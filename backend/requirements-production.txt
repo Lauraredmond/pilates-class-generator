@@ -8,6 +8,7 @@ python-multipart==0.0.6
 # Pydantic (data validation)
 pydantic==2.12.4
 pydantic-settings==2.1.0
+email-validator==2.3.0
 
 # Database - Supabase client (using versions from local working environment)
 supabase==2.24.0
