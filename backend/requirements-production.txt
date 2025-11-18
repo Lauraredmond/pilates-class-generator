@@ -9,8 +9,8 @@ python-multipart==0.0.6
 pydantic==2.5.3
 pydantic-settings==2.1.0
 
-# Database - Supabase client (let it resolve its own sub-dependencies)
-supabase==2.3.4
+# Database - Supabase client (using versions from local working environment)
+supabase==2.24.0
 
 # Other core dependencies
 python-dotenv==1.0.0
