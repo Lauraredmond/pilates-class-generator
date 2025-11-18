@@ -39,7 +39,7 @@ pyjwt==2.10.1
 
 # Uvicorn standard extras
 watchfiles==1.1.1
-websockets==10.4
+websockets==11.0.3
 uvloop==0.22.1
 httptools==0.7.1
 
