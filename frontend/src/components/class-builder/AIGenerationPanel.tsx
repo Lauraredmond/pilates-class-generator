@@ -10,12 +10,14 @@ import { useStore } from '../../store/useStore';
 import { agentsApi } from '../../services/api';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
+import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
 
 export function AIGenerationPanel() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [results, setResults] = useState<GeneratedClassResults | null>(null);
   const [lastFormData, setLastFormData] = useState<GenerationFormData | null>(null);
+  const [isPlayingClass, setIsPlayingClass] = useState(false);
   const setCurrentClass = useStore((state) => state.setCurrentClass);
   const showToast = useStore((state) => state.showToast);
 
@@ -148,25 +150,73 @@ export function AIGenerationPanel() {
     setResults(null);
   };
 
+  const handlePlayClass = () => {
+    if (!results) return;
+    setIsPlayingClass(true);
+  };
+
+  const handleExitPlayback = () => {
+    setIsPlayingClass(false);
+  };
+
+  const handleCompletePlayback = () => {
+    setIsPlayingClass(false);
+    showToast('Class completed! Great work!', 'success');
+  };
+
+  // Transform results to playback format
+  const playbackItems: PlaybackItem[] = results
+    ? results.sequence.movements.map((m) => ({
+        type: m.type || 'movement',
+        id: m.id,
+        name: m.name,
+        duration_seconds: m.duration_seconds,
+        setup_instructions: undefined, // TODO: Add from backend
+        teaching_cues: undefined, // TODO: Add from backend
+        breathing_pattern: undefined, // TODO: Add from backend
+        difficulty_level: m.difficulty_level,
+        primary_muscles: m.primary_muscles,
+        from_position: m.from_position,
+        to_position: m.to_position,
+        narrative: m.narrative,
+      } as PlaybackItem))
+    : [];
+
   return (
     <>
       <Card className="h-full flex flex-col">
         <CardHeader>
-          <CardTitle>AI Class Generator</CardTitle>
+          <CardTitle>Class Generator</CardTitle>
         </CardHeader>
         <CardBody className="flex-1 overflow-y-auto">
-          <GenerationForm onSubmit={handleGenerateCompleteClass} isLoading={isGenerating} />
+          <GenerationForm
+            onSubmit={handleGenerateCompleteClass}
+            isLoading={isGenerating}
+            onPlayClass={handlePlayClass}
+            hasGeneratedClass={results !== null}
+          />
         </CardBody>
       </Card>
 
       {/* Results Modal */}
-      {results && (
+      {results && !isPlayingClass && (
         <GeneratedResults
           results={results}
           onAccept={handleAcceptResults}
           onRegenerate={handleRegenerate}
           onCancel={handleCancel}
           isRegenerating={isRegenerating}
+        />
+      )}
+
+      {/* Playback Mode */}
+      {isPlayingClass && results && lastFormData && (
+        <ClassPlayback
+          items={playbackItems}
+          movementMusicStyle={lastFormData.movementMusicStyle}
+          coolDownMusicStyle={lastFormData.coolDownMusicStyle}
+          onComplete={handleCompletePlayback}
+          onExit={handleExitPlayback}
         />
       )}
     </>
