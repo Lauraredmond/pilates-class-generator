@@ -1,0 +1,329 @@
+"""
+AI Agents API Router
+Endpoints for sequence generation, music selection, meditation, and research
+"""
+
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
+from loguru import logger
+
+from models import (
+    SequenceGenerationRequest,
+    SequenceGenerationResponse,
+    MusicSelectionRequest,
+    MusicSelectionResponse,
+    MeditationRequest,
+    MeditationResponse,
+    ResearchRequest,
+    ResearchResponse,
+    CompleteClassRequest,
+    CompleteClassResponse,
+    AgentDecision
+)
+
+from agents import (
+    SequenceAgent,
+    MusicAgent,
+    MeditationAgent,
+    ResearchAgent
+)
+
+from datetime import datetime
+from uuid import uuid4
+
+router = APIRouter()
+
+# Initialize agents (in production, these would be dependency-injected)
+sequence_agent = SequenceAgent(strictness_level="guided")
+music_agent = MusicAgent(strictness_level="guided")
+meditation_agent = MeditationAgent(strictness_level="guided")
+research_agent = ResearchAgent(strictness_level="guided")
+
+
+# Temporary user ID function (replace with real auth in Session 4+)
+def get_current_user_id() -> str:
+    """Get current user ID (placeholder until auth is implemented)"""
+    return "demo-user-id"
+
+
+@router.post("/generate-sequence", response_model=dict)
+async def generate_sequence(
+    request: SequenceGenerationRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Generate a Pilates movement sequence using the Sequence Agent
+
+    - **target_duration_minutes**: Total class duration (15-120 minutes)
+    - **difficulty_level**: Beginner, Intermediate, or Advanced
+    - **focus_areas**: Optional muscle groups to emphasize
+    - **strictness_level**: strict, guided, or autonomous
+    - **include_mcp_research**: Whether to enhance with web research
+    """
+    try:
+        logger.info(f"Generating sequence for user {user_id}")
+        logger.info(f"Request data: {request.dict()}")
+
+        # Process with agent
+        result = await sequence_agent.process(
+            user_id=user_id,
+            inputs=request.dict()
+        )
+
+        logger.info(f"Agent result success: {result.get('success')}")
+
+        if not result["success"]:
+            logger.error(f"Agent returned failure: {result}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Sequence generation failed: {result.get('error')}"
+            )
+
+        return result
+
+    except ValueError as e:
+        logger.error(f"Validation error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Sequence generation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/select-music", response_model=dict)
+async def select_music(
+    request: MusicSelectionRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Select music playlist for a Pilates class using the Music Agent
+
+    - **class_duration_minutes**: Duration of the class
+    - **energy_curve**: Optional energy levels throughout class (0.0-1.0)
+    - **preferred_genres**: Optional list of preferred genres
+    - **target_bpm_range**: Target BPM range (default: 90-130)
+    """
+    try:
+        logger.info(f"Selecting music for user {user_id}")
+
+        result = await music_agent.process(
+            user_id=user_id,
+            inputs=request.dict()
+        )
+
+        if not result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Music selection failed: {result.get('error')}"
+            )
+
+        return result
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Music selection error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/create-meditation", response_model=dict)
+async def create_meditation(
+    request: MeditationRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Generate a meditation/cool-down script using the Meditation Agent
+
+    - **duration_minutes**: Duration of meditation (2-15 minutes)
+    - **class_intensity**: low, moderate, or high
+    - **focus_theme**: Optional theme (mindfulness, body_scan, gratitude)
+    - **include_breathing**: Whether to include breathing guidance
+    """
+    try:
+        logger.info(f"Creating meditation for user {user_id}")
+
+        result = await meditation_agent.process(
+            user_id=user_id,
+            inputs=request.dict()
+        )
+
+        if not result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Meditation creation failed: {result.get('error')}"
+            )
+
+        return result
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Meditation creation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/research-cues", response_model=dict)
+async def research_cues(
+    request: ResearchRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Perform web research using the Research Agent and MCP Playwright
+
+    - **research_type**: movement_cues, warmup, pregnancy, injury, or trends
+    - **movement_name**: Name of movement (for movement_cues, pregnancy, injury)
+    - **target_muscles**: List of muscles (for warmup)
+    - **condition**: Condition to research (for pregnancy, injury)
+    - **trusted_sources_only**: Only use trusted Pilates websites
+    """
+    try:
+        logger.info(f"Performing research for user {user_id}: {request.research_type}")
+
+        result = await research_agent.process(
+            user_id=user_id,
+            inputs=request.dict()
+        )
+
+        if not result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Research failed: {result.get('error')}"
+            )
+
+        return result
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Research error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/generate-complete-class", response_model=dict)
+async def generate_complete_class(
+    request: CompleteClassRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Generate a complete class with sequence, music, and meditation
+
+    Orchestrates all agents to create a full class plan in one request.
+    """
+    try:
+        logger.info(f"Generating complete class for user {user_id}")
+
+        import time
+        start_time = time.time()
+
+        # Step 1: Generate sequence
+        sequence_result = await sequence_agent.process(
+            user_id=user_id,
+            inputs=request.class_plan.dict()
+        )
+
+        if not sequence_result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail="Sequence generation failed"
+            )
+
+        # Step 2: Select music (if requested)
+        music_result = None
+        if request.include_music:
+            music_input = {
+                "class_duration_minutes": request.class_plan.target_duration_minutes,
+                "target_bpm_range": (90, 130)
+            }
+            music_result = await music_agent.process(
+                user_id=user_id,
+                inputs=music_input
+            )
+
+        # Step 3: Generate meditation (if requested)
+        meditation_result = None
+        if request.include_meditation:
+            meditation_input = {
+                "duration_minutes": 5,
+                "class_intensity": "moderate"
+            }
+            meditation_result = await meditation_agent.process(
+                user_id=user_id,
+                inputs=meditation_input
+            )
+
+        # Step 4: Perform research enhancements (if requested)
+        research_results = []
+        if request.include_research:
+            # Research first few movements
+            sequence_data = sequence_result["data"]
+            movements = sequence_data.get("sequence", [])[:3]
+
+            for movement in movements:
+                research_input = {
+                    "research_type": "movement_cues",
+                    "movement_name": movement.get("name"),
+                    "trusted_sources_only": True
+                }
+                research_result = await research_agent.process(
+                    user_id=user_id,
+                    inputs=research_input
+                )
+                if research_result["success"]:
+                    research_results.append(research_result)
+
+        # Calculate total processing time
+        total_time_ms = (time.time() - start_time) * 1000
+
+        return {
+            "success": True,
+            "data": {
+                "sequence": sequence_result,
+                "music_recommendation": music_result,
+                "meditation_script": meditation_result,
+                "research_enhancements": research_results if research_results else None,
+                "total_processing_time_ms": total_time_ms
+            },
+            "metadata": {
+                "generated_at": datetime.now().isoformat(),
+                "user_id": user_id,
+                "agents_used": ["sequence", "music", "meditation", "research"] if request.include_research else ["sequence", "music", "meditation"]
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Complete class generation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/agent-info")
+async def get_agent_info():
+    """Get information about all available agents"""
+    return {
+        "agents": {
+            "sequence": sequence_agent.get_agent_info(),
+            "music": music_agent.get_agent_info(),
+            "meditation": meditation_agent.get_agent_info(),
+            "research": research_agent.get_agent_info()
+        }
+    }
+
+
+@router.get("/decisions/{user_id}")
+async def get_user_decisions(
+    user_id: str,
+    limit: int = 10,
+    agent_type: Optional[str] = None
+):
+    """
+    Get user's agent decision history (EU AI Act transparency)
+
+    - **user_id**: User ID to query
+    - **limit**: Number of recent decisions to return
+    - **agent_type**: Optional filter by agent type
+    """
+    # This would query the ai_decision_log table
+    # Placeholder implementation
+    return {
+        "user_id": user_id,
+        "decisions": [],
+        "message": "Decision logging will be available once database tables are created"
+    }

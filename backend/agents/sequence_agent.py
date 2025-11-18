@@ -123,6 +123,9 @@ class SequenceAgent(BaseAgent):
         # Step 4: Validate sequence against safety rules
         validation = self._validate_sequence(sequence, muscle_balance)
 
+        # Step 4.5: Generate LLM-based narrative variations for teaching cues
+        await self._enhance_narrative_variations(sequence_with_transitions)
+
         # Step 5: Enhance with MCP research if requested
         mcp_enhancements = None
         if include_mcp and self.strictness_level in ["guided", "autonomous"]:
@@ -151,14 +154,14 @@ class SequenceAgent(BaseAgent):
         difficulty: str,
         excluded_ids: List[str]
     ) -> List[Dict[str, Any]]:
-        """Fetch available movements from database"""
+        """Fetch available movements from database with all teaching data"""
         try:
             # Get movements at or below requested difficulty
             difficulty_order = ["Beginner", "Intermediate", "Advanced"]
             max_level_idx = difficulty_order.index(difficulty)
             allowed_levels = difficulty_order[:max_level_idx + 1]
 
-            # Query database
+            # Query database - get all fields including narrative, setup_position, watch_out_points
             response = self.supabase.table('movements') \
                 .select('*') \
                 .in_('difficulty_level', allowed_levels) \
@@ -170,11 +173,57 @@ class SequenceAgent(BaseAgent):
             if excluded_ids:
                 movements = [m for m in movements if m['id'] not in excluded_ids]
 
-            logger.info(f"Found {len(movements)} available movements")
+            # Enrich each movement with teaching_cues and muscle_groups
+            for movement in movements:
+                # Fetch teaching cues
+                movement['teaching_cues'] = await self._get_teaching_cues(movement['id'])
+
+                # Fetch muscle groups
+                movement['muscle_groups'] = await self._get_muscle_groups(movement['id'])
+
+            logger.info(f"Found {len(movements)} available movements with teaching data")
             return movements
 
         except Exception as e:
             logger.error(f"Error fetching movements: {e}")
+            return []
+
+    async def _get_teaching_cues(self, movement_id: str) -> List[Dict[str, Any]]:
+        """Fetch teaching cues for a specific movement"""
+        try:
+            response = self.supabase.table('teaching_cues') \
+                .select('cue_type, cue_text, cue_order, is_primary') \
+                .eq('movement_id', movement_id) \
+                .order('cue_order') \
+                .execute()
+
+            return response.data if response.data else []
+
+        except Exception as e:
+            logger.error(f"Error fetching teaching cues for movement {movement_id}: {e}")
+            return []
+
+    async def _get_muscle_groups(self, movement_id: str) -> List[Dict[str, Any]]:
+        """Fetch muscle groups for a specific movement"""
+        try:
+            response = self.supabase.table('movement_muscles') \
+                .select('muscle_group_name, is_primary') \
+                .eq('movement_id', movement_id) \
+                .execute()
+
+            # Build muscle groups list from the simplified schema
+            muscle_groups = []
+            for mm in response.data:
+                muscle_groups.append({
+                    'name': mm.get('muscle_group_name', ''),
+                    'category': None,  # Not in current schema
+                    'is_primary': mm.get('is_primary', True)
+                })
+
+            return muscle_groups
+
+        except Exception as e:
+            logger.error(f"Error fetching muscle groups for movement {movement_id}: {e}")
             return []
 
     async def _build_safe_sequence(
@@ -391,9 +440,9 @@ class SequenceAgent(BaseAgent):
             if not movement_ids:
                 return muscle_load
 
-            # Query movement_muscles and muscle_groups tables
+            # Query movement_muscles table (simplified schema with muscle_group_name)
             response = self.supabase.table('movement_muscles') \
-                .select('movement_id, muscle_group_id, muscle_groups(name)') \
+                .select('movement_id, muscle_group_name') \
                 .in_('movement_id', movement_ids) \
                 .execute()
 
@@ -409,7 +458,7 @@ class SequenceAgent(BaseAgent):
                 ]
 
                 for mm in movement_muscles:
-                    muscle_name = mm["muscle_groups"]["name"]
+                    muscle_name = mm.get("muscle_group_name", "Unknown")
                     if muscle_name not in muscle_load:
                         muscle_load[muscle_name] = 0.0
                     muscle_load[muscle_name] += duration
@@ -461,6 +510,61 @@ class SequenceAgent(BaseAgent):
             "violations": violations,
             "warnings": warnings
         }
+
+    async def _enhance_narrative_variations(self, sequence: List[Dict[str, Any]]) -> None:
+        """
+        Use LLM to generate narrative variations for teaching cues
+        Modifies sequence in-place with varied phrasing
+        """
+        try:
+            for item in sequence:
+                if item.get("type") != "movement":
+                    continue  # Skip transitions
+
+                # Vary teaching cues
+                if item.get("teaching_cues") and len(item["teaching_cues"]) > 0:
+                    cue_texts = [cue.get("cue_text", "") for cue in item["teaching_cues"]]
+                    if any(cue_texts):
+                        varied_cues = await self.generate_narrative_variations(
+                            texts=cue_texts,
+                            variation_type="cue"
+                        )
+                        # Update cues with varied text
+                        for i, varied_text in enumerate(varied_cues):
+                            if i < len(item["teaching_cues"]):
+                                item["teaching_cues"][i]["cue_text"] = varied_text
+
+                # Vary setup position description
+                if item.get("setup_position"):
+                    varied_setup = await self.generate_narrative_variations(
+                        texts=[f"Begin in {item['setup_position']} position"],
+                        variation_type="setup"
+                    )
+                    if varied_setup:
+                        # Store as a new field so frontend can use it
+                        item["setup_instruction"] = varied_setup[0]
+
+                # Vary muscle group descriptions
+                if item.get("muscle_groups") and len(item["muscle_groups"]) > 0:
+                    primary_muscles = [
+                        mg.get("name", "")
+                        for mg in item["muscle_groups"]
+                        if mg.get("is_primary", True)
+                    ]
+                    if primary_muscles:
+                        muscle_description = f"This movement targets your {', '.join(primary_muscles)}"
+                        varied_muscle = await self.generate_narrative_variations(
+                            texts=[muscle_description],
+                            variation_type="muscle"
+                        )
+                        if varied_muscle:
+                            # Store as a new field
+                            item["muscle_description"] = varied_muscle[0]
+
+            logger.info(f"Enhanced {len([i for i in sequence if i.get('type') == 'movement'])} movements with LLM narrative variations")
+
+        except Exception as e:
+            logger.warning(f"LLM narrative variation failed: {e}. Using original text.")
 
     async def _enhance_with_mcp(self, sequence: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Enhance sequence with MCP web research"""

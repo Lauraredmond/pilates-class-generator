@@ -13,8 +13,23 @@ export interface PlaybackMovement {
   id?: string;
   name: string;
   duration_seconds: number;
+  // New fields from Supabase
+  narrative?: string; // Teaching story/approach
+  setup_position?: string; // Supine, Prone, Kneeling, Seated, Side-lying
+  watch_out_points?: string; // Safety warnings
+  teaching_cues?: Array<{
+    cue_type: string;
+    cue_text: string;
+    cue_order?: number;
+    is_primary?: boolean;
+  }>;
+  muscle_groups?: Array<{
+    name: string;
+    category?: string;
+    is_primary?: boolean;
+  }>;
+  // Legacy fields (for backwards compatibility)
   setup_instructions?: string;
-  teaching_cues?: string[];
   breathing_pattern?: string;
   difficulty_level?: string;
   primary_muscles?: string[];

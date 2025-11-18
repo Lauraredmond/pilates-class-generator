@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-11-14T17:35:43.199015",
+  "checks_passed": 6,
+  "checks_failed": 0,
+  "warnings": [
+    "Sequence rules count low: 10 < 16",
+    "No movement-muscle mappings"
+  ],
+  "errors": [],
+  "details": {
+    "reference_data": {
+      "muscle_groups": {
+        "status": "pass",
+        "count": 23,
+        "expected": 23
+      },
+      "sequence_rules": {
+        "status": "warning",
+        "count": 10,
+        "expected": 16
+      },
+      "transitions": {
+        "status": "pass",
+        "count": 20,
+        "expected": 20
+      }
+    },
+    "movements": {
+      "movement_count": {
+        "status": "pass",
+        "count": 34,
+        "expected": 34
+      },
+      "movement_structure": {
+        "status": "pass",
+        "sample_name": "The Hundred"
+      },
+      "excel_traceability": {
+        "status": "pass",
+        "percent": 100.0
+      }
+    },
+    "relationships": {
+      "movement_muscles": {
+        "status": "warning",
+        "count": 0
+      },
+      "teaching_cues": {
+        "status": "pass",
+        "count": 15
+      },
+      "common_mistakes": {
+        "status": "pass",
+        "count": 34
+      }
+    },
+    "rls_policies": {
+      "public_read": {
+        "status": "pass"
+      },
+      "rls_users": {
+        "status": "pass"
+      },
+      "rls_pii_tokens": {
+        "status": "pass"
+      },
+      "rls_class_plans": {
+        "status": "pass"
+      },
+      "rls_student_profiles": {
+        "status": "pass"
+      }
+    }
+  }
+}

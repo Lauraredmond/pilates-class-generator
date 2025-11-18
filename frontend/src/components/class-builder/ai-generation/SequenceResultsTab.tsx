@@ -75,27 +75,6 @@ export function SequenceResultsTab({ data }: SequenceResultsTabProps) {
         </div>
       </div>
 
-      {/* Muscle Balance Chart */}
-      <div className="bg-burgundy-dark border border-cream/30 rounded-lg p-4">
-        <h4 className="text-sm font-semibold text-cream mb-3">Muscle Group Balance</h4>
-        <div className="space-y-2">
-          {Object.entries(data.muscle_balance).map(([muscle, percentage]) => (
-            <div key={muscle}>
-              <div className="flex justify-between text-xs text-cream/60 mb-1">
-                <span className="capitalize">{muscle}</span>
-                <span>{percentage}%</span>
-              </div>
-              <div className="w-full bg-burgundy rounded-full h-2">
-                <div
-                  className="bg-energy-gradient h-2 rounded-full transition-all"
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Movement List */}
       <div>
         <h4 className="text-sm font-semibold text-cream mb-3">Movement Sequence</h4>
@@ -173,6 +152,27 @@ export function SequenceResultsTab({ data }: SequenceResultsTabProps) {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Muscle Balance Chart */}
+      <div className="bg-burgundy-dark border border-cream/30 rounded-lg p-4">
+        <h4 className="text-sm font-semibold text-cream mb-3">Muscle Group Balance</h4>
+        <div className="space-y-2">
+          {Object.entries(data.muscle_balance).map(([muscle, percentage]) => (
+            <div key={muscle}>
+              <div className="flex justify-between text-xs text-cream/60 mb-1">
+                <span className="capitalize">{muscle}</span>
+                <span>{Math.round(percentage)}%</span>
+              </div>
+              <div className="w-full bg-burgundy rounded-full h-2">
+                <div
+                  className="bg-energy-gradient h-2 rounded-full transition-all"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

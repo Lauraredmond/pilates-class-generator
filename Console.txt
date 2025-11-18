@@ -1,0 +1,60 @@
+[Debug] [vite] connecting... (client, line 495)
+[Debug] [vite] connected. (client, line 618)
+[Warning] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. (react-router-dom.js, line 4413)
+[Warning] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. (react-router-dom.js, line 4413)
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (ClassBuilder.tsx, line 34)
+[Log] [ClassBuilder] Force fetching movements from API... (ClassBuilder.tsx, line 35)
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (ClassBuilder.tsx, line 34)
+[Log] [ClassBuilder] Force fetching movements from API... (ClassBuilder.tsx, line 35)
+[Log] [ClassBuilder] API response: – 34 – "movements received" (ClassBuilder.tsx, line 40)
+[Log] [ClassBuilder] Sample movement: – Object (ClassBuilder.tsx, line 42)
+Object
+[Log] [ClassBuilder] API response: – 34 – "movements received" (ClassBuilder.tsx, line 40)
+[Log] [ClassBuilder] Sample movement: – Object (ClassBuilder.tsx, line 42)
+Object
+[Log] [AIGenerationPanel] Raw sequence data sample: – {firstMovement: Object, hasTeachingCues: true, hasSetupPosition: true, …} (AIGenerationPanel.tsx, line 75)
+{firstMovement: Object, hasTeachingCues: true, hasSetupPosition: true, hasMuscleGroups: true, hasWatchOutPoints: false}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
+{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object

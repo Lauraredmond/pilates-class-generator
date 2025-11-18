@@ -16,6 +16,7 @@ export function AIGenerationPanel() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [results, setResults] = useState<GeneratedClassResults | null>(null);
+  const [showResultsModal, setShowResultsModal] = useState(false);
   const [lastFormData, setLastFormData] = useState<GenerationFormData | null>(null);
   const [isPlayingClass, setIsPlayingClass] = useState(false);
   const setCurrentClass = useStore((state) => state.setCurrentClass);
@@ -23,6 +24,7 @@ export function AIGenerationPanel() {
 
   const handleGenerateCompleteClass = async (formData: GenerationFormData) => {
     setIsGenerating(true);
+    setResults(null); // Clear previous results when starting new generation
     setLastFormData(formData);
 
     try {
@@ -63,6 +65,15 @@ export function AIGenerationPanel() {
         throw new Error(meditationResponse.data.error || 'Failed to create meditation');
       }
 
+      // DEBUG: Log raw API response
+      console.log('[AIGenerationPanel] Raw sequence data sample:', {
+        firstMovement: sequenceResponse.data.data.sequence[0],
+        hasTeachingCues: !!sequenceResponse.data.data.sequence[0]?.teaching_cues,
+        hasSetupPosition: !!sequenceResponse.data.data.sequence[0]?.setup_position,
+        hasMuscleGroups: !!sequenceResponse.data.data.sequence[0]?.muscle_groups,
+        hasWatchOutPoints: !!sequenceResponse.data.data.sequence[0]?.watch_out_points
+      });
+
       // Transform API responses to match our result types
       const completeResults: GeneratedClassResults = {
         sequence: {
@@ -76,6 +87,11 @@ export function AIGenerationPanel() {
             from_position: m.from_position,
             to_position: m.to_position,
             narrative: m.narrative,
+            // NEW FIELDS - Pass through from API
+            setup_position: m.setup_position,
+            watch_out_points: m.watch_out_points,
+            teaching_cues: m.teaching_cues || [],
+            muscle_groups: m.muscle_groups || [],
           })),
           movement_count: sequenceResponse.data.data.movement_count || 0,
           transition_count: sequenceResponse.data.data.transition_count || 0,
@@ -104,6 +120,7 @@ export function AIGenerationPanel() {
       };
 
       setResults(completeResults);
+      setShowResultsModal(true); // Show the modal
       showToast('Complete class generated successfully!', 'success');
     } catch (error: any) {
       console.error('Failed to generate complete class:', error);
@@ -142,12 +159,12 @@ export function AIGenerationPanel() {
     });
 
     showToast('Class added successfully!', 'success');
-    setResults(null);
-    setLastFormData(null);
+    setShowResultsModal(false); // Close the modal but keep results for Play Class button
   };
 
   const handleCancel = () => {
     setResults(null);
+    setShowResultsModal(false);
   };
 
   const handlePlayClass = () => {
@@ -171,14 +188,18 @@ export function AIGenerationPanel() {
         id: m.id,
         name: m.name,
         duration_seconds: m.duration_seconds,
-        setup_instructions: undefined, // TODO: Add from backend
-        teaching_cues: undefined, // TODO: Add from backend
-        breathing_pattern: undefined, // TODO: Add from backend
+        // New fields from Supabase
+        narrative: m.narrative,
+        setup_position: m.setup_position,
+        watch_out_points: m.watch_out_points,
+        teaching_cues: m.teaching_cues,
+        muscle_groups: m.muscle_groups,
+        // Legacy fields
         difficulty_level: m.difficulty_level,
         primary_muscles: m.primary_muscles,
+        // Transition fields (for transitions)
         from_position: m.from_position,
         to_position: m.to_position,
-        narrative: m.narrative,
       } as PlaybackItem))
     : [];
 
@@ -199,7 +220,7 @@ export function AIGenerationPanel() {
       </Card>
 
       {/* Results Modal */}
-      {results && !isPlayingClass && (
+      {showResultsModal && results && !isPlayingClass && (
         <GeneratedResults
           results={results}
           onAccept={handleAcceptResults}
