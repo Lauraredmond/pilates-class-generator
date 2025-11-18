@@ -156,6 +156,7 @@ export function AIGenerationPanel() {
         code: movement.id || `code-${index}`,
         category: 'AI Generated',
         sequenceIndex: index,
+        difficulty_level: movement.difficulty_level || 'Intermediate',
       })),
     });
 

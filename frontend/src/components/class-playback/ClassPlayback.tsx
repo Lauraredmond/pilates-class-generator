@@ -69,7 +69,6 @@ export function ClassPlayback({
 
   const currentItem = items[currentIndex];
   const totalItems = items.length;
-  const _isLastItem = currentIndex === totalItems - 1;
 
   // Timer countdown logic
   useEffect(() => {

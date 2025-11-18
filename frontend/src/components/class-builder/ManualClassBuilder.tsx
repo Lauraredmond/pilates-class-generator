@@ -28,7 +28,7 @@ export function ManualClassBuilder() {
 
     // Dragging from library to sequence
     if (over.id === 'sequence-canvas' && !active.id.toString().startsWith('sequence-')) {
-      const movement = active.data.current;
+      const movement = active.data.current as any;
       if (movement) {
         addMovementToSequence(movement);
       }
