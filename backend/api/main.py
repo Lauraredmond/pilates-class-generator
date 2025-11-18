@@ -28,8 +28,8 @@ app.add_middleware(
         "http://localhost:5173",  # Vite dev
         "http://localhost:5174",  # Vite dev alternate
         "https://basslinemvp.netlify.app",  # Netlify production
-        "https://*.netlify.app",  # Netlify preview deployments
     ],
+    allow_origin_regex=r"https://.*\.netlify\.app",  # Netlify preview deployments
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
