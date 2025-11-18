@@ -620,14 +620,64 @@ if (currentMovement.name === 'Final Meditation') {
 
 ---
 
-**Status:**
-- ✅ Deployment complete (Render Starter + Netlify)
-- ✅ Frontend playback UI ready for testing
-- 🎵 **SoundCloud integration is next priority (ESSENTIAL FEATURE)**
-- ⚠️ Backend teaching cues enhancement optional but recommended
+## Future Sessions Roadmap
 
-**Pre-work Required:** Create SoundCloud account and 9 curated playlists before Session 11
+### **Session 14-15: Audio Narration Prototype** 🎙️
+
+**Approach:** Test with user's own voice recordings first (before committing to OpenAI TTS)
+
+**User Requirement:** "I'd like to try a static audio prototype first, say using a recording from me - see how that works first"
+
+**Why This Approach:**
+- ✅ Validate UX (do users prefer audio vs text?)
+- ✅ Test technical implementation (playback, volume ducking, timing)
+- ✅ Try your own voice before AI TTS costs
+- ✅ Faster iteration (no API integration needed)
+
+**Implementation Plan:**
+1. **Pre-work:** Record narration for 2-3 movements
+   - Setup instructions
+   - Teaching cues
+   - Breathing patterns
+   - Save as MP3 files
+
+2. **Backend:** Upload audio files to Supabase Storage
+   - Manual upload via dashboard
+   - Associate audio URLs with movements in database
+
+3. **Frontend:** Integrate audio playback into ClassPlayback
+   - Play narration when movement starts
+   - Pause/resume with timer
+   - **Volume ducking:** Lower music to 30% during narration
+   - Fade music back to 50% when narration ends
+
+4. **Testing:**
+   - Test audio quality and clarity
+   - Test volume balance (music vs narration)
+   - Test timing (does narration finish before movement ends?)
+   - Get user feedback on experience
+
+**If prototype succeeds → Session 16+: OpenAI TTS Integration**
+- Replace manual recordings with AI-generated narration
+- ~$0.18 per class, $18/month for 100 classes
+- Multiple voice options (nova, alloy, shimmer)
+- Automatic generation when class is created
+
+**Time Estimate:** 2-3 hours (assuming audio files pre-recorded)
 
 ---
 
-Last Updated: 2025-11-18 21:55 UTC
+**Status:**
+- ✅ Deployment complete (Render Starter + Netlify)
+- ✅ Frontend playback UI ready for testing
+- 🎵 **SoundCloud integration is next priority (ESSENTIAL FEATURE - Session 11)**
+- 🎙️ **Audio narration prototype planned for Sessions 14-15**
+- ⚠️ Backend teaching cues enhancement optional but recommended
+
+**Pre-work Required:**
+- **Session 11:** Create SoundCloud account and 9 curated playlists
+- **Session 14-15:** Record narration audio for 2-3 test movements
+
+---
+
+Last Updated: 2025-11-18 22:00 UTC
