@@ -1,0 +1,26 @@
+services:
+  # Backend API Service
+  - type: web
+    name: pilates-class-generator-api
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: MCP_PLAYWRIGHT_URL
+        sync: false
+    healthCheckPath: /health
