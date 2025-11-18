@@ -16,7 +16,7 @@ supabase==2.24.0
 python-dotenv==1.0.0
 loguru==0.7.2
 PyYAML==6.0.1
-typing-extensions==4.12.2
+typing-extensions==4.14.0
 pydantic-core==2.14.6
 annotated-types==0.7.0
 starlette==0.35.1
