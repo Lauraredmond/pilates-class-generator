@@ -17,14 +17,8 @@ storage3==0.7.7
 realtime==1.0.6
 supafunc==0.3.3
 
-# HTTP client dependencies (CRITICAL PINS to avoid backtracking)
-httpx==0.24.1
-httpcore==0.17.3
-h11==0.14.0
-anyio==3.7.1
-sniffio==1.3.1
-certifi==2025.11.12
-idna==3.11
+# HTTP client dependencies - let pip resolve compatible versions
+# (removed explicit pins due to conflicts between supabase sub-packages)
 
 # Other core dependencies
 python-dotenv==1.0.0
