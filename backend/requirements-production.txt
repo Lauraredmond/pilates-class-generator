@@ -6,7 +6,7 @@ uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 
 # Pydantic (data validation)
-pydantic==2.5.3
+pydantic==2.12.4
 pydantic-settings==2.1.0
 
 # Database - Supabase client (using versions from local working environment)
@@ -17,7 +17,7 @@ python-dotenv==1.0.0
 loguru==0.7.2
 PyYAML==6.0.1
 typing-extensions==4.14.0
-pydantic-core==2.14.6
+pydantic-core==2.41.5
 annotated-types==0.7.0
 starlette==0.35.1
 click==8.3.1
