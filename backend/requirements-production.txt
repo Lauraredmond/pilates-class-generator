@@ -1,25 +1,46 @@
-# Production dependencies - minimal set needed to run the API on Render
-
-# Critical: Pin PyYAML first to avoid build issues
-PyYAML==6.0.1
+# Production dependencies - FULLY PINNED to avoid dependency resolution issues
 
 # FastAPI and ASGI server
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 
-# Pydantic (data validation - comes with FastAPI but being explicit)
+# Pydantic (data validation)
 pydantic==2.5.3
 pydantic-settings==2.1.0
 
-# Database - Supabase client
+# Database - Supabase client with ALL sub-dependencies pinned
 supabase==2.3.4
+gotrue==2.12.4
+postgrest==0.15.1
+storage3==0.7.7
+realtime==1.0.6
+supafunc==0.3.3
 
-# Environment variables
+# HTTP client dependencies (CRITICAL PINS to avoid backtracking)
+httpx==0.24.1
+httpcore==0.17.3
+h11==0.14.0
+anyio==3.7.1
+sniffio==1.3.1
+certifi==2025.11.12
+idna==3.11
+
+# Other core dependencies
 python-dotenv==1.0.0
-
-# Logging
 loguru==0.7.2
+PyYAML==6.0.1
+typing-extensions==4.8.0
+pydantic-core==2.14.6
+annotated-types==0.7.0
+starlette==0.35.1
+click==8.3.1
+pyjwt==2.10.1
 
-# Note: All other dependencies (testing, code quality, Excel parsing, AI libraries)
-# are development-only and not needed in production
+# Uvicorn standard extras
+watchfiles==1.1.1
+websockets==10.4
+uvloop==0.22.1
+httptools==0.7.1
+
+# Note: All versions explicitly pinned to prevent pip dependency resolver issues
