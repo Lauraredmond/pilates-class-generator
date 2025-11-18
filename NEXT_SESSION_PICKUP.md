@@ -1,24 +1,58 @@
-# Next Session Pickup - Timer-Based Class Playback
+# Next Session Pickup - SoundCloud Music Integration + Playback Testing
 
 **Date Created:** 2025-11-17 21:50 UTC
-**Last Updated:** 2025-11-17 22:05 UTC
-**Session:** Session 9 → Session 10
-**Status:** Frontend Components Complete - Ready for Testing & Backend Work
+**Last Updated:** 2025-11-18 21:50 UTC
+**Session:** Session 10 → Session 11
+**Status:** Deployment Complete - Ready for SoundCloud Integration & Testing
 
 ---
 
 ## Quick Start
 
-**Primary Task:** Design and implement timer-based teleprompter functionality for "Start Class" / "Play Class" feature.
+**Primary Task:** Integrate SoundCloud music playback into class playback feature (ESSENTIAL ENHANCEMENT).
 
-**Approach:** Use multi-agent methodology with specialized roles:
-- Frontend Developer
-- Backend Developer
-- QA Tester
-- UAT Tester
-- Integration Tester
-- Security Auditor
-- Regression Tester
+**User Requirement:** "Music integration is essential to my offering, not optional."
+
+**Recommended Approach:** Option 3 - Pre-curated SoundCloud playlists
+- Fast implementation (1-2 hours)
+- No authentication complexity
+- Professional, controlled music experience
+- You curate playlists for each music style ahead of time
+
+**Implementation Steps:**
+1. Create SoundCloud account and 9 playlists (one per music style)
+2. Integrate SoundCloud Widget API into ClassPlayback component
+3. Map music styles to playlist URLs
+4. Test playback during movements and cool-down
+5. Add volume controls (optional)
+
+---
+
+## Session 10 Accomplishments (2025-11-18)
+
+### ✅ Deployment & Infrastructure
+- **Backend:** Deployed to Render.com (https://pilates-class-generator-api3.onrender.com)
+- **Frontend:** Deployed to Netlify (https://basslinemvp.netlify.app)
+- **Render Upgrade:** Switched to Starter tier ($9/month) - **No more spin-down issues**
+- **CORS Fixed:** Netlify can now communicate with Render backend
+- **TypeScript Errors:** All frontend build errors resolved
+- **Security:** Removed exposed Supabase credentials from git
+- **Database:** Created `ai_decision_log` table for EU AI Act compliance
+
+### ✅ Performance Improvements
+- **Backend response time:** ~3-4 seconds (down from ~5-6s)
+- **No more failed database inserts:** `ai_decision_log` table now exists
+- **Always-on backend:** Render Starter tier eliminates 30-second spin-down delays
+
+### ✅ UI Updates
+- **Home Page:** Updated narrative to emphasize "progress quickly" and "competence"
+- **Medical Disclaimer:** Mobile-responsive (iPhone tested)
+
+### 🎓 Learning: Backend Troubleshooting
+- **Lesson:** When backend is unresponsive, check logs first to distinguish:
+  - Spin-down wake-up (30-60s delay, expected on free tier)
+  - Actual crash (persistent timeout, requires code fix)
+- **Solution:** Upgraded to paid tier ($9/month) to eliminate spin-down entirely
 
 ---
 
@@ -459,38 +493,141 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ---
 
-## Priority Tasks for Next Session
+## Priority Tasks for Session 11
 
-### 1. **User Testing (HIGH PRIORITY)**
+### **1. SoundCloud Music Integration (CRITICAL - ESSENTIAL FEATURE)** 🎵
+
+**User Requirement:** "Music integration is essential to my offering, not optional."
+
+**Approach: Option 3 - Pre-curated Playlists (Recommended)**
+
+#### Step 1: Create SoundCloud Playlists (Pre-work - Do Before Session)
+Create a SoundCloud account and build 9 playlists matching the music styles in the app:
+
+**Movement Music Playlists:**
+1. Ambient Pilates
+2. Meditation Instrumentals
+3. Chillout Beats
+4. Lo-Fi Focus
+5. Acoustic Calm
+6. Piano Minimal
+
+**Cool-Down Music Playlists:**
+7. Baroque Classical
+8. Classical Piano
+9. Romantic Era
+
+Each playlist should be 60+ minutes of curated, appropriate music.
+
+#### Step 2: Implement SoundCloud Widget API (Session Work - 1-2 hours)
+
+**Frontend Changes:**
+```typescript
+// 1. Add SoundCloud Widget script to index.html
+<script src="https://w.soundcloud.com/player/api.js"></script>
+
+// 2. Create music playlist mapping (frontend/src/utils/musicPlaylists.ts)
+export const MUSIC_PLAYLISTS = {
+  'Ambient': 'https://soundcloud.com/your-account/ambient-pilates',
+  'Meditation': 'https://soundcloud.com/your-account/meditation-instrumentals',
+  // ... 7 more playlists
+};
+
+// 3. Update ClassPlayback.tsx to include hidden iframe
+<iframe
+  id="sc-widget"
+  src={`https://w.soundcloud.com/player/?url=${playlistUrl}`}
+  width="0"
+  height="0"
+  style={{ display: 'none' }}
+/>
+
+// 4. Control playback with Widget API
+const widget = SC.Widget('sc-widget');
+useEffect(() => {
+  widget.load(selectedPlaylistUrl);
+  widget.play();
+  widget.setVolume(50); // 50% volume
+}, []);
+
+// 5. Pause music when class is paused
+useEffect(() => {
+  if (isPaused) {
+    widget.pause();
+  } else {
+    widget.play();
+  }
+}, [isPaused]);
+
+// 6. Switch playlist for cool-down section
+if (currentMovement.name === 'Final Meditation') {
+  widget.load(coolDownPlaylistUrl);
+}
+```
+
+**Files to Create/Modify:**
+- ✅ `frontend/src/utils/musicPlaylists.ts` (NEW) - Playlist URL mappings
+- ✅ `frontend/src/components/class-playback/ClassPlayback.tsx` (MODIFY) - Add iframe and widget control
+- ✅ `frontend/public/index.html` (MODIFY) - Add SoundCloud Widget API script
+
+**Testing Checklist:**
+- [ ] Music starts playing when "Play Class" is clicked
+- [ ] Music pauses when user pauses class
+- [ ] Music resumes when user resumes
+- [ ] Music switches from movement playlist to cool-down playlist
+- [ ] Music volume is appropriate (not too loud)
+- [ ] Music continues across movement transitions
+
+**Time Estimate:** 1-2 hours (assuming playlists are pre-created)
+
+---
+
+### **2. User Testing (HIGH PRIORITY)**
 - Generate a complete class in the UI
 - Click "Play Class" button
+- **Test music playback throughout class** 🎵
 - Test timer countdown accuracy
-- Test pause/resume functionality
+- Test pause/resume functionality (including music pause)
 - Test previous/next navigation
 - Test auto-advance behavior
 - Test exit confirmation modal
 - Verify transitions display correctly
 
-### 2. **Backend Enhancement (MEDIUM PRIORITY)**
+---
+
+### **3. Backend Enhancement (MEDIUM PRIORITY)**
 - Add teaching cues to sequence agent response
 - Add setup instructions to movements
 - Add breathing patterns to movements
 - This will make the MovementDisplay component fully functional
 
-### 3. **Regression Testing (HIGH PRIORITY)**
+---
+
+### **4. Regression Testing (HIGH PRIORITY)**
 - Verify "Your AI-Generated Class" modal still looks correct (baseline `a53672e`)
 - Ensure no visual regressions in existing features
 - Run through complete generation → review → playback flow
+- **Test music doesn't break any existing functionality**
 
-### 4. **Optional Enhancements (LOW PRIORITY)**
+---
+
+### **5. Optional Enhancements (LOW PRIORITY)**
+- Volume slider control for music
+- Mute button
 - Keyboard shortcuts (space for pause, arrows for navigation)
 - Class completion tracking in database
 - Save/resume progress functionality
 
 ---
 
-**Status:** Frontend playback UI complete and ready for testing. Backend teaching cues enhancement is optional but recommended for full experience.
+**Status:**
+- ✅ Deployment complete (Render Starter + Netlify)
+- ✅ Frontend playback UI ready for testing
+- 🎵 **SoundCloud integration is next priority (ESSENTIAL FEATURE)**
+- ⚠️ Backend teaching cues enhancement optional but recommended
+
+**Pre-work Required:** Create SoundCloud account and 9 curated playlists before Session 11
 
 ---
 
-Last Updated: 2025-11-17 22:05 UTC
+Last Updated: 2025-11-18 21:55 UTC
