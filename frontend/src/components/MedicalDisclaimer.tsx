@@ -31,38 +31,38 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <Card className="max-w-2xl w-full">
-        <CardHeader className="border-b border-burgundy/20">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-8 h-8 text-red-600" />
-            <CardTitle className="text-2xl">Medical Safety Disclaimer</CardTitle>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <Card className="max-w-2xl w-full my-8 max-h-[90vh] flex flex-col">
+        <CardHeader className="border-b border-burgundy/20 flex-shrink-0">
+          <div className="flex items-center gap-2 md:gap-3">
+            <AlertTriangle className="w-6 h-6 md:w-8 md:h-8 text-red-600" />
+            <CardTitle className="text-lg md:text-2xl">Medical Safety Disclaimer</CardTitle>
           </div>
         </CardHeader>
 
-        <CardBody className="p-6 space-y-6">
+        <CardBody className="p-3 md:p-6 space-y-4 md:space-y-6 overflow-y-auto flex-1">
           {/* Pregnancy Exclusion - FIRST and MANDATORY */}
-          <div className="bg-red-50 border-2 border-red-600 rounded-lg p-6">
-            <h3 className="text-lg font-bold text-red-900 mb-3 flex items-center gap-2">
-              <XCircle className="w-6 h-6" />
+          <div className="bg-red-50 border-2 border-red-600 rounded-lg p-3 md:p-6">
+            <h3 className="text-base md:text-lg font-bold text-red-900 mb-2 md:mb-3 flex items-center gap-2">
+              <XCircle className="w-5 h-5 md:w-6 md:h-6" />
               PREGNANCY EXCLUSION - MANDATORY
             </h3>
 
-            <p className="text-red-900 font-semibold mb-4">
+            <p className="text-sm md:text-base text-red-900 font-semibold mb-3 md:mb-4">
               Are you currently pregnant or could you be pregnant?
             </p>
 
             {isPregnant === null && (
-              <div className="flex gap-4">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
                 <Button
                   onClick={() => handlePregnancyResponse(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white flex-1"
+                  className="bg-red-600 hover:bg-red-700 text-white flex-1 text-sm md:text-base py-3"
                 >
                   Yes, I am pregnant
                 </Button>
                 <Button
                   onClick={() => handlePregnancyResponse(false)}
-                  className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                  className="bg-green-600 hover:bg-green-700 text-white flex-1 text-sm md:text-base py-3"
                 >
                   No, I am not pregnant
                 </Button>
@@ -108,7 +108,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
             <>
               <div className="bg-cream/50 border border-burgundy/30 rounded-lg p-4">
                 <h3 className="font-bold text-burgundy mb-3">Medical Disclaimer</h3>
-                <div className="text-sm space-y-2 text-charcoal max-h-60 overflow-y-auto pr-2">
+                <div className="text-sm space-y-2 text-charcoal max-h-40 md:max-h-60 overflow-y-auto pr-2">
                   <p>
                     <strong>IMPORTANT: READ CAREFULLY</strong>
                   </p>
@@ -182,18 +182,18 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-4 pt-4 border-t border-burgundy/20">
+              <div className="flex flex-col-reverse md:flex-row gap-3 md:gap-4 pt-4 border-t border-burgundy/20">
                 <Button
                   onClick={onReject}
                   variant="secondary"
-                  className="flex-1"
+                  className="flex-1 text-sm md:text-base py-3"
                 >
                   Decline - Exit App
                 </Button>
                 <Button
                   onClick={onAccept}
                   disabled={!hasReadDisclaimer || !acceptsTerms}
-                  className="flex-1 bg-burgundy hover:bg-burgundy/90 text-cream disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  className="flex-1 bg-burgundy hover:bg-burgundy/90 text-cream disabled:bg-gray-300 disabled:cursor-not-allowed text-sm md:text-base py-3"
                 >
                   Accept - Continue to App
                 </Button>
