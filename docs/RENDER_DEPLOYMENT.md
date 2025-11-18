@@ -39,11 +39,11 @@ Go to https://render.com and sign in with GitHub
 Click **"Advanced"** → **"Add Environment Variable"** and add these:
 
 ```
-SUPABASE_URL=https://lixvcebtwusmaipodcpc.supabase.co
-SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpeHZjZWJ0d3VzbWFpcG9kY3BjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzEzNzA0MiwiZXhwIjoyMDc4NzEzMDQyfQ.-4z1GKTM5csj5hO3rY34xG4ZvAoWwIEabVajOY_fiXM
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpeHZjZWJ0d3VzbWFpcG9kY3BjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMzcwNDIsImV4cCI6MjA3ODcxMzA0Mn0.BkuYbF3eqSbZi2ILnAFkE3pyTPu-d4FRg1PNP1nfD6Y
-OPENAI_API_KEY=sk-YOUR_OPENAI_API_KEY_HERE
-PYTHON_VERSION=3.11.0
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_KEY=your-service-role-key-from-supabase-dashboard
+SUPABASE_ANON_KEY=your-anon-key-from-supabase-dashboard
+OPENAI_API_KEY=your-openai-api-key
+PYTHON_VERSION=3.10.0
 ```
 
 **Optional (can leave empty for now):**
