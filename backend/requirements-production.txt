@@ -9,16 +9,8 @@ python-multipart==0.0.6
 pydantic==2.5.3
 pydantic-settings==2.1.0
 
-# Database - Supabase client with ALL sub-dependencies pinned
+# Database - Supabase client (let it resolve its own sub-dependencies)
 supabase==2.3.4
-gotrue==2.12.4
-postgrest==0.15.1
-storage3==0.7.7
-realtime==1.0.6
-supafunc==0.3.3
-
-# HTTP client dependencies - let pip resolve compatible versions
-# (removed explicit pins due to conflicts between supabase sub-packages)
 
 # Other core dependencies
 python-dotenv==1.0.0
