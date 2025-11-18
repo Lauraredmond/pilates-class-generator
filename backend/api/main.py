@@ -23,7 +23,13 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"],  # React dev servers
+    allow_origins=[
+        "http://localhost:3000",  # React dev
+        "http://localhost:5173",  # Vite dev
+        "http://localhost:5174",  # Vite dev alternate
+        "https://basslinemvp.netlify.app",  # Netlify production
+        "https://*.netlify.app",  # Netlify preview deployments
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

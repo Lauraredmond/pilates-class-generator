@@ -24,6 +24,59 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## 🚨 CRITICAL SECURITY RULES 🚨
+
+### NEVER Expose Secrets in Code or Documentation
+
+**ABSOLUTE PROHIBITIONS:**
+
+1. **NEVER commit files containing secrets to git**
+   - API keys, tokens, passwords, database credentials
+   - Supabase keys, JWT secrets, service role keys
+   - Any authentication credentials or private keys
+
+2. **NEVER include secrets in documentation files**
+   - README.md, deployment docs, or any markdown files
+   - Comments in code (even if commented out)
+   - Example configurations with real credentials
+
+3. **NEVER put secrets in frontend code**
+   - Frontend code is publicly accessible in browser
+   - Use environment variables with VITE_ prefix ONLY for public data
+   - Backend URLs are OK, but NOT API keys
+
+4. **Files that commonly contain secrets (CHECK BEFORE COMMITTING):**
+   - `.env` files (should ALWAYS be in .gitignore)
+   - `credentials.json`, `secrets.json`, `config.json`
+   - Any file named with "key", "token", "secret", "password"
+   - Database connection files, API configuration files
+   - Documentation files in `/docs`, `/database`, `/config`
+
+5. **If secrets are exposed:**
+   - Immediately rotate/revoke the exposed credentials
+   - Remove from git history (git filter-branch or BFG Repo-Cleaner)
+   - Add file pattern to .gitignore
+   - Verify the secret is not in any other files
+
+6. **Where secrets SHOULD be stored:**
+   - Environment variables (`.env` files in .gitignore)
+   - Deployment platform environment variables (Render, Netlify)
+   - Secret management services (never in code)
+   - Local files explicitly listed in .gitignore
+
+7. **Before committing, ALWAYS check:**
+   ```bash
+   git diff
+   git status
+   grep -r "eyJ" .  # Check for JWT tokens
+   grep -r "sk_" .  # Check for secret keys
+   grep -r "password" .  # Check for passwords
+   ```
+
+**This is a zero-tolerance policy. A single exposed secret can compromise the entire application.**
+
+---
+
 ## Multi-Agent Development Workflow
 
 **IMPORTANT: Use parallel test agents proactively for complex debugging, testing, and validation tasks.**

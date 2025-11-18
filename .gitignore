@@ -76,6 +76,8 @@ temp/
 *.cert
 credentials.json
 secrets/
+supabaseDetails
+**/supabaseDetails
 
 # Excel temporary files
 ~$*.xlsm
