@@ -4,7 +4,6 @@
  */
 
 import { DndContext, DragEndEvent, DragOverlay } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
 import { MovementLibrary } from './MovementLibrary';
 import { SequenceCanvas } from './SequenceCanvas';
 import { MuscleBalanceTracker } from './MuscleBalanceTracker';

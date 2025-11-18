@@ -34,15 +34,15 @@ const DIFFICULTY_OPTIONS: Array<'Beginner' | 'Intermediate' | 'Advanced' | 'Mixe
   'Advanced',
   'Mixed',
 ];
-const FOCUS_AREAS = ['Core', 'Legs', 'Arms', 'Back', 'Flexibility', 'Balance'];
-const MEDITATION_THEMES = [
-  'Mindfulness',
-  'Body Scan',
-  'Breath Focus',
-  'Gratitude',
-  'Relaxation',
-  'Visualization',
-];
+// const _FOCUS_AREAS = ['Core', 'Legs', 'Arms', 'Back', 'Flexibility', 'Balance'];
+// const _MEDITATION_THEMES = [
+//   'Mindfulness',
+//   'Body Scan',
+//   'Breath Focus',
+//   'Gratitude',
+//   'Relaxation',
+//   'Visualization',
+// ];
 
 // Movement music styles - low tempo, meditative, background
 const MOVEMENT_MUSIC_STYLES = [
@@ -89,14 +89,14 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
     onSubmit(formData);
   };
 
-  const toggleFocusArea = (area: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      focusAreas: prev.focusAreas.includes(area)
-        ? prev.focusAreas.filter((a) => a !== area)
-        : [...prev.focusAreas, area],
-    }));
-  };
+  // const _toggleFocusArea = (area: string) => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     focusAreas: prev.focusAreas.includes(area)
+  //       ? prev.focusAreas.filter((a) => a !== area)
+  //       : [...prev.focusAreas, area],
+  //   }));
+  // };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

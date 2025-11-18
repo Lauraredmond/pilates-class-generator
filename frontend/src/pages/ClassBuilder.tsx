@@ -56,7 +56,7 @@ export function ClassBuilder() {
   if (isLoading && movements.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loading size="lg" text="Loading movements..." />
+        <Loading message="Loading movements..." />
       </div>
     );
   }

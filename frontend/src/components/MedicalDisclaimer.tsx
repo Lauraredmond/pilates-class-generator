@@ -185,7 +185,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
               <div className="flex gap-4 pt-4 border-t border-burgundy/20">
                 <Button
                   onClick={onReject}
-                  variant="outline"
+                  variant="secondary"
                   className="flex-1"
                 >
                   Decline - Exit App
