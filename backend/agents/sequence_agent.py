@@ -878,12 +878,13 @@ class SequenceAgent(BaseAgent):
                 .execute()
 
             if not existing.data or len(existing.data) == 0:
-                # Create temporary user
+                # Create temporary user (match actual database schema)
                 self.supabase.table('users').insert({
                     'id': user_uuid,
-                    'email': f"temp-{user_uuid}@bassline.com",  # Temporary email
-                    'full_name': 'Temporary User',
-                    'is_temporary': True
+                    'email_token': f"temp-{user_uuid}@bassline.com",  # Schema uses email_token (PII)
+                    'full_name_token': 'Temporary User',  # Schema uses full_name_token (PII)
+                    'role': 'instructor',
+                    'is_active': True
                 }).execute()
                 logger.info(f"Created temporary user record with UUID: {user_uuid}")
 
