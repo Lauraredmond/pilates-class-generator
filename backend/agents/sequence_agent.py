@@ -868,15 +868,13 @@ class SequenceAgent(BaseAgent):
                 for item in sequence
             ]
 
-            # Insert into class_history
+            # Insert into class_history (match actual database schema)
             self.supabase.table('class_history').insert({
                 'user_id': user_id,
-                'taught_on': datetime.now().date().isoformat(),
+                'taught_date': datetime.now().date().isoformat(),  # Schema uses taught_date
+                'actual_duration_minutes': duration_minutes,  # Schema uses actual_duration_minutes
                 'movements_snapshot': movements_snapshot,
-                'duration_minutes': duration_minutes,
-                'difficulty_level': difficulty,
-                'muscle_balance': muscle_balance,
-                'generated_at': datetime.now().isoformat()
+                'instructor_notes': f"AI-generated {difficulty} class with balanced muscle distribution"
             }).execute()
 
             logger.info(f"Saved class history for user {user_id}")
