@@ -8,6 +8,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
+  const isHomePage = location.pathname === '/';
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
@@ -20,22 +21,24 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-premium-texture flex flex-col">
-      {/* Header - Logo only */}
-      <header className="bg-burgundy-dark/80 backdrop-blur-sm border-b border-cream/20 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-center">
-          <Link to="/" className="group relative">
-            <img
-              src="/assets/Logo4.jpg"
-              alt="Bassline Logo"
-              className="h-12 w-auto rounded-lg shadow-md"
-              title="Logo by Cian Ryan, La Cathedral studios"
-            />
-            <span className="absolute left-1/2 -translate-x-1/2 -bottom-8 bg-burgundy-dark/95 text-cream text-xs px-3 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Logo by Cian Ryan, La Cathedral studios
-            </span>
-          </Link>
-        </div>
-      </header>
+      {/* Header - Logo only (hidden on home page) */}
+      {!isHomePage && (
+        <header className="bg-burgundy-dark/80 backdrop-blur-sm border-b border-cream/20 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-center">
+            <Link to="/" className="group relative">
+              <img
+                src="/assets/Logo4.jpg"
+                alt="Bassline Logo"
+                className="h-12 w-auto rounded-lg shadow-md"
+                title="Logo by Cian Ryan, La Cathedral studios"
+              />
+              <span className="absolute left-1/2 -translate-x-1/2 -bottom-8 bg-burgundy-dark/95 text-cream text-xs px-3 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Logo by Cian Ryan, La Cathedral studios
+              </span>
+            </Link>
+          </div>
+        </header>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-6 pb-24">
