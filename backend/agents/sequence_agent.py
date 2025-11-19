@@ -791,6 +791,9 @@ class SequenceAgent(BaseAgent):
         try:
             from datetime import date
 
+            # CRITICAL: Ensure user exists in users table (foreign key constraint)
+            await self._ensure_user_exists(user_id)
+
             today = date.today()
 
             # Get movement IDs from sequence (skip transitions)
@@ -836,6 +839,32 @@ class SequenceAgent(BaseAgent):
             logger.warning(f"Error updating movement usage: {e}. Continuing without tracking.")
             # Don't fail class generation if tracking fails
 
+    async def _ensure_user_exists(self, user_id: str) -> None:
+        """
+        Ensure user exists in users table (required for foreign key constraints)
+        Creates temporary user if doesn't exist
+        """
+        try:
+            # Check if user exists
+            existing = self.supabase.table('users') \
+                .select('id') \
+                .eq('id', user_id) \
+                .execute()
+
+            if not existing.data or len(existing.data) == 0:
+                # Create temporary user
+                self.supabase.table('users').insert({
+                    'id': user_id,
+                    'email': f"{user_id}@temp.bassline.com",  # Temporary email
+                    'full_name': 'Temporary User',
+                    'is_temporary': True
+                }).execute()
+                logger.info(f"Created temporary user record for {user_id}")
+
+        except Exception as e:
+            logger.error(f"Error ensuring user exists: {e}")
+            raise  # Re-raise because this is critical for FK constraints
+
     async def _save_class_history(
         self,
         user_id: str,
@@ -855,6 +884,9 @@ class SequenceAgent(BaseAgent):
         """
         try:
             from datetime import datetime
+
+            # CRITICAL: Ensure user exists in users table (foreign key constraint)
+            await self._ensure_user_exists(user_id)
 
             # Create movements snapshot (serialize for JSONB storage)
             movements_snapshot = [
