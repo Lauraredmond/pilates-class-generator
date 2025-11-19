@@ -79,7 +79,7 @@ async def get_user_analytics_summary(user_id: str):
         response = supabase.table('class_history') \
             .select('*') \
             .eq('user_id', user_id) \
-            .order('taught_on', desc=True) \
+            .order('taught_date', desc=True) \
             .execute()
 
         classes = response.data or []
@@ -88,7 +88,7 @@ async def get_user_analytics_summary(user_id: str):
         total_classes = len(classes)
 
         # Calculate total practice time
-        total_practice_time = sum(c.get('duration_minutes', 0) for c in classes)
+        total_practice_time = sum(c.get('actual_duration_minutes', 0) for c in classes)
 
         # Calculate average class duration
         avg_class_duration = total_practice_time // total_classes if total_classes > 0 else 0
@@ -104,7 +104,7 @@ async def get_user_analytics_summary(user_id: str):
         week_start = today - timedelta(days=today.weekday())
         classes_this_week = sum(
             1 for c in classes
-            if datetime.fromisoformat(c.get('taught_on', '')).date() >= week_start
+            if datetime.fromisoformat(c.get('taught_date', '')).date() >= week_start
         ) if classes else 0
 
         return UserAnalyticsSummary(
@@ -148,7 +148,7 @@ async def get_movement_usage_history(
         response = supabase.table('class_history') \
             .select('*') \
             .eq('user_id', user_id) \
-            .gte('taught_on', earliest_date.isoformat()) \
+            .gte('taught_date', earliest_date.isoformat()) \
             .execute()
 
         classes = response.data or []
@@ -157,7 +157,7 @@ async def get_movement_usage_history(
         movement_counts = defaultdict(lambda: [0] * weeks)
 
         for class_item in classes:
-            class_date = datetime.fromisoformat(class_item.get('taught_on', '')).date()
+            class_date = datetime.fromisoformat(class_item.get('taught_date', '')).date()
             movements_snapshot = class_item.get('movements_snapshot', [])
 
             # Find which week this class belongs to
@@ -220,7 +220,7 @@ async def get_muscle_group_history(
         response = supabase.table('class_history') \
             .select('*') \
             .eq('user_id', user_id) \
-            .gte('taught_on', earliest_date.isoformat()) \
+            .gte('taught_date', earliest_date.isoformat()) \
             .execute()
 
         classes = response.data or []
@@ -229,7 +229,7 @@ async def get_muscle_group_history(
         muscle_counts = defaultdict(lambda: [0] * weeks)
 
         for class_item in classes:
-            class_date = datetime.fromisoformat(class_item.get('taught_on', '')).date()
+            class_date = datetime.fromisoformat(class_item.get('taught_date', '')).date()
             movements_snapshot = class_item.get('movements_snapshot', [])
 
             # Find which week this class belongs to
@@ -277,7 +277,7 @@ def _calculate_streak(classes: List[Dict[str, Any]]) -> int:
 
     # Get unique dates (sorted descending)
     class_dates = sorted(
-        set(datetime.fromisoformat(c.get('taught_on', '')).date() for c in classes),
+        set(datetime.fromisoformat(c.get('taught_date', '')).date() for c in classes),
         reverse=True
     )
 
