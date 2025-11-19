@@ -138,6 +138,28 @@ class SequenceAgent(BaseAgent):
         # Calculate total duration (movements + transitions)
         total_duration_seconds = sum(item.get("duration_seconds") or 60 for item in sequence_with_transitions)
 
+        # PHASE 2: Track movement usage for intelligent variety
+        user_id = inputs.get("user_id")  # Optional - passed from API layer
+        if user_id:
+            try:
+                await self._update_movement_usage(user_id=user_id, sequence=sequence)
+                logger.info("PHASE 2: Movement usage tracking complete")
+            except Exception as e:
+                logger.warning(f"Movement usage tracking failed (non-critical): {e}")
+
+            # Also save to class_history for analytics
+            try:
+                await self._save_class_history(
+                    user_id=user_id,
+                    sequence=sequence_with_transitions,
+                    duration_minutes=total_duration_seconds // 60,
+                    difficulty=inputs.get("difficulty_level", "Beginner"),
+                    muscle_balance=muscle_balance
+                )
+                logger.info("Class history saved for analytics")
+            except Exception as e:
+                logger.warning(f"Class history tracking failed (non-critical): {e}")
+
         return {
             "sequence": sequence_with_transitions,  # Return sequence WITH transitions
             "movement_count": len(movements_only),  # Count only movements
@@ -312,15 +334,28 @@ class SequenceAgent(BaseAgent):
         return sequence
 
     def _get_warmup_movement(self, movements: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-        """Get appropriate warmup movement"""
+        """
+        Get appropriate warmup movement with ROTATION for variety
+
+        PHASE 1 FIX: Rotate warmup movements instead of always using "The Hundred"
+        """
         if not movements:
             return None
+
         warmup_keywords = ["hundred", "breathing", "pelvic"]
         warmup_movements = [
             m for m in movements
             if any(kw in m["name"].lower() for kw in warmup_keywords)
         ]
-        return warmup_movements[0] if warmup_movements else movements[0]
+
+        # PHASE 1 FIX: Use random.choice() to rotate warmup movements
+        # This fixes the issue where 100% of classes started with "The Hundred"
+        if warmup_movements:
+            selected = random.choice(warmup_movements)
+            logger.info(f"Selected warmup movement: {selected['name']}")
+            return selected
+
+        return movements[0] if movements else None
 
     def _get_cooldown_movement(self, movements: List[Dict[str, Any]], current_sequence: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """Get appropriate cooldown movement"""
@@ -349,7 +384,11 @@ class SequenceAgent(BaseAgent):
         focus_areas: List[str],
         pattern_priority: List[str]
     ) -> Optional[Dict[str, Any]]:
-        """Select next movement based on rules and focus areas"""
+        """
+        Select next movement based on rules and focus areas
+
+        PHASE 1 FIX: Added consecutive muscle overlap validation
+        """
         # Get already used movement IDs
         used_ids = [m["id"] for m in current_sequence]
 
@@ -358,6 +397,36 @@ class SequenceAgent(BaseAgent):
 
         if not available:
             return None
+
+        # PHASE 1 FIX: Filter out movements with high consecutive muscle overlap
+        # Get previous movement's muscles (if exists)
+        if current_sequence:
+            prev_movement = current_sequence[-1]
+            prev_muscles = set(mg['name'] for mg in prev_movement.get('muscle_groups', []))
+
+            if prev_muscles:
+                # Filter available movements to avoid >50% muscle overlap
+                filtered_available = []
+                for candidate in available:
+                    candidate_muscles = set(mg['name'] for mg in candidate.get('muscle_groups', []))
+
+                    if candidate_muscles:
+                        overlap = prev_muscles & candidate_muscles
+                        overlap_pct = (len(overlap) / len(candidate_muscles)) * 100 if candidate_muscles else 0
+
+                        # Only keep candidates with <50% overlap
+                        if overlap_pct < 50:
+                            filtered_available.append(candidate)
+                        else:
+                            logger.debug(
+                                f"Skipping {candidate['name']} due to {overlap_pct:.1f}% muscle overlap with {prev_movement['name']}"
+                            )
+
+                # If we filtered out everything, fall back to original available list
+                # (Better to have some overlap than no movement)
+                if filtered_available:
+                    available = filtered_available
+                    logger.info(f"Filtered to {len(available)} movements with <50% consecutive muscle overlap")
 
         # If focus areas specified, prefer those
         if focus_areas:
@@ -647,6 +716,174 @@ class SequenceAgent(BaseAgent):
             reasoning_parts.append(f"Warnings: {', '.join(validation['warnings'])}.")
 
         return " ".join(reasoning_parts)
+
+    async def _get_movement_usage_weights(
+        self,
+        user_id: str,
+        movements: List[Dict[str, Any]]
+    ) -> Dict[str, float]:
+        """
+        PHASE 2: Get movement usage weights based on history
+
+        Queries existing movement_usage table to calculate weights.
+        Higher weight = prefer this movement (less recently used)
+        """
+        try:
+            from datetime import datetime, date
+
+            # Query movement_usage table for this user
+            response = self.supabase.table('movement_usage') \
+                .select('movement_id, last_used_date') \
+                .eq('user_id', user_id) \
+                .execute()
+
+            usage_map = {
+                item['movement_id']: item['last_used_date']
+                for item in response.data
+            }
+
+            # Calculate weights for each movement
+            weights = {}
+            today = date.today()
+
+            for movement in movements:
+                movement_id = movement['id']
+
+                if movement_id in usage_map:
+                    # Calculate days since last used
+                    last_used_str = usage_map[movement_id]
+                    # Handle both date and datetime formats
+                    if 'T' in last_used_str:
+                        last_used = datetime.fromisoformat(last_used_str.replace('Z', '+00:00')).date()
+                    else:
+                        last_used = datetime.strptime(last_used_str, '%Y-%m-%d').date()
+
+                    days_since = (today - last_used).days
+
+                    # Weight formula: (days + 1) ^ 2
+                    # 1 day ago = 4, 7 days ago = 64, 30 days ago = 961
+                    weight = (days_since + 1) ** 2
+                else:
+                    # Never used before - highest weight
+                    weight = 10000
+
+                weights[movement_id] = weight
+
+            logger.info(f"PHASE 2: Calculated usage weights for {len(weights)} movements")
+            return weights
+
+        except Exception as e:
+            logger.warning(f"Error getting movement usage weights: {e}. Using equal weights.")
+            # Return equal weights if error
+            return {m['id']: 1.0 for m in movements}
+
+    async def _update_movement_usage(
+        self,
+        user_id: str,
+        sequence: List[Dict[str, Any]]
+    ) -> None:
+        """
+        PHASE 2: Update movement_usage table after generating class
+
+        Tracks which movements were used and when, for variety enforcement.
+        Uses existing movement_usage table from database schema.
+        """
+        try:
+            from datetime import date
+
+            today = date.today()
+
+            # Get movement IDs from sequence (skip transitions)
+            movement_ids = [
+                item['id']
+                for item in sequence
+                if item.get('type') == 'movement'
+            ]
+
+            for movement_id in movement_ids:
+                # Check if record exists
+                existing = self.supabase.table('movement_usage') \
+                    .select('id, usage_count') \
+                    .eq('user_id', user_id) \
+                    .eq('movement_id', movement_id) \
+                    .execute()
+
+                if existing.data and len(existing.data) > 0:
+                    # Update existing record
+                    current_count = existing.data[0].get('usage_count', 0)
+                    self.supabase.table('movement_usage') \
+                        .update({
+                            'last_used_date': today.isoformat(),
+                            'usage_count': current_count + 1
+                        }) \
+                        .eq('user_id', user_id) \
+                        .eq('movement_id', movement_id) \
+                        .execute()
+                else:
+                    # Insert new record
+                    self.supabase.table('movement_usage') \
+                        .insert({
+                            'user_id': user_id,
+                            'movement_id': movement_id,
+                            'last_used_date': today.isoformat(),
+                            'usage_count': 1
+                        }) \
+                        .execute()
+
+            logger.info(f"PHASE 2: Updated movement usage for {len(movement_ids)} movements")
+
+        except Exception as e:
+            logger.warning(f"Error updating movement usage: {e}. Continuing without tracking.")
+            # Don't fail class generation if tracking fails
+
+    async def _save_class_history(
+        self,
+        user_id: str,
+        sequence: List[Dict[str, Any]],
+        duration_minutes: int,
+        difficulty: str,
+        muscle_balance: Dict[str, float]
+    ) -> None:
+        """
+        Save generated class to class_history table for analytics
+
+        This enables the analytics dashboard to show:
+        - Total classes generated
+        - Movement frequency over time
+        - Muscle group distribution trends
+        - User progress tracking
+        """
+        try:
+            from datetime import datetime
+
+            # Create movements snapshot (serialize for JSONB storage)
+            movements_snapshot = [
+                {
+                    'id': item.get('id'),
+                    'name': item.get('name'),
+                    'type': item.get('type', 'movement'),
+                    'duration_seconds': item.get('duration_seconds'),
+                    'muscle_groups': [mg.get('name') for mg in item.get('muscle_groups', [])]
+                }
+                for item in sequence
+            ]
+
+            # Insert into class_history
+            self.supabase.table('class_history').insert({
+                'user_id': user_id,
+                'taught_on': datetime.now().date().isoformat(),
+                'movements_snapshot': movements_snapshot,
+                'duration_minutes': duration_minutes,
+                'difficulty_level': difficulty,
+                'muscle_balance': muscle_balance,
+                'generated_at': datetime.now().isoformat()
+            }).execute()
+
+            logger.info(f"Saved class history for user {user_id}")
+
+        except Exception as e:
+            logger.warning(f"Error saving class history: {e}. Analytics may not update.")
+            # Don't fail class generation if history save fails
 
     async def _get_fallback(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Provide safe fallback sequence"""

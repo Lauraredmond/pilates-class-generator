@@ -64,10 +64,14 @@ async def generate_sequence(
         logger.info(f"Generating sequence for user {user_id}")
         logger.info(f"Request data: {request.dict()}")
 
+        # PHASE 2: Add user_id to inputs for movement usage tracking
+        inputs_with_user = request.dict()
+        inputs_with_user['user_id'] = user_id
+
         # Process with agent
         result = await sequence_agent.process(
             user_id=user_id,
-            inputs=request.dict()
+            inputs=inputs_with_user
         )
 
         logger.info(f"Agent result success: {result.get('success')}")

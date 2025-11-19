@@ -197,14 +197,202 @@ Your `Pilates_Summary_Spreadsheet_teachingTracker_v10.xlsm` will serve as the au
 
 ---
 
+## 🏗️ COMPLETE PILATES CLASS STRUCTURE (6 PHASES)
+
+### User-Specified Class Architecture
+
+**CRITICAL:** A complete Pilates class follows this 6-phase structure. Current implementation only covers Phase 3 (Main Phase). Future sessions must implement all phases.
+
+---
+
+### **Phase 1: Setup Section**
+**Purpose:** Establish Pilates core principles before movement begins
+
+**Components:**
+1. **Posture Check** - Alignment assessment and corrections
+2. **Breathing** - Establish proper Pilates breathing pattern (lateral thoracic breathing)
+3. **Core Activation** - Engage deep core muscles (transverse abdominis, pelvic floor)
+4. **Balance Check** - Assess stability and body awareness
+
+**Implementation Approach:**
+- **MVP (Phase 1):** Hardcoded narratives provided by user
+  - User will provide specific scripts for each component
+  - Static text displayed before class begins
+  - Essential for teaching proper form
+
+- **Future Versions:** AI variation using LLMs, agents, RAG
+  - Generate varied phrasing while maintaining core principles
+  - Adapt setup instructions based on user level
+  - Personalize based on previous sessions
+
+**Notes:**
+- This section is instructional, not movement-based
+- Critical for injury prevention and proper technique
+- Should be calm, focused, and educational
+
+---
+
+### **Phase 2: Warm-Up Section**
+**Purpose:** Prepare body for main Pilates movements
+
+**Components:**
+- General warm-up movements (not necessarily Pilates movements, but can be)
+- Examples from screenshot: gentle mobilization, breathing exercises, pelvic tilts
+- Pilates movements from the 34 classical movements may be used if appropriate for warm-up
+- Progressive activation of major muscle groups
+- Increase heart rate gradually
+
+**Implementation Approach:**
+- **MVP (Phase 1):** Finite list of warm-up movements
+  - User will provide curated warm-up movement library
+  - Can include both Pilates and general warm-up exercises
+  - Hardcoded selection initially
+
+- **Future Versions:** AI agentic variation
+  - Intelligent selection based on main phase focus
+  - Adapt to user's warm-up preferences
+  - Vary warm-ups to prevent boredom
+  - Use RAG to source new warm-up variations
+
+**Notes:**
+- More general than classical Pilates movements
+- Focus on mobility and activation, not strength
+- Duration: 5-10 minutes typically
+
+---
+
+### **Phase 3: Main Phase** ✅ **CURRENTLY IMPLEMENTED**
+**Purpose:** Core Pilates movement sequence
+
+**Components:**
+- Pilates movements from the 34 classical movements
+- Transitions between movements (with narrative instructions)
+- Proper sequencing following safety rules
+- Muscle balance tracking
+- Difficulty-appropriate selection
+
+**Implementation Status:**
+- ✅ Sequence agent generates movements
+- ✅ Transitions with narratives
+- ✅ Safety rule validation
+- ✅ Muscle balance calculation
+- ✅ Intelligent variety tracking (Phase 2)
+- ✅ Consecutive muscle overlap prevention
+
+**Notes:**
+- This is the current focus of the application
+- Working well according to user testing
+- Continue to refine and improve
+
+---
+
+### **Phase 4: Cool-Down Section**
+**Purpose:** Gradually reduce intensity and stretch muscles used during main phase
+
+**Components:**
+- Common cool-down stretches (not necessarily Pilates movements)
+- Examples:
+  - **Child's Pose** - Resting position, stretches back
+  - **Hamstring Stretch** - Targets legs
+  - **Back Stretch** - Spinal decompression
+  - **Hip Flexor Stretch** - Counter hip flexor work
+  - Any stretch relevant to muscles used in main phase
+
+**Implementation Approach:**
+- **MVP (Phase 1):** Finite list of cool-down stretches
+  - User will provide curated cool-down library
+  - Hardcoded selection based on main phase muscle usage
+
+- **Future Versions:** Intelligent cool-down selection
+  - Analyze muscle groups used in main phase
+  - Select stretches targeting those specific areas
+  - Vary cool-down to prevent boredom
+  - Use MCP/RAG to source new stretches
+
+**Notes:**
+- Focus on flexibility and recovery
+- Should be calming and restorative
+- Duration: 5-10 minutes typically
+
+---
+
+### **Phase 5: Relaxation Section**
+**Purpose:** Meditative phase for mental calm and body integration
+
+**Components:**
+- **Body Stillness** - Lie still in resting position (typically supine)
+- **Short Narrative** - Brief guided relaxation script (user will provide)
+- **Silence and Music** - Majority of this phase is quiet reflection
+- **Music Integration** - Background music to support relaxation
+- **Breathing Focus** - Return to natural breathing, body awareness
+
+**Implementation Approach:**
+- **MVP (Phase 1):** Hardcoded relaxation narrative
+  - User provides short relaxation script
+  - Static music from SoundCloud playlists
+  - Timer-based silence periods
+
+- **Future Versions:** Varied relaxation scripts
+  - LLM-generated guided relaxations
+  - Adapt to class intensity (harder class = longer relaxation)
+  - Personalize based on user preferences
+
+**Notes:**
+- This is NOT active movement
+- Focus is on mental integration and rest
+- Music should be calming, ambient
+- Duration: 2-5 minutes typically
+
+---
+
+### **Phase 6: Homecare Advice Section**
+**Purpose:** Provide self-care guidance for post-class wellness
+
+**Components:**
+- Self-care recommendations
+- Post-class hydration reminders
+- Stretching guidance for later in the day
+- Injury prevention tips
+- Recovery best practices
+
+**Implementation Approach:**
+- **MVP (Phase 1):** Hardcoded homecare advice
+  - User will add finite list to Supabase table
+  - Sourced from reputable medical sources (e.g., American School of Medicine)
+  - Heavily disclaimed and neutral tone
+
+- **Future Versions:** AI-sourced homecare advice
+  - Use MCP to research latest medical guidance
+  - Must source ONLY from trusted medical institutions
+  - Every piece of advice must be properly attributed
+  - Multiple layers of disclaimers
+
+**CRITICAL LIABILITY NOTES:**
+- **Must be neutral and tapered advice** - No extreme recommendations
+- **Full medical disclaimers required** - User assumes all risk
+- **Source attribution mandatory** - Always cite medical source
+- **Conservative approach only** - When in doubt, don't include
+- **No diagnosis or treatment** - General wellness only
+- **Legal review recommended** - Consult attorney before implementation
+
+**Sources to Consider:**
+- American College of Sports Medicine
+- National Institutes of Health (NIH)
+- Mayo Clinic
+- American Physical Therapy Association
+- Peer-reviewed medical journals
+
+---
+
 ## 🔄 SEQUENCING RULES
 
 ### Safety-Critical Rules (Never Violate)
-1. **Warm-up first** - Always start with breathing and gentle movements
-2. **Spinal progression** - Flexion before extension
-3. **Balance muscle groups** - Don't overwork one area
-4. **Complexity progression** - Simple to complex within session
-5. **Cool-down required** - End with stretching and breathing
+1. **Warm-up first** - Always start with breathing and gentle movements (Phase 2)
+2. **Spinal progression** - Flexion before extension (Phase 3)
+3. **Balance muscle groups** - Don't overwork one area (Phase 3)
+4. **Complexity progression** - Simple to complex within session (Phase 3)
+5. **Cool-down required** - End with stretching and breathing (Phase 4)
+6. **Relaxation essential** - Mental integration and body awareness (Phase 5)
 
 ### Quality Rules (Enforce in Strict Mode)
 1. **Movement variety** - At least 3 different patterns per class
@@ -1440,4 +1628,141 @@ Good luck! Follow each session sequentially, and you'll have a complete, profess
 
 ---
 
-*This comprehensive document merges all content from both versions, providing complete daily session instructions for Claude Code. Each session is designed to be completable in 2-3 hours with clear inputs, processes, outputs, and success criteria. The integration of MCP Playwright and Excel database migration adds significant value to the original MVP.*
+## 🔄 SESSION PROGRESS UPDATE (As of 2025-11-18)
+
+### Sessions Completed (Actual Progress)
+
+**Session 1-9:** ✅ **COMPLETED**
+- Project structure established
+- Backend deployed to Render.com (Starter tier - $9/month)
+- Frontend deployed to Netlify
+- Supabase database configured
+- AI agents implemented (sequence, music, meditation)
+- Frontend playback UI with timer-based teleprompter
+- Movement library and class generation working
+- Transitions displaying correctly inline
+- Medical disclaimer with pregnancy exclusion
+
+**Session 10:** ✅ **COMPLETED** (2025-11-18)
+- **Deployment & Infrastructure**
+  - Backend: Render.com with Starter tier (no spin-down)
+  - Frontend: Netlify with auto-deploy from GitHub
+  - CORS configured for production communication
+  - TypeScript build errors resolved
+  - Security: Removed exposed Supabase credentials
+  - Database: Created `ai_decision_log` table for EU AI Act compliance
+
+- **Performance Improvements**
+  - Backend response: ~3-4 seconds (down from ~5-6s)
+  - No more failed database inserts
+  - Always-on backend (eliminated 30s spin-down delays)
+
+- **UI Updates**
+  - Home page: Updated Bassline narrative
+  - Medical disclaimer: Mobile-responsive
+
+- **Key Learning**
+  - Backend troubleshooting: Distinguish spin-down from crashes
+  - Solution: Upgraded to paid tier to eliminate spin-down
+
+### Sessions In Progress / Upcoming
+
+**Session 11:** 🎵 **NEXT PRIORITY - SoundCloud Music Integration** (ESSENTIAL FEATURE)
+- **User Requirement:** "Music integration is essential to my offering, not optional"
+- **Approach:** Pre-curated SoundCloud playlists (Option 3)
+- **Pre-work Required:** Create 9 curated playlists on SoundCloud
+- **Implementation:** 1-2 hours using Widget API
+- **Deliverables:**
+  - SoundCloud Widget API integrated into ClassPlayback component
+  - Music playlist mapping configuration
+  - Background music during movements and cool-down
+  - Volume ducking for narration (future)
+  - Pause/resume sync with class timer
+
+**Session 12-13:** Testing, Refinement & Backend Enhancements
+- User testing of playback functionality
+- Add teaching cues to sequence agent (optional)
+- Regression testing against visual baseline
+- Bug fixes and polish
+- Performance optimization
+
+**Session 14-15:** 🎙️ **Audio Narration Prototype** (TEST BEFORE AI TTS)
+- **User Requirement:** "I'd like to try a static audio prototype first, say using a recording from me"
+- **Pre-work Required:** Record narration for 2-3 test movements
+- **Implementation:** 2-3 hours
+- **Deliverables:**
+  - Audio playback integrated into ClassPlayback
+  - Volume ducking (lower music during narration)
+  - Pause/resume sync
+  - Test UX: Do users prefer audio vs text?
+  - Validate technical implementation
+- **Success Metric:** If prototype succeeds → proceed to OpenAI TTS in Session 16+
+
+**Session 16+:** OpenAI TTS Integration (if prototype succeeds)
+- Replace manual recordings with AI-generated narration
+- Multiple voice options (nova, alloy, shimmer)
+- Automatic generation when class is created
+- Cost: ~$0.18 per class, $18/month for 100 classes
+- Quality scoring and caching
+
+### Modified Session Plan
+
+**Original Plan:**
+- Session 10: Music Integration (basic)
+- Session 11: OpenAI GPT Integration
+- Session 12: Testing Suite
+
+**Actual Progress (Adjusted):**
+- ✅ Session 10: Deployment & Infrastructure (completed)
+- 🎵 Session 11: SoundCloud Integration (essential feature, next)
+- Session 12-13: Testing & Backend Enhancements
+- 🎙️ Session 14-15: Audio Narration Prototype (user voice)
+- Session 16+: OpenAI TTS Integration (if prototype succeeds)
+- Session 17+: Continue with original plan (Compliance, Mobile, Performance, Documentation, Deployment polish)
+
+### Key Architecture Decisions Made
+
+1. **Music is Essential:** SoundCloud integration moved from "nice-to-have" to core Session 11 priority
+2. **Audio Narration Phased Approach:**
+   - Phase 1: Test with user's voice recordings (validate UX)
+   - Phase 2: Upgrade to OpenAI TTS if successful (automate)
+3. **Render Hosting:** Upgraded to Starter tier ($9/month) to eliminate spin-down issues
+4. **EU AI Act Compliance:** `ai_decision_log` table implemented early
+
+### Current Status Summary
+
+**Production URLs:**
+- Frontend: https://basslinemvp.netlify.app
+- Backend: https://pilates-class-generator-api3.onrender.com
+- Database: Supabase (production instance)
+
+**Working Features:**
+- ✅ Class generation with AI agents
+- ✅ Movement library (34 classical movements + database-driven)
+- ✅ Timer-based playback with auto-advance
+- ✅ Transitions displayed inline with distinct styling
+- ✅ Muscle balance calculation
+- ✅ Medical disclaimer with pregnancy exclusion
+- ✅ Mobile-responsive UI
+
+**In Development:**
+- 🎵 SoundCloud music playback (Session 11)
+- 🎙️ Audio narration (Sessions 14-15)
+
+**Not Yet Started:**
+- Teaching cues from backend (optional enhancement)
+- MCP research integration (future)
+- Excel sync tools (future)
+- Compliance dashboard (future)
+- Mobile PWA features (future)
+
+### Reference Documents
+
+For current session work, refer to:
+- `/NEXT_SESSION_PICKUP.md` - Current session details and priorities
+- `/VISUAL_REGRESSION_BASELINE.md` - Visual regression baseline (commit `a53672e`)
+- `/CLAUDE.md` - Project architecture and coding guidelines
+
+---
+
+*This comprehensive document provides the original 19-session plan. Actual progress is tracked in NEXT_SESSION_PICKUP.md. The plan has evolved based on real-world priorities (music as essential, audio narration phased approach, deployment optimization). Both documents should be consulted together for complete context.*
