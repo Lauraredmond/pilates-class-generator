@@ -72,4 +72,12 @@ export const classPlansApi = {
   delete: (id: string) => api.delete(`/api/classes/${id}`),
 };
 
+export const analyticsApi = {
+  getSummary: (userId: string) => api.get(`/api/analytics/summary/${userId}`),
+  getMovementHistory: (userId: string, weeks?: number) =>
+    api.get(`/api/analytics/movement-history/${userId}`, { params: { weeks } }),
+  getMuscleGroupHistory: (userId: string, weeks?: number) =>
+    api.get(`/api/analytics/muscle-group-history/${userId}`, { params: { weeks } }),
+};
+
 export default api;

@@ -10,7 +10,7 @@ from loguru import logger
 import time
 
 # Import routers
-from api import movements, agents, classes
+from api import movements, agents, classes, analytics
 
 app = FastAPI(
     title="Pilates Class Planner API",
@@ -80,6 +80,7 @@ async def root():
 app.include_router(movements.router, prefix="/api/movements", tags=["Movements"])
 app.include_router(agents.router, prefix="/api/agents", tags=["AI Agents"])
 app.include_router(classes.router, prefix="/api/classes", tags=["Classes"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
 # app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 # app.include_router(users.router, prefix="/api/users", tags=["Users"])
 

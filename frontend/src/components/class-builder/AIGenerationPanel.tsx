@@ -11,6 +11,7 @@ import { agentsApi } from '../../services/api';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
 import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
+import { getTempUserId } from '../../utils/tempUserId';
 
 export function AIGenerationPanel() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -28,10 +29,15 @@ export function AIGenerationPanel() {
     setLastFormData(formData);
 
     try {
+      // Get or create temporary user ID for tracking
+      const userId = getTempUserId();
+      console.log('[AIGenerationPanel] Using user ID:', userId);
+
       // Generate all three components in parallel
       const [sequenceResponse, musicResponse, meditationResponse] = await Promise.all([
         // Generate sequence
         agentsApi.generateSequence({
+          user_id: userId, // CRITICAL FIX: Pass user_id for movement tracking
           target_duration_minutes: formData.duration,
           difficulty_level: formData.difficulty,
           strictness_level: 'guided',
