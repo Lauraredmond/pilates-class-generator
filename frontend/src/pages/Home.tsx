@@ -6,6 +6,21 @@ export function Home() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Bassline Logo - Centered */}
+      <div className="flex justify-center mb-8">
+        <div className="group relative">
+          <img
+            src="/assets/Logo4.jpg"
+            alt="Bassline Logo"
+            className="h-24 w-auto rounded-lg shadow-glow"
+            title="Logo by Cian Ryan, La Cathedral studios"
+          />
+          <span className="absolute left-1/2 -translate-x-1/2 -bottom-8 bg-burgundy-dark/95 text-cream text-xs px-3 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            Logo by Cian Ryan, La Cathedral studios
+          </span>
+        </div>
+      </div>
+
       {/* Hero Image */}
       <div className="relative w-full h-48 rounded-xl overflow-hidden mb-6 shadow-glow">
         <img
