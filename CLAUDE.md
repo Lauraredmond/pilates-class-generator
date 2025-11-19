@@ -77,6 +77,50 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## 🔄 GIT WORKFLOW POLICY
+
+### Automatic Commits After Code Changes
+
+**RULE:** After making any code changes, automatically commit and push to GitHub unless the user explicitly says not to.
+
+**Process:**
+1. Make code changes as requested
+2. Stage all modified files: `git add .`
+3. Create descriptive commit message with:
+   - Summary of changes
+   - Files modified
+   - Purpose/reason for changes
+   - Co-authored-by Claude tag
+4. Push to GitHub: `git push origin main`
+5. Confirm with user that changes are live
+
+**When NOT to commit:**
+- User explicitly says "don't commit" or "wait to commit"
+- Files contain secrets or credentials (check first!)
+- Changes are experimental/incomplete
+- User says they want to review changes first
+
+**Commit Message Format:**
+```
+<Type>: <Brief summary>
+
+<Detailed description of changes>
+<Files modified>
+<Purpose/impact>
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**Always verify before committing:**
+- No secrets exposed (API keys, tokens, passwords)
+- No `.env` files being committed
+- Changes align with user's request
+- All files staged are intentional
+
+---
+
 ## Multi-Agent Development Workflow
 
 **IMPORTANT: Use parallel test agents proactively for complex debugging, testing, and validation tasks.**
