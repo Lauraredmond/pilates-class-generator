@@ -19,13 +19,13 @@ export function Home() {
       {/* Main Action Button */}
       <div className="mb-8">
         <Button className="w-full" size="lg" onClick={() => navigate('/class-builder')}>
-          Build Class (Drag & Drop)
+          Generate my Pilates class
         </Button>
       </div>
 
       {/* Mission Statement */}
       <div className="mb-8">
-        <p className="text-cream/90 text-center leading-relaxed italic text-base tracking-wide">
+        <p className="text-cream/90 text-center leading-relaxed italic text-[12px] tracking-wide">
           <span className="block mb-2 bg-gradient-to-r from-yellow-200 via-cream to-yellow-100 bg-clip-text text-transparent drop-shadow-sm">
             "Bassline helps you progress quickly between instructor-led sessions,
           </span>
