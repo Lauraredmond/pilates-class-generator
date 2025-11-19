@@ -792,7 +792,8 @@ class SequenceAgent(BaseAgent):
             from datetime import date
 
             # CRITICAL: Ensure user exists in users table (foreign key constraint)
-            await self._ensure_user_exists(user_id)
+            # This also converts temp user ID to UUID format
+            user_uuid = await self._ensure_user_exists(user_id)
 
             today = date.today()
 
@@ -807,7 +808,7 @@ class SequenceAgent(BaseAgent):
                 # Check if record exists
                 existing = self.supabase.table('movement_usage') \
                     .select('id, usage_count') \
-                    .eq('user_id', user_id) \
+                    .eq('user_id', user_uuid) \
                     .eq('movement_id', movement_id) \
                     .execute()
 
@@ -819,14 +820,14 @@ class SequenceAgent(BaseAgent):
                             'last_used_date': today.isoformat(),
                             'usage_count': current_count + 1
                         }) \
-                        .eq('user_id', user_id) \
+                        .eq('user_id', user_uuid) \
                         .eq('movement_id', movement_id) \
                         .execute()
                 else:
                     # Insert new record
                     self.supabase.table('movement_usage') \
                         .insert({
-                            'user_id': user_id,
+                            'user_id': user_uuid,
                             'movement_id': movement_id,
                             'last_used_date': today.isoformat(),
                             'usage_count': 1
@@ -839,27 +840,54 @@ class SequenceAgent(BaseAgent):
             logger.warning(f"Error updating movement usage: {e}. Continuing without tracking.")
             # Don't fail class generation if tracking fails
 
-    async def _ensure_user_exists(self, user_id: str) -> None:
+    def _convert_to_uuid(self, user_id: str) -> str:
+        """
+        Convert any user_id string to a valid UUID format
+        Uses UUID5 (deterministic hashing) so same input always gives same UUID
+        """
+        import uuid
+
+        # If already a valid UUID, return as-is
+        try:
+            uuid.UUID(user_id)
+            return user_id
+        except ValueError:
+            pass
+
+        # Convert string to deterministic UUID using namespace
+        # This ensures "temp-user-123" always converts to the same UUID
+        namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')  # Standard namespace
+        user_uuid = uuid.uuid5(namespace, user_id)
+        logger.info(f"Converted '{user_id}' to UUID: {user_uuid}")
+        return str(user_uuid)
+
+    async def _ensure_user_exists(self, user_id: str) -> str:
         """
         Ensure user exists in users table (required for foreign key constraints)
         Creates temporary user if doesn't exist
+        Returns the UUID version of the user_id
         """
         try:
+            # Convert to UUID format
+            user_uuid = self._convert_to_uuid(user_id)
+
             # Check if user exists
             existing = self.supabase.table('users') \
                 .select('id') \
-                .eq('id', user_id) \
+                .eq('id', user_uuid) \
                 .execute()
 
             if not existing.data or len(existing.data) == 0:
                 # Create temporary user
                 self.supabase.table('users').insert({
-                    'id': user_id,
-                    'email': f"{user_id}@temp.bassline.com",  # Temporary email
+                    'id': user_uuid,
+                    'email': f"temp-{user_uuid}@bassline.com",  # Temporary email
                     'full_name': 'Temporary User',
                     'is_temporary': True
                 }).execute()
-                logger.info(f"Created temporary user record for {user_id}")
+                logger.info(f"Created temporary user record with UUID: {user_uuid}")
+
+            return user_uuid
 
         except Exception as e:
             logger.error(f"Error ensuring user exists: {e}")
@@ -886,7 +914,8 @@ class SequenceAgent(BaseAgent):
             from datetime import datetime
 
             # CRITICAL: Ensure user exists in users table (foreign key constraint)
-            await self._ensure_user_exists(user_id)
+            # This also converts temp user ID to UUID format
+            user_uuid = await self._ensure_user_exists(user_id)
 
             # Create movements snapshot (serialize for JSONB storage)
             movements_snapshot = [
@@ -902,14 +931,14 @@ class SequenceAgent(BaseAgent):
 
             # Insert into class_history (match actual database schema)
             self.supabase.table('class_history').insert({
-                'user_id': user_id,
+                'user_id': user_uuid,
                 'taught_date': datetime.now().date().isoformat(),  # Schema uses taught_date
                 'actual_duration_minutes': duration_minutes,  # Schema uses actual_duration_minutes
                 'movements_snapshot': movements_snapshot,
                 'instructor_notes': f"AI-generated {difficulty} class with balanced muscle distribution"
             }).execute()
 
-            logger.info(f"Saved class history for user {user_id}")
+            logger.info(f"Saved class history for user UUID: {user_uuid}")
 
         except Exception as e:
             logger.warning(f"Error saving class history: {e}. Analytics may not update.")

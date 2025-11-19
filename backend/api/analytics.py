@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Dict, List, Any
 from pydantic import BaseModel
 import os
+import uuid
 from datetime import datetime, timedelta, date
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -75,10 +76,13 @@ async def get_user_analytics_summary(user_id: str):
     - Average class duration
     """
     try:
+        # Convert user_id to UUID format (matches sequence_agent conversion)
+        user_uuid = _convert_to_uuid(user_id)
+
         # Fetch all class history for this user
         response = supabase.table('class_history') \
             .select('*') \
-            .eq('user_id', user_id) \
+            .eq('user_id', user_uuid) \
             .order('taught_date', desc=True) \
             .execute()
 
@@ -135,6 +139,9 @@ async def get_movement_usage_history(
     Returns aggregated data showing how many times each movement was used per week
     """
     try:
+        # Convert user_id to UUID format
+        user_uuid = _convert_to_uuid(user_id)
+
         # Calculate date ranges for each week
         today = date.today()
         week_ranges = []
@@ -147,7 +154,7 @@ async def get_movement_usage_history(
         earliest_date = week_ranges[-1][0]
         response = supabase.table('class_history') \
             .select('*') \
-            .eq('user_id', user_id) \
+            .eq('user_id', user_uuid) \
             .gte('taught_date', earliest_date.isoformat()) \
             .execute()
 
@@ -207,6 +214,9 @@ async def get_muscle_group_history(
     Returns aggregated data showing muscle group usage trends
     """
     try:
+        # Convert user_id to UUID format
+        user_uuid = _convert_to_uuid(user_id)
+
         # Calculate date ranges
         today = date.today()
         week_ranges = []
@@ -219,7 +229,7 @@ async def get_muscle_group_history(
         earliest_date = week_ranges[-1][0]
         response = supabase.table('class_history') \
             .select('*') \
-            .eq('user_id', user_id) \
+            .eq('user_id', user_uuid) \
             .gte('taught_date', earliest_date.isoformat()) \
             .execute()
 
@@ -270,6 +280,24 @@ async def get_muscle_group_history(
 
 
 # Helper functions
+def _convert_to_uuid(user_id: str) -> str:
+    """
+    Convert any user_id string to a valid UUID format
+    Must match the conversion in sequence_agent.py
+    """
+    # If already a valid UUID, return as-is
+    try:
+        uuid.UUID(user_id)
+        return user_id
+    except ValueError:
+        pass
+
+    # Convert string to deterministic UUID using namespace
+    namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
+    user_uuid = uuid.uuid5(namespace, user_id)
+    return str(user_uuid)
+
+
 def _calculate_streak(classes: List[Dict[str, Any]]) -> int:
     """Calculate consecutive days with classes"""
     if not classes:
@@ -308,9 +336,12 @@ def _calculate_streak(classes: List[Dict[str, Any]]) -> int:
 async def _get_favorite_movement(user_id: str) -> str:
     """Get the most frequently used movement"""
     try:
+        # Convert user_id to UUID format
+        user_uuid = _convert_to_uuid(user_id)
+
         response = supabase.table('movement_usage') \
             .select('movement_id, usage_count') \
-            .eq('user_id', user_id) \
+            .eq('user_id', user_uuid) \
             .order('usage_count', desc=True) \
             .limit(1) \
             .execute()
