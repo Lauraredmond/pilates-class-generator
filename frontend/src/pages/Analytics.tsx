@@ -1,19 +1,55 @@
 /**
- * Analytics Dashboard - Real Data from Supabase
- * Displays user progress, movement history, and muscle group trends
+ * Analytics Dashboard - Comprehensive Data Views with Charts
+ * Features time period filtering, dynamic tables, and Chart.js visualizations
  */
 
 import { useState, useEffect } from 'react';
 import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/Card';
 import { analyticsApi } from '../services/api';
 import { getTempUserId } from '../utils/tempUserId';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Line, Doughnut, Bar } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+type TimePeriod = 'day' | 'week' | 'month' | 'total';
+
+interface TimeSeriesData {
+  label: string;
+  periods: number[];
+  period_labels: string[];
+  total: number;
+}
 
 export function Analytics() {
   const userId = getTempUserId();
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('week');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Real data from API
+  // Summary stats
   const [stats, setStats] = useState({
     totalClasses: 0,
     totalPracticeTime: 0,
@@ -23,23 +59,39 @@ export function Analytics() {
     avgClassDuration: 0,
   });
 
-  const [movementHistory, setMovementHistory] = useState<any[]>([]);
-  const [muscleGroupHistory, setMuscleGroupHistory] = useState<any[]>([]);
+  // Table data
+  const [movementHistory, setMovementHistory] = useState<TimeSeriesData[]>([]);
+  const [muscleGroupHistory, setMuscleGroupHistory] = useState<TimeSeriesData[]>([]);
 
-  // Fetch analytics data on mount
+  // Chart data
+  const [practiceFrequency, setPracticeFrequency] = useState<any>(null);
+  const [difficultyProgression, setDifficultyProgression] = useState<any>(null);
+  const [muscleDistribution, setMuscleDistribution] = useState<any>(null);
+
+  // Fetch all analytics data
   useEffect(() => {
     const fetchAnalytics = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const [summaryResponse, movementHistoryResponse, muscleHistoryResponse] =
-          await Promise.all([
-            analyticsApi.getSummary(userId),
-            analyticsApi.getMovementHistory(userId, 5),
-            analyticsApi.getMuscleGroupHistory(userId, 5),
-          ]);
+        const [
+          summaryResponse,
+          movementHistoryResponse,
+          muscleHistoryResponse,
+          practiceFreqResponse,
+          difficultyProgResponse,
+          muscleDistResponse,
+        ] = await Promise.all([
+          analyticsApi.getSummary(userId),
+          analyticsApi.getMovementHistory(userId, timePeriod),
+          analyticsApi.getMuscleGroupHistory(userId, timePeriod),
+          analyticsApi.getPracticeFrequency(userId, timePeriod),
+          analyticsApi.getDifficultyProgression(userId, timePeriod),
+          analyticsApi.getMuscleDistribution(userId, 'total'), // Always show total for doughnut
+        ]);
 
+        // Update stats
         setStats({
           totalClasses: summaryResponse.data.total_classes,
           totalPracticeTime: summaryResponse.data.total_practice_time,
@@ -49,8 +101,14 @@ export function Analytics() {
           avgClassDuration: summaryResponse.data.avg_class_duration,
         });
 
+        // Update tables
         setMovementHistory(movementHistoryResponse.data);
         setMuscleGroupHistory(muscleHistoryResponse.data);
+
+        // Update charts
+        setPracticeFrequency(practiceFreqResponse.data);
+        setDifficultyProgression(difficultyProgResponse.data);
+        setMuscleDistribution(muscleDistResponse.data);
       } catch (err: any) {
         console.error('Failed to fetch analytics:', err);
         setError(err.response?.data?.detail || 'Failed to load analytics data');
@@ -60,7 +118,55 @@ export function Analytics() {
     };
 
     fetchAnalytics();
-  }, [userId]);
+  }, [userId, timePeriod]);
+
+  // Chart configurations
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      title: { display: false },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#f5f1e8' },
+        grid: { color: 'rgba(245, 241, 232, 0.1)' },
+      },
+      x: {
+        ticks: { color: '#f5f1e8' },
+        grid: { color: 'rgba(245, 241, 232, 0.1)' },
+      },
+    },
+  };
+
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' as const, labels: { color: '#f5f1e8' } },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#f5f1e8' },
+        grid: { color: 'rgba(245, 241, 232, 0.1)' },
+      },
+      x: {
+        ticks: { color: '#f5f1e8' },
+        grid: { color: 'rgba(245, 241, 232, 0.1)' },
+      },
+    },
+  };
+
+  const doughnutChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right' as const, labels: { color: '#f5f1e8' } },
+    },
+  };
 
   // Show loading state
   if (isLoading) {
@@ -84,7 +190,6 @@ export function Analytics() {
   }
 
   const handleExportCSV = () => {
-    // Export stats as CSV
     const csvData = `Metric,Value
 Total Classes,${stats.totalClasses}
 Total Practice Time (min),${stats.totalPracticeTime}
@@ -101,6 +206,68 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
+
+  // Prepare chart data
+  const practiceFrequencyChartData = practiceFrequency
+    ? {
+        labels: practiceFrequency.period_labels,
+        datasets: [
+          {
+            label: 'Classes',
+            data: practiceFrequency.class_counts,
+            borderColor: '#8b2635',
+            backgroundColor: 'rgba(139, 38, 53, 0.5)',
+            tension: 0.4,
+          },
+        ],
+      }
+    : null;
+
+  const difficultyProgressionChartData = difficultyProgression
+    ? {
+        labels: difficultyProgression.period_labels,
+        datasets: [
+          {
+            label: 'Beginner',
+            data: difficultyProgression.beginner_counts,
+            backgroundColor: 'rgba(139, 38, 53, 0.8)',
+          },
+          {
+            label: 'Intermediate',
+            data: difficultyProgression.intermediate_counts,
+            backgroundColor: 'rgba(139, 38, 53, 0.6)',
+          },
+          {
+            label: 'Advanced',
+            data: difficultyProgression.advanced_counts,
+            backgroundColor: 'rgba(139, 38, 53, 0.4)',
+          },
+        ],
+      }
+    : null;
+
+  const muscleDistributionChartData = muscleDistribution
+    ? {
+        labels: muscleDistribution.muscle_groups,
+        datasets: [
+          {
+            data: muscleDistribution.percentages,
+            backgroundColor: [
+              '#8b2635',
+              '#a12d3f',
+              '#b73449',
+              '#cd3b53',
+              '#e3425d',
+              '#8b4635',
+              '#a1523f',
+              '#b75e49',
+              '#cd6a53',
+              '#e3765d',
+            ],
+          },
+        ],
+      }
+    : null;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -122,9 +289,30 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
         </div>
       </div>
 
+      {/* Time Period Filter */}
+      <div className="mb-6">
+        <div className="inline-flex rounded-lg border border-cream/30 bg-burgundy-dark p-1">
+          {(['day', 'week', 'month', 'total'] as TimePeriod[]).map((period) => (
+            <button
+              key={period}
+              onClick={() => setTimePeriod(period)}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                timePeriod === period
+                  ? 'bg-burgundy text-cream'
+                  : 'text-cream/60 hover:text-cream'
+              }`}
+            >
+              {period === 'day' && 'By Day'}
+              {period === 'week' && 'By Week'}
+              {period === 'month' && 'By Month'}
+              {period === 'total' && 'Totals'}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Classes */}
         <Card>
           <CardBody className="p-6">
             <div className="flex items-center justify-between">
@@ -142,7 +330,6 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           </CardBody>
         </Card>
 
-        {/* Practice Time */}
         <Card>
           <CardBody className="p-6">
             <div className="flex items-center justify-between">
@@ -162,7 +349,6 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           </CardBody>
         </Card>
 
-        {/* Current Streak */}
         <Card>
           <CardBody className="p-6">
             <div className="flex items-center justify-between">
@@ -180,7 +366,6 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           </CardBody>
         </Card>
 
-        {/* Favorite Movement */}
         <Card>
           <CardBody className="p-6">
             <div className="flex items-center justify-between">
@@ -199,10 +384,74 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
         </Card>
       </div>
 
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Practice Frequency Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Practice Frequency</CardTitle>
+          </CardHeader>
+          <CardBody className="p-6">
+            <div className="h-64">
+              {practiceFrequencyChartData ? (
+                <Line data={practiceFrequencyChartData} options={lineChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-cream/60">
+                  No data available
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Difficulty Progression Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Difficulty Progression</CardTitle>
+          </CardHeader>
+          <CardBody className="p-6">
+            <div className="h-64">
+              {difficultyProgressionChartData ? (
+                <Bar data={difficultyProgressionChartData} options={barChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-cream/60">
+                  No data available
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Muscle Distribution Chart (Full Width) */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Muscle Group Distribution</CardTitle>
+        </CardHeader>
+        <CardBody className="p-6">
+          <div className="h-96">
+            {muscleDistributionChartData ? (
+              <Doughnut data={muscleDistributionChartData} options={doughnutChartOptions} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-cream/60">
+                No data available
+              </div>
+            )}
+          </div>
+        </CardBody>
+      </Card>
+
       {/* Movement History Table */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Movement History (Week by Week)</CardTitle>
+          <CardTitle>
+            Movement History (
+            {timePeriod === 'day' && 'Daily'}
+            {timePeriod === 'week' && 'Weekly'}
+            {timePeriod === 'month' && 'Monthly'}
+            {timePeriod === 'total' && 'All Time'}
+            )
+          </CardTitle>
         </CardHeader>
         <CardBody className="p-6">
           {movementHistory.length === 0 ? (
@@ -215,29 +464,33 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
                 <thead>
                   <tr className="border-b border-cream/30">
                     <th className="text-left py-3 px-4 text-cream font-semibold">Movement</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 1</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 2</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 3</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 4</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 5</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold bg-burgundy/30">Grand Total</th>
+                    {movementHistory[0]?.period_labels.map((label, idx) => (
+                      <th key={idx} className="text-center py-3 px-4 text-cream font-semibold">
+                        {label}
+                      </th>
+                    ))}
+                    <th className="text-center py-3 px-4 text-cream font-semibold bg-burgundy/30">
+                      Grand Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {movementHistory.map((row, index) => (
                     <tr
-                      key={row.movement}
+                      key={row.label}
                       className={`border-b border-cream/10 hover:bg-burgundy/10 transition-colors ${
                         index % 2 === 0 ? 'bg-burgundy/5' : ''
                       }`}
                     >
-                      <td className="py-3 px-4 text-cream">{row.movement}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week1 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week2 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week3 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week4 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week5 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream font-semibold bg-burgundy/20">{row.total}</td>
+                      <td className="py-3 px-4 text-cream">{row.label}</td>
+                      {row.periods.map((count, idx) => (
+                        <td key={idx} className="py-3 px-4 text-center text-cream/80">
+                          {count || '-'}
+                        </td>
+                      ))}
+                      <td className="py-3 px-4 text-center text-cream font-semibold bg-burgundy/20">
+                        {row.total}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -250,7 +503,14 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
       {/* Muscle Group History Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Muscle Group History (Week by Week)</CardTitle>
+          <CardTitle>
+            Muscle Group History (
+            {timePeriod === 'day' && 'Daily'}
+            {timePeriod === 'week' && 'Weekly'}
+            {timePeriod === 'month' && 'Monthly'}
+            {timePeriod === 'total' && 'All Time'}
+            )
+          </CardTitle>
         </CardHeader>
         <CardBody className="p-6">
           {muscleGroupHistory.length === 0 ? (
@@ -262,30 +522,36 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-cream/30">
-                    <th className="text-left py-3 px-4 text-cream font-semibold">Muscle Group / Goal</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 1</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 2</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 3</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 4</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold">Week 5</th>
-                    <th className="text-center py-3 px-4 text-cream font-semibold bg-burgundy/30">Grand Total</th>
+                    <th className="text-left py-3 px-4 text-cream font-semibold">
+                      Muscle Group / Goal
+                    </th>
+                    {muscleGroupHistory[0]?.period_labels.map((label, idx) => (
+                      <th key={idx} className="text-center py-3 px-4 text-cream font-semibold">
+                        {label}
+                      </th>
+                    ))}
+                    <th className="text-center py-3 px-4 text-cream font-semibold bg-burgundy/30">
+                      Grand Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {muscleGroupHistory.map((row, index) => (
                     <tr
-                      key={row.group}
+                      key={row.label}
                       className={`border-b border-cream/10 hover:bg-burgundy/10 transition-colors ${
                         index % 2 === 0 ? 'bg-burgundy/5' : ''
                       }`}
                     >
-                      <td className="py-3 px-4 text-cream">{row.group}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week1 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week2 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week3 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week4 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream/80">{row.week5 || '-'}</td>
-                      <td className="py-3 px-4 text-center text-cream font-semibold bg-burgundy/20">{row.total}</td>
+                      <td className="py-3 px-4 text-cream">{row.label}</td>
+                      {row.periods.map((count, idx) => (
+                        <td key={idx} className="py-3 px-4 text-center text-cream/80">
+                          {count || '-'}
+                        </td>
+                      ))}
+                      <td className="py-3 px-4 text-center text-cream font-semibold bg-burgundy/20">
+                        {row.total}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

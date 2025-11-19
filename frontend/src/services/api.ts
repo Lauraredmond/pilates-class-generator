@@ -74,10 +74,16 @@ export const classPlansApi = {
 
 export const analyticsApi = {
   getSummary: (userId: string) => api.get(`/api/analytics/summary/${userId}`),
-  getMovementHistory: (userId: string, weeks?: number) =>
-    api.get(`/api/analytics/movement-history/${userId}`, { params: { weeks } }),
-  getMuscleGroupHistory: (userId: string, weeks?: number) =>
-    api.get(`/api/analytics/muscle-group-history/${userId}`, { params: { weeks } }),
+  getMovementHistory: (userId: string, period?: string) =>
+    api.get(`/api/analytics/movement-history/${userId}`, { params: { period } }),
+  getMuscleGroupHistory: (userId: string, period?: string) =>
+    api.get(`/api/analytics/muscle-group-history/${userId}`, { params: { period } }),
+  getPracticeFrequency: (userId: string, period?: string) =>
+    api.get(`/api/analytics/practice-frequency/${userId}`, { params: { period } }),
+  getDifficultyProgression: (userId: string, period?: string) =>
+    api.get(`/api/analytics/difficulty-progression/${userId}`, { params: { period } }),
+  getMuscleDistribution: (userId: string, period?: string) =>
+    api.get(`/api/analytics/muscle-distribution/${userId}`, { params: { period } }),
 };
 
 export default api;
