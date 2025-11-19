@@ -42,11 +42,11 @@ export function Home() {
       <div className="mb-8">
         <p className="text-cream/90 text-center leading-relaxed italic text-[12px] tracking-wide">
           <span className="block mb-2 bg-gradient-to-r from-yellow-200 via-cream to-yellow-100 bg-clip-text text-transparent drop-shadow-sm">
-            "Bassline helps you progress quickly between instructor-led sessions,
+            "Bassline helps you progress quickly between instructor-led sessions, accelerating your competence in Pilates technique and principles.
           </span>
-          <span className="block mb-2 text-cream/80">
+          {/*<span className="block mb-2 text-cream/80">
             accelerating your competence in Pilates technique and principles.
-          </span>
+          </span>*/}
           <span className="block bg-gradient-to-r from-yellow-200 via-cream to-yellow-100 bg-clip-text text-transparent drop-shadow-sm">
             Data from your previous sessions is leveraged to build a varied programme which is tailored for you."
           </span>
