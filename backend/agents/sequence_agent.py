@@ -24,7 +24,6 @@ class SequenceAgent(BaseAgent):
 
     # Safety-critical sequencing rules
     SAFETY_RULES = {
-        "must_warmup": "Classes must start with breathing and gentle movements",
         "spinal_progression": "Flexion movements must precede extension movements",
         "muscle_balance": "No muscle group should exceed 40% of total class load",
         "complexity_progression": "Difficulty should progress gradually",
@@ -44,7 +43,6 @@ class SequenceAgent(BaseAgent):
 
     # Movement patterns for sequencing
     MOVEMENT_PATTERNS = {
-        "warmup": ["Breathing", "Pelvic Tilts", "Gentle Mobilization"],
         "flexion": ["The Hundred", "Roll Up", "Roll Over", "Single Leg Stretch"],
         "extension": ["Swan Dive", "Swimming", "Single Leg Kick"],
         "rotation": ["The Saw", "Spine Twist", "Corkscrew"],
@@ -106,12 +104,14 @@ class SequenceAgent(BaseAgent):
         )
 
         # Step 2: Build sequence following safety rules
+        # Pass user_id for movement variety enforcement
         sequence = await self._build_safe_sequence(
             movements=available_movements,
             target_duration=target_duration,
             required_movements=required_movements,
             focus_areas=focus_areas,
-            difficulty=difficulty
+            difficulty=difficulty,
+            user_id=inputs.get("user_id")  # Pass user_id for usage tracking
         )
 
         # Step 2.5: Add transitions between movements
@@ -254,7 +254,8 @@ class SequenceAgent(BaseAgent):
         target_duration: int,
         required_movements: List[str],
         focus_areas: List[str],
-        difficulty: str = "Beginner"
+        difficulty: str = "Beginner",
+        user_id: Optional[str] = None  # For movement variety enforcement
     ) -> List[Dict[str, Any]]:
         """Build sequence following safety rules"""
         sequence = []
@@ -277,16 +278,12 @@ class SequenceAgent(BaseAgent):
             f"= max {max_movements} movements"
         )
 
-        # Rule 1: Always start with warmup
-        warmup = self._get_warmup_movement(movements)
-        if warmup:
-            # Override duration to teaching time
-            warmup_copy = warmup.copy()
-            warmup_copy["duration_seconds"] = teaching_time_seconds
-            warmup_copy["type"] = "movement"  # Mark as movement
-            sequence.append(warmup_copy)
+        # PHASE 2: Get movement usage weights for variety enforcement
+        usage_weights = {}
+        if user_id:
+            usage_weights = await self._get_movement_usage_weights(user_id, movements)
 
-        # Rule 2: Add required movements if specified
+        # Rule 1: Add required movements if specified
         if required_movements:
             for movement_id in required_movements:
                 movement = next((m for m in movements if m["id"] == movement_id), None)
@@ -297,18 +294,20 @@ class SequenceAgent(BaseAgent):
                     movement_copy["type"] = "movement"  # Mark as movement
                     sequence.append(movement_copy)
 
-        # Rule 3: Fill to max movements with balanced movements
+        # Rule 2: Fill to max movements with balanced movements
         # Priority: Flexion -> Rotation -> Extension -> Lateral -> Balance
         pattern_order = ["flexion", "rotation", "extension", "lateral", "balance"]
 
         # Leave room for cooldown
         while len(sequence) < (max_movements - 1):
             # Pick movement based on pattern order and focus areas
+            # PHASE 2: Pass usage weights for variety enforcement
             selected = self._select_next_movement(
                 movements=movements,
                 current_sequence=sequence,
                 focus_areas=focus_areas,
-                pattern_priority=pattern_order
+                pattern_priority=pattern_order,
+                usage_weights=usage_weights  # Weight by last usage
             )
 
             if not selected:
@@ -320,7 +319,7 @@ class SequenceAgent(BaseAgent):
             selected_copy["type"] = "movement"  # Mark as movement
             sequence.append(selected_copy)
 
-        # Rule 4: Always end with cooldown
+        # Rule 3: Always end with cooldown
         cooldown = self._get_cooldown_movement(movements, sequence)
         if cooldown:
             # Override duration to teaching time
@@ -332,30 +331,6 @@ class SequenceAgent(BaseAgent):
         logger.info(f"Generated sequence with {len(sequence)} movements (max was {max_movements})")
 
         return sequence
-
-    def _get_warmup_movement(self, movements: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-        """
-        Get appropriate warmup movement with ROTATION for variety
-
-        PHASE 1 FIX: Rotate warmup movements instead of always using "The Hundred"
-        """
-        if not movements:
-            return None
-
-        warmup_keywords = ["hundred", "breathing", "pelvic"]
-        warmup_movements = [
-            m for m in movements
-            if any(kw in m["name"].lower() for kw in warmup_keywords)
-        ]
-
-        # PHASE 1 FIX: Use random.choice() to rotate warmup movements
-        # This fixes the issue where 100% of classes started with "The Hundred"
-        if warmup_movements:
-            selected = random.choice(warmup_movements)
-            logger.info(f"Selected warmup movement: {selected['name']}")
-            return selected
-
-        return movements[0] if movements else None
 
     def _get_cooldown_movement(self, movements: List[Dict[str, Any]], current_sequence: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """Get appropriate cooldown movement"""
@@ -382,12 +357,14 @@ class SequenceAgent(BaseAgent):
         movements: List[Dict[str, Any]],
         current_sequence: List[Dict[str, Any]],
         focus_areas: List[str],
-        pattern_priority: List[str]
+        pattern_priority: List[str],
+        usage_weights: Dict[str, float] = None  # PHASE 2: Movement usage weights
     ) -> Optional[Dict[str, Any]]:
         """
         Select next movement based on rules and focus areas
 
         PHASE 1 FIX: Added consecutive muscle overlap validation
+        PHASE 2 FIX: Added weighted random selection based on usage history
         """
         # Get already used movement IDs
         used_ids = [m["id"] for m in current_sequence]
@@ -435,10 +412,20 @@ class SequenceAgent(BaseAgent):
                 if any(area.lower() in str(m.get("category", "")).lower() for area in focus_areas)
             ]
             if focused:
-                return random.choice(focused)
+                available = focused
 
-        # Otherwise, pick randomly from available
-        return random.choice(available)
+        # PHASE 2 FIX: Use weighted random selection based on usage history
+        if usage_weights and available:
+            # Build weights list aligned with available movements
+            weights = [usage_weights.get(m['id'], 1.0) for m in available]
+
+            # Use random.choices with weights (prefers less-recently-used movements)
+            selected = random.choices(available, weights=weights, k=1)[0]
+            logger.info(f"Selected '{selected['name']}' (weight: {usage_weights.get(selected['id'], 1.0):.0f})")
+            return selected
+
+        # Fallback: pick randomly from available (no usage data)
+        return random.choice(available) if available else None
 
     async def _add_transitions_to_sequence(self, sequence: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Add transition narratives between movements based on setup positions"""
@@ -554,14 +541,7 @@ class SequenceAgent(BaseAgent):
         violations = []
         warnings = []
 
-        # Check Rule 1: Has warmup
-        if not sequence or "hundred" not in sequence[0]["name"].lower():
-            if self.strictness_level == "strict":
-                violations.append("Must start with warmup movement")
-            else:
-                warnings.append("Consider starting with warmup")
-
-        # Check Rule 3: Muscle balance
+        # Check muscle balance
         for muscle, load in muscle_balance.items():
             if load > 40:
                 if self.strictness_level == "strict":
