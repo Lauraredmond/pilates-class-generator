@@ -29,7 +29,7 @@ export const MOVEMENT_PLAYLISTS: MusicPlaylist[] = [
     id: 'ambient-pilates',
     name: 'Ambient Pilates',
     category: 'movement',
-    url: 'https://soundcloud.com/REPLACE-WITH-YOUR-USERNAME/ambient-pilates',
+    url: 'https://on.soundcloud.com/KJcRYsHiwxrmknJxRb',
     description: 'Calm ambient soundscapes perfect for focused movement',
   },
   {
