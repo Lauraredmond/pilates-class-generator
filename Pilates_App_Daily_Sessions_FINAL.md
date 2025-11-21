@@ -1339,22 +1339,126 @@ Create complete test suite for frontend and backend.
 
 ---
 
-## **SESSION 13: Music Integration (ESSENTIAL FEATURE) & Compliance Dashboard**
+## **SESSION 11 (labeled 13): Music Integration (ESSENTIAL FEATURE)** - ⚠️ IN PROGRESS
+
+### Status: PARTIALLY COMPLETE - Troubleshooting Required
+
+**Session Date:** 2025-11-21
+**Git Commits:** e7449f5, ff55d54, e2c7e90, 32631ab, 68348b2
+**Current State:** Integration code complete, but playback not working
 
 ### Role
 You are an audio integration specialist and compliance expert.
 
 ### Context
-Day 13. Core app functional. Music integration is ESSENTIAL to the offering - not optional. After music is complete, add compliance dashboard features.
+Day 11. Core app functional. Music integration is ESSENTIAL to the offering - not optional. SoundCloud Widget API integration implemented but experiencing playback issues.
 
-### Priority 1: SoundCloud Music Integration (CRITICAL - 2-3 hours)
+### What Was Completed ✅
+
+1. **SoundCloud Widget API Integration**
+   - Added Widget API script to `frontend/index.html`
+   - Created `frontend/src/utils/musicPlaylists.ts` with 9 playlist configurations
+   - Integrated hidden iframe into ClassPlayback component
+   - Added TypeScript type definitions for Widget API
+   - Implemented pause/resume sync with class timer
+   - Added visual status indicator ("Music Loading" → "Music Playing")
+
+2. **Documentation**
+   - Created MUSIC_INTEGRATION_SETUP.md with setup instructions
+   - Created MUSIC_DEBUG_STEPS.md for troubleshooting
+
+3. **Files Modified**
+   - ✅ `frontend/src/utils/musicPlaylists.ts` (NEW)
+   - ✅ `frontend/src/components/class-playback/ClassPlayback.tsx` (MODIFIED)
+   - ✅ `frontend/index.html` (MODIFIED)
+   - ✅ `frontend/src/pages/ClassBuilder.tsx` (MODIFIED - added version indicator for testing)
+
+### Current Issue ❌
+
+**Problem:** Music integration shows "Music Playing" but no audio playback occurs
+
+**Symptoms:**
+- Widget loads: "SoundCloud widget ready" ✅
+- Play triggered: "Music play triggered" ✅
+- Console errors: InvalidStateError from SoundCloud widget canvas drawing ❌
+- No actual audio playback ❌
+
+**Debugging Completed:**
+- ✅ Tested with user's playlist (8 tracks, public, Enya/classical music)
+- ✅ Tested with known-working public playlists (Lofi Girl)
+- ✅ Tested with SoundCloud API track format (track ID 293)
+- ❌ All tests result in same InvalidStateError
+
+**Root Cause Hypothesis:**
+- Tracks may have embedding disabled by copyright holders (Enya, André Rieu, etc.)
+- Browser autoplay restrictions (attempted fix with user interaction trigger)
+- SoundCloud Widget API canvas rendering issues
+- URL format incompatibility
+
+**User Decision:** Pause work on music integration, resume next session with ChatGPT consultation
+
+### 🔄 NEXT SESSION PICKUP (Session 11 Continuation)
+
+**Priority:** Debug and resolve SoundCloud music playback issue
+
+**Context for Next Session:**
+- Integration code is complete and deployed (commit 68348b2)
+- Widget loads successfully but InvalidStateError prevents playback
+- User has created 1 test playlist (Ambient Pilates - 8 tracks)
+- Console.txt logs show consistent error pattern across all test attempts
+
+**Troubleshooting Options for Next Session:**
+
+1. **Option A: Fix SoundCloud Widget API**
+   - Consult ChatGPT for InvalidStateError solution
+   - Try alternative Widget API initialization patterns
+   - Test with royalty-free music tracks (no embedding restrictions)
+   - Investigate canvas rendering polyfill
+
+2. **Option B: Pivot to YouTube Music API**
+   - More reliable embedding permissions
+   - YouTube IFrame Player API well-documented
+   - User creates YouTube playlists instead
+
+3. **Option C: Use HTML5 Audio with Hosted Files**
+   - Upload MP3s to Netlify/S3
+   - Full control over playback
+   - No API dependencies or restrictions
+   - Most reliable option
+
+4. **Option D: Simplify to Text Recommendations**
+   - Display "Suggested Music: Ambient Piano" text
+   - Users play their own music separately
+   - No technical complexity
+
+**Recommended Approach:**
+- Start with Option A (fix SoundCloud) with ChatGPT help
+- If not resolved in 30 minutes, pivot to Option B (YouTube)
+- Option C is most reliable if time allows
+- Option D is fallback if all else fails
+
+**Files to Review:**
+- `Console.txt` - Current error logs
+- `frontend/src/components/class-playback/ClassPlayback.tsx` - Widget integration code
+- `frontend/src/utils/musicPlaylists.ts` - Playlist configuration
+- `MUSIC_DEBUG_STEPS.md` - Troubleshooting guide
+
+**Success Criteria:**
+- [ ] Music plays audibly when class starts
+- [ ] Music pauses/resumes with class timer
+- [ ] No console errors
+- [ ] User can hear background music during movements
+
+---
+
+### Priority 1: SoundCloud Music Integration - ORIGINAL PLAN (FOR REFERENCE)
 
 **User Requirement:** "Music integration is essential to my offering, not optional."
 
-#### Your Task
+#### Your Task (Original)
 Integrate SoundCloud music playback into class experience with pre-curated playlists.
 
-#### What You Should Do
+#### What You Should Do (Original Plan)
 
 **Step 1: Pre-curated Playlist Setup**
 - Create SoundCloud account with 9 curated playlists:
