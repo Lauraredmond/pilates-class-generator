@@ -230,17 +230,17 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           {
             label: 'Beginner',
             data: difficultyProgression.beginner_counts,
-            backgroundColor: 'rgba(139, 38, 53, 0.8)',
+            backgroundColor: '#cd8b76', // Light terracotta - warm, approachable
           },
           {
             label: 'Intermediate',
             data: difficultyProgression.intermediate_counts,
-            backgroundColor: 'rgba(139, 38, 53, 0.6)',
+            backgroundColor: '#8b2635', // Primary burgundy - brand color
           },
           {
             label: 'Advanced',
             data: difficultyProgression.advanced_counts,
-            backgroundColor: 'rgba(139, 38, 53, 0.4)',
+            backgroundColor: '#5c1a26', // Dark burgundy - intense, challenging
           },
         ],
       }
@@ -253,16 +253,30 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           {
             data: muscleDistribution.percentages,
             backgroundColor: [
-              '#8b2635',
-              '#a12d3f',
-              '#b73449',
-              '#cd3b53',
-              '#e3425d',
-              '#8b4635',
-              '#a1523f',
-              '#b75e49',
-              '#cd6a53',
-              '#e3765d',
+              '#8b2635',  // Primary burgundy - deep red
+              '#cd8b76',  // Terracotta - warm orange
+              '#f5f1e8',  // Cream - light neutral
+              '#5c1a26',  // Dark burgundy - almost brown
+              '#e3a57a',  // Light peach - bright accent
+              '#3d1118',  // Very dark burgundy - chocolate
+              '#b8927d',  // Medium beige - earthy
+              '#d94d5c',  // Bright coral red - vibrant
+              '#9e7762',  // Warm brown - neutral
+              '#f7d9c4',  // Light cream - pale accent
+              // Additional colors for 23 muscle groups
+              '#6b2532',  // Medium dark burgundy
+              '#dda88f',  // Peachy tan
+              '#4a1820',  // Deep chocolate
+              '#c67a6a',  // Dusty rose
+              '#8a6f5f',  // Taupe brown
+              '#f2c6a8',  // Light tan
+              '#a13d48',  // Rose burgundy
+              '#755c52',  // Warm gray brown
+              '#e8bfa3',  // Cream tan
+              '#7d2e3a',  // Deep rose
+              '#b89988',  // Light brown
+              '#cf9b84',  // Soft terracotta
+              '#5d4840',  // Dark taupe
             ],
           },
         ],

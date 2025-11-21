@@ -1339,24 +1339,133 @@ Create complete test suite for frontend and backend.
 
 ---
 
-## **SESSION 13: Compliance Dashboard**
+## **SESSION 13: Music Integration (ESSENTIAL FEATURE) & Compliance Dashboard**
 
 ### Role
-You are a compliance specialist with EU AI Act expertise.
+You are an audio integration specialist and compliance expert.
 
 ### Context
-Day 13. App functional with LLM integration. Add compliance features.
+Day 13. Core app functional. Music integration is ESSENTIAL to the offering - not optional. After music is complete, add compliance dashboard features.
 
-### Your Task
+### Priority 1: SoundCloud Music Integration (CRITICAL - 2-3 hours)
+
+**User Requirement:** "Music integration is essential to my offering, not optional."
+
+#### Your Task
+Integrate SoundCloud music playback into class experience with pre-curated playlists.
+
+#### What You Should Do
+
+**Step 1: Pre-curated Playlist Setup**
+- Create SoundCloud account with 9 curated playlists:
+  - **Movement Music:** Ambient Pilates, Meditation Instrumentals, Chillout Beats, Lo-Fi Focus, Acoustic Calm, Piano Minimal
+  - **Cool-Down Music:** Baroque Classical, Classical Piano, Romantic Era
+- Each playlist: 60+ minutes of appropriate music
+- Get shareable URLs for each playlist
+
+**Step 2: SoundCloud Widget API Integration**
+```typescript
+// frontend/src/utils/musicPlaylists.ts (NEW FILE)
+export const MUSIC_PLAYLISTS = {
+  'Ambient': 'https://soundcloud.com/your-account/ambient-pilates',
+  'Meditation': 'https://soundcloud.com/your-account/meditation-instrumentals',
+  'Chillout': 'https://soundcloud.com/your-account/chillout-beats',
+  // ... 6 more playlists
+};
+```
+
+**Step 3: Update ClassPlayback Component**
+```typescript
+// frontend/src/components/class-playback/ClassPlayback.tsx
+// Add hidden SoundCloud iframe
+<iframe
+  id="sc-widget"
+  src={`https://w.soundcloud.com/player/?url=${playlistUrl}`}
+  width="0"
+  height="0"
+  style={{ display: 'none' }}
+/>
+
+// Control playback with Widget API
+const widget = SC.Widget('sc-widget');
+useEffect(() => {
+  widget.load(selectedPlaylistUrl);
+  widget.play();
+  widget.setVolume(50); // 50% volume
+}, []);
+
+// Sync music with class pause/resume
+useEffect(() => {
+  if (isPaused) {
+    widget.pause();
+  } else {
+    widget.play();
+  }
+}, [isPaused]);
+```
+
+**Step 4: Add SoundCloud Script**
+```html
+<!-- frontend/public/index.html -->
+<script src="https://w.soundcloud.com/player/api.js"></script>
+```
+
+**Step 5: Testing Checklist**
+- [ ] Music starts when "Play Class" clicked
+- [ ] Music pauses/resumes with class timer
+- [ ] Music switches from movement playlist to cool-down playlist
+- [ ] Music volume appropriate (not too loud)
+- [ ] Music continues seamlessly across transitions
+- [ ] No audio conflicts with future narration
+
+#### Expected Outputs
+- `frontend/src/utils/musicPlaylists.ts` (NEW) - Playlist mappings
+- `frontend/src/components/class-playback/ClassPlayback.tsx` (MODIFIED) - Widget integration
+- `frontend/public/index.html` (MODIFIED) - SoundCloud API script
+- Comprehensive testing of music playback during full class
+
+#### Success Criteria
+- [ ] Music plays throughout entire class
+- [ ] Pause/resume works correctly
+- [ ] Playlist switching works (movement → cool-down)
+- [ ] No performance impact
+- [ ] Music enhances class experience
+- [ ] User can control volume (bonus feature)
+
+---
+
+### Priority 2: Compliance Dashboard (After Music Complete)
+
+**User Requirement:** EU AI Act compliance for AI decision transparency.
+
+#### Your Task
 Build compliance dashboard for EU AI Act requirements.
 
-### What You Should Do
+#### What You Should Do
 - Decision transparency view
 - Bias monitoring dashboard
 - Model performance metrics
 - Audit trail interface
 - **NEW: Research source tracking**
 - Export compliance reports
+
+#### Expected Outputs
+- Compliance dashboard page
+- Agent decision log viewer
+- Bias monitoring charts
+- Export functionality
+
+---
+
+### Time Allocation
+- **Music Integration:** 2-3 hours (PRIORITY)
+- **Compliance Dashboard:** 1-2 hours (if time permits)
+
+### Notes
+- Music is ESSENTIAL - complete before moving to compliance features
+- Pre-curated playlists approach is fastest and most reliable
+- Widget API is simpler than full SoundCloud SDK integration
+- Volume ducking for narration comes in Session 14-15 (audio prototype)
 
 ---
 
