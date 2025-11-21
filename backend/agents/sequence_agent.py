@@ -711,14 +711,17 @@ class SequenceAgent(BaseAgent):
         try:
             from datetime import datetime, date
 
-            # Query movement_usage table for this user
+            # Query movement_usage table for this user - INCLUDE usage_count
             response = self.supabase.table('movement_usage') \
-                .select('movement_id, last_used_date') \
+                .select('movement_id, last_used_date, usage_count') \
                 .eq('user_id', user_id) \
                 .execute()
 
             usage_map = {
-                item['movement_id']: item['last_used_date']
+                item['movement_id']: {
+                    'last_used_date': item['last_used_date'],
+                    'usage_count': item.get('usage_count', 0)
+                }
                 for item in response.data
             }
 
@@ -731,7 +734,9 @@ class SequenceAgent(BaseAgent):
 
                 if movement_id in usage_map:
                     # Calculate days since last used
-                    last_used_str = usage_map[movement_id]
+                    last_used_str = usage_map[movement_id]['last_used_date']
+                    usage_count = usage_map[movement_id]['usage_count']
+
                     # Handle both date and datetime formats
                     if 'T' in last_used_str:
                         last_used = datetime.fromisoformat(last_used_str.replace('Z', '+00:00')).date()
@@ -740,12 +745,21 @@ class SequenceAgent(BaseAgent):
 
                     days_since = (today - last_used).days
 
-                    # Weight formula: (days + 1) ^ 2
-                    # 1 day ago = 4, 7 days ago = 64, 30 days ago = 961
-                    weight = (days_since + 1) ** 2
+                    # IMPROVED Weight formula: Combine days_since AND usage frequency
+                    # Base weight from recency: (days + 1) ^ 3 (cubic for stronger penalty)
+                    # Penalty from frequency: divided by (usage_count ^ 2)
+                    #
+                    # Examples:
+                    # - Used today (days=0), used 1x: (0+1)^3 / 1^2 = 1
+                    # - Used today (days=0), used 10x: (0+1)^3 / 10^2 = 0.01 (HEAVILY penalized!)
+                    # - Used 7 days ago, used 1x: (7+1)^3 / 1^2 = 512
+                    # - Used 7 days ago, used 5x: (7+1)^3 / 5^2 = 20.48
+                    recency_weight = (days_since + 1) ** 3  # Cubic instead of quadratic
+                    frequency_penalty = max(1, usage_count) ** 2  # Quadratic penalty for frequency
+                    weight = recency_weight / frequency_penalty
                 else:
                     # Never used before - highest weight
-                    weight = 10000
+                    weight = 100000  # Increased from 10000 to ensure never-used are STRONGLY preferred
 
                 weights[movement_id] = weight
 
