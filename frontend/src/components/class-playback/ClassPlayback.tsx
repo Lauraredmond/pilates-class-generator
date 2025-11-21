@@ -126,7 +126,8 @@ export function ClassPlayback({
           console.log('SoundCloud widget ready');
           setIsMusicReady(true);
           widget.setVolume(50); // Set to 50% volume
-          widget.play(); // Auto-play when ready
+          // Note: Don't auto-play here - let the pause/resume effect handle it
+          // This avoids browser autoplay blocking issues
         });
 
         widget.bind(window.SC.Widget.Events.ERROR, () => {
@@ -159,7 +160,9 @@ export function ClassPlayback({
       if (isPaused) {
         widgetRef.current.pause();
       } else {
+        // Trigger play - happens after user clicked "Play Class"
         widgetRef.current.play();
+        console.log('Music play triggered');
       }
     } catch (error) {
       console.error('Error controlling SoundCloud playback:', error);
