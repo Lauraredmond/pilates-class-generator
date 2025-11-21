@@ -329,7 +329,7 @@ export function ClassPlayback({
       {/* SoundCloud Widget (hidden iframe) */}
       <iframe
         id="sc-widget"
-        src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(movementPlaylist.url)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false`}
+        src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(movementPlaylist.url)}&auto_play=false&buying=false&sharing=false&download=false&show_artwork=false&show_playcount=false&show_user=false&hide_related=true&visual=false&start_track=0`}
         width="0"
         height="0"
         style={{ display: 'none' }}
