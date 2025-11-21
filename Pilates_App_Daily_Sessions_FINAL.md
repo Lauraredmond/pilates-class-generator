@@ -1523,45 +1523,90 @@ Ensure complete mobile responsiveness.
 
 ---
 
-## **SESSION 16: Performance Optimization**
+## **SESSION 16: Performance Optimization & OpenAI/MCP Enhancements**
 
 ### Role
-You are a performance engineer.
+You are a performance engineer and integration specialist.
 
 ### Context
-Day 16. Features complete. Optimize performance.
+Day 16. Features complete. Optimize performance and address Session 11.5 backlog items.
 
 ### Your Task
-Optimize frontend and backend performance.
+Optimize frontend and backend performance, add MCP Playwright integration, and implement OpenAI Redis caching.
 
 ### What You Should Do
+
+**Performance Optimization:**
 - Code splitting
 - Lazy loading
 - Database query optimization
-- Caching strategies
+- Caching strategies (Redis setup)
 - CDN setup
 - Bundle size reduction
 
+**Session 11.5 Backlog - OpenAI Redis Caching (MEDIUM PRIORITY):**
+- Set up Redis server (local or cloud)
+- Implement LLM caching layer for narrative variations
+- 24-hour TTL for cached results
+- Cost monitoring dashboard for OpenAI API usage
+- Expected: 70% cost reduction through caching
+
+**Session 11.5 Backlog - MCP Playwright Integration (MEDIUM PRIORITY):**
+- Set up MCP Playwright server
+- Replace placeholder data in `mcp_client.py` (line 108 TODO)
+- Implement actual web scraping from trusted Pilates sources
+- Test research agent with real MCP calls
+- Quality scoring and source attribution
+
+### Expected Outputs
+- Performance optimizations complete
+- Redis caching working for OpenAI
+- Cost monitoring dashboard
+- MCP Playwright functional (replaces placeholders)
+- Research agent tested and working
+
 ---
 
-## **SESSION 17-18: Documentation & Polish**
+## **SESSION 17-18: Documentation, Polish & Analytics Export**
 
 ### Role
 You are a technical writer and UX specialist.
 
 ### Context
-Days 17-18. App complete. Documentation and polish.
+Days 17-18. App complete. Documentation, polish, and finish Session 11.5 backlog items.
 
 ### Your Task
-Complete documentation and final polish.
+Complete documentation, final polish, and add export functionality to Analytics.
 
 ### What You Should Do
+
+**Documentation:**
 - User documentation
 - API documentation
 - Deployment guides
 - Video tutorials
+
+**Polish & Bug Fixes:**
 - Bug fixes
 - UI polish
+- Performance tuning
+
+**Session 11.5 Backlog - Analytics Export (MEDIUM PRIORITY):**
+- Export analytics as CSV (class history, movement stats)
+- Export charts as PNG images
+- Print report functionality
+- User can share progress with instructors/trainers
+
+**Session 11.5 Backlog - Agent Testing (MEDIUM PRIORITY):**
+- Test Music Agent with real class generations
+- Test Meditation Agent with real cool-down scripts
+- Verify agent outputs quality and consistency
+
+### Expected Outputs
+- Complete documentation
+- Polished UI
+- Analytics export functionality
+- Music and Meditation agents tested
 
 ---
 
@@ -1583,6 +1628,134 @@ Deploy to production environments.
 - MCP: Server configuration
 - Monitoring: Sentry setup
 - Analytics: Posthog/Mixpanel
+
+---
+
+## **SESSION 20 (FUTURE): User Registration & Multi-User Support**
+
+### Role
+You are a full-stack developer specializing in authentication and GDPR compliance.
+
+### Context
+Day 20. App functional for single user. Now implement proper end-user registration, multi-user support, and compliance features.
+
+### Your Task
+Implement complete multi-user system with PII tokenization, email verification, password reset, and GDPR compliance.
+
+### What You Should Do
+
+**Session 11.5 Backlog - Authentication Flows (HIGH PRIORITY - Deferred):**
+
+**Step 1: Email Verification Flow**
+- Registration sends verification email
+- Email contains secure token (24-hour expiry)
+- User clicks link to verify account
+- Account activated upon verification
+- Resend verification email option
+
+**Step 2: Password Reset Flow**
+- "Forgot Password" on login page
+- User enters email, receives reset link
+- Secure token (1-hour expiry)
+- Reset password form
+- Confirmation email sent after reset
+
+**Step 3: PII Tokenization (GDPR Compliance)**
+```python
+# backend/utils/pii_tokenizer.py (NEW FILE)
+class PIITokenizer:
+    """Tokenize personally identifiable information for GDPR compliance"""
+
+    def __init__(self, encryption_key: str):
+        self.key = encryption_key
+        self.cipher = Fernet(self.key)
+
+    def tokenize(self, pii_data: str) -> str:
+        """Encrypt PII and return token"""
+        encrypted = self.cipher.encrypt(pii_data.encode())
+        token = base64.urlsafe_b64encode(encrypted).decode()
+        return token
+
+    def detokenize(self, token: str) -> str:
+        """Decrypt token and return original PII"""
+        encrypted = base64.urlsafe_b64decode(token.encode())
+        decrypted = self.cipher.decrypt(encrypted)
+        return decrypted.decode()
+```
+
+**Step 4: Database Schema Updates**
+```sql
+-- Create pii_tokens table
+CREATE TABLE pii_tokens (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    field_name VARCHAR(50),  -- 'email', 'full_name', etc.
+    encrypted_value TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Update users table to store tokens instead of PII
+ALTER TABLE users
+    ADD COLUMN email_token VARCHAR(255),
+    ADD COLUMN full_name_token VARCHAR(255);
+```
+
+**Step 5: GDPR Data Export**
+```python
+# backend/api/routers/gdpr.py (NEW FILE)
+@router.get("/gdpr/export")
+async def export_user_data(user_id: str):
+    """Export all user data for GDPR compliance"""
+    # Collect all user data from all tables
+    user_data = {
+        "profile": await get_user_profile(user_id),
+        "classes": await get_user_classes(user_id),
+        "analytics": await get_user_analytics(user_id),
+        "agent_decisions": await get_agent_decisions(user_id)
+    }
+
+    # Return as downloadable JSON
+    return JSONResponse(content=user_data)
+
+@router.delete("/gdpr/delete")
+async def delete_user_data(user_id: str):
+    """Delete all user data (right to be forgotten)"""
+    # Cascade delete from all tables
+    await delete_all_user_data(user_id)
+    return {"message": "User data deleted successfully"}
+```
+
+**Step 6: Multi-User Differentiation**
+- User roles: Admin, Instructor, Student
+- Permission system for features
+- User-specific class history
+- Shared vs. private classes
+- User settings and preferences
+
+### Expected Outputs
+- Email verification system working
+- Password reset flow functional
+- PII tokenization implemented
+- `pii_tokens` table created
+- `utils/pii_tokenizer.py` created
+- GDPR export/delete endpoints
+- Multi-user support with roles
+- Updated authentication UI
+
+### Success Criteria
+- [ ] Email verification emails sent and working
+- [ ] Password reset flow tested end-to-end
+- [ ] All PII tokenized (no plaintext PII in database)
+- [ ] GDPR export returns complete user data
+- [ ] GDPR delete removes all user traces
+- [ ] Multiple users can use app simultaneously
+- [ ] User roles and permissions enforced
+
+### Notes
+- **Deferred from Session 11.5** - User decision: Not needed until proper end-user registration
+- This session should be prioritized when transitioning from single-user to multi-user app
+- PII tokenization is CRITICAL for GDPR compliance (legal requirement)
+- Email verification improves security and reduces spam accounts
 
 ---
 

@@ -380,20 +380,31 @@ Systematically reviewed each session (1-11) from `Pilates_App_Daily_Sessions_FIN
 
 ## 💡 RECOMMENDATIONS
 
-### Immediate Next Steps (User's Choice):
-1. **Session 13:** SoundCloud Music Integration (user's priority, 2-3 hours)
-2. **Session 13.5:** Address HIGH PRIORITY gaps (9-12 hours)
-   - Excel extraction → Rich teaching content
-   - PII tokenization → GDPR compliance
-   - Settings page → User control
-   - Auth flows → Better UX
+### ✅ USER DECISION (2025-11-21)
 
-### Medium-Term:
-3. **Session 14-15:** MCP Playwright integration (4-6 hours)
-4. **Session 16:** OpenAI Redis caching + cost monitoring (2-3 hours)
+**User's Prioritization:**
+1. **Defer to Future "User Registration & Multi-User" Session:**
+   - PII tokenization (GDPR compliance)
+   - Email verification flow
+   - Password reset flow
+   - Multi-user differentiation
+   - Rationale: Single-user app currently, not needed until proper end-user registration
 
-### Future Sessions:
-5. Continue with original plan: Audio narration, testing, mobile, performance, documentation, deployment
+2. **Scrap for Now (Can Revisit Later):**
+   - Excel database extraction (comprehensive domain knowledge)
+   - Settings page
+   - Rationale: App functional without these, can add when time permits
+
+3. **Integrate into Appropriate Future Sessions:**
+   - MCP Playwright integration → Session 16-17 (after audio narration)
+   - OpenAI Redis caching → Session 16 (with MCP or when costs become issue)
+   - Analytics export → Session 17-18 (polish phase)
+   - Music/Meditation agent testing → Session 13 (music) or 14-15
+   - Research integration panel → After MCP working
+   - MCP advanced features → After basic MCP working
+
+### Immediate Next Steps:
+1. **Session 13:** SoundCloud Music Integration (user's priority, ESSENTIAL FEATURE)
 
 ---
 
@@ -451,8 +462,8 @@ Systematically reviewed each session (1-11) from `Pilates_App_Daily_Sessions_FIN
 - [x] Documented all gap items with priority levels
 - [x] Estimated effort for remediation
 - [x] Created this comprehensive Session 11.5 summary
-- [ ] **USER DECISION REQUIRED:** Choose remediation approach (Option A, B, or C)
-- [ ] **USER DECISION REQUIRED:** Proceed with Session 13 (Music) or Session 13.5 (Gaps)?
+- [x] **USER DECISION RECEIVED:** Defer PII/Auth to future user registration session, scrap Settings/Excel for now, integrate medium/low items into future sessions
+- [x] **NEXT SESSION:** Proceed with Session 13 (SoundCloud Music Integration) - ESSENTIAL FEATURE
 
 ---
 
