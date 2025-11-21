@@ -29,7 +29,9 @@ export const MOVEMENT_PLAYLISTS: MusicPlaylist[] = [
     id: 'ambient-pilates',
     name: 'Ambient Pilates',
     category: 'movement',
-    url: 'https://soundcloud.com/laura-redmond-504579291/sets/ambient-pilates?si=dddfa1e2030d43bcacc404c387f8df91&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
+    // TESTING: Using known-working public playlist (Lofi Girl)
+    url: 'https://soundcloud.com/chilledcow/sets/chillhop-music',
+    // Original URL (not working): https://soundcloud.com/laura-redmond-504579291/sets/ambient-pilates
     description: 'Calm ambient soundscapes perfect for focused movement',
   },
   {

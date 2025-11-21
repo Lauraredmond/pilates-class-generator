@@ -1,60 +1,59 @@
-[Debug] [vite] connecting... (client, line 495)
-[Debug] [vite] connected. (client, line 618)
-[Warning] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. (react-router-dom.js, line 4413)
-[Warning] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. (react-router-dom.js, line 4413)
-[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (ClassBuilder.tsx, line 34)
-[Log] [ClassBuilder] Force fetching movements from API... (ClassBuilder.tsx, line 35)
-[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (ClassBuilder.tsx, line 34)
-[Log] [ClassBuilder] Force fetching movements from API... (ClassBuilder.tsx, line 35)
-[Log] [ClassBuilder] API response: – 34 – "movements received" (ClassBuilder.tsx, line 40)
-[Log] [ClassBuilder] Sample movement: – Object (ClassBuilder.tsx, line 42)
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-ColIbWFX.js, line 167)
+[Log] [ClassBuilder] Force fetching movements from API... (index-ColIbWFX.js, line 167)
+[Log] [ClassBuilder] API response: – 34 – "movements received" (index-ColIbWFX.js, line 167)
+[Log] [ClassBuilder] Sample movement: – Object (index-ColIbWFX.js, line 167)
 Object
-[Log] [ClassBuilder] API response: – 34 – "movements received" (ClassBuilder.tsx, line 40)
-[Log] [ClassBuilder] Sample movement: – Object (ClassBuilder.tsx, line 42)
+[Log] [AIGenerationPanel] Using user ID: – "82906f6d-2a73-53c5-8d04-151b12ef43cf" (index-ColIbWFX.js, line 167)
+[Log] [AIGenerationPanel] Raw sequence data sample: – Object (index-ColIbWFX.js, line 167)
 Object
-[Log] [AIGenerationPanel] Raw sequence data sample: – {firstMovement: Object, hasTeachingCues: true, hasSetupPosition: true, …} (AIGenerationPanel.tsx, line 75)
-{firstMovement: Object, hasTeachingCues: true, hasSetupPosition: true, hasMuscleGroups: true, hasWatchOutPoints: false}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
-[Log] [MovementDisplay] Item data: – {type: "movement", name: "The Hundred", narrative: "YES", …} (MovementDisplay.tsx, line 18)
-{type: "movement", name: "The Hundred", narrative: "YES", setup_position: "MISSING", teaching_cues: 0, …}Object
+[Log] SoundCloud Embed Player (api-web) (widget-9-0111f457ff60.js, line 55)
+[Log] SoundCloud widget ready (index-ColIbWFX.js, line 167)
+[Log] Music play triggered (index-ColIbWFX.js, line 167)
+[Warning] Exception: Script error. (widget-9-0111f457ff60.js, line 55)
+[Warning] constructor (widget-9-0111f457ff60.js, line 55)
+[Error] InvalidStateError: The object is in an invalid state.
+	createPattern (widget-0-4ce89f8ceffc.js:1:101374)
+	f (widget-0-4ce89f8ceffc.js:1:101374)
+	draw (widget-0-4ce89f8ceffc.js:1:100299)
+	n (widget-9-0111f457ff60.js:53:50458)
+	(anonymous function) (widget-9-0111f457ff60.js:53:51649)
+	update (widget-0-4ce89f8ceffc.js:1:80080)
+	update (widget-0-4ce89f8ceffc.js:1:79388)
+[Warning] Exception: Script error. (widget-9-0111f457ff60.js, line 55)
+[Warning] constructor (widget-9-0111f457ff60.js, line 55)
+[Error] InvalidStateError: The object is in an invalid state.
+	createPattern (widget-0-4ce89f8ceffc.js:1:101374)
+	f (widget-0-4ce89f8ceffc.js:1:101374)
+	draw (widget-0-4ce89f8ceffc.js:1:100299)
+	n (widget-9-0111f457ff60.js:53:50458)
+	(anonymous function) (widget-9-0111f457ff60.js:53:51649)
+	update (widget-0-4ce89f8ceffc.js:1:80080)
+	update (widget-0-4ce89f8ceffc.js:1:79388)
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/api.js-4950e94a9243.map. This content was blocked and must be served over HTTPS.
+
+[Error] Not allowed to request resource
+[Error] Cannot load http://ent/web-sourcemaps/api.js-4950e94a9243.map due to access control checks.
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-8-8102dadd8b2e.js.map. This content was blocked and must be served over HTTPS.
+
+[Error] Not allowed to request resource
+[Error] Cannot load http://ent/web-sourcemaps/widget-8-8102dadd8b2e.js.map due to access control checks.
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-0-4ce89f8ceffc.js.map. This content was blocked and must be served over HTTPS.
+
+[Error] Not allowed to request resource
+[Error] Cannot load http://ent/web-sourcemaps/widget-0-4ce89f8ceffc.js.map due to access control checks.
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-2-545bd6bf75a8.js.map. This content was blocked and must be served over HTTPS.
+
+[Error] Not allowed to request resource
+[Error] Cannot load http://ent/web-sourcemaps/widget-2-545bd6bf75a8.js.map due to access control checks.
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-9-0111f457ff60.js.map. This content was blocked and must be served over HTTPS.
+
+[Error] Not allowed to request resource
+[Error] Cannot load http://ent/web-sourcemaps/widget-9-0111f457ff60.js.map due to access control checks.
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-1-2a294ec9db9c.js.map. This content was blocked and must be served over HTTPS.
+
+[Error] Not allowed to request resource
+[Error] Cannot load http://ent/web-sourcemaps/widget-1-2a294ec9db9c.js.map due to access control checks.
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-4-434ca88dccea.js.map. This content was blocked and must be served over HTTPS.
+
+[Error] Not allowed to request resource
+[Error] Cannot load http://ent/web-sourcemaps/widget-4-434ca88dccea.js.map due to access control checks.
