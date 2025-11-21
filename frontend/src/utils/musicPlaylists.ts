@@ -29,7 +29,7 @@ export const MOVEMENT_PLAYLISTS: MusicPlaylist[] = [
     id: 'ambient-pilates',
     name: 'Ambient Pilates',
     category: 'movement',
-    url: 'https://on.soundcloud.com/KJcRYsHiwxrmknJxRb',
+    url: 'https://soundcloud.com/laura-redmond-504579291/sets/ambient-pilates?si=dddfa1e2030d43bcacc404c387f8df91&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
     description: 'Calm ambient soundscapes perfect for focused movement',
   },
   {
