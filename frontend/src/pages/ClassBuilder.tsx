@@ -62,7 +62,12 @@ export function ClassBuilder() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
+      {/* Version Indicator - for testing/debugging */}
+      <div className="absolute top-2 right-2 z-50 text-xs text-cream/40 bg-burgundy-dark/80 px-2 py-1 rounded border border-cream/20">
+        v: 32631ab | Music Test #3
+      </div>
+
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-cream mb-2">Class Builder</h1>
