@@ -243,7 +243,6 @@ export function AIGenerationPanel() {
         <ClassPlayback
           items={playbackItems}
           movementMusicStyle={lastFormData.movementMusicStyle}
-          coolDownMusicStyle={lastFormData.coolDownMusicStyle}
           onComplete={handleCompletePlayback}
           onExit={handleExitPlayback}
         />
