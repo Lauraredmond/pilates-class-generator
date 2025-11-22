@@ -535,6 +535,128 @@ All MCP results are cached in Redis with source attribution for EU AI Act compli
 
 ---
 
+## SoundCloud Music Integration
+
+### OAuth Setup (Session 11)
+
+**Current Status:** Waiting for SoundCloud Developer Support to approve app registration (Ticket #4004208)
+
+**Architecture Decision:** Use instructor's SoundCloud account for all Bassline users
+- Instructor curates 9 playlists (Ambient, Meditation, Chillout, etc.)
+- All users hear instructor's curated music during classes
+- Music is part of the complete class experience (like Peloton)
+- Scales to unlimited users (SoundCloud serves audio from their CDN)
+- No performance impact on backend
+
+**When SoundCloud Support Responds:**
+
+1. **Get App Credentials** from SoundCloud Developer Dashboard
+   - Navigate to https://soundcloud.com/you/apps
+   - Create new app: "Bassline Pilates"
+   - Copy `Client ID` and `Client Secret`
+
+2. **Configure Redirect URIs** in SoundCloud Dashboard
+   - Production: `https://basslinemvp.netlify.app/auth/soundcloud/callback`
+   - Local Dev: `http://localhost:5173/auth/soundcloud/callback`
+   - **Must match exactly** (including protocol and trailing path)
+
+3. **Add to Environment Variables**
+   ```bash
+   # backend/.env
+   SOUNDCLOUD_CLIENT_ID=your_client_id_here
+   SOUNDCLOUD_CLIENT_SECRET=your_client_secret_here
+   SOUNDCLOUD_REDIRECT_URI=https://basslinemvp.netlify.app/auth/soundcloud/callback
+   ```
+
+4. **One-Time OAuth Connection** (Instructor Only)
+   - Navigate to `/admin/soundcloud` in deployed app
+   - Click "Connect My SoundCloud Account"
+   - Authorize once (OAuth 2.1 + PKCE flow)
+   - Access token and refresh token stored on backend
+   - **Done!** All users can now play music from instructor's playlists
+
+### API Endpoints
+
+**Backend Routes** (`/api/soundcloud_auth.py`)
+- `GET /auth/soundcloud/connect` - Initiates OAuth flow (admin only)
+- `GET /auth/soundcloud/callback` - Exchanges code for tokens
+- `GET /api/soundcloud/playlists` - Returns instructor's playlists
+- `GET /api/soundcloud/tracks?playlistId=...` - Returns tracks from playlist
+- `POST /api/soundcloud/refresh` - Refreshes expired access token
+
+### Token Management
+
+Tokens are stored securely in backend `.env` or database:
+```python
+# After successful OAuth
+{
+  "access_token": "...",  # Used for API requests
+  "refresh_token": "...", # Used to get new access token
+  "expires_in": 3600,     # Token lifetime (1 hour)
+  "scope": "non-expiring" # SoundCloud permission scope
+}
+```
+
+Auto-refresh logic runs when `access_token` expires.
+
+### Audio Playback
+
+Frontend uses SoundCloud's HLS (HTTP Live Streaming) URLs:
+```typescript
+// ClassPlayback component
+const audioPlayer = new Audio(track.hls_aac_160_url); // HLS stream
+audioPlayer.play();
+
+// Sync with class timer
+useEffect(() => {
+  if (isPaused) audioPlayer.pause();
+  else audioPlayer.play();
+}, [isPaused]);
+```
+
+### Rate Limits & Scaling
+
+**SoundCloud API Limits:**
+- API requests: 15,000/day (fetching playlists/tracks)
+- Audio streams: Unlimited (served from SoundCloud CDN)
+- Concurrent plays: No published limit
+
+**Bassline Usage:**
+- ~10 API calls/day (fetching playlists when needed)
+- Unlimited users streaming music (no backend load)
+- No performance bottleneck
+
+### Future Enhancement: Per-User OAuth
+
+**Phase 2 Implementation** (when needed):
+- Add user-level SoundCloud connections
+- Store tokens in `user_soundcloud_tokens` table
+- Users can choose: instructor's playlists OR their own
+- Requires full OAuth flow per user
+
+```python
+# Future table schema
+CREATE TABLE user_soundcloud_tokens (
+    user_id UUID REFERENCES users(id),
+    access_token TEXT ENCRYPTED,
+    refresh_token TEXT ENCRYPTED,
+    expires_at TIMESTAMP
+);
+```
+
+### Troubleshooting
+
+**Problem:** 401 Unauthorized on API calls
+**Solution:** Access token expired - trigger refresh with `refresh_token`
+
+**Problem:** CORS errors
+**Solution:** Ensure redirect URI matches exactly in SoundCloud dashboard
+
+**Problem:** Invalid redirect URI
+**Solution:** Check for trailing slashes, protocol (https vs http), exact path match
+
+---
+
 ## Excel Database Synchronization
 
 ### Migration from Excel

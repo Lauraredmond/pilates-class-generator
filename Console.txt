@@ -1,4 +1,10 @@
-[Error] Failed to load resource: the server responded with a status of 404 () (player, line 0)
+[Log] [AIGenerationPanel] Using user ID: – "82906f6d-2a73-53c5-8d04-151b12ef43cf" (index-DPuchwce.js, line 167)
+[Log] [AIGenerationPanel] Raw sequence data sample: – {firstMovement: Object, hasTeachingCues: true, hasSetupPosition: true, …} (index-DPuchwce.js, line 167)
+{firstMovement: Object, hasTeachingCues: true, hasSetupPosition: true, hasMuscleGroups: true, hasWatchOutPoints: false}Object
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-5-cd8b86ff1046.js.map. This content was blocked and must be served over HTTPS.
+
+[Error] Not allowed to request resource
+[Error] Cannot load http://ent/web-sourcemaps/widget-5-cd8b86ff1046.js.map due to access control checks.
 [Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-8-8102dadd8b2e.js.map. This content was blocked and must be served over HTTPS.
 
 [Error] Not allowed to request resource
@@ -7,14 +13,34 @@
 
 [Error] Not allowed to request resource
 [Error] Cannot load http://ent/web-sourcemaps/widget-9-0111f457ff60.js.map due to access control checks.
-[Error] Failed to load resource: the server responded with a status of 404 (Not Found) (resolve, line 0)
-[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-3-9c117d9e334a.js.map. This content was blocked and must be served over HTTPS.
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-0-4ce89f8ceffc.js.map. This content was blocked and must be served over HTTPS.
 
 [Error] Not allowed to request resource
-[Error] Cannot load http://ent/web-sourcemaps/widget-3-9c117d9e334a.js.map due to access control checks.
-[Error] SoundCloud widget error - check playlist URL
-	(anonymous function) (index-CXzKRxCi.js:167:5046)
-	w (api.js:1:2493)
-	A (api.js:1:3024)
-[Log] SoundCloud widget ready (index-CXzKRxCi.js, line 167)
-[Log] Music play triggered (index-CXzKRxCi.js, line 167)
+[Error] Cannot load http://ent/web-sourcemaps/widget-0-4ce89f8ceffc.js.map due to access control checks.
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/class-builder requested insecure content from http://ent/web-sourcemaps/widget-1-2a294ec9db9c.js.map. This content was blocked and must be served over HTTPS.
+
+[Error] Not allowed to request resource
+[Error] Cannot load http://ent/web-sourcemaps/widget-1-2a294ec9db9c.js.map due to access control checks.
+[Log] SoundCloud Embed Player (api-web) (widget-9-0111f457ff60.js, line 55)
+[Log] SoundCloud widget ready (index-DPuchwce.js, line 167)
+[Log] Music play triggered (index-DPuchwce.js, line 167)
+[Warning] Exception: Script error. (widget-9-0111f457ff60.js, line 55)
+[Warning] constructor {resource_id: "f-2", attributes: Object, _escapedAttributes: {}, cid: "c24", _setting: false, …} (widget-9-0111f457ff60.js, line 55)
+[Error] InvalidStateError: The object is in an invalid state.
+	createPattern (widget-0-4ce89f8ceffc.js:1:101374)
+	f (widget-0-4ce89f8ceffc.js:1:101374)
+	draw (widget-0-4ce89f8ceffc.js:1:100299)
+	n (widget-9-0111f457ff60.js:53:50458)
+	(anonymous function) (widget-9-0111f457ff60.js:53:51649)
+	update (widget-0-4ce89f8ceffc.js:1:80080)
+	update (widget-0-4ce89f8ceffc.js:1:79388)
+[Warning] Exception: Script error. (widget-9-0111f457ff60.js, line 55)
+[Warning] constructor {resource_id: "f-3", attributes: Object, _escapedAttributes: {}, cid: "c25", _setting: false, …} (widget-9-0111f457ff60.js, line 55)
+[Error] InvalidStateError: The object is in an invalid state.
+	createPattern (widget-0-4ce89f8ceffc.js:1:101374)
+	f (widget-0-4ce89f8ceffc.js:1:101374)
+	draw (widget-0-4ce89f8ceffc.js:1:100299)
+	n (widget-9-0111f457ff60.js:53:50458)
+	(anonymous function) (widget-9-0111f457ff60.js:53:51649)
+	update (widget-0-4ce89f8ceffc.js:1:80080)
+	update (widget-0-4ce89f8ceffc.js:1:79388)

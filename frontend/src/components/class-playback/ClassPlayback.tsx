@@ -1,42 +1,31 @@
 /**
  * ClassPlayback Component
  * Full-screen timer-based class playback with auto-advance
- * Integrated with SoundCloud music playback
+ * Integrated with SoundCloud OAuth music playback
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 import { MovementDisplay } from './MovementDisplay';
 import { PlaybackControls } from './PlaybackControls';
 import { TimerDisplay } from './TimerDisplay';
 import { getPlaylistByName, DEFAULT_MOVEMENT_PLAYLIST, DEFAULT_COOLDOWN_PLAYLIST } from '../../utils/musicPlaylists';
 
-// SoundCloud Widget API type definitions
-declare global {
-  interface Window {
-    SC: {
-      Widget: {
-        new (iframeId: string): SoundCloudWidget;
-        Events: {
-          READY: 'ready';
-          PLAY: 'play';
-          PAUSE: 'pause';
-          FINISH: 'finish';
-          ERROR: 'error';
-        };
-      };
-    };
-  }
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+// SoundCloud API type definitions
+interface SoundCloudTrack {
+  id: number;
+  title: string;
+  duration: number;
+  stream_url: string;
+  artwork_url?: string;
 }
 
-interface SoundCloudWidget {
-  load(url: string, options?: { auto_play?: boolean }): void;
-  play(): void;
-  pause(): void;
-  toggle(): void;
-  seekTo(milliseconds: number): void;
-  setVolume(volume: number): void;
-  bind(eventName: string, listener: () => void): void;
-  unbind(eventName: string): void;
+interface SoundCloudPlaylist {
+  id: number;
+  title: string;
+  tracks: SoundCloudTrack[];
 }
 
 export interface PlaybackMovement {
@@ -98,74 +87,120 @@ export function ClassPlayback({
   const [timeRemaining, setTimeRemaining] = useState(items[0]?.duration_seconds || 0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isMusicReady, setIsMusicReady] = useState(false);
+  const [currentPlaylist, setCurrentPlaylist] = useState<SoundCloudPlaylist | null>(null);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [musicError, setMusicError] = useState<string | null>(null);
 
   const currentItem = items[currentIndex];
   const totalItems = items.length;
-  const widgetRef = useRef<SoundCloudWidget | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Get appropriate playlist URLs
+  // Get appropriate playlist metadata
   const movementPlaylist = getPlaylistByName(movementMusicStyle) || DEFAULT_MOVEMENT_PLAYLIST;
   const cooldownPlaylist = getPlaylistByName(coolDownMusicStyle) || DEFAULT_COOLDOWN_PLAYLIST;
 
-  // Initialize SoundCloud Widget
+  // Fetch SoundCloud playlist via OAuth API
   useEffect(() => {
-    // Wait for SoundCloud Widget API to load
-    const initWidget = () => {
-      if (typeof window.SC === 'undefined') {
-        // Retry after a short delay
-        setTimeout(initWidget, 100);
-        return;
-      }
-
+    const fetchPlaylist = async () => {
       try {
-        const widget = new window.SC.Widget('sc-widget');
-        widgetRef.current = widget;
+        setMusicError(null);
 
-        // Wait for widget to be ready
-        widget.bind(window.SC.Widget.Events.READY, () => {
-          console.log('SoundCloud widget ready');
-          setIsMusicReady(true);
-          widget.setVolume(50); // Set to 50% volume
-          // Note: Don't auto-play here - let the pause/resume effect handle it
-          // This avoids browser autoplay blocking issues
+        // Search for playlist by name (using movement music style)
+        const response = await axios.get(`${API_BASE_URL}/api/soundcloud/search/playlists`, {
+          params: { query: movementMusicStyle }
         });
 
-        widget.bind(window.SC.Widget.Events.ERROR, () => {
-          console.error('SoundCloud widget error - check playlist URL');
-        });
-      } catch (error) {
-        console.error('Error initializing SoundCloud widget:', error);
-      }
-    };
+        if (response.data && response.data.length > 0) {
+          const playlist = response.data[0];
+          setCurrentPlaylist(playlist);
 
-    initWidget();
-
-    // Cleanup
-    return () => {
-      if (widgetRef.current) {
-        try {
-          widgetRef.current.pause();
-        } catch (e) {
-          // Widget may already be destroyed
+          // If tracks available, load first track
+          if (playlist.tracks && playlist.tracks.length > 0) {
+            await loadTrack(playlist.tracks[0].id);
+          }
+        } else {
+          // Fallback: get any available playlist
+          const allPlaylists = await axios.get(`${API_BASE_URL}/api/soundcloud/playlists?limit=1`);
+          if (allPlaylists.data && allPlaylists.data.length > 0) {
+            const playlist = allPlaylists.data[0];
+            setCurrentPlaylist(playlist);
+            if (playlist.tracks && playlist.tracks.length > 0) {
+              await loadTrack(playlist.tracks[0].id);
+            }
+          } else {
+            setMusicError('No playlists available. Please connect SoundCloud in admin panel.');
+          }
+        }
+      } catch (error: any) {
+        console.error('Error fetching SoundCloud playlist:', error);
+        if (error.response?.status === 401) {
+          setMusicError('SoundCloud not connected. Admin must authorize via /admin/soundcloud');
+        } else {
+          setMusicError('Failed to load music. Class will continue without audio.');
         }
       }
     };
-  }, []);
+
+    fetchPlaylist();
+  }, [movementMusicStyle]);
+
+  // Load a specific track's stream URL
+  const loadTrack = async (trackId: number) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/soundcloud/tracks/${trackId}/stream`);
+
+      if (audioRef.current && response.data.stream_url) {
+        audioRef.current.src = response.data.stream_url;
+        audioRef.current.volume = 0.5; // 50% volume
+        setIsMusicReady(true);
+        console.log('Music track loaded:', response.data.title);
+      }
+    } catch (error) {
+      console.error('Error loading track stream:', error);
+      setMusicError('Failed to load music track. Continuing without audio.');
+    }
+  };
+
+  // Initialize HTML5 audio element
+  useEffect(() => {
+    const audio = new Audio();
+    audioRef.current = audio;
+
+    // Handle track ending - load next track
+    audio.addEventListener('ended', () => {
+      if (currentPlaylist && currentPlaylist.tracks) {
+        const nextIndex = (currentTrackIndex + 1) % currentPlaylist.tracks.length;
+        setCurrentTrackIndex(nextIndex);
+        loadTrack(currentPlaylist.tracks[nextIndex].id);
+      }
+    });
+
+    // Cleanup
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+    };
+  }, [currentPlaylist, currentTrackIndex]);
 
   // Sync music pause/resume with class timer
   useEffect(() => {
-    if (!widgetRef.current || !isMusicReady) return;
+    if (!audioRef.current || !isMusicReady) return;
 
     try {
       if (isPaused) {
-        widgetRef.current.pause();
+        audioRef.current.pause();
       } else {
         // Trigger play - happens after user clicked "Play Class"
-        widgetRef.current.play();
+        audioRef.current.play().catch(error => {
+          console.error('Audio play failed:', error);
+          // Browser may block autoplay - user needs to interact first
+        });
         console.log('Music play triggered');
       }
     } catch (error) {
-      console.error('Error controlling SoundCloud playback:', error);
+      console.error('Error controlling music playback:', error);
     }
   }, [isPaused, isMusicReady]);
 
@@ -326,25 +361,27 @@ export function ClassPlayback({
         </div>
       )}
 
-      {/* SoundCloud Widget (hidden iframe) */}
-      <iframe
-        id="sc-widget"
-        src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(movementPlaylist.url)}&auto_play=false&buying=false&sharing=false&download=false&show_artwork=false&show_playcount=false&show_user=false&hide_related=true&visual=false&start_track=0`}
-        width="0"
-        height="0"
-        style={{ display: 'none' }}
-        allow="autoplay"
-        title="SoundCloud Music Player"
-      />
-
       {/* Music info */}
       <div className="absolute bottom-20 left-4 text-xs text-cream/40 space-y-1">
-        <p className="flex items-center gap-2">
-          <span className={`inline-block w-2 h-2 rounded-full ${isMusicReady ? 'bg-green-500' : 'bg-gray-500'}`} />
-          {isMusicReady ? 'Music Playing' : 'Music Loading...'}
-        </p>
-        <p>Movement: {movementPlaylist.name}</p>
-        <p>Cool Down: {cooldownPlaylist.name}</p>
+        {musicError ? (
+          <p className="flex items-center gap-2 text-yellow-400">
+            <span className="inline-block w-2 h-2 rounded-full bg-yellow-500" />
+            {musicError}
+          </p>
+        ) : (
+          <>
+            <p className="flex items-center gap-2">
+              <span className={`inline-block w-2 h-2 rounded-full ${isMusicReady ? 'bg-green-500' : 'bg-gray-500'}`} />
+              {isMusicReady ? 'Music Playing' : 'Music Loading...'}
+            </p>
+            {currentPlaylist && (
+              <>
+                <p>Playlist: {currentPlaylist.title}</p>
+                <p>Track {currentTrackIndex + 1} of {currentPlaylist.tracks?.length || 0}</p>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

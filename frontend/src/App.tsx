@@ -8,6 +8,7 @@ import { ClassBuilder } from './pages/ClassBuilder';
 import { Analytics } from './pages/Analytics';
 import { Profile } from './pages/Profile';
 import { Settings } from './pages/Settings';
+import { AdminSoundCloud } from './pages/AdminSoundCloud';
 import { MedicalDisclaimer } from './components/MedicalDisclaimer';
 
 function App() {
@@ -103,6 +104,7 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/admin/soundcloud" element={<AdminSoundCloud />} />
         </Routes>
       </Layout>
     </BrowserRouter>
