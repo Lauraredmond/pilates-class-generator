@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Layout } from './components/layout/Layout';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Home } from './pages/Home';
 import { Classes } from './pages/Classes';
 import { Generate } from './pages/Generate';
@@ -9,6 +10,9 @@ import { Analytics } from './pages/Analytics';
 import { Profile } from './pages/Profile';
 import { Settings } from './pages/Settings';
 import { AdminSoundCloud } from './pages/AdminSoundCloud';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { ResetPassword } from './pages/ResetPassword';
 import { MedicalDisclaimer } from './components/MedicalDisclaimer';
 
 function App() {
@@ -95,18 +99,70 @@ function App() {
   // Disclaimer accepted - show normal app
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/classes" element={<Classes />} />
-          <Route path="/generate" element={<Generate />} />
-          <Route path="/class-builder" element={<ClassBuilder />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/admin/soundcloud" element={<AdminSoundCloud />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* Public routes (no layout) */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* Protected routes (with layout) */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Layout>
+              <Home />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/classes" element={
+          <ProtectedRoute>
+            <Layout>
+              <Classes />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/generate" element={
+          <ProtectedRoute>
+            <Layout>
+              <Generate />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/class-builder" element={
+          <ProtectedRoute>
+            <Layout>
+              <ClassBuilder />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/analytics" element={
+          <ProtectedRoute>
+            <Layout>
+              <Analytics />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Layout>
+              <Profile />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <Layout>
+              <Settings />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/soundcloud" element={
+          <ProtectedRoute>
+            <Layout>
+              <AdminSoundCloud />
+            </Layout>
+          </ProtectedRoute>
+        } />
+      </Routes>
     </BrowserRouter>
   );
 }
