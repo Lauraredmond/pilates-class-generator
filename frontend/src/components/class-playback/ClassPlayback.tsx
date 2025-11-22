@@ -67,7 +67,6 @@ export type PlaybackItem = PlaybackMovement | PlaybackTransition;
 interface ClassPlaybackProps {
   items: PlaybackItem[];
   movementMusicStyle: string;
-  coolDownMusicStyle: string;
   className?: string;
   onComplete?: () => void;
   onExit?: () => void;
@@ -76,7 +75,6 @@ interface ClassPlaybackProps {
 export function ClassPlayback({
   items,
   movementMusicStyle,
-  coolDownMusicStyle,
   className = '',
   onComplete,
   onExit,
