@@ -957,4 +957,76 @@ supabase db reset && supabase db push
 
 ---
 
+## Session Progress & Next Steps
+
+### Session 7: User Authentication & Profile (IN PROGRESS)
+
+**Date:** November 22, 2025
+**Status:** ✅ Registration working, writing to Supabase successfully
+
+**Completed:**
+- ✅ Created authentication system (JWT tokens, password hashing)
+- ✅ Built backend auth endpoints (`/api/auth/register`, `/api/auth/login`, etc.)
+- ✅ Created frontend auth pages (Login, Register, ResetPassword)
+- ✅ Implemented AuthContext for global auth state
+- ✅ Added ProtectedRoute wrapper for authenticated routes
+- ✅ Created Supabase database tables (`user_profiles`, `user_preferences`)
+- ✅ Fixed Render deployment (added missing dependencies to `requirements-production.txt`)
+- ✅ Fixed Netlify deployment (removed unused TypeScript parameters)
+- ✅ **CONFIRMED: Successfully writing user data to Supabase** (commit 9a1f8b5)
+
+**Production URLs:**
+- Frontend: https://basslinemvp.netlify.app
+- Backend API: https://pilates-class-generator-api3.onrender.com
+- Registration page: https://basslinemvp.netlify.app/register
+
+**Environment Configuration:**
+- Netlify: `VITE_API_URL=https://pilates-class-generator-api3.onrender.com` (NO trailing slash!)
+- Render: `SUPABASE_URL`, `SUPABASE_KEY`, `JWT_SECRET_KEY`, `FRONTEND_URL` configured
+
+**Known Issues to Address:**
+1. ⚠️ Console security warnings during registration (need investigation)
+2. ⚠️ Supabase API key validation needed (keys may be from wrong project)
+
+**Next Session Tasks (Session 7/8 Continuation):**
+
+1. **Investigate console security warnings**
+   - Review browser console errors during registration
+   - Ensure no sensitive data leaking
+   - Check CORS configuration
+   - Validate JWT token handling
+
+2. **Complete Session 7 Testing**
+   - Test login flow with registered user
+   - Test profile page (displays user stats)
+   - Test logout functionality
+   - Test protected routes (redirect when not authenticated)
+   - Test password reset flow
+
+3. **Validate Supabase API Keys**
+   - Confirm keys in Render match Supabase project
+   - Test database writes beyond registration
+   - Verify user preferences are created correctly
+
+4. **Session 8: Settings & Preferences** (Next major milestone)
+   - Build Settings page UI
+   - Implement user preference updates
+   - Add profile editing (name, email)
+   - Add password change functionality
+   - Test preference persistence
+
+**Important Notes:**
+- User prefers production testing over local testing
+- Database tables are created and working
+- Backend and frontend both deployed and communicating
+- Double-slash URL issue fixed in Netlify (`VITE_API_URL` without trailing slash)
+
+**Git Commits This Session:**
+- `2834414` - Updated backend dependencies (Supabase 2.24.0, httpx, websockets)
+- `9a1f8b5` - Added missing auth dependencies to production requirements
+- `9c15068` - Removed unused `coolDownMusicStyle` parameter
+- `c67ad8a` - Removed unused `coolDownMusicStyle` from ClassPlayback interface
+
+---
+
 *This CLAUDE.md provides comprehensive guidance for working in the Pilates Class Planner v2.0 codebase. Update this file as the architecture evolves.*
