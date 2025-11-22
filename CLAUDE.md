@@ -986,7 +986,12 @@ supabase db reset && supabase db push
 
 **Known Issues to Address:**
 1. ⚠️ Console security warnings during registration (need investigation)
-2. ⚠️ Supabase API key validation needed (keys may be from wrong project)
+2. ⚠️ **Supabase API Key Format Mismatch:**
+   - **Production (Render):** Using NEW Supabase API key format → ✅ Working correctly
+   - **Local (`backend/.env`):** Using LEGACY Supabase API key format → ❌ Cannot write to Supabase
+   - **Fix needed:** Update local `.env` with new API keys from Supabase dashboard
+   - **Note:** Supabase has migrated from legacy `eyJh...` format to new `sb_publishable_...` format
+   - Keys in Render.com environment variables are correct (hence production registration works)
 
 **Next Session Tasks (Session 7/8 Continuation):**
 
@@ -1003,10 +1008,13 @@ supabase db reset && supabase db push
    - Test protected routes (redirect when not authenticated)
    - Test password reset flow
 
-3. **Validate Supabase API Keys**
-   - Confirm keys in Render match Supabase project
-   - Test database writes beyond registration
-   - Verify user preferences are created correctly
+3. **Update Local Supabase API Keys to New Format**
+   - Production (Render) already has correct NEW format keys
+   - Local `backend/.env` still has LEGACY format keys
+   - Get new keys from Supabase dashboard (Settings → API)
+   - Update local `.env` with new `sb_publishable_...` format keys
+   - Test local registration to confirm localhost can write to Supabase
+   - **Note:** Legacy `eyJh...` JWT format no longer supported by Supabase
 
 4. **Session 8: Settings & Preferences** (Next major milestone)
    - Build Settings page UI
