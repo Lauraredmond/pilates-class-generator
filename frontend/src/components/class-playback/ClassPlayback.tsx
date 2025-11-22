@@ -9,7 +9,6 @@ import axios from 'axios';
 import { MovementDisplay } from './MovementDisplay';
 import { PlaybackControls } from './PlaybackControls';
 import { TimerDisplay } from './TimerDisplay';
-import { getPlaylistByName, DEFAULT_MOVEMENT_PLAYLIST, DEFAULT_COOLDOWN_PLAYLIST } from '../../utils/musicPlaylists';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -94,10 +93,6 @@ export function ClassPlayback({
   const currentItem = items[currentIndex];
   const totalItems = items.length;
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Get appropriate playlist metadata
-  const movementPlaylist = getPlaylistByName(movementMusicStyle) || DEFAULT_MOVEMENT_PLAYLIST;
-  const cooldownPlaylist = getPlaylistByName(coolDownMusicStyle) || DEFAULT_COOLDOWN_PLAYLIST;
 
   // Fetch SoundCloud playlist via OAuth API
   useEffect(() => {
