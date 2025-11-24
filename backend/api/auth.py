@@ -46,6 +46,12 @@ class UserResponse(BaseModel):
     full_name: Optional[str] = None
     created_at: datetime
     last_login: Optional[datetime] = None
+    # Profile fields
+    age_range: Optional[str] = None
+    gender_identity: Optional[str] = None
+    country: Optional[str] = None
+    pilates_experience: Optional[str] = None
+    goals: Optional[list[str]] = None
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -93,7 +99,13 @@ async def register(user_data: UserCreate):
             "full_name": user_data.full_name,
             "hashed_password": hashed_password,
             "created_at": datetime.utcnow().isoformat(),
-            "last_login": datetime.utcnow().isoformat()
+            "last_login": datetime.utcnow().isoformat(),
+            # New profile fields
+            "age_range": user_data.age_range,
+            "gender_identity": user_data.gender_identity,
+            "country": user_data.country,
+            "pilates_experience": user_data.pilates_experience,
+            "goals": user_data.goals if user_data.goals else []
         }
 
         supabase.table("user_profiles").insert(profile_data).execute()
@@ -302,7 +314,12 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
             email=user["email"],
             full_name=user.get("full_name"),
             created_at=user["created_at"],
-            last_login=user.get("last_login")
+            last_login=user.get("last_login"),
+            age_range=user.get("age_range"),
+            gender_identity=user.get("gender_identity"),
+            country=user.get("country"),
+            pilates_experience=user.get("pilates_experience"),
+            goals=user.get("goals", [])
         )
 
     except HTTPException:

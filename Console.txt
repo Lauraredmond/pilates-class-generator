@@ -1,9 +1,4 @@
-[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
-[Error] Failed to fetch user: – V
-V
-	(anonymous function) (index-BGQ1InFF.js:132:6126)
-[Error] Failed to load resource: the server responded with a status of 401 () (refresh, line 0)
-[Warning] [blocked] The page at https://basslinemvp.netlify.app/login requested insecure content from http://ent/web-sourcemaps/api.js-4950e94a9243.map. This content was blocked and must be served over HTTPS.
+[Warning] [blocked] The page at https://basslinemvp.netlify.app/register requested insecure content from http://ent/web-sourcemaps/api.js-4950e94a9243.map. This content was blocked and must be served over HTTPS.
 
 [Error] Not allowed to request resource
 [Error] Cannot load http://ent/web-sourcemaps/api.js-4950e94a9243.map due to access control checks.

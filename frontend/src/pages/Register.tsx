@@ -1,17 +1,30 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, type RegistrationData } from '../context/AuthContext';
 
 export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [ageRange, setAgeRange] = useState('');
+  const [genderIdentity, setGenderIdentity] = useState('');
+  const [country, setCountry] = useState('');
+  const [pilatesExperience, setPilatesExperience] = useState('');
+  const [goals, setGoals] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoalToggle = (goal: string) => {
+    setGoals(prev =>
+      prev.includes(goal)
+        ? prev.filter(g => g !== goal)
+        : [...prev, goal]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +45,18 @@ export function Register() {
     setLoading(true);
 
     try {
-      await register(email, password, fullName || undefined);
+      const registrationData: RegistrationData = {
+        email,
+        password,
+        fullName: fullName || undefined,
+        ageRange: ageRange || undefined,
+        genderIdentity: genderIdentity || undefined,
+        country: country || undefined,
+        pilatesExperience: pilatesExperience || undefined,
+        goals: goals.length > 0 ? goals : undefined
+      };
+
+      await register(registrationData);
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Registration failed');
@@ -43,8 +67,11 @@ export function Register() {
 
   return (
     <div className="min-h-screen bg-burgundy flex items-center justify-center p-4">
-      <div className="bg-cream rounded-lg shadow-xl p-8 max-w-md w-full">
-        <h1 className="text-3xl font-bold text-burgundy mb-6 text-center">Create Account</h1>
+      <div className="bg-cream rounded-lg shadow-xl p-8 max-w-2xl w-full">
+        <h1 className="text-3xl font-bold text-burgundy mb-2 text-center">Create Account</h1>
+        <p className="text-charcoal/70 text-sm text-center mb-6">
+          Help us personalize your Pilates experience
+        </p>
 
         {error && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
@@ -52,73 +79,227 @@ export function Register() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="fullName" className="block text-sm font-medium text-charcoal mb-1">
-              Full Name (optional)
-            </label>
-            <input
-              id="fullName"
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
-              placeholder="Jane Doe"
-            />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-burgundy border-b border-burgundy/20 pb-2">
+              Account Information
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-charcoal mb-1">
+                  Full Name <span className="text-charcoal/50">(optional)</span>
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  placeholder="Jane Doe"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-charcoal mb-1">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  placeholder="you@example.com"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-charcoal mb-1">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  placeholder="••••••••"
+                />
+                <p className="text-xs text-charcoal/60 mt-1">At least 8 characters</p>
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-charcoal mb-1">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-charcoal mb-1">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
-              placeholder="you@example.com"
-            />
+          {/* Profile Information */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-burgundy border-b border-burgundy/20 pb-2">
+              About You <span className="text-sm font-normal text-charcoal/60">(optional but helpful)</span>
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="ageRange" className="block text-sm font-medium text-charcoal mb-1">
+                  Age Range
+                </label>
+                <select
+                  id="ageRange"
+                  value={ageRange}
+                  onChange={(e) => setAgeRange(e.target.value)}
+                  className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy bg-white"
+                >
+                  <option value="">Select age range</option>
+                  <option value="18-24">18-24</option>
+                  <option value="25-34">25-34</option>
+                  <option value="35-44">35-44</option>
+                  <option value="45-54">45-54</option>
+                  <option value="55-64">55-64</option>
+                  <option value="65+">65+</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="genderIdentity" className="block text-sm font-medium text-charcoal mb-1">
+                  Gender Identity
+                </label>
+                <select
+                  id="genderIdentity"
+                  value={genderIdentity}
+                  onChange={(e) => setGenderIdentity(e.target.value)}
+                  className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy bg-white"
+                >
+                  <option value="">Select gender identity</option>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Non-binary">Non-binary</option>
+                  <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="country" className="block text-sm font-medium text-charcoal mb-1">
+                  Country
+                </label>
+                <input
+                  id="country"
+                  type="text"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  placeholder="United States"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="pilatesExperience" className="block text-sm font-medium text-charcoal mb-1">
+                  Pilates Experience
+                </label>
+                <select
+                  id="pilatesExperience"
+                  value={pilatesExperience}
+                  onChange={(e) => setPilatesExperience(e.target.value)}
+                  className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy bg-white"
+                >
+                  <option value="">Select experience level</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                  <option value="Instructor">Instructor</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-charcoal mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
-              placeholder="••••••••"
-            />
-            <p className="text-xs text-charcoal/60 mt-1">At least 8 characters</p>
-          </div>
+          {/* Goals */}
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold text-burgundy border-b border-burgundy/20 pb-2">
+              Your Goals <span className="text-sm font-normal text-charcoal/60">(select all that apply)</span>
+            </h2>
 
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-charcoal mb-1">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
-              placeholder="••••••••"
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className="flex items-center space-x-3 p-3 border border-charcoal/20 rounded cursor-pointer hover:bg-burgundy/5 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={goals.includes('stress_relief')}
+                  onChange={() => handleGoalToggle('stress_relief')}
+                  className="w-5 h-5 text-burgundy focus:ring-burgundy border-charcoal/30 rounded"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Stress Relief</div>
+                  <div className="text-xs text-charcoal/60">Relaxation and mindfulness</div>
+                </div>
+              </label>
+
+              <label className="flex items-center space-x-3 p-3 border border-charcoal/20 rounded cursor-pointer hover:bg-burgundy/5 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={goals.includes('tone_strength')}
+                  onChange={() => handleGoalToggle('tone_strength')}
+                  className="w-5 h-5 text-burgundy focus:ring-burgundy border-charcoal/30 rounded"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Tone & Strength</div>
+                  <div className="text-xs text-charcoal/60">Build muscle and definition</div>
+                </div>
+              </label>
+
+              <label className="flex items-center space-x-3 p-3 border border-charcoal/20 rounded cursor-pointer hover:bg-burgundy/5 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={goals.includes('performance')}
+                  onChange={() => handleGoalToggle('performance')}
+                  className="w-5 h-5 text-burgundy focus:ring-burgundy border-charcoal/30 rounded"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Performance</div>
+                  <div className="text-xs text-charcoal/60">Athletic enhancement</div>
+                </div>
+              </label>
+
+              <label className="flex items-center space-x-3 p-3 border border-charcoal/20 rounded cursor-pointer hover:bg-burgundy/5 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={goals.includes('habit_building')}
+                  onChange={() => handleGoalToggle('habit_building')}
+                  className="w-5 h-5 text-burgundy focus:ring-burgundy border-charcoal/30 rounded"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Habit Building</div>
+                  <div className="text-xs text-charcoal/60">Consistent practice routine</div>
+                </div>
+              </label>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-burgundy text-cream py-3 rounded font-semibold hover:bg-burgundy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-smooth"
+            className="w-full bg-burgundy text-cream py-3 rounded font-semibold hover:bg-burgundy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-smooth mt-6"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>

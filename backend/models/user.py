@@ -19,6 +19,12 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """User creation model (registration)"""
     password: str = Field(..., min_length=8)
+    # Optional profile fields captured during registration
+    age_range: Optional[str] = Field(None, description="Age range: 18-24, 25-34, 35-44, 45-54, 55-64, 65+")
+    gender_identity: Optional[str] = Field(None, description="Optional: Female, Male, Non-binary, Prefer not to say, Other")
+    country: Optional[str] = Field(None, description="User country")
+    pilates_experience: Optional[str] = Field(None, description="Beginner, Intermediate, Advanced, Instructor")
+    goals: Optional[list[str]] = Field(default_factory=list, description="stress_relief, tone_strength, performance, habit_building")
 
 
 class UserLogin(BaseModel):
@@ -46,6 +52,12 @@ class User(UserBase):
     id: UUID
     created_at: datetime
     last_login: Optional[datetime] = None
+    # Profile fields
+    age_range: Optional[str] = None
+    gender_identity: Optional[str] = None
+    country: Optional[str] = None
+    pilates_experience: Optional[str] = None
+    goals: Optional[list[str]] = None
 
     class Config:
         from_attributes = True

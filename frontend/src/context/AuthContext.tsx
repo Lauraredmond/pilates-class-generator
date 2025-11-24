@@ -9,13 +9,30 @@ interface User {
   full_name?: string;
   created_at: string;
   last_login?: string;
+  // Profile fields
+  age_range?: string;
+  gender_identity?: string;
+  country?: string;
+  pilates_experience?: string;
+  goals?: string[];
+}
+
+interface RegistrationData {
+  email: string;
+  password: string;
+  fullName?: string;
+  ageRange?: string;
+  genderIdentity?: string;
+  country?: string;
+  pilatesExperience?: string;
+  goals?: string[];
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName?: string) => Promise<void>;
+  register: (data: RegistrationData) => Promise<void>;
   logout: () => void;
   refreshToken: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -122,12 +139,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Register
-  const register = async (email: string, password: string, fullName?: string) => {
+  const register = async (data: RegistrationData) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
-        email,
-        password,
-        full_name: fullName
+        email: data.email,
+        password: data.password,
+        full_name: data.fullName,
+        age_range: data.ageRange,
+        gender_identity: data.genderIdentity,
+        country: data.country,
+        pilates_experience: data.pilatesExperience,
+        goals: data.goals || []
       });
 
       const { access_token, refresh_token } = response.data;
@@ -233,3 +255,6 @@ export function useAuth() {
   }
   return context;
 }
+
+// Export types for use in components
+export type { RegistrationData };
