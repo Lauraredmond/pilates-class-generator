@@ -55,7 +55,7 @@ export function Settings() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await axios.put(`${API_BASE_URL}/api/auth/profile`, {
+      await axios.put(`${API_BASE_URL}/api/auth/profile`, {
         full_name: editedProfile.fullName || null,
         age_range: editedProfile.ageRange || null,
         gender_identity: editedProfile.genderIdentity || null,
@@ -69,10 +69,13 @@ export function Settings() {
       });
 
       // Update AuthContext with new user data
-      window.location.reload(); // Simple way to refresh user data
-
       setProfileSuccess('Profile updated successfully!');
       setIsEditingProfile(false);
+
+      // Reload page to refresh user data from AuthContext
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error: any) {
       setProfileError(error.response?.data?.detail || 'Failed to update profile');
     } finally {
