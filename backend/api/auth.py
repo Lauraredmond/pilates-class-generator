@@ -78,21 +78,47 @@ async def register(user_data: UserCreate):
         hashed_password = hash_password(user_data.password)
 
         # Create user in Supabase Auth
-        auth_response = supabase.auth.sign_up({
-            "email": user_data.email,
-            "password": user_data.password,
-            "options": {
-                "data": {
-                    "full_name": user_data.full_name
-                },
-                "email_redirect_to": f"{os.getenv('FRONTEND_URL', 'http://localhost:5173')}/auth/confirm"
-            }
-        })
+        try:
+            auth_response = supabase.auth.sign_up({
+                "email": user_data.email,
+                "password": user_data.password,
+                "options": {
+                    "data": {
+                        "full_name": user_data.full_name
+                    },
+                    "email_redirect_to": f"{os.getenv('FRONTEND_URL', 'http://localhost:5173')}/auth/confirm"
+                }
+            })
+        except Exception as auth_error:
+            error_message = str(auth_error).lower()
+
+            # Check for specific Supabase Auth errors
+            if "rate limit" in error_message or "too many" in error_message:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Too many registration attempts. Please try again in a few minutes."
+                )
+            elif "invalid" in error_message and "email" in error_message:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid email address format"
+                )
+            elif "weak" in error_message or "password" in error_message:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Password does not meet security requirements"
+                )
+            else:
+                # Generic Supabase Auth error
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Authentication service error: {str(auth_error)}"
+                )
 
         if not auth_response.user:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create user"
+                detail="Failed to create user - please try again"
             )
 
         user_id = auth_response.user.id
