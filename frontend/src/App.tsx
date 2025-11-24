@@ -13,6 +13,7 @@ import { AdminSoundCloud } from './pages/AdminSoundCloud';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ResetPassword } from './pages/ResetPassword';
+import { ResetPasswordConfirm } from './pages/ResetPasswordConfirm';
 import { MedicalDisclaimer } from './components/MedicalDisclaimer';
 
 function App() {
@@ -104,6 +105,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/reset-password-confirm" element={<ResetPasswordConfirm />} />
 
         {/* Protected routes (with layout) */}
         <Route path="/" element={
