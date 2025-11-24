@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export function Login() {
+  const location = useLocation();
+  const successMessage = (location.state as any)?.message;
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -30,6 +33,12 @@ export function Login() {
     <div className="min-h-screen bg-burgundy flex items-center justify-center p-4">
       <div className="bg-cream rounded-lg shadow-xl p-8 max-w-md w-full">
         <h1 className="text-3xl font-bold text-burgundy mb-6 text-center">Sign In</h1>
+
+        {successMessage && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6">
+            <p className="text-sm text-green-700">{successMessage}</p>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
