@@ -4,7 +4,7 @@ User registration, login, password reset using Supabase Auth
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 import os
@@ -42,6 +42,20 @@ class PasswordResetConfirm(BaseModel):
 
 class AccountDeleteRequest(BaseModel):
     password: str
+
+
+class ProfileUpdateRequest(BaseModel):
+    full_name: Optional[str] = None
+    age_range: Optional[str] = None
+    gender_identity: Optional[str] = None
+    country: Optional[str] = None
+    pilates_experience: Optional[str] = None
+    goals: Optional[list[str]] = None
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8)
 
 
 class UserResponse(BaseModel):
@@ -359,6 +373,144 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch user: {str(e)}"
+        )
+
+
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(
+    profile_data: ProfileUpdateRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Update user profile information
+
+    Allows users to update their profile details (name, demographics, goals)
+    Does NOT allow email changes (security reason)
+    """
+    try:
+        # Build update dict (only include fields that were provided)
+        update_data = {}
+
+        if profile_data.full_name is not None:
+            update_data["full_name"] = profile_data.full_name
+        if profile_data.age_range is not None:
+            update_data["age_range"] = profile_data.age_range
+        if profile_data.gender_identity is not None:
+            update_data["gender_identity"] = profile_data.gender_identity
+        if profile_data.country is not None:
+            update_data["country"] = profile_data.country
+        if profile_data.pilates_experience is not None:
+            update_data["pilates_experience"] = profile_data.pilates_experience
+        if profile_data.goals is not None:
+            update_data["goals"] = profile_data.goals
+
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No fields to update"
+            )
+
+        # Update user profile
+        supabase.table("user_profiles").update(update_data).eq("id", user_id).execute()
+
+        # Fetch and return updated user
+        result = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
+
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        user = result.data[0]
+
+        return UserResponse(
+            id=user["id"],
+            email=user["email"],
+            full_name=user.get("full_name"),
+            created_at=user["created_at"],
+            last_login=user.get("last_login"),
+            age_range=user.get("age_range"),
+            gender_identity=user.get("gender_identity"),
+            country=user.get("country"),
+            pilates_experience=user.get("pilates_experience"),
+            goals=user.get("goals", [])
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Profile update failed: {str(e)}"
+        )
+
+
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+async def change_password(
+    password_data: PasswordChangeRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Change user password (when logged in)
+
+    Requires current password for security
+    Updates both Supabase Auth and local database
+    """
+    try:
+        # Get user to verify current password
+        result = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
+
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        user = result.data[0]
+
+        # Verify current password
+        if not verify_password(password_data.current_password, user["hashed_password"]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Current password is incorrect"
+            )
+
+        # Validate new password is different
+        if password_data.current_password == password_data.new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must be different from current password"
+            )
+
+        # Update password in Supabase Auth
+        try:
+            supabase.auth.admin.update_user_by_id(
+                user_id,
+                {"password": password_data.new_password}
+            )
+        except Exception as auth_error:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to update password in auth service: {str(auth_error)}"
+            )
+
+        # Update hashed password in our database
+        hashed = hash_password(password_data.new_password)
+        supabase.table("user_profiles").update({
+            "hashed_password": hashed
+        }).eq("id", user_id).execute()
+
+        return {
+            "message": "Password successfully changed"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Password change failed: {str(e)}"
         )
 
 
