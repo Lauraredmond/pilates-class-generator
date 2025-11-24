@@ -80,7 +80,8 @@ async def register(user_data: UserCreate):
             "options": {
                 "data": {
                     "full_name": user_data.full_name
-                }
+                },
+                "email_redirect_to": f"{os.getenv('FRONTEND_URL', 'http://localhost:5173')}/auth/confirm"
             }
         })
 
