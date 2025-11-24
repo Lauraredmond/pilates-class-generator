@@ -22,7 +22,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false, // Disable sourcemaps in production to prevent mixed content warnings
   },
   test: {
     globals: true,

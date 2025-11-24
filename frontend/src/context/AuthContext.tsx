@@ -80,19 +80,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.data);
       setLoading(false);
     } catch (error: any) {
-      console.error('Failed to fetch user:', error);
-
       // If token is invalid, try to refresh
       if (error.response?.status === 401) {
         try {
           await refreshToken();
         } catch {
-          // Refresh failed, clear auth
+          // Refresh failed, clear auth (silently - this is expected behavior)
           clearTokens();
           setUser(null);
           setLoading(false);
         }
       } else {
+        // Only log unexpected errors
+        console.error('Failed to fetch user:', error);
         setLoading(false);
       }
     }
