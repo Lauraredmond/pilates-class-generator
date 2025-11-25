@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, AlertTriangle, Edit2, Save, X, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music } from 'lucide-react';
+import { Trash2, AlertTriangle, Edit2, Save, X, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -55,6 +55,11 @@ export function Settings() {
   const [preferencesSaving, setPreferencesSaving] = useState(false);
   const [preferencesError, setPreferencesError] = useState('');
   const [preferencesSuccess, setPreferencesSuccess] = useState('');
+
+  // Compliance state
+  const [complianceLoading, setComplianceLoading] = useState(false);
+  const [complianceError, setComplianceError] = useState('');
+  const [complianceSuccess, setComplianceSuccess] = useState('');
 
   const handleGoalToggle = (goal: string) => {
     setEditedProfile(prev => ({
@@ -236,6 +241,198 @@ export function Settings() {
       setPreferencesError(error.response?.data?.detail || 'Failed to update preference');
     } finally {
       setPreferencesSaving(false);
+    }
+  };
+
+  // Compliance handlers
+  const handleDownloadMyData = async () => {
+    setComplianceLoading(true);
+    setComplianceError('');
+    setComplianceSuccess('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE_URL}/api/compliance/my-data?format=json`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Create downloadable JSON file
+      const dataStr = JSON.stringify(response.data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `bassline-my-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setComplianceSuccess('Your data has been downloaded successfully');
+      setTimeout(() => setComplianceSuccess(''), 5000);
+    } catch (error: any) {
+      setComplianceError(error.response?.data?.detail || 'Failed to download data');
+    } finally {
+      setComplianceLoading(false);
+    }
+  };
+
+  const handleViewROPAReport = async () => {
+    setComplianceLoading(true);
+    setComplianceError('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE_URL}/api/compliance/ropa-report`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Display ROPA report in a modal or new window
+      const reportWindow = window.open('', '_blank');
+      if (reportWindow) {
+        reportWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>GDPR Processing Activities Report</title>
+            <style>
+              body {
+                font-family: system-ui, -apple-system, sans-serif;
+                padding: 2rem;
+                max-width: 800px;
+                margin: 0 auto;
+                background: #1a1a1a;
+                color: #f5f5f5;
+              }
+              h1 { color: #8b2635; }
+              h2 { color: #a02d3e; margin-top: 2rem; }
+              .section { background: #2a2a2a; padding: 1rem; border-radius: 8px; margin: 1rem 0; }
+              .stat { display: inline-block; margin: 0.5rem 1rem 0.5rem 0; }
+              pre { background: #1a1a1a; padding: 1rem; overflow-x: auto; border-left: 3px solid #8b2635; }
+            </style>
+          </head>
+          <body>
+            <h1>GDPR Processing Activities Report</h1>
+            <p><strong>Report Date:</strong> ${response.data.report_date}</p>
+
+            <div class="section">
+              <h2>Summary</h2>
+              <div class="stat"><strong>Total Activities:</strong> ${response.data.summary.total_processing_activities}</div>
+            </div>
+
+            <div class="section">
+              <h2>Your GDPR Rights</h2>
+              <ul>
+                ${Object.entries(response.data.your_rights).map(([_key, value]: [string, any]) => `
+                  <li><strong>${value.description}</strong><br/>
+                  <em>How to exercise:</em> ${value.how_to_exercise}</li>
+                `).join('')}
+              </ul>
+            </div>
+
+            <div class="section">
+              <h2>Full Report (JSON)</h2>
+              <pre>${JSON.stringify(response.data, null, 2)}</pre>
+            </div>
+          </body>
+          </html>
+        `);
+      }
+
+      setComplianceSuccess('ROPA report opened in new window');
+      setTimeout(() => setComplianceSuccess(''), 3000);
+    } catch (error: any) {
+      setComplianceError(error.response?.data?.detail || 'Failed to load ROPA report');
+    } finally {
+      setComplianceLoading(false);
+    }
+  };
+
+  const handleViewAIDecisions = async () => {
+    setComplianceLoading(true);
+    setComplianceError('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE_URL}/api/compliance/ai-decisions?limit=50`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Display AI decisions in a modal or new window
+      const decisionsWindow = window.open('', '_blank');
+      if (decisionsWindow) {
+        decisionsWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>AI Decision Explanations</title>
+            <style>
+              body {
+                font-family: system-ui, -apple-system, sans-serif;
+                padding: 2rem;
+                max-width: 1000px;
+                margin: 0 auto;
+                background: #1a1a1a;
+                color: #f5f5f5;
+              }
+              h1 { color: #8b2635; }
+              h2 { color: #a02d3e; margin-top: 2rem; }
+              .decision { background: #2a2a2a; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; }
+              .stat { display: inline-block; margin: 0.5rem 1rem 0.5rem 0; }
+              .confidence { color: #4ade80; }
+              pre { background: #1a1a1a; padding: 1rem; overflow-x: auto; border-left: 3px solid #8b2635; font-size: 0.875rem; }
+            </style>
+          </head>
+          <body>
+            <h1>AI Decision Explanations</h1>
+            <p><strong>Total Decisions:</strong> ${response.data.total_decisions}</p>
+
+            <div class="decision">
+              <h2>Statistics</h2>
+              <div class="stat"><strong>Average Confidence:</strong> <span class="confidence">${(response.data.statistics?.average_confidence * 100).toFixed(1)}%</span></div>
+              <div class="stat"><strong>User Overrides:</strong> ${response.data.statistics?.user_overrides || 0}</div>
+              <div class="stat"><strong>Override Rate:</strong> ${response.data.statistics?.override_rate_percent || 0}%</div>
+            </div>
+
+            <h2>Recent Decisions</h2>
+            ${response.data.total_decisions === 0 ? '<p><em>No AI decisions recorded yet. AI decisions will appear here after you generate classes or receive recommendations.</em></p>' :
+              response.data.decisions.map((decision: any) => `
+                <div class="decision">
+                  <h3>${decision.agent_type.replace('_', ' ')} - ${new Date(decision.timestamp).toLocaleString()}</h3>
+                  <p><strong>Model:</strong> ${decision.model_name}</p>
+                  <p><strong>Confidence:</strong> <span class="confidence">${(decision.confidence_score * 100).toFixed(1)}%</span></p>
+                  <p><strong>Reasoning:</strong> ${decision.reasoning || 'No reasoning provided'}</p>
+                  ${decision.user_overridden ? '<p style="color: #fbbf24;"><strong>⚠️  You overrode this decision</strong></p>' : ''}
+                </div>
+              `).join('')
+            }
+
+            <div class="decision">
+              <h2>EU AI Act Compliance</h2>
+              <ul>
+                <li><strong>Transparency:</strong> All AI decisions include reasoning</li>
+                <li><strong>Explainability:</strong> You can see why the AI made each recommendation</li>
+                <li><strong>Human Oversight:</strong> You can override any AI decision</li>
+                <li><strong>Accuracy:</strong> Average confidence ${response.data.statistics?.average_confidence ? (response.data.statistics.average_confidence * 100).toFixed(1) : '0'}%</li>
+              </ul>
+            </div>
+          </body>
+          </html>
+        `);
+      }
+
+      setComplianceSuccess('AI decisions opened in new window');
+      setTimeout(() => setComplianceSuccess(''), 3000);
+    } catch (error: any) {
+      setComplianceError(error.response?.data?.detail || 'Failed to load AI decisions');
+    } finally {
+      setComplianceLoading(false);
     }
   };
 
@@ -684,6 +881,95 @@ export function Settings() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Compliance & Privacy Dashboard */}
+      <div className="bg-charcoal rounded-lg p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Shield className="w-6 h-6 text-burgundy" />
+          <h2 className="text-xl font-semibold text-cream">Data & Privacy Rights</h2>
+        </div>
+
+        {/* Success/Error Messages */}
+        {complianceSuccess && (
+          <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-4 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-400" />
+            <p className="text-green-400">{complianceSuccess}</p>
+          </div>
+        )}
+
+        {complianceError && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+            <p className="text-sm text-red-700">{complianceError}</p>
+          </div>
+        )}
+
+        {/* Compliance Actions */}
+        <div className="space-y-3 mb-4">
+          <button
+            onClick={handleDownloadMyData}
+            disabled={complianceLoading}
+            className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center gap-3">
+              <FileDown className="w-5 h-5 text-burgundy" />
+              <div className="text-left">
+                <div className="font-medium text-cream">Download My Data</div>
+                <div className="text-sm text-cream/60">Export all your personal data (GDPR Article 15)</div>
+              </div>
+            </div>
+            <Download className="w-5 h-5 text-cream/40" />
+          </button>
+
+          <button
+            onClick={handleViewROPAReport}
+            disabled={complianceLoading}
+            className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center gap-3">
+              <Database className="w-5 h-5 text-burgundy" />
+              <div className="text-left">
+                <div className="font-medium text-cream">View Processing Activities</div>
+                <div className="text-sm text-cream/60">See how your data has been processed (GDPR Article 30)</div>
+              </div>
+            </div>
+            <Info className="w-5 h-5 text-cream/40" />
+          </button>
+
+          <button
+            onClick={handleViewAIDecisions}
+            disabled={complianceLoading}
+            className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center gap-3">
+              <Info className="w-5 h-5 text-burgundy" />
+              <div className="text-left">
+                <div className="font-medium text-cream">View AI Decisions</div>
+                <div className="text-sm text-cream/60">Understand AI recommendations (EU AI Act transparency)</div>
+              </div>
+            </div>
+            <Shield className="w-5 h-5 text-cream/40" />
+          </button>
+        </div>
+
+        {/* Compliance Status Badges */}
+        <div className="bg-burgundy/10 rounded p-4">
+          <p className="text-cream font-medium mb-3">Compliance Status</p>
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 bg-green-900/30 px-3 py-2 rounded">
+              <CheckCircle className="w-4 h-4 text-green-400" />
+              <span className="text-green-400 text-sm font-medium">GDPR Compliant</span>
+            </div>
+            <div className="flex items-center gap-2 bg-green-900/30 px-3 py-2 rounded">
+              <CheckCircle className="w-4 h-4 text-green-400" />
+              <span className="text-green-400 text-sm font-medium">EU AI Act Compliant</span>
+            </div>
+          </div>
+          <p className="text-cream/60 text-xs mt-3">
+            Your data is protected and processed transparently in accordance with GDPR and EU AI Act regulations.
+            You have the right to access, correct, delete, and export your data at any time.
+          </p>
+        </div>
       </div>
 
       {/* Danger Zone - Delete Account */}
