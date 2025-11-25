@@ -110,7 +110,8 @@ async def register(user_data: UserCreate):
             if "rate limit" in error_message or "too many" in error_message:
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Too many registration attempts. Please try again in a few minutes."
+                    detail="Too many registration attempts. Supabase has rate-limited this email or IP address. Please try again in 1-2 hours, or try a different email address. If this persists, contact support.",
+                    headers={"Retry-After": "3600"}  # 1 hour in seconds
                 )
             elif "invalid" in error_message and "email" in error_message:
                 raise HTTPException(
@@ -292,7 +293,17 @@ async def request_password_reset(request: PasswordResetRequest):
         }
 
     except Exception as e:
-        # Don't reveal errors to prevent email enumeration
+        error_message = str(e).lower()
+
+        # Check for rate limit specifically
+        if "rate limit" in error_message or "too many" in error_message:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many password reset attempts. Please try again in 1-2 hours.",
+                headers={"Retry-After": "3600"}
+            )
+
+        # Don't reveal other errors to prevent email enumeration
         return {
             "message": "If the email exists, a password reset link has been sent"
         }
