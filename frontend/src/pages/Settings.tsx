@@ -606,13 +606,32 @@ export function Settings() {
               <input
                 type="number"
                 value={preferences.default_class_duration}
-                onChange={(e) => updatePreference('default_class_duration', parseInt(e.target.value))}
+                onChange={(e) => {
+                  // Update local state immediately for smooth typing
+                  const value = e.target.value;
+                  if (value === '') return; // Don't update if empty
+                  const numValue = parseInt(value);
+                  if (!isNaN(numValue) && numValue >= 10 && numValue <= 120) {
+                    setPreferences({ ...preferences, default_class_duration: numValue });
+                  }
+                }}
+                onBlur={(e) => {
+                  // Only send to server when user finishes editing
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value >= 10 && value <= 120) {
+                    updatePreference('default_class_duration', value);
+                  } else {
+                    // Reset to previous valid value if invalid
+                    setPreferences({ ...preferences, default_class_duration: preferences.default_class_duration });
+                  }
+                }}
                 disabled={preferencesSaving}
                 min={10}
                 max={120}
+                step={5}
                 className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
               />
-              <p className="text-xs text-cream/60 mt-1">Between 10 and 120 minutes</p>
+              <p className="text-xs text-cream/60 mt-1">Between 10 and 120 minutes (use up/down arrows or type directly)</p>
             </div>
 
             <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
