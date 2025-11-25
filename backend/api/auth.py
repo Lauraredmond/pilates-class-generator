@@ -3,7 +3,7 @@ Authentication API routes
 User registration, login, password reset using Supabase Auth
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
@@ -19,6 +19,7 @@ from utils.auth import (
     refresh_access_token,
     get_current_user_id
 )
+from middleware.pii_logger import PIILogger
 
 load_dotenv()
 
@@ -106,7 +107,7 @@ class UserResponse(BaseModel):
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate):
+async def register(user_data: UserCreate, request: Request):
     """
     Register a new user with email and password
 
@@ -208,6 +209,9 @@ async def register(user_data: UserCreate):
         }
 
         supabase.table("user_preferences").insert(preferences_data).execute()
+
+        # Log PII transaction for GDPR compliance
+        await PIILogger.log_registration(user_id, request, profile_data)
 
         # Generate JWT tokens
         tokens = create_token_pair(user_id)
@@ -388,7 +392,7 @@ async def confirm_password_reset(reset_data: PasswordResetConfirm):
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user(user_id: str = Depends(get_current_user_id)):
+async def get_current_user(request: Request, user_id: str = Depends(get_current_user_id)):
     """
     Get current authenticated user's profile
 
@@ -404,6 +408,9 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
             )
 
         user = result.data[0]
+
+        # Log PII read for GDPR compliance
+        await PIILogger.log_profile_read(user_id, request, user)
 
         return UserResponse(
             id=user["id"],
@@ -430,6 +437,7 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
 @router.put("/profile", response_model=UserResponse)
 async def update_profile(
     profile_data: ProfileUpdateRequest,
+    request: Request,
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -463,6 +471,9 @@ async def update_profile(
 
         # Update user profile
         supabase.table("user_profiles").update(update_data).eq("id", user_id).execute()
+
+        # Log PII update for GDPR compliance
+        await PIILogger.log_profile_update(user_id, request, update_data)
 
         # Fetch and return updated user
         result = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
@@ -568,6 +579,7 @@ async def change_password(
 @router.delete("/account", status_code=status.HTTP_200_OK)
 async def delete_account(
     delete_request: AccountDeleteRequest,
+    request: Request,
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -600,6 +612,9 @@ async def delete_account(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect password"
             )
+
+        # Log account deletion for GDPR compliance (before deletion)
+        await PIILogger.log_account_deletion(user_id, request)
 
         # Delete from Supabase Auth
         try:

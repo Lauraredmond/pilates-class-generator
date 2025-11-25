@@ -10,7 +10,7 @@ from loguru import logger
 import time
 
 # Import routers
-from api import movements, agents, classes, analytics, soundcloud_auth, soundcloud_api, auth, users
+from api import movements, agents, classes, analytics, soundcloud_auth, soundcloud_api, auth, users, compliance
 
 app = FastAPI(
     title="Pilates Class Planner API",
@@ -85,6 +85,7 @@ app.include_router(soundcloud_auth.router)  # SoundCloud OAuth (has its own pref
 app.include_router(soundcloud_api.router)  # SoundCloud API (has its own prefix)
 app.include_router(auth.router)  # Auth routes (has its own prefix)
 app.include_router(users.router)  # User routes (has its own prefix)
+app.include_router(compliance.router, tags=["Compliance"])  # GDPR & AI Act compliance
 
 
 # Global exception handler
