@@ -106,11 +106,16 @@ async def register(user_data: UserCreate):
         except Exception as auth_error:
             error_message = str(auth_error).lower()
 
+            # Log the full error for debugging
+            print(f"[DEBUG] Supabase Auth Error: {str(auth_error)}")
+            print(f"[DEBUG] Error type: {type(auth_error)}")
+            print(f"[DEBUG] Error attributes: {dir(auth_error)}")
+
             # Check for specific Supabase Auth errors
-            if "rate limit" in error_message or "too many" in error_message:
+            if "rate limit" in error_message or "too many" in error_message or "email_rate_limit" in error_message:
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Too many registration attempts. Supabase has rate-limited this email or IP address. Please try again in 1-2 hours, or try a different email address. If this persists, contact support.",
+                    detail=f"Supabase rate limit exceeded. Original error: {str(auth_error)}. Please try again in 1-2 hours, or try a different email address.",
                     headers={"Retry-After": "3600"}  # 1 hour in seconds
                 )
             elif "invalid" in error_message and "email" in error_message:
@@ -124,7 +129,7 @@ async def register(user_data: UserCreate):
                     detail="Password does not meet security requirements"
                 )
             else:
-                # Generic Supabase Auth error
+                # Generic Supabase Auth error - return full details for debugging
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Authentication service error: {str(auth_error)}"
