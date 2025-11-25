@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, AlertTriangle, Edit2, Save, X, Key, CheckCircle } from 'lucide-react';
+import { Trash2, AlertTriangle, Edit2, Save, X, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -38,6 +38,23 @@ export function Settings() {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Preferences state
+  const [preferences, setPreferences] = useState({
+    strictness_level: 'guided',
+    default_class_duration: 60,
+    enable_mcp_research: true,
+    email_notifications: true,
+    class_reminders: true,
+    weekly_summary: false,
+    analytics_enabled: true,
+    data_sharing_enabled: false,
+    music_preferences: {} as Record<string, any>
+  });
+  const [preferencesLoading, setPreferencesLoading] = useState(true);
+  const [preferencesSaving, setPreferencesSaving] = useState(false);
+  const [preferencesError, setPreferencesError] = useState('');
+  const [preferencesSuccess, setPreferencesSuccess] = useState('');
 
   const handleGoalToggle = (goal: string) => {
     setEditedProfile(prev => ({
@@ -167,6 +184,58 @@ export function Settings() {
     } catch (error: any) {
       setDeleteError(error.response?.data?.detail || 'Failed to delete account');
       setIsDeleting(false);
+    }
+  };
+
+  // Fetch preferences on component mount
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await axios.get(`${API_BASE_URL}/api/auth/preferences`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        setPreferences(response.data);
+      } catch (error: any) {
+        console.error('Failed to fetch preferences:', error);
+        setPreferencesError('Failed to load preferences');
+      } finally {
+        setPreferencesLoading(false);
+      }
+    };
+
+    fetchPreferences();
+  }, []);
+
+  // Update a single preference
+  const updatePreference = async (key: string, value: any) => {
+    setPreferencesSaving(true);
+    setPreferencesError('');
+    setPreferencesSuccess('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const updateData = { [key]: value };
+
+      const response = await axios.put(
+        `${API_BASE_URL}/api/auth/preferences`,
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      setPreferences(response.data);
+      setPreferencesSuccess('Preference updated successfully');
+      setTimeout(() => setPreferencesSuccess(''), 3000);
+    } catch (error: any) {
+      setPreferencesError(error.response?.data?.detail || 'Failed to update preference');
+    } finally {
+      setPreferencesSaving(false);
     }
   };
 
@@ -390,13 +459,212 @@ export function Settings() {
         </button>
       </div>
 
-      {/* Preferences (Coming Soon) */}
+      {/* Preferences Success/Error Messages */}
+      {preferencesSuccess && (
+        <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-6 flex items-center gap-2">
+          <CheckCircle className="w-5 h-5 text-green-400" />
+          <p className="text-green-400">{preferencesSuccess}</p>
+        </div>
+      )}
+
+      {preferencesError && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+          <p className="text-sm text-red-700">{preferencesError}</p>
+        </div>
+      )}
+
+      {/* Notification Preferences */}
       <div className="bg-charcoal rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-cream mb-4">Preferences</h2>
-        <p className="text-cream/70">
-          Configure AI strictness, music preferences, research sources, and more.
-        </p>
-        <p className="text-cream/50 text-sm mt-2">Coming soon!</p>
+        <div className="flex items-center gap-3 mb-4">
+          <Bell className="w-6 h-6 text-burgundy" />
+          <h2 className="text-xl font-semibold text-cream">Notification Preferences</h2>
+        </div>
+
+        {preferencesLoading ? (
+          <p className="text-cream/50">Loading preferences...</p>
+        ) : (
+          <div className="space-y-4">
+            <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+              <div>
+                <div className="font-medium text-cream">Email Notifications</div>
+                <div className="text-sm text-cream/60">Receive emails about account activity</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={preferences.email_notifications}
+                onChange={(e) => updatePreference('email_notifications', e.target.checked)}
+                disabled={preferencesSaving}
+                className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+              <div>
+                <div className="font-medium text-cream">Class Reminders</div>
+                <div className="text-sm text-cream/60">Get notified before scheduled classes</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={preferences.class_reminders}
+                onChange={(e) => updatePreference('class_reminders', e.target.checked)}
+                disabled={preferencesSaving}
+                className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+              <div>
+                <div className="font-medium text-cream">Weekly Summary</div>
+                <div className="text-sm text-cream/60">Receive a weekly summary of your progress</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={preferences.weekly_summary}
+                onChange={(e) => updatePreference('weekly_summary', e.target.checked)}
+                disabled={preferencesSaving}
+                className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+              />
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* Privacy Settings */}
+      <div className="bg-charcoal rounded-lg p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Shield className="w-6 h-6 text-burgundy" />
+          <h2 className="text-xl font-semibold text-cream">Privacy Settings</h2>
+        </div>
+
+        {preferencesLoading ? (
+          <p className="text-cream/50">Loading preferences...</p>
+        ) : (
+          <div className="space-y-4">
+            <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+              <div>
+                <div className="font-medium text-cream">Analytics</div>
+                <div className="text-sm text-cream/60">Help us improve by sharing anonymous usage data</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={preferences.analytics_enabled}
+                onChange={(e) => updatePreference('analytics_enabled', e.target.checked)}
+                disabled={preferencesSaving}
+                className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+              <div>
+                <div className="font-medium text-cream">Data Sharing</div>
+                <div className="text-sm text-cream/60">Allow sharing data with third-party services</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={preferences.data_sharing_enabled}
+                onChange={(e) => updatePreference('data_sharing_enabled', e.target.checked)}
+                disabled={preferencesSaving}
+                className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+              />
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* AI Settings */}
+      <div className="bg-charcoal rounded-lg p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <SettingsIcon className="w-6 h-6 text-burgundy" />
+          <h2 className="text-xl font-semibold text-cream">AI Class Generation</h2>
+        </div>
+
+        {preferencesLoading ? (
+          <p className="text-cream/50">Loading preferences...</p>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-cream mb-2">AI Strictness Level</label>
+              <select
+                value={preferences.strictness_level}
+                onChange={(e) => updatePreference('strictness_level', e.target.value)}
+                disabled={preferencesSaving}
+                className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+              >
+                <option value="guided">Guided - AI suggests with flexibility</option>
+                <option value="strict">Strict - AI follows classical rules closely</option>
+                <option value="autonomous">Autonomous - AI has full creative control</option>
+              </select>
+              <p className="text-xs text-cream/60 mt-1">
+                {preferences.strictness_level === 'guided' && 'AI will suggest movements while allowing you to make changes'}
+                {preferences.strictness_level === 'strict' && 'AI will strictly follow classical Pilates sequencing rules'}
+                {preferences.strictness_level === 'autonomous' && 'AI will generate complete classes with full creative freedom'}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-cream mb-2">Default Class Duration (minutes)</label>
+              <input
+                type="number"
+                value={preferences.default_class_duration}
+                onChange={(e) => updatePreference('default_class_duration', parseInt(e.target.value))}
+                disabled={preferencesSaving}
+                min={10}
+                max={120}
+                className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+              />
+              <p className="text-xs text-cream/60 mt-1">Between 10 and 120 minutes</p>
+            </div>
+
+            <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+              <div>
+                <div className="font-medium text-cream">Enable Web Research</div>
+                <div className="text-sm text-cream/60">Allow AI to research movement cues and modifications online</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={preferences.enable_mcp_research}
+                onChange={(e) => updatePreference('enable_mcp_research', e.target.checked)}
+                disabled={preferencesSaving}
+                className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+              />
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* Music Preferences */}
+      <div className="bg-charcoal rounded-lg p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Music className="w-6 h-6 text-burgundy" />
+          <h2 className="text-xl font-semibold text-cream">Music Preferences</h2>
+        </div>
+
+        {preferencesLoading ? (
+          <p className="text-cream/50">Loading preferences...</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-burgundy/10 rounded p-4">
+              <p className="text-cream font-medium mb-2">Classical Music Styles</p>
+              <p className="text-cream/60 text-sm mb-3">
+                Music integration with Musopen and FreePD will be available in Session 10.
+                Choose your preferred classical music periods for class accompaniment.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {['Baroque', 'Classical', 'Romantic', 'Impressionist', 'Modern', 'Contemporary', 'Celtic'].map((style) => (
+                  <label key={style} className="flex items-center space-x-2 p-2 bg-burgundy/20 rounded cursor-pointer hover:bg-burgundy/30 transition-colors">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+                      disabled={true}
+                    />
+                    <span className="text-cream text-sm">{style}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-cream/50 text-xs mt-3 italic">Music preferences will be functional in Session 10</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Danger Zone - Delete Account */}

@@ -58,6 +58,39 @@ class PasswordChangeRequest(BaseModel):
     new_password: str = Field(..., min_length=8)
 
 
+class PreferencesUpdateRequest(BaseModel):
+    strictness_level: Optional[str] = None  # guided, strict, autonomous
+    default_class_duration: Optional[int] = None  # in minutes
+    favorite_movements: Optional[list[str]] = None
+    music_preferences: Optional[dict] = None
+    research_sources: Optional[list[str]] = None
+    enable_mcp_research: Optional[bool] = None
+    # Notification preferences
+    email_notifications: Optional[bool] = None
+    class_reminders: Optional[bool] = None
+    weekly_summary: Optional[bool] = None
+    # Privacy settings
+    analytics_enabled: Optional[bool] = None
+    data_sharing_enabled: Optional[bool] = None
+
+
+class PreferencesResponse(BaseModel):
+    user_id: str
+    strictness_level: str
+    default_class_duration: int
+    favorite_movements: list[str]
+    music_preferences: dict
+    research_sources: list[str]
+    enable_mcp_research: bool
+    # Notification preferences
+    email_notifications: bool
+    class_reminders: bool
+    weekly_summary: bool
+    # Privacy settings
+    analytics_enabled: bool
+    data_sharing_enabled: bool
+
+
 class UserResponse(BaseModel):
     id: str
     email: str
@@ -164,7 +197,14 @@ async def register(user_data: UserCreate):
             "favorite_movements": [],
             "music_preferences": {},
             "research_sources": [],
-            "enable_mcp_research": True
+            "enable_mcp_research": True,
+            # Notification preferences (default: all enabled)
+            "email_notifications": True,
+            "class_reminders": True,
+            "weekly_summary": False,
+            # Privacy settings (default: analytics on, sharing off)
+            "analytics_enabled": True,
+            "data_sharing_enabled": False
         }
 
         supabase.table("user_preferences").insert(preferences_data).execute()
@@ -590,4 +630,147 @@ async def delete_account(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Account deletion failed: {str(e)}"
+        )
+
+
+@router.get("/preferences", response_model=PreferencesResponse)
+async def get_preferences(user_id: str = Depends(get_current_user_id)):
+    """
+    Get user preferences
+
+    Returns all user preferences including AI settings, notifications, and privacy
+    """
+    try:
+        result = supabase.table("user_preferences").select("*").eq("user_id", user_id).execute()
+
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User preferences not found"
+            )
+
+        prefs = result.data[0]
+
+        return PreferencesResponse(
+            user_id=prefs["user_id"],
+            strictness_level=prefs.get("strictness_level", "guided"),
+            default_class_duration=prefs.get("default_class_duration", 60),
+            favorite_movements=prefs.get("favorite_movements", []),
+            music_preferences=prefs.get("music_preferences", {}),
+            research_sources=prefs.get("research_sources", []),
+            enable_mcp_research=prefs.get("enable_mcp_research", True),
+            email_notifications=prefs.get("email_notifications", True),
+            class_reminders=prefs.get("class_reminders", True),
+            weekly_summary=prefs.get("weekly_summary", False),
+            analytics_enabled=prefs.get("analytics_enabled", True),
+            data_sharing_enabled=prefs.get("data_sharing_enabled", False)
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch preferences: {str(e)}"
+        )
+
+
+@router.put("/preferences", response_model=PreferencesResponse)
+async def update_preferences(
+    preferences_data: PreferencesUpdateRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Update user preferences
+
+    Allows users to update their AI settings, notifications, privacy, and music preferences
+    """
+    try:
+        # Build update dict (only include fields that were provided)
+        update_data = {}
+
+        if preferences_data.strictness_level is not None:
+            if preferences_data.strictness_level not in ["guided", "strict", "autonomous"]:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Strictness level must be 'guided', 'strict', or 'autonomous'"
+                )
+            update_data["strictness_level"] = preferences_data.strictness_level
+
+        if preferences_data.default_class_duration is not None:
+            if preferences_data.default_class_duration < 10 or preferences_data.default_class_duration > 120:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Class duration must be between 10 and 120 minutes"
+                )
+            update_data["default_class_duration"] = preferences_data.default_class_duration
+
+        if preferences_data.favorite_movements is not None:
+            update_data["favorite_movements"] = preferences_data.favorite_movements
+
+        if preferences_data.music_preferences is not None:
+            update_data["music_preferences"] = preferences_data.music_preferences
+
+        if preferences_data.research_sources is not None:
+            update_data["research_sources"] = preferences_data.research_sources
+
+        if preferences_data.enable_mcp_research is not None:
+            update_data["enable_mcp_research"] = preferences_data.enable_mcp_research
+
+        if preferences_data.email_notifications is not None:
+            update_data["email_notifications"] = preferences_data.email_notifications
+
+        if preferences_data.class_reminders is not None:
+            update_data["class_reminders"] = preferences_data.class_reminders
+
+        if preferences_data.weekly_summary is not None:
+            update_data["weekly_summary"] = preferences_data.weekly_summary
+
+        if preferences_data.analytics_enabled is not None:
+            update_data["analytics_enabled"] = preferences_data.analytics_enabled
+
+        if preferences_data.data_sharing_enabled is not None:
+            update_data["data_sharing_enabled"] = preferences_data.data_sharing_enabled
+
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No fields to update"
+            )
+
+        # Update preferences
+        supabase.table("user_preferences").update(update_data).eq("user_id", user_id).execute()
+
+        # Fetch and return updated preferences
+        result = supabase.table("user_preferences").select("*").eq("user_id", user_id).execute()
+
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User preferences not found"
+            )
+
+        prefs = result.data[0]
+
+        return PreferencesResponse(
+            user_id=prefs["user_id"],
+            strictness_level=prefs.get("strictness_level", "guided"),
+            default_class_duration=prefs.get("default_class_duration", 60),
+            favorite_movements=prefs.get("favorite_movements", []),
+            music_preferences=prefs.get("music_preferences", {}),
+            research_sources=prefs.get("research_sources", []),
+            enable_mcp_research=prefs.get("enable_mcp_research", True),
+            email_notifications=prefs.get("email_notifications", True),
+            class_reminders=prefs.get("class_reminders", True),
+            weekly_summary=prefs.get("weekly_summary", False),
+            analytics_enabled=prefs.get("analytics_enabled", True),
+            data_sharing_enabled=prefs.get("data_sharing_enabled", False)
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Preferences update failed: {str(e)}"
         )
