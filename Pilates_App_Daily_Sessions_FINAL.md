@@ -1554,12 +1554,46 @@ Build compliance dashboard for EU AI Act requirements.
 - Quality scores
 - Trust indicators
 
+**Step 5: AI Compliance System End-to-End Testing (Deferred from Session 8)**
+- **Context**: Compliance infrastructure built in Session 8, but testing deferred until AI behaviors are active
+- **Prerequisites**: Session 11 (OpenAI GPT Integration) must be complete - AI agents actively making decisions
+- **What to Test**:
+  - AI decision logging with real AI operations
+    - Verify all agent decisions logged to `ai_decision_log` table
+    - Check input parameters, outputs, reasoning, confidence scores
+    - Test with sequence, music, and meditation agents
+  - Bias monitoring with actual model outputs
+    - Run model drift detection scripts
+    - Verify fairness metrics tracking
+    - Test alert system for bias detection
+  - Model drift detection with real data
+    - Check historical comparison charts
+    - Verify drift threshold alerts working
+    - Test with varied input patterns
+  - GDPR data export functionality
+    - Test `/api/compliance/my-data` endpoint with valid JWT
+    - Verify all user compliance data exported correctly
+    - Test ROPA audit log access
+    - Verify AI decision history export
+- **Known Issue to Fix**: GDPR Article 15 data download (HTTP 500 error)
+  - Check Render backend logs for error details
+  - Verify Row-Level Security (RLS) policies on compliance tables
+  - Test endpoint authentication flow
+  - Fix PIILogger.log_data_export() if needed
+- **Integration Testing**:
+  - Generate 10 test classes with AI
+  - Verify each class generation logged
+  - Check bias metrics after generation
+  - Export compliance data and verify completeness
+
 ### Expected Outputs
 - Compliance dashboard page
 - Agent decision log viewer
 - Bias monitoring charts
 - Export functionality
 - Source attribution display
+- **AI compliance testing report** (new)
+- **GDPR data export fix** (addresses Session 8 known issue)
 
 ### Success Criteria
 - [ ] All AI decisions logged and visible
@@ -1567,6 +1601,8 @@ Build compliance dashboard for EU AI Act requirements.
 - [ ] Export works correctly
 - [ ] Source attribution complete
 - [ ] EU AI Act compliant
+- [ ] AI compliance system tested end-to-end with real AI operations
+- [ ] GDPR Article 15 data download working (500 error fixed)
 
 ---
 

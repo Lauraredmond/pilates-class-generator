@@ -22,6 +22,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - EU AI Act and GDPR compliant from day 1
 - PII tokenization for all user data
 
+**Design Plan Source of Truth:**
+- **`/Pilates_App_Daily_Sessions_FINAL.md`** is the central source of truth for the development plan
+- This file in the MVP2 folder defines all sessions, features, and implementation approach
+- Consult it for session-by-session guidance, features roadmap, and architectural decisions
+- When planning future work or understanding project scope, refer to this document first
+
 ---
 
 ## 🚨 CRITICAL SECURITY RULES 🚨
