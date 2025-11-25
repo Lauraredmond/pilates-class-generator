@@ -106,17 +106,12 @@ async def register(user_data: UserCreate):
         except Exception as auth_error:
             error_message = str(auth_error).lower()
 
-            # Log the full error for debugging
-            print(f"[DEBUG] Supabase Auth Error: {str(auth_error)}")
-            print(f"[DEBUG] Error type: {type(auth_error)}")
-            print(f"[DEBUG] Error attributes: {dir(auth_error)}")
-
             # Check for specific Supabase Auth errors
             if "rate limit" in error_message or "too many" in error_message or "email_rate_limit" in error_message:
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail=f"Supabase rate limit exceeded. Original error: {str(auth_error)}. Please try again in 1-2 hours, or try a different email address.",
-                    headers={"Retry-After": "3600"}  # 1 hour in seconds
+                    detail="Registration temporarily unavailable due to Supabase free tier email limits. Please try again in 24-48 hours, or contact support for immediate access. We apologize for the inconvenience.",
+                    headers={"Retry-After": "7200"}  # 2 hours in seconds
                 )
             elif "invalid" in error_message and "email" in error_message:
                 raise HTTPException(
