@@ -1,7 +1,10 @@
 -- ROPA Audit Log - GDPR Article 30 Compliance
 -- Records all PII processing activities
 
-CREATE TABLE IF NOT EXISTS ropa_audit_log (
+-- Drop existing table if it exists (clean slate)
+DROP TABLE IF EXISTS ropa_audit_log CASCADE;
+
+CREATE TABLE ropa_audit_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     user_id UUID,

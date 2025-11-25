@@ -1,7 +1,10 @@
 -- AI Decision Log - EU AI Act Compliance
 -- Records all AI decisions with reasoning and explainability
 
-CREATE TABLE IF NOT EXISTS ai_decision_log (
+-- Drop existing table if it exists (clean slate)
+DROP TABLE IF EXISTS ai_decision_log CASCADE;
+
+CREATE TABLE ai_decision_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     user_id UUID,

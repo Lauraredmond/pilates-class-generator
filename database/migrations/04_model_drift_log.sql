@@ -1,7 +1,10 @@
 -- Model Drift Detection - EU AI Act Compliance
 -- Monitors AI model performance over time
 
-CREATE TABLE IF NOT EXISTS model_drift_log (
+-- Drop existing table if it exists (clean slate)
+DROP TABLE IF EXISTS model_drift_log CASCADE;
+
+CREATE TABLE model_drift_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 

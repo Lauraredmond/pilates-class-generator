@@ -1,7 +1,10 @@
 -- Bias Monitoring - EU AI Act Compliance
 -- Tracks algorithmic bias across demographics
 
-CREATE TABLE IF NOT EXISTS bias_monitoring (
+-- Drop existing table if it exists (clean slate)
+DROP TABLE IF EXISTS bias_monitoring CASCADE;
+
+CREATE TABLE bias_monitoring (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
