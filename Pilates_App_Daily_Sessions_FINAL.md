@@ -1517,237 +1517,56 @@ Create complete test suite for frontend and backend.
 
 ---
 
-## **SESSION 11 (labeled 13): Music Integration (ESSENTIAL FEATURE)** - ⚠️ IN PROGRESS
-
-### Status: PARTIALLY COMPLETE - Troubleshooting Required
-
-**Session Date:** 2025-11-21
-**Git Commits:** e7449f5, ff55d54, e2c7e90, 32631ab, 68348b2
-**Current State:** Integration code complete, but playback not working
+## **SESSION 13: Compliance Dashboard & EU AI Act**
 
 ### Role
-You are an audio integration specialist and compliance expert.
+You are a compliance specialist with expertise in EU AI Act requirements.
 
 ### Context
-Day 11. Core app functional. Music integration is ESSENTIAL to the offering - not optional. SoundCloud Widget API integration implemented but experiencing playback issues.
+Day 13. Core app functional. Implement compliance dashboard for AI decision transparency.
 
-### What Was Completed ✅
-
-1. **SoundCloud Widget API Integration**
-   - Added Widget API script to `frontend/index.html`
-   - Created `frontend/src/utils/musicPlaylists.ts` with 9 playlist configurations
-   - Integrated hidden iframe into ClassPlayback component
-   - Added TypeScript type definitions for Widget API
-   - Implemented pause/resume sync with class timer
-   - Added visual status indicator ("Music Loading" → "Music Playing")
-
-2. **Documentation**
-   - Created MUSIC_INTEGRATION_SETUP.md with setup instructions
-   - Created MUSIC_DEBUG_STEPS.md for troubleshooting
-
-3. **Files Modified**
-   - ✅ `frontend/src/utils/musicPlaylists.ts` (NEW)
-   - ✅ `frontend/src/components/class-playback/ClassPlayback.tsx` (MODIFIED)
-   - ✅ `frontend/index.html` (MODIFIED)
-   - ✅ `frontend/src/pages/ClassBuilder.tsx` (MODIFIED - added version indicator for testing)
-
-### Current Issue ❌
-
-**Problem:** Music integration shows "Music Playing" but no audio playback occurs
-
-**Symptoms:**
-- Widget loads: "SoundCloud widget ready" ✅
-- Play triggered: "Music play triggered" ✅
-- Console errors: InvalidStateError from SoundCloud widget canvas drawing ❌
-- No actual audio playback ❌
-
-**Debugging Completed:**
-- ✅ Tested with user's playlist (8 tracks, public, Enya/classical music)
-- ✅ Tested with known-working public playlists (Lofi Girl)
-- ✅ Tested with SoundCloud API track format (track ID 293)
-- ❌ All tests result in same InvalidStateError
-
-**Root Cause Hypothesis:**
-- Tracks may have embedding disabled by copyright holders (Enya, André Rieu, etc.)
-- Browser autoplay restrictions (attempted fix with user interaction trigger)
-- SoundCloud Widget API canvas rendering issues
-- URL format incompatibility
-
-**User Decision:** Pause work on music integration, resume next session with ChatGPT consultation
-
-### 🔄 NEXT SESSION PICKUP (Session 11 Continuation)
-
-**Priority:** Debug and resolve SoundCloud music playback issue
-
-**Context for Next Session:**
-- Integration code is complete and deployed (commit 68348b2)
-- Widget loads successfully but InvalidStateError prevents playback
-- User has created 1 test playlist (Ambient Pilates - 8 tracks)
-- Console.txt logs show consistent error pattern across all test attempts
-
-**Troubleshooting Options for Next Session:**
-
-1. **Option A: Fix SoundCloud Widget API**
-   - Consult ChatGPT for InvalidStateError solution
-   - Try alternative Widget API initialization patterns
-   - Test with royalty-free music tracks (no embedding restrictions)
-   - Investigate canvas rendering polyfill
-
-2. **Option B: Pivot to YouTube Music API**
-   - More reliable embedding permissions
-   - YouTube IFrame Player API well-documented
-   - User creates YouTube playlists instead
-
-3. **Option C: Use HTML5 Audio with Hosted Files**
-   - Upload MP3s to Netlify/S3
-   - Full control over playback
-   - No API dependencies or restrictions
-   - Most reliable option
-
-4. **Option D: Simplify to Text Recommendations**
-   - Display "Suggested Music: Ambient Piano" text
-   - Users play their own music separately
-   - No technical complexity
-
-**Recommended Approach:**
-- Start with Option A (fix SoundCloud) with ChatGPT help
-- If not resolved in 30 minutes, pivot to Option B (YouTube)
-- Option C is most reliable if time allows
-- Option D is fallback if all else fails
-
-**Files to Review:**
-- `Console.txt` - Current error logs
-- `frontend/src/components/class-playback/ClassPlayback.tsx` - Widget integration code
-- `frontend/src/utils/musicPlaylists.ts` - Playlist configuration
-- `MUSIC_DEBUG_STEPS.md` - Troubleshooting guide
-
-**Success Criteria:**
-- [ ] Music plays audibly when class starts
-- [ ] Music pauses/resumes with class timer
-- [ ] No console errors
-- [ ] User can hear background music during movements
-
----
-
-### Priority 1: SoundCloud Music Integration - ORIGINAL PLAN (FOR REFERENCE)
-
-**User Requirement:** "Music integration is essential to my offering, not optional."
-
-#### Your Task (Original)
-Integrate SoundCloud music playback into class experience with pre-curated playlists.
-
-#### What You Should Do (Original Plan)
-
-**Step 1: Pre-curated Playlist Setup**
-- Create SoundCloud account with 9 curated playlists:
-  - **Movement Music:** Ambient Pilates, Meditation Instrumentals, Chillout Beats, Lo-Fi Focus, Acoustic Calm, Piano Minimal
-  - **Cool-Down Music:** Baroque Classical, Classical Piano, Romantic Era
-- Each playlist: 60+ minutes of appropriate music
-- Get shareable URLs for each playlist
-
-**Step 2: SoundCloud Widget API Integration**
-```typescript
-// frontend/src/utils/musicPlaylists.ts (NEW FILE)
-export const MUSIC_PLAYLISTS = {
-  'Ambient': 'https://soundcloud.com/your-account/ambient-pilates',
-  'Meditation': 'https://soundcloud.com/your-account/meditation-instrumentals',
-  'Chillout': 'https://soundcloud.com/your-account/chillout-beats',
-  // ... 6 more playlists
-};
-```
-
-**Step 3: Update ClassPlayback Component**
-```typescript
-// frontend/src/components/class-playback/ClassPlayback.tsx
-// Add hidden SoundCloud iframe
-<iframe
-  id="sc-widget"
-  src={`https://w.soundcloud.com/player/?url=${playlistUrl}`}
-  width="0"
-  height="0"
-  style={{ display: 'none' }}
-/>
-
-// Control playback with Widget API
-const widget = SC.Widget('sc-widget');
-useEffect(() => {
-  widget.load(selectedPlaylistUrl);
-  widget.play();
-  widget.setVolume(50); // 50% volume
-}, []);
-
-// Sync music with class pause/resume
-useEffect(() => {
-  if (isPaused) {
-    widget.pause();
-  } else {
-    widget.play();
-  }
-}, [isPaused]);
-```
-
-**Step 4: Add SoundCloud Script**
-```html
-<!-- frontend/public/index.html -->
-<script src="https://w.soundcloud.com/player/api.js"></script>
-```
-
-**Step 5: Testing Checklist**
-- [ ] Music starts when "Play Class" clicked
-- [ ] Music pauses/resumes with class timer
-- [ ] Music switches from movement playlist to cool-down playlist
-- [ ] Music volume appropriate (not too loud)
-- [ ] Music continues seamlessly across transitions
-- [ ] No audio conflicts with future narration
-
-#### Expected Outputs
-- `frontend/src/utils/musicPlaylists.ts` (NEW) - Playlist mappings
-- `frontend/src/components/class-playback/ClassPlayback.tsx` (MODIFIED) - Widget integration
-- `frontend/public/index.html` (MODIFIED) - SoundCloud API script
-- Comprehensive testing of music playback during full class
-
-#### Success Criteria
-- [ ] Music plays throughout entire class
-- [ ] Pause/resume works correctly
-- [ ] Playlist switching works (movement → cool-down)
-- [ ] No performance impact
-- [ ] Music enhances class experience
-- [ ] User can control volume (bonus feature)
-
----
-
-### Priority 2: Compliance Dashboard (After Music Complete)
-
-**User Requirement:** EU AI Act compliance for AI decision transparency.
-
-#### Your Task
+### Your Task
 Build compliance dashboard for EU AI Act requirements.
 
-#### What You Should Do
-- Decision transparency view
-- Bias monitoring dashboard
-- Model performance metrics
-- Audit trail interface
-- **NEW: Research source tracking**
-- Export compliance reports
+### What You Should Do
 
-#### Expected Outputs
+**Step 1: Decision Transparency View**
+- Display all AI agent decisions for user
+- Show input parameters and outputs
+- Explain reasoning for each decision
+- Confidence scores
+
+**Step 2: Bias Monitoring Dashboard**
+- Track model drift over time
+- Display fairness metrics
+- Alert on bias detection
+- Historical comparison charts
+
+**Step 3: Audit Trail Interface**
+- Complete decision history
+- Export functionality (CSV, JSON)
+- Filter by date, agent type, user
+- Search capabilities
+
+**Step 4: Research Source Tracking**
+- Display MCP research sources
+- Source attribution for all web content
+- Quality scores
+- Trust indicators
+
+### Expected Outputs
 - Compliance dashboard page
 - Agent decision log viewer
 - Bias monitoring charts
 - Export functionality
+- Source attribution display
 
----
-
-### Time Allocation
-- **Music Integration:** 2-3 hours (PRIORITY)
-- **Compliance Dashboard:** 1-2 hours (if time permits)
-
-### Notes
-- Music is ESSENTIAL - complete before moving to compliance features
-- Pre-curated playlists approach is fastest and most reliable
-- Widget API is simpler than full SoundCloud SDK integration
-- Volume ducking for narration comes in Session 14-15 (audio prototype)
+### Success Criteria
+- [ ] All AI decisions logged and visible
+- [ ] Bias monitoring operational
+- [ ] Export works correctly
+- [ ] Source attribution complete
+- [ ] EU AI Act compliant
 
 ---
 
@@ -2231,67 +2050,62 @@ Good luck! Follow each session sequentially, and you'll have a complete, profess
 
 ### Sessions In Progress / Upcoming
 
-**Session 11:** 🎵 **NEXT PRIORITY - SoundCloud Music Integration** (ESSENTIAL FEATURE)
-- **User Requirement:** "Music integration is essential to my offering, not optional"
-- **Approach:** Pre-curated SoundCloud playlists (Option 3)
-- **Pre-work Required:** Create 9 curated playlists on SoundCloud
-- **Implementation:** 1-2 hours using Widget API
+**Session 8:** ⚙️ **CURRENT - Settings & Preferences** (IN PROGRESS)
+- Profile editing ✅ (completed)
+- Password change ✅ (completed)
+- Account deletion with GDPR ✅ (completed)
+- **Remaining Tasks:**
+  - Notification preferences UI
+  - Privacy settings
+  - AI strictness preferences
+  - Music style preferences (for future Musopen/FreePD integration)
+
+**Session 9:** MCP Advanced Features
+- Implement caching layer for research results
+- Quality scoring system for web sources
+- Batch research operations
+- Research scheduling
+
+**Session 10:** 🎵 **Music Integration** (Musopen/FreePD)
+- **Approach:** Royalty-free classical music from Musopen and FreePD
+- **Architecture:** Vendor-agnostic Music Source Layer
+- **Musical Periods:** Baroque, Classical, Romantic, Impressionist, Modern, Contemporary, Celtic
 - **Deliverables:**
-  - SoundCloud Widget API integrated into ClassPlayback component
-  - Music playlist mapping configuration
-  - Background music during movements and cool-down
-  - Volume ducking for narration (future)
-  - Pause/resume sync with class timer
+  - Database schema (music_tracks, music_playlists)
+  - Backend API endpoints
+  - Frontend music player with HTML5 audio
+  - Musical stylistic period selection
+  - Sync with class timer
 
-**Session 12-13:** Testing, Refinement & Backend Enhancements
-- User testing of playback functionality
-- Add teaching cues to sequence agent (optional)
-- Regression testing against visual baseline
-- Bug fixes and polish
-- Performance optimization
+**Session 11:** OpenAI GPT Integration & Agentic Behavior
+- OpenAI API setup and configuration
+- LLM-based narrative variation
+- Redis caching for cost optimization
+- Cost monitoring dashboard
+- Template fallback configuration
 
-**Session 14-15:** 🎙️ **Audio Narration Prototype** (TEST BEFORE AI TTS)
-- **User Requirement:** "I'd like to try a static audio prototype first, say using a recording from me"
-- **Pre-work Required:** Record narration for 2-3 test movements
-- **Implementation:** 2-3 hours
-- **Deliverables:**
-  - Audio playback integrated into ClassPlayback
-  - Volume ducking (lower music during narration)
-  - Pause/resume sync
-  - Test UX: Do users prefer audio vs text?
-  - Validate technical implementation
-- **Success Metric:** If prototype succeeds → proceed to OpenAI TTS in Session 16+
+**Session 12:** Testing Suite
+- Unit tests (Jest/Pytest)
+- Integration tests
+- E2E tests (Playwright)
+- MCP mock server
+- Performance tests
 
-**Session 16+:** OpenAI TTS Integration (if prototype succeeds)
-- Replace manual recordings with AI-generated narration
-- Multiple voice options (nova, alloy, shimmer)
-- Automatic generation when class is created
-- Cost: ~$0.18 per class, $18/month for 100 classes
-- Quality scoring and caching
-
-### Modified Session Plan
-
-**Original Plan:**
-- Session 10: Music Integration (basic)
-- Session 11: OpenAI GPT Integration
-- Session 12: Testing Suite
-
-**Actual Progress (Adjusted):**
-- ✅ Session 10: Deployment & Infrastructure (completed)
-- 🎵 Session 11: SoundCloud Integration (essential feature, next)
-- Session 12-13: Testing & Backend Enhancements
-- 🎙️ Session 14-15: Audio Narration Prototype (user voice)
-- Session 16+: OpenAI TTS Integration (if prototype succeeds)
-- Session 17+: Continue with original plan (Compliance, Mobile, Performance, Documentation, Deployment polish)
+**Session 13:** Compliance Dashboard
+- EU AI Act decision transparency
+- Bias monitoring dashboard
+- Audit trail interface
+- Research source tracking
+- Export functionality
 
 ### Key Architecture Decisions Made
 
-1. **Music is Essential:** SoundCloud integration moved from "nice-to-have" to core Session 11 priority
-2. **Audio Narration Phased Approach:**
-   - Phase 1: Test with user's voice recordings (validate UX)
-   - Phase 2: Upgrade to OpenAI TTS if successful (automate)
-3. **Render Hosting:** Upgraded to Starter tier ($9/month) to eliminate spin-down issues
-4. **EU AI Act Compliance:** `ai_decision_log` table implemented early
+1. **Music Strategy:** Musopen/FreePD for royalty-free classical music (no OAuth, no user caps, scalable)
+2. **Musical Periods:** User selects classical period (Baroque, Romantic, etc.) instead of specific playlists
+3. **Vendor-Agnostic Design:** Abstract Music Source Layer allows future additions (Jamendo, Epidemic Sound)
+4. **Render Hosting:** Upgraded to Starter tier ($9/month) to eliminate spin-down issues
+5. **EU AI Act Compliance:** `ai_decision_log` table implemented early
+6. **GDPR Compliance:** Account deletion feature implemented in Session 8
 
 ### Current Status Summary
 
@@ -2308,16 +2122,20 @@ Good luck! Follow each session sequentially, and you'll have a complete, profess
 - ✅ Muscle balance calculation
 - ✅ Medical disclaimer with pregnancy exclusion
 - ✅ Mobile-responsive UI
+- ✅ User authentication (registration, login, password reset)
+- ✅ Profile editing and password change
+- ✅ Account deletion (GDPR compliance)
 
 **In Development:**
-- 🎵 SoundCloud music playback (Session 11)
-- 🎙️ Audio narration (Sessions 14-15)
+- ⚙️ Settings & Preferences (Session 8) - notification, privacy, AI preferences
 
 **Not Yet Started:**
-- Teaching cues from backend (optional enhancement)
-- MCP research integration (future)
+- MCP research integration (Session 9)
+- Music integration - Musopen/FreePD (Session 10)
+- OpenAI GPT narrative variation (Session 11)
+- Testing suite (Session 12)
+- Compliance dashboard (Session 13)
 - Excel sync tools (future)
-- Compliance dashboard (future)
 - Mobile PWA features (future)
 
 ### Reference Documents

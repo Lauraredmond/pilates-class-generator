@@ -535,76 +535,80 @@ All MCP results are cached in Redis with source attribution for EU AI Act compli
 
 ---
 
-## SoundCloud Music Integration
+## Music Integration (Musopen/FreePD)
 
-### OAuth Setup (Session 11)
+### Architecture Decision (Session 10)
 
-**Current Status:** Waiting for SoundCloud Developer Support to approve app registration (Ticket #4004208)
+**Status:** Planning phase - Implementation scheduled for Session 10
 
-**Architecture Decision:** Use instructor's SoundCloud account for all Bassline users
-- Instructor curates 9 playlists (Ambient, Meditation, Chillout, etc.)
-- All users hear instructor's curated music during classes
-- Music is part of the complete class experience (like Peloton)
-- Scales to unlimited users (SoundCloud serves audio from their CDN)
-- No performance impact on backend
+**Strategy:** Royalty-free classical music from Musopen and FreePD
+- No per-user OAuth required
+- No arbitrary user caps (unlike SoundCloud's 25-user dev limit)
+- Royalty-free/public domain music suitable for Pilates
+- Streamed from third-party CDN (not self-hosted)
+- No ads during playback
+- Scalable to unlimited users
 
-**When SoundCloud Support Responds:**
+### Musical Stylistic Periods
 
-1. **Get App Credentials** from SoundCloud Developer Dashboard
-   - Navigate to https://soundcloud.com/you/apps
-   - Create new app: "Bassline Pilates"
-   - Copy `Client ID` and `Client Secret`
+Users select from classical music periods appropriate for Pilates:
+- **Baroque Period (c. 1600–1750)** - Bach, Handel, Vivaldi
+- **Classical Period (c. 1750–1820)** - Mozart, Haydn, early Beethoven
+- **Romantic Period (c. 1820–1910)** - Chopin, Tchaikovsky, Brahms
+- **Impressionist Period (c. 1890–1920)** - Debussy, Ravel
+- **Modern Period (c. 1900–1975)** - Stravinsky, Bartók, Copland
+- **Contemporary/Postmodern (1975–present)** - Minimalist, ambient, neo-classical
+- **Celtic Traditional**
 
-2. **Configure Redirect URIs** in SoundCloud Dashboard
-   - Production: `https://basslinemvp.netlify.app/auth/soundcloud/callback`
-   - Local Dev: `http://localhost:5173/auth/soundcloud/callback`
-   - **Must match exactly** (including protocol and trailing path)
+### Database Schema (Planned)
 
-3. **Add to Environment Variables**
-   ```bash
-   # backend/.env
-   SOUNDCLOUD_CLIENT_ID=your_client_id_here
-   SOUNDCLOUD_CLIENT_SECRET=your_client_secret_here
-   SOUNDCLOUD_REDIRECT_URI=https://basslinemvp.netlify.app/auth/soundcloud/callback
-   ```
+**Core Tables:**
+- `music_tracks` - Individual tracks from Musopen/FreePD
+  - source (MUSOPEN, FREEPD)
+  - title, composer, performer
+  - duration_seconds, bpm, stylistic_period
+  - audio_url (streaming URL)
+  - license_info (CC0, PD, etc.)
 
-4. **One-Time OAuth Connection** (Instructor Only)
-   - Navigate to `/admin/soundcloud` in deployed app
-   - Click "Connect My SoundCloud Account"
-   - Authorize once (OAuth 2.1 + PKCE flow)
-   - Access token and refresh token stored on backend
-   - **Done!** All users can now play music from instructor's playlists
+- `music_playlists` - Curated playlists by period/intensity
+  - name, description
+  - intended_intensity (LOW, MEDIUM, HIGH)
+  - intended_use (PILATES_SLOW_FLOW, PILATES_CORE, etc.)
+  - stylistic_period
 
-### API Endpoints
+- `music_playlist_tracks` - Many-to-many relationship
+  - playlist_id, track_id
+  - sequence_order
 
-**Backend Routes** (`/api/soundcloud_auth.py`)
-- `GET /auth/soundcloud/connect` - Initiates OAuth flow (admin only)
-- `GET /auth/soundcloud/callback` - Exchanges code for tokens
-- `GET /api/soundcloud/playlists` - Returns instructor's playlists
-- `GET /api/soundcloud/tracks?playlistId=...` - Returns tracks from playlist
-- `POST /api/soundcloud/refresh` - Refreshes expired access token
+### Vendor-Agnostic Music Source Layer
 
-### Token Management
-
-Tokens are stored securely in backend `.env` or database:
+**Abstract Interface:**
 ```python
-# After successful OAuth
-{
-  "access_token": "...",  # Used for API requests
-  "refresh_token": "...", # Used to get new access token
-  "expires_in": 3600,     # Token lifetime (1 hour)
-  "scope": "non-expiring" # SoundCloud permission scope
-}
+class MusicSource:
+    def get_playlists(self, period: str, intensity: str) -> List[Playlist]
+    def get_tracks(self, playlist_id: str) -> List[Track]
+    def get_streaming_url(self, track_id: str) -> str
 ```
 
-Auto-refresh logic runs when `access_token` expires.
+**Implementations:**
+- `MusopenSource` - Primary source (public domain classical)
+- `FreePDSource` - Secondary source (CC0 library)
+- Future: `JamendoSource`, `EpidemicSource` (when budget allows)
+
+### Security Considerations
+
+- Never expose provider API keys to client
+- Validate and whitelist audio streaming domains
+- No "open proxy" endpoints
+- Server-side RLS for music data
+- Rate limiting on API endpoints
 
 ### Audio Playback
 
-Frontend uses SoundCloud's HLS (HTTP Live Streaming) URLs:
+Frontend uses HTML5 `<audio>` element:
 ```typescript
 // ClassPlayback component
-const audioPlayer = new Audio(track.hls_aac_160_url); // HLS stream
+const audioPlayer = new Audio(track.audio_url);
 audioPlayer.play();
 
 // Sync with class timer
@@ -614,46 +618,12 @@ useEffect(() => {
 }, [isPaused]);
 ```
 
-### Rate Limits & Scaling
+### Future Enhancement
 
-**SoundCloud API Limits:**
-- API requests: 15,000/day (fetching playlists/tracks)
-- Audio streams: Unlimited (served from SoundCloud CDN)
-- Concurrent plays: No published limit
-
-**Bassline Usage:**
-- ~10 API calls/day (fetching playlists when needed)
-- Unlimited users streaming music (no backend load)
-- No performance bottleneck
-
-### Future Enhancement: Per-User OAuth
-
-**Phase 2 Implementation** (when needed):
-- Add user-level SoundCloud connections
-- Store tokens in `user_soundcloud_tokens` table
-- Users can choose: instructor's playlists OR their own
-- Requires full OAuth flow per user
-
-```python
-# Future table schema
-CREATE TABLE user_soundcloud_tokens (
-    user_id UUID REFERENCES users(id),
-    access_token TEXT ENCRYPTED,
-    refresh_token TEXT ENCRYPTED,
-    expires_at TIMESTAMP
-);
-```
-
-### Troubleshooting
-
-**Problem:** 401 Unauthorized on API calls
-**Solution:** Access token expired - trigger refresh with `refresh_token`
-
-**Problem:** CORS errors
-**Solution:** Ensure redirect URI matches exactly in SoundCloud dashboard
-
-**Problem:** Invalid redirect URI
-**Solution:** Check for trailing slashes, protocol (https vs http), exact path match
+- Add Jamendo API (commercial use requires paid license)
+- Add Epidemic Sound Partner API (royalty-free catalog)
+- Keep Musopen/FreePD as free base catalog
+- Gradual migration path without breaking changes
 
 ---
 
@@ -959,10 +929,10 @@ supabase db reset && supabase db push
 
 ## Session Progress & Next Steps
 
-### Session 7: User Authentication & Profile (IN PROGRESS)
+### Session 7: User Authentication & Profile ✅ COMPLETED
 
-**Date:** November 22, 2025
-**Status:** ✅ Registration working, writing to Supabase successfully
+**Date:** November 22-24, 2025
+**Status:** ✅ Complete
 
 **Completed:**
 - ✅ Created authentication system (JWT tokens, password hashing)
@@ -974,66 +944,52 @@ supabase db reset && supabase db push
 - ✅ Fixed Render deployment (added missing dependencies to `requirements-production.txt`)
 - ✅ Fixed Netlify deployment (removed unused TypeScript parameters)
 - ✅ **CONFIRMED: Successfully writing user data to Supabase** (commit 9a1f8b5)
+- ✅ Email confirmation page and production redirect URL fixed
+- ✅ Enhanced user profile fields added to registration
+- ✅ Content Security Policy implemented
+- ✅ Password reset flow completed with confirmation page
+- ✅ Console security warnings resolved
+- ✅ Account deletion feature added (GDPR right to be forgotten)
+
+### Session 8: Settings & Preferences (IN PROGRESS)
+
+**Date:** November 24-25, 2025
+**Status:** 🔨 In Progress
+
+**Completed:**
+- ✅ Profile editing functionality (commit 54d36cb)
+- ✅ Password change functionality (commit 54d36cb)
+- ✅ Account deletion with GDPR compliance (commit 93ed31c)
 
 **Production URLs:**
 - Frontend: https://basslinemvp.netlify.app
 - Backend API: https://pilates-class-generator-api3.onrender.com
-- Registration page: https://basslinemvp.netlify.app/register
+- Settings page: https://basslinemvp.netlify.app/settings
 
-**Environment Configuration:**
-- Netlify: `VITE_API_URL=https://pilates-class-generator-api3.onrender.com` (NO trailing slash!)
-- Render: `SUPABASE_URL`, `SUPABASE_KEY`, `JWT_SECRET_KEY`, `FRONTEND_URL` configured
+**Session 8 Tasks Remaining:**
 
-**Known Issues to Address:**
-1. ⚠️ Console security warnings during registration (need investigation)
-2. ⚠️ **Supabase API Key Format Mismatch:**
-   - **Production (Render):** Using NEW Supabase API key format → ✅ Working correctly
-   - **Local (`backend/.env`):** Using LEGACY Supabase API key format → ❌ Cannot write to Supabase
-   - **Fix needed:** Update local `.env` with new API keys from Supabase dashboard
-   - **Note:** Supabase has migrated from legacy `eyJh...` format to new `sb_publishable_...` format
-   - Keys in Render.com environment variables are correct (hence production registration works)
+1. **Complete Settings Page UI**
+   - Notification preferences
+   - Privacy settings
+   - AI strictness preferences
+   - Music style preferences (for future Musopen/FreePD integration)
 
-**Next Session Tasks (Session 7/8 Continuation):**
+2. **User Preference Management**
+   - Implement preference updates API
+   - Test preference persistence in Supabase
+   - Add validation and error handling
 
-1. **Investigate console security warnings**
-   - Review browser console errors during registration
-   - Ensure no sensitive data leaking
-   - Check CORS configuration
-   - Validate JWT token handling
+3. **Testing & Validation**
+   - Test all settings update correctly
+   - Test logout/login preserves settings
+   - Verify data persistence across sessions
 
-2. **Complete Session 7 Testing**
-   - Test login flow with registered user
-   - Test profile page (displays user stats)
-   - Test logout functionality
-   - Test protected routes (redirect when not authenticated)
-   - Test password reset flow
+**Next Sessions Preview:**
 
-3. **Update Local Supabase API Keys to New Format**
-   - Production (Render) already has correct NEW format keys
-   - Local `backend/.env` still has LEGACY format keys
-   - Get new keys from Supabase dashboard (Settings → API)
-   - Update local `.env` with new `sb_publishable_...` format keys
-   - Test local registration to confirm localhost can write to Supabase
-   - **Note:** Legacy `eyJh...` JWT format no longer supported by Supabase
-
-4. **Session 8: Settings & Preferences** (Next major milestone)
-   - Build Settings page UI
-   - Implement user preference updates
-   - Add profile editing (name, email)
-   - Add password change functionality
-   - Test preference persistence
-
-**Important Notes:**
-- User prefers production testing over local testing
-- Database tables are created and working
-- Backend and frontend both deployed and communicating
-- Double-slash URL issue fixed in Netlify (`VITE_API_URL` without trailing slash)
-
-**Git Commits This Session:**
-- `2834414` - Updated backend dependencies (Supabase 2.24.0, httpx, websockets)
-- `9a1f8b5` - Added missing auth dependencies to production requirements
-- `9c15068` - Removed unused `coolDownMusicStyle` parameter
-- `c67ad8a` - Removed unused `coolDownMusicStyle` from ClassPlayback interface
+- **Session 9:** MCP Advanced Features (research capabilities)
+- **Session 10:** Music Integration (Musopen/FreePD - royalty-free classical music)
+- **Session 11:** OpenAI GPT Integration (LLM narrative variation)
+- **Session 12:** Testing Suite
 
 ---
 
