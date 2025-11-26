@@ -4,20 +4,419 @@ Provides users with transparency into their data processing
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import HTMLResponse
 from typing import Dict, Any, List
 from datetime import datetime
 from api.auth import get_current_user_id
 from utils.supabase_client import supabase
 from utils.supabase_admin import supabase_admin  # Service role client for compliance operations
 from middleware.pii_logger import PIILogger
+import json
 
 router = APIRouter()
+
+
+def generate_html_report(user_data: Dict[str, Any]) -> str:
+    """
+    Generate a beautiful, human-readable HTML report for GDPR data export
+
+    Returns styled HTML that can be printed or saved as PDF
+    """
+    profile = user_data.get('profile', {}) or {}
+    preferences = user_data.get('preferences', {}) or {}
+    saved_classes = user_data.get('saved_classes', [])
+    class_history = user_data.get('class_history', [])
+    ropa = user_data.get('data_processing_activities', [])
+    ai_decisions = user_data.get('ai_decisions', [])
+    metadata = user_data.get('export_metadata', {})
+
+    # Format date nicely
+    export_date = datetime.fromisoformat(metadata.get('export_date', datetime.utcnow().isoformat())).strftime('%B %d, %Y at %I:%M %p UTC')
+
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Personal Data Export - Bassline Pilates</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 1000px;
+                margin: 0 auto;
+                padding: 40px 20px;
+                background: #f9f9f9;
+            }}
+            .container {{
+                background: white;
+                padding: 50px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }}
+            h1 {{
+                color: #7a1f1f;
+                font-size: 2.5em;
+                margin-bottom: 10px;
+                border-bottom: 3px solid #7a1f1f;
+                padding-bottom: 15px;
+            }}
+            h2 {{
+                color: #7a1f1f;
+                font-size: 1.8em;
+                margin-top: 40px;
+                margin-bottom: 20px;
+                border-left: 5px solid #7a1f1f;
+                padding-left: 15px;
+            }}
+            h3 {{
+                color: #444;
+                font-size: 1.3em;
+                margin-top: 25px;
+                margin-bottom: 15px;
+            }}
+            .metadata {{
+                background: #f5f5f5;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+                border-left: 4px solid #7a1f1f;
+            }}
+            .metadata p {{
+                margin: 5px 0;
+            }}
+            .section {{
+                margin-bottom: 40px;
+            }}
+            .data-table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 15px;
+                background: white;
+            }}
+            .data-table th {{
+                background: #7a1f1f;
+                color: white;
+                padding: 12px;
+                text-align: left;
+                font-weight: 600;
+            }}
+            .data-table td {{
+                padding: 12px;
+                border-bottom: 1px solid #ddd;
+            }}
+            .data-table tr:hover {{
+                background: #f9f9f9;
+            }}
+            .info-box {{
+                background: #e8f4f8;
+                border-left: 4px solid #0073aa;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+            }}
+            .warning-box {{
+                background: #fff3cd;
+                border-left: 4px solid #856404;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+            }}
+            .empty-state {{
+                color: #999;
+                font-style: italic;
+                padding: 20px;
+                text-align: center;
+                background: #f9f9f9;
+                border-radius: 8px;
+            }}
+            .data-item {{
+                margin: 10px 0;
+                padding: 10px 0;
+                border-bottom: 1px solid #eee;
+            }}
+            .data-item:last-child {{
+                border-bottom: none;
+            }}
+            .label {{
+                font-weight: 600;
+                color: #555;
+                min-width: 200px;
+                display: inline-block;
+            }}
+            .value {{
+                color: #333;
+            }}
+            .badge {{
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 12px;
+                font-size: 0.85em;
+                font-weight: 600;
+                margin-left: 10px;
+            }}
+            .badge-success {{ background: #d4edda; color: #155724; }}
+            .badge-info {{ background: #d1ecf1; color: #0c5460; }}
+            .badge-warning {{ background: #fff3cd; color: #856404; }}
+            @media print {{
+                body {{ background: white; }}
+                .container {{ box-shadow: none; }}
+                h1 {{ page-break-before: avoid; }}
+                .section {{ page-break-inside: avoid; }}
+            }}
+            footer {{
+                margin-top: 50px;
+                padding-top: 30px;
+                border-top: 2px solid #ddd;
+                text-align: center;
+                color: #777;
+                font-size: 0.9em;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>📄 My Personal Data Export</h1>
+
+            <div class="metadata">
+                <p><strong>Export Date:</strong> {export_date}</p>
+                <p><strong>Data Controller:</strong> {metadata.get('data_controller', 'Bassline Pilates')}</p>
+                <p><strong>Legal Basis:</strong> GDPR Article 15 - Right to Access</p>
+                <p><strong>Reference:</strong> <a href="{metadata.get('gdpr_article_url', '#')}" target="_blank">GDPR Article 15</a></p>
+            </div>
+
+            <div class="info-box">
+                <strong>ℹ️ About This Report:</strong> This document contains all personal data we hold about you.
+                You have the right to access, correct, delete, or transfer this data at any time.
+                For questions, contact: {metadata.get('data_controller_contact', 'support@bassline.com')}
+            </div>
+
+            <!-- PROFILE SECTION -->
+            <div class="section">
+                <h2>👤 Profile Information</h2>
+                {_generate_profile_section(profile)}
+            </div>
+
+            <!-- PREFERENCES SECTION -->
+            <div class="section">
+                <h2>⚙️ Account Preferences</h2>
+                {_generate_preferences_section(preferences)}
+            </div>
+
+            <!-- SAVED CLASSES SECTION -->
+            <div class="section">
+                <h2>💾 Saved Classes</h2>
+                {_generate_saved_classes_section(saved_classes)}
+            </div>
+
+            <!-- CLASS HISTORY SECTION -->
+            <div class="section">
+                <h2>📊 Class History</h2>
+                {_generate_class_history_section(class_history)}
+            </div>
+
+            <!-- DATA PROCESSING SECTION -->
+            <div class="section">
+                <h2>🔒 Data Processing Activities</h2>
+                <div class="warning-box">
+                    <strong>⚠️ GDPR Article 30 Compliance:</strong> This section shows every time we accessed,
+                    modified, or processed your personal data. We are required by law to maintain this audit log.
+                </div>
+                {_generate_ropa_section(ropa)}
+            </div>
+
+            <!-- AI DECISIONS SECTION -->
+            <div class="section">
+                <h2>🤖 AI Decisions & Explanations</h2>
+                <div class="info-box">
+                    <strong>🇪🇺 EU AI Act Compliance:</strong> Every AI decision made for you is logged with
+                    an explanation. You have the right to understand and challenge any AI-driven recommendation.
+                </div>
+                {_generate_ai_decisions_section(ai_decisions)}
+            </div>
+
+            <!-- YOUR RIGHTS -->
+            <div class="section">
+                <h2>⚖️ Your Data Rights</h2>
+                <div class="data-item">
+                    <span class="label">Right to Access</span>
+                    <span class="value">You can download your data at any time (you're doing it now!)</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">Right to Rectification</span>
+                    <span class="value">Update your profile information in Settings</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">Right to Erasure</span>
+                    <span class="value">Delete your account and all data in Settings → Account Deletion</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">Right to Data Portability</span>
+                    <span class="value">Download in JSON format to transfer to another service</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">Right to Object</span>
+                    <span class="value">Contact {metadata.get('data_controller_contact', 'support@bassline.com')}</span>
+                </div>
+            </div>
+
+            <footer>
+                <p><strong>Bassline Pilates</strong> | GDPR & EU AI Act Compliant</p>
+                <p>Generated on {export_date}</p>
+                <p>This report is for your personal records only</p>
+            </footer>
+        </div>
+    </body>
+    </html>
+    """
+
+    return html
+
+
+def _generate_profile_section(profile: Dict) -> str:
+    """Generate HTML for profile section"""
+    if not profile:
+        return '<div class="empty-state">No profile information available</div>'
+
+    html = '<div class="data-item">'
+    html += f'<span class="label">Email:</span> <span class="value">{profile.get("email", "N/A")}</span><br>'
+    html += f'<span class="label">Full Name:</span> <span class="value">{profile.get("full_name", "N/A")}</span><br>'
+    html += f'<span class="label">Age Range:</span> <span class="value">{profile.get("age_range", "N/A")}</span><br>'
+    html += f'<span class="label">Gender Identity:</span> <span class="value">{profile.get("gender_identity", "Prefer not to say")}</span><br>'
+    html += f'<span class="label">Country:</span> <span class="value">{profile.get("country", "N/A")}</span><br>'
+    html += f'<span class="label">Pilates Experience:</span> <span class="value">{profile.get("pilates_experience", "N/A")}</span><br>'
+
+    goals = profile.get("goals", [])
+    if goals:
+        html += f'<span class="label">Goals:</span> <span class="value">{", ".join(goals)}</span><br>'
+
+    html += f'<span class="label">Account Created:</span> <span class="value">{profile.get("created_at", "N/A")}</span><br>'
+    html += f'<span class="label">Last Login:</span> <span class="value">{profile.get("last_login", "N/A")}</span>'
+    html += '</div>'
+
+    return html
+
+
+def _generate_preferences_section(preferences: Dict) -> str:
+    """Generate HTML for preferences section"""
+    if not preferences:
+        return '<div class="empty-state">No preferences configured</div>'
+
+    html = '<div class="data-item">'
+    html += f'<span class="label">AI Strictness Level:</span> <span class="value">{preferences.get("strictness_level", "N/A")}</span><br>'
+    html += f'<span class="label">Default Class Duration:</span> <span class="value">{preferences.get("default_class_duration", "N/A")} minutes</span><br>'
+    html += f'<span class="label">Email Notifications:</span> <span class="value">{"✓ Enabled" if preferences.get("email_notifications") else "✗ Disabled"}</span><br>'
+    html += f'<span class="label">Class Reminders:</span> <span class="value">{"✓ Enabled" if preferences.get("class_reminders") else "✗ Disabled"}</span><br>'
+    html += f'<span class="label">Weekly Summary:</span> <span class="value">{"✓ Enabled" if preferences.get("weekly_summary") else "✗ Disabled"}</span><br>'
+    html += f'<span class="label">Analytics:</span> <span class="value">{"✓ Enabled" if preferences.get("analytics_enabled") else "✗ Disabled"}</span><br>'
+    html += f'<span class="label">Data Sharing:</span> <span class="value">{"✓ Enabled" if preferences.get("data_sharing_enabled") else "✗ Disabled"}</span><br>'
+    html += f'<span class="label">MCP Research:</span> <span class="value">{"✓ Enabled" if preferences.get("enable_mcp_research") else "✗ Disabled"}</span>'
+    html += '</div>'
+
+    return html
+
+
+def _generate_saved_classes_section(classes: List) -> str:
+    """Generate HTML for saved classes section"""
+    if not classes:
+        return '<div class="empty-state">No saved classes</div>'
+
+    html = f'<p><strong>Total Saved Classes:</strong> {len(classes)}</p>'
+    html += '<table class="data-table"><thead><tr>'
+    html += '<th>Class Name</th><th>Duration</th><th>Saved On</th>'
+    html += '</tr></thead><tbody>'
+
+    for cls in classes:
+        html += f'<tr>'
+        html += f'<td>{cls.get("name", "Untitled Class")}</td>'
+        html += f'<td>{cls.get("duration", "N/A")} min</td>'
+        html += f'<td>{cls.get("created_at", "N/A")}</td>'
+        html += f'</tr>'
+
+    html += '</tbody></table>'
+    return html
+
+
+def _generate_class_history_section(history: List) -> str:
+    """Generate HTML for class history section"""
+    if not history:
+        return '<div class="empty-state">No class history</div>'
+
+    html = f'<p><strong>Total Classes Completed:</strong> {len(history)}</p>'
+    html += '<table class="data-table"><thead><tr>'
+    html += '<th>Class Name</th><th>Completed On</th><th>Duration</th>'
+    html += '</tr></thead><tbody>'
+
+    for item in history:
+        html += f'<tr>'
+        html += f'<td>{item.get("class_name", "N/A")}</td>'
+        html += f'<td>{item.get("completed_at", "N/A")}</td>'
+        html += f'<td>{item.get("duration", "N/A")} min</td>'
+        html += f'</tr>'
+
+    html += '</tbody></table>'
+    return html
+
+
+def _generate_ropa_section(ropa: List) -> str:
+    """Generate HTML for ROPA (data processing activities) section"""
+    if not ropa:
+        return '<div class="empty-state">No data processing activities recorded</div>'
+
+    html = f'<p><strong>Total Transactions:</strong> {len(ropa)}</p>'
+    html += '<table class="data-table"><thead><tr>'
+    html += '<th>Date & Time</th><th>Transaction Type</th><th>System</th><th>Purpose</th>'
+    html += '</tr></thead><tbody>'
+
+    for entry in ropa[:50]:  # Show last 50 entries
+        html += f'<tr>'
+        html += f'<td>{entry.get("timestamp", "N/A")}</td>'
+        html += f'<td><span class="badge badge-info">{entry.get("transaction_type", "N/A").upper()}</span></td>'
+        html += f'<td>{entry.get("processing_system", "N/A")}</td>'
+        html += f'<td>{entry.get("purpose", "N/A")}</td>'
+        html += f'</tr>'
+
+    html += '</tbody></table>'
+    if len(ropa) > 50:
+        html += f'<p style="margin-top: 15px; color: #777;">Showing 50 most recent transactions (total: {len(ropa)})</p>'
+
+    return html
+
+
+def _generate_ai_decisions_section(decisions: List) -> str:
+    """Generate HTML for AI decisions section"""
+    if not decisions:
+        return '<div class="empty-state">No AI decisions recorded yet</div>'
+
+    html = f'<p><strong>Total AI Decisions:</strong> {len(decisions)}</p>'
+    html += '<table class="data-table"><thead><tr>'
+    html += '<th>Date & Time</th><th>Agent Type</th><th>Model</th><th>Confidence</th><th>Reasoning</th>'
+    html += '</tr></thead><tbody>'
+
+    for decision in decisions[:20]:  # Show last 20 decisions
+        confidence = decision.get('confidence_score', 0) * 100
+        html += f'<tr>'
+        html += f'<td>{decision.get("timestamp", "N/A")}</td>'
+        html += f'<td><span class="badge badge-success">{decision.get("agent_type", "N/A")}</span></td>'
+        html += f'<td>{decision.get("model_name", "N/A")}</td>'
+        html += f'<td>{confidence:.1f}%</td>'
+        html += f'<td>{decision.get("reasoning", "No reasoning provided")[:100]}...</td>'
+        html += f'</tr>'
+
+    html += '</tbody></table>'
+    if len(decisions) > 20:
+        html += f'<p style="margin-top: 15px; color: #777;">Showing 20 most recent decisions (total: {len(decisions)})</p>'
+
+    return html
 
 
 @router.get("/api/compliance/my-data")
 async def export_my_data(
     request: Request,
-    format: str = 'json',  # 'json' or 'csv'
+    format: str = 'html',  # 'json', 'html', or 'csv'
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -87,16 +486,20 @@ async def export_my_data(
 
         if format == 'json':
             return user_data
+        elif format == 'html':
+            # Generate beautiful HTML report
+            html_content = generate_html_report(user_data)
+            return HTMLResponse(content=html_content, status_code=200)
         elif format == 'csv':
             # CSV export not yet implemented
             raise HTTPException(
                 status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                detail="CSV export not yet implemented. Use format=json"
+                detail="CSV export not yet implemented. Use format=json or format=html"
             )
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid format. Use 'json' or 'csv'"
+                detail="Invalid format. Use 'json', 'html', or 'csv'"
             )
 
     except Exception as e:
