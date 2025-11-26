@@ -48,6 +48,7 @@ class SupabaseMusicSource(MusicSource):
         'freepd.com',
         'files.freepd.com',
         'cdn.freepd.com',
+        'archive.org',  # Internet Archive for public domain classical music
         # Add more as sources are added
     ]
 
