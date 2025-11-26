@@ -1,7 +1,7 @@
 /**
  * ClassPlayback Component
  * Full-screen timer-based class playback with auto-advance
- * Integrated with SoundCloud OAuth music playback
+ * Integrated with music database (Internet Archive streaming)
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -12,19 +12,28 @@ import { TimerDisplay } from './TimerDisplay';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-// SoundCloud API type definitions
-interface SoundCloudTrack {
-  id: number;
+// Music API type definitions
+interface MusicTrack {
+  id: string;
   title: string;
-  duration: number;
-  stream_url: string;
-  artwork_url?: string;
+  composer: string;
+  artist_performer: string;
+  duration_seconds: number;
+  bpm: number;
+  audio_url: string;
+  stylistic_period: string;
+  mood_tags: string[];
 }
 
-interface SoundCloudPlaylist {
-  id: number;
-  title: string;
-  tracks: SoundCloudTrack[];
+interface MusicPlaylist {
+  id: string;
+  name: string;
+  description: string;
+  stylistic_period: string;
+  intended_intensity: string;
+  intended_use: string;
+  duration_minutes_target: number;
+  tracks: MusicTrack[];
 }
 
 export interface PlaybackMovement {
@@ -84,7 +93,7 @@ export function ClassPlayback({
   const [timeRemaining, setTimeRemaining] = useState(items[0]?.duration_seconds || 0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isMusicReady, setIsMusicReady] = useState(false);
-  const [currentPlaylist, setCurrentPlaylist] = useState<SoundCloudPlaylist | null>(null);
+  const [currentPlaylist, setCurrentPlaylist] = useState<MusicPlaylist | null>(null);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [musicError, setMusicError] = useState<string | null>(null);
 
@@ -92,64 +101,81 @@ export function ClassPlayback({
   const totalItems = items.length;
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Fetch SoundCloud playlist via OAuth API
+  // Fetch music playlist from database
   useEffect(() => {
     const fetchPlaylist = async () => {
       try {
         setMusicError(null);
 
-        // Search for playlist by name (using movement music style)
-        const response = await axios.get(`${API_BASE_URL}/api/soundcloud/search/playlists`, {
-          params: { query: movementMusicStyle }
+        // Map movement music style to stylistic period
+        // movementMusicStyle could be: "Baroque", "Classical", "Romantic", "Impressionist", etc.
+        const stylisticPeriod = movementMusicStyle.toUpperCase().replace(/\s+/g, '_');
+
+        // Get playlists for this stylistic period
+        const response = await axios.get(`${API_BASE_URL}/api/music/playlists`, {
+          params: {
+            stylistic_period: stylisticPeriod,
+            is_featured: true
+          }
         });
 
         if (response.data && response.data.length > 0) {
-          const playlist = response.data[0];
+          // Get the first featured playlist
+          const playlistSummary = response.data[0];
+
+          // Fetch full playlist with tracks
+          const fullPlaylistResponse = await axios.get(
+            `${API_BASE_URL}/api/music/playlists/${playlistSummary.id}`
+          );
+
+          const playlist = fullPlaylistResponse.data;
           setCurrentPlaylist(playlist);
 
           // If tracks available, load first track
           if (playlist.tracks && playlist.tracks.length > 0) {
-            await loadTrack(playlist.tracks[0].id);
+            loadTrack(playlist.tracks[0]);
           }
         } else {
-          // Fallback: get any available playlist
-          const allPlaylists = await axios.get(`${API_BASE_URL}/api/soundcloud/playlists?limit=1`);
-          if (allPlaylists.data && allPlaylists.data.length > 0) {
-            const playlist = allPlaylists.data[0];
+          // Fallback: get any featured playlist
+          const fallbackResponse = await axios.get(`${API_BASE_URL}/api/music/playlists`, {
+            params: { is_featured: true, limit: 1 }
+          });
+
+          if (fallbackResponse.data && fallbackResponse.data.length > 0) {
+            const playlistSummary = fallbackResponse.data[0];
+            const fullPlaylistResponse = await axios.get(
+              `${API_BASE_URL}/api/music/playlists/${playlistSummary.id}`
+            );
+            const playlist = fullPlaylistResponse.data;
             setCurrentPlaylist(playlist);
+
             if (playlist.tracks && playlist.tracks.length > 0) {
-              await loadTrack(playlist.tracks[0].id);
+              loadTrack(playlist.tracks[0]);
             }
           } else {
-            setMusicError('No playlists available. Please connect SoundCloud in admin panel.');
+            setMusicError('No music playlists available.');
           }
         }
       } catch (error: any) {
-        console.error('Error fetching SoundCloud playlist:', error);
-        if (error.response?.status === 401) {
-          setMusicError('SoundCloud not connected. Admin must authorize via /admin/soundcloud');
-        } else {
-          setMusicError('Failed to load music. Class will continue without audio.');
-        }
+        console.error('Error fetching music playlist:', error);
+        setMusicError('Failed to load music. Class will continue without audio.');
       }
     };
 
     fetchPlaylist();
   }, [movementMusicStyle]);
 
-  // Load a specific track's stream URL
-  const loadTrack = async (trackId: number) => {
+  // Load a specific track (uses direct audio_url from database)
+  const loadTrack = (track: MusicTrack) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/soundcloud/tracks/${trackId}/stream`);
-
-      if (audioRef.current && response.data.stream_url) {
-        audioRef.current.src = response.data.stream_url;
+      if (audioRef.current && track.audio_url) {
+        audioRef.current.src = track.audio_url;
         audioRef.current.volume = 0.5; // 50% volume
         setIsMusicReady(true);
-        console.log('Music track loaded:', response.data.title);
+        console.log('Music track loaded:', track.title, 'by', track.composer);
       }
     } catch (error) {
-      console.error('Error loading track stream:', error);
+      console.error('Error loading track:', error);
       setMusicError('Failed to load music track. Continuing without audio.');
     }
   };
@@ -164,7 +190,7 @@ export function ClassPlayback({
       if (currentPlaylist && currentPlaylist.tracks) {
         const nextIndex = (currentTrackIndex + 1) % currentPlaylist.tracks.length;
         setCurrentTrackIndex(nextIndex);
-        loadTrack(currentPlaylist.tracks[nextIndex].id);
+        loadTrack(currentPlaylist.tracks[nextIndex]);
       }
     });
 
@@ -369,8 +395,13 @@ export function ClassPlayback({
             </p>
             {currentPlaylist && (
               <>
-                <p>Playlist: {currentPlaylist.title}</p>
+                <p>Playlist: {currentPlaylist.name}</p>
                 <p>Track {currentTrackIndex + 1} of {currentPlaylist.tracks?.length || 0}</p>
+                {currentPlaylist.tracks && currentPlaylist.tracks[currentTrackIndex] && (
+                  <p className="truncate max-w-xs">
+                    {currentPlaylist.tracks[currentTrackIndex].composer} - {currentPlaylist.tracks[currentTrackIndex].title}
+                  </p>
+                )}
               </>
             )}
           </>

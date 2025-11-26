@@ -1,143 +1,128 @@
 /**
- * SoundCloud Music Playlists
+ * Music Stylistic Periods
  *
- * Pre-curated playlists for Pilates class playback
- * Each playlist should be 60+ minutes of appropriate music
- *
- * SETUP REQUIRED:
- * 1. Create a SoundCloud account
- * 2. Create 9 playlists with the names below
- * 3. Upload or add 60+ minutes of music to each playlist
- * 4. Get the shareable URL for each playlist (e.g., https://soundcloud.com/your-username/your-playlist)
- * 5. Replace the placeholder URLs below with your actual playlist URLs
+ * Mapping of musical periods for Pilates class playback
+ * These correspond to stylistic_period values in the music database
+ * All music sourced from Internet Archive (public domain/CC licensed)
  */
 
-export interface MusicPlaylist {
+export interface StylisticPeriod {
   id: string;
   name: string;
+  displayName: string;
   category: 'movement' | 'cooldown';
-  url: string;
   description: string;
+  era: string;
 }
 
 /**
- * Movement Music Playlists (6 playlists)
+ * Stylistic Periods for Movement Music
  * Used during active Pilates movements
  */
-export const MOVEMENT_PLAYLISTS: MusicPlaylist[] = [
+export const MOVEMENT_PERIODS: StylisticPeriod[] = [
   {
-    id: 'ambient-pilates',
-    name: 'Ambient Pilates',
+    id: 'IMPRESSIONIST',
+    name: 'IMPRESSIONIST',
+    displayName: 'Impressionist',
     category: 'movement',
-    // TESTING: Using a single public track known to work with Widget API
-    url: 'https://api.soundcloud.com/tracks/293',
-    // Alternative format: https://soundcloud.com/forss/flickermood
-    // Original URL (embedding disabled by tracks): https://soundcloud.com/laura-redmond-504579291/sets/ambient-pilates
-    description: 'Calm ambient soundscapes perfect for focused movement',
+    description: 'Atmospheric and flowing - Debussy, Ravel (c. 1890-1920)',
+    era: '1890-1920',
   },
   {
-    id: 'meditation-instrumentals',
-    name: 'Meditation Instrumentals',
+    id: 'ROMANTIC',
+    name: 'ROMANTIC',
+    displayName: 'Romantic',
     category: 'movement',
-    url: 'https://soundcloud.com/REPLACE-WITH-YOUR-USERNAME/meditation-instrumentals',
-    description: 'Gentle instrumental melodies for mindful practice',
+    description: 'Expressive and flowing - Chopin, Tchaikovsky (c. 1820-1910)',
+    era: '1820-1910',
   },
   {
-    id: 'chillout-beats',
-    name: 'Chillout Beats',
+    id: 'MODERN',
+    name: 'MODERN',
+    displayName: 'Modern',
     category: 'movement',
-    url: 'https://soundcloud.com/REPLACE-WITH-YOUR-USERNAME/chillout-beats',
-    description: 'Relaxing electronic beats with steady rhythm',
+    description: 'Minimalist and meditative - Satie, Copland (c. 1900-1975)',
+    era: '1900-1975',
   },
   {
-    id: 'lofi-focus',
-    name: 'Lo-Fi Focus',
+    id: 'CONTEMPORARY',
+    name: 'CONTEMPORARY',
+    displayName: 'Contemporary',
     category: 'movement',
-    url: 'https://soundcloud.com/REPLACE-WITH-YOUR-USERNAME/lofi-focus',
-    description: 'Lo-fi hip hop beats for concentration',
-  },
-  {
-    id: 'acoustic-calm',
-    name: 'Acoustic Calm',
-    category: 'movement',
-    url: 'https://soundcloud.com/REPLACE-WITH-YOUR-USERNAME/acoustic-calm',
-    description: 'Acoustic guitar and piano for serene movement',
-  },
-  {
-    id: 'piano-minimal',
-    name: 'Piano Minimal',
-    category: 'movement',
-    url: 'https://soundcloud.com/REPLACE-WITH-YOUR-USERNAME/piano-minimal',
-    description: 'Minimalist piano compositions for clarity',
+    description: 'Ambient and peaceful - Modern meditation music (1975-present)',
+    era: '1975-present',
   },
 ];
 
 /**
- * Cool-Down Music Playlists (3 playlists)
+ * Stylistic Periods for Cool-Down Music
  * Used during stretching and relaxation phase
  */
-export const COOLDOWN_PLAYLISTS: MusicPlaylist[] = [
+export const COOLDOWN_PERIODS: StylisticPeriod[] = [
   {
-    id: 'baroque-classical',
-    name: 'Baroque Classical',
+    id: 'BAROQUE',
+    name: 'BAROQUE',
+    displayName: 'Baroque',
     category: 'cooldown',
-    url: 'https://soundcloud.com/REPLACE-WITH-YOUR-USERNAME/baroque-classical',
-    description: 'Bach, Vivaldi, and baroque composers for relaxation',
+    description: 'Serene and balanced - Bach, Handel (c. 1600-1750)',
+    era: '1600-1750',
   },
   {
-    id: 'classical-piano',
-    name: 'Classical Piano',
+    id: 'CLASSICAL',
+    name: 'CLASSICAL',
+    displayName: 'Classical',
     category: 'cooldown',
-    url: 'https://soundcloud.com/REPLACE-WITH-YOUR-USERNAME/classical-piano',
-    description: 'Chopin, Debussy, and romantic piano pieces',
+    description: 'Elegant and structured - Mozart, Haydn (c. 1750-1820)',
+    era: '1750-1820',
   },
   {
-    id: 'romantic-era',
-    name: 'Romantic Era',
+    id: 'CELTIC_TRADITIONAL',
+    name: 'CELTIC_TRADITIONAL',
+    displayName: 'Celtic Traditional',
     category: 'cooldown',
-    url: 'https://soundcloud.com/REPLACE-WITH-YOUR-USERNAME/romantic-era',
-    description: 'Schumann, Brahms, and romantic orchestral works',
+    description: 'Gentle and melodic - Irish flute tunes',
+    era: 'Traditional',
   },
 ];
 
 /**
- * All playlists combined for easy access
+ * All stylistic periods combined for easy access
  */
-export const ALL_PLAYLISTS: MusicPlaylist[] = [
-  ...MOVEMENT_PLAYLISTS,
-  ...COOLDOWN_PLAYLISTS,
+export const ALL_PERIODS: StylisticPeriod[] = [
+  ...MOVEMENT_PERIODS,
+  ...COOLDOWN_PERIODS,
 ];
 
 /**
- * Get playlist by ID
+ * Get stylistic period by ID
  */
-export function getPlaylistById(id: string): MusicPlaylist | undefined {
-  return ALL_PLAYLISTS.find(playlist => playlist.id === id);
+export function getPeriodById(id: string): StylisticPeriod | undefined {
+  return ALL_PERIODS.find(period => period.id === id);
 }
 
 /**
- * Get playlist URL by name (case-insensitive match)
- * Used when music style names come from backend
+ * Get stylistic period by display name (case-insensitive match)
+ * Used when music style names come from UI
  */
-export function getPlaylistByName(name: string): MusicPlaylist | undefined {
+export function getPeriodByName(name: string): StylisticPeriod | undefined {
   const normalizedName = name.toLowerCase().trim();
 
-  return ALL_PLAYLISTS.find(playlist =>
-    playlist.name.toLowerCase().includes(normalizedName) ||
-    normalizedName.includes(playlist.name.toLowerCase())
+  return ALL_PERIODS.find(period =>
+    period.displayName.toLowerCase().includes(normalizedName) ||
+    normalizedName.includes(period.displayName.toLowerCase())
   );
 }
 
 /**
- * Get random playlist by category
+ * Get random stylistic period by category
  */
-export function getRandomPlaylist(category: 'movement' | 'cooldown'): MusicPlaylist {
-  const playlists = category === 'movement' ? MOVEMENT_PLAYLISTS : COOLDOWN_PLAYLISTS;
-  return playlists[Math.floor(Math.random() * playlists.length)];
+export function getRandomPeriod(category: 'movement' | 'cooldown'): StylisticPeriod {
+  const periods = category === 'movement' ? MOVEMENT_PERIODS : COOLDOWN_PERIODS;
+  return periods[Math.floor(Math.random() * periods.length)];
 }
 
 /**
- * Default playlists for fallback
+ * Default stylistic periods for fallback
  */
-export const DEFAULT_MOVEMENT_PLAYLIST = MOVEMENT_PLAYLISTS[0]; // Ambient Pilates
-export const DEFAULT_COOLDOWN_PLAYLIST = COOLDOWN_PLAYLISTS[0]; // Baroque Classical
+export const DEFAULT_MOVEMENT_PERIOD = MOVEMENT_PERIODS[0]; // Impressionist
+export const DEFAULT_COOLDOWN_PERIOD = COOLDOWN_PERIODS[0]; // Baroque
