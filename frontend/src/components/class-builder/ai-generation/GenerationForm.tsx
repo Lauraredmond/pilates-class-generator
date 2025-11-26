@@ -44,30 +44,21 @@ const DIFFICULTY_OPTIONS: Array<'Beginner' | 'Intermediate' | 'Advanced' | 'Mixe
 //   'Visualization',
 // ];
 
-// Movement music styles - low tempo, meditative, background
+// Movement music styles - Stylistic periods appropriate for active movement
 const MOVEMENT_MUSIC_STYLES = [
-  'Ambient',
-  'Meditation',
-  'Chillout',
-  'Downtempo',
-  'Lofi Instrumental',
-  'Acoustic Instrumental',
-  'Piano Ambient',
-  'Nature Sounds',
-  'Ethereal Soundscapes',
+  { value: 'IMPRESSIONIST', label: 'Impressionist (Debussy, Ravel)' },
+  { value: 'ROMANTIC', label: 'Romantic (Chopin, Tchaikovsky)' },
+  { value: 'MODERN', label: 'Modern (Satie, Copland)' },
+  { value: 'CONTEMPORARY', label: 'Contemporary (Ambient, Meditation)' },
 ];
 
-// Cool down music styles - classical periods + relaxing genres
+// Cool down music styles - Classical periods for relaxation
 const COOLDOWN_MUSIC_STYLES = [
-  'Baroque',
-  'Classical',
-  'Romantic',
-  'Contemporary Classical',
-  'Ambient Classical',
-  'New Age',
-  'Spa & Wellness',
-  'Guided Meditation',
-  'Binaural Beats',
+  { value: 'BAROQUE', label: 'Baroque (Bach, Handel)' },
+  { value: 'CLASSICAL', label: 'Classical (Mozart, Haydn)' },
+  { value: 'ROMANTIC', label: 'Romantic (Chopin, Brahms)' },
+  { value: 'IMPRESSIONIST', label: 'Impressionist (Debussy, Ravel)' },
+  { value: 'CELTIC_TRADITIONAL', label: 'Celtic Traditional (Irish Flute)' },
 ];
 
 export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGeneratedClass = false }: GenerationFormProps) {
@@ -80,8 +71,8 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
     energyLevel: 0.5,
     meditationTheme: 'Mindfulness',
     enableMcpResearch: false,
-    movementMusicStyle: 'Ambient',
-    coolDownMusicStyle: 'Classical',
+    movementMusicStyle: 'IMPRESSIONIST',
+    coolDownMusicStyle: 'BAROQUE',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -202,13 +193,13 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
             className="w-full h-12 px-4 bg-burgundy-dark border border-cream/30 rounded-lg text-cream focus:border-cream/60 focus:outline-none transition-smooth"
           >
             {MOVEMENT_MUSIC_STYLES.map((style) => (
-              <option key={style} value={style}>
-                {style}
+              <option key={style.value} value={style.value}>
+                {style.label}
               </option>
             ))}
           </select>
           <p className="text-xs text-cream/60 mt-1">
-            Low tempo, meditative background music for movement practice
+            Classical music from Internet Archive - public domain, no ads
           </p>
         </div>
 
@@ -225,13 +216,13 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
             className="w-full h-12 px-4 bg-burgundy-dark border border-cream/30 rounded-lg text-cream focus:border-cream/60 focus:outline-none transition-smooth"
           >
             {COOLDOWN_MUSIC_STYLES.map((style) => (
-              <option key={style} value={style}>
-                {style}
+              <option key={style.value} value={style.value}>
+                {style.label}
               </option>
             ))}
           </select>
           <p className="text-xs text-cream/60 mt-1">
-            Calming music to support relaxation during cool down
+            Calming classical music for relaxation and stretching
           </p>
         </div>
       </div>
