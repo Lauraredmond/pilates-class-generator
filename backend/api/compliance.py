@@ -1064,9 +1064,405 @@ async def get_ropa_report(
         )
 
 
+def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
+    """
+    Generate a beautiful, human-readable HTML AI decisions report
+    Shows users why AI made specific recommendations (EU AI Act compliance)
+    """
+    statistics = report_data.get('statistics', {})
+    decisions = report_data.get('decisions', [])
+    ai_act = report_data.get('ai_act_compliance', {})
+    total_decisions = report_data.get('total_decisions', 0)
+
+    # Format date
+    report_date = datetime.utcnow().strftime('%B %d, %Y at %I:%M %p UTC')
+
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AI Decision Explanations - Bassline Pilates</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 40px 20px;
+                background: #f9f9f9;
+            }}
+            .container {{
+                background: white;
+                padding: 50px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }}
+            h1 {{
+                color: #7a1f1f;
+                font-size: 2.5em;
+                margin-bottom: 10px;
+                border-bottom: 3px solid #7a1f1f;
+                padding-bottom: 15px;
+            }}
+            h2 {{
+                color: #7a1f1f;
+                font-size: 1.8em;
+                margin-top: 40px;
+                margin-bottom: 20px;
+                border-left: 5px solid #7a1f1f;
+                padding-left: 15px;
+            }}
+            h3 {{
+                color: #444;
+                font-size: 1.3em;
+                margin-top: 25px;
+                margin-bottom: 15px;
+            }}
+            .metadata {{
+                background: #f5f5f5;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+                border-left: 4px solid #7a1f1f;
+            }}
+            .section {{
+                margin-bottom: 40px;
+            }}
+            .stat-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin: 20px 0;
+            }}
+            .stat-card {{
+                background: #f9f9f9;
+                padding: 20px;
+                border-radius: 8px;
+                border-left: 4px solid #7a1f1f;
+            }}
+            .stat-number {{
+                font-size: 2em;
+                font-weight: bold;
+                color: #7a1f1f;
+                margin-bottom: 5px;
+            }}
+            .stat-label {{
+                color: #666;
+                font-size: 0.9em;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }}
+            .decision-card {{
+                background: #f9f9f9;
+                padding: 25px;
+                border-radius: 8px;
+                margin: 20px 0;
+                border-left: 4px solid #7a1f1f;
+            }}
+            .decision-header {{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }}
+            .decision-title {{
+                font-size: 1.2em;
+                font-weight: 600;
+                color: #7a1f1f;
+            }}
+            .confidence-badge {{
+                display: inline-block;
+                padding: 6px 14px;
+                border-radius: 20px;
+                font-size: 0.9em;
+                font-weight: 600;
+            }}
+            .confidence-high {{ background: #d4edda; color: #155724; }}
+            .confidence-medium {{ background: #fff3cd; color: #856404; }}
+            .confidence-low {{ background: #f8d7da; color: #721c24; }}
+            .info-box {{
+                background: #e8f4f8;
+                border-left: 4px solid #0073aa;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+            }}
+            .warning-box {{
+                background: #fff3cd;
+                border-left: 4px solid #856404;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+            }}
+            .success-box {{
+                background: #d4edda;
+                border-left: 4px solid #155724;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+            }}
+            .badge {{
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 12px;
+                font-size: 0.85em;
+                font-weight: 600;
+                margin: 2px;
+            }}
+            .badge-agent {{ background: #d1ecf1; color: #0c5460; }}
+            .badge-override {{ background: #f8d7da; color: #721c24; }}
+            .empty-state {{
+                color: #999;
+                font-style: italic;
+                padding: 40px 20px;
+                text-align: center;
+                background: #f9f9f9;
+                border-radius: 8px;
+            }}
+            .empty-state-icon {{
+                font-size: 4em;
+                margin-bottom: 15px;
+            }}
+            .compliance-list {{
+                list-style: none;
+                padding: 0;
+            }}
+            .compliance-list li {{
+                background: #f9f9f9;
+                padding: 15px;
+                margin: 10px 0;
+                border-radius: 8px;
+                border-left: 4px solid #7a1f1f;
+            }}
+            .compliance-list strong {{
+                color: #7a1f1f;
+                display: block;
+                margin-bottom: 5px;
+            }}
+            @media print {{
+                body {{ background: white; }}
+                .container {{ box-shadow: none; }}
+                h1 {{ page-break-before: avoid; }}
+                .section {{ page-break-inside: avoid; }}
+            }}
+            footer {{
+                margin-top: 50px;
+                padding-top: 30px;
+                border-top: 2px solid #ddd;
+                text-align: center;
+                color: #777;
+                font-size: 0.9em;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🤖 AI Decision Explanations</h1>
+
+            <div class="metadata">
+                <p><strong>Report Date:</strong> {report_date}</p>
+                <p><strong>Legal Basis:</strong> EU AI Act - Transparency & Explainability Requirements</p>
+                <p><strong>Reference:</strong> <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act</a></p>
+            </div>
+
+            <div class="info-box">
+                <strong>ℹ️ About This Report:</strong> This document shows every AI-powered decision made on your behalf,
+                complete with explanations and reasoning. The EU AI Act requires us to make AI decision-making transparent
+                and explainable. You have the right to understand and challenge any AI recommendation.
+            </div>
+    """
+
+    if total_decisions == 0:
+        html += """
+            <div class="section">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🤖</div>
+                    <h3>No AI Decisions Yet</h3>
+                    <p>AI decisions will appear here once you start using AI-powered features like:</p>
+                    <ul style="text-align: left; max-width: 500px; margin: 20px auto; list-style: disc;">
+                        <li>Class sequence generation</li>
+                        <li>Movement recommendations</li>
+                        <li>Music playlist suggestions</li>
+                        <li>Meditation script creation</li>
+                    </ul>
+                    <p>All AI recommendations will be logged here with full explanations.</p>
+                </div>
+            </div>
+        """
+    else:
+        # Statistics section
+        avg_conf = statistics.get('average_confidence', 0)
+        overrides = statistics.get('user_overrides', 0)
+        override_rate = statistics.get('override_rate_percent', 0)
+        decisions_by_agent = statistics.get('decisions_by_agent', {})
+
+        html += f"""
+            <!-- SUMMARY STATISTICS -->
+            <div class="section">
+                <h2>📊 Summary Statistics</h2>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">{total_decisions}</div>
+                        <div class="stat-label">Total Decisions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{avg_conf * 100:.1f}%</div>
+                        <div class="stat-label">Average Confidence</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{overrides}</div>
+                        <div class="stat-label">User Overrides</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{override_rate:.1f}%</div>
+                        <div class="stat-label">Override Rate</div>
+                    </div>
+                </div>
+
+                <h3>Decisions by AI Agent Type</h3>
+                <div class="stat-grid">
+        """
+
+        for agent_type, count in decisions_by_agent.items():
+            formatted_agent = agent_type.replace('_', ' ').title()
+            html += f"""
+                    <div class="stat-card">
+                        <div class="stat-number">{count}</div>
+                        <div class="stat-label">{formatted_agent}</div>
+                    </div>
+            """
+
+        html += """
+                </div>
+            </div>
+
+            <!-- RECENT DECISIONS -->
+            <div class="section">
+                <h2>📝 Recent AI Decisions</h2>
+        """
+
+        for decision in decisions:
+            timestamp = decision.get('timestamp', 'N/A')
+            try:
+                timestamp = datetime.fromisoformat(timestamp).strftime('%b %d, %Y at %I:%M %p')
+            except:
+                pass
+
+            agent_type = decision.get('agent_type', 'Unknown').replace('_', ' ').title()
+            model_name = decision.get('model_name', 'N/A')
+            confidence = decision.get('confidence_score', 0)
+            reasoning = decision.get('reasoning', 'No reasoning provided')
+            overridden = decision.get('user_overridden', False)
+
+            # Determine confidence level for badge color
+            if confidence >= 0.8:
+                conf_class = "confidence-high"
+            elif confidence >= 0.6:
+                conf_class = "confidence-medium"
+            else:
+                conf_class = "confidence-low"
+
+            html += f"""
+                <div class="decision-card">
+                    <div class="decision-header">
+                        <div class="decision-title">{agent_type}</div>
+                        <div>
+                            <span class="confidence-badge {conf_class}">{confidence * 100:.1f}% Confidence</span>
+                            {('<span class="badge badge-override">⚠️ You Overrode This</span>' if overridden else '')}
+                        </div>
+                    </div>
+                    <p><strong>Date & Time:</strong> {timestamp}</p>
+                    <p><strong>AI Model:</strong> {model_name}</p>
+                    <p><strong>Agent Type:</strong> <span class="badge badge-agent">{agent_type}</span></p>
+                    <div style="margin-top: 15px;">
+                        <strong>🧠 AI Reasoning:</strong>
+                        <p style="margin-top: 8px; padding: 15px; background: white; border-radius: 6px; border-left: 3px solid #7a1f1f;">
+                            {reasoning}
+                        </p>
+                    </div>
+                </div>
+            """
+
+        html += """
+            </div>
+        """
+
+    # EU AI Act Compliance section
+    html += f"""
+            <!-- EU AI ACT COMPLIANCE -->
+            <div class="section">
+                <h2>🇪🇺 EU AI Act Compliance</h2>
+                <div class="success-box">
+                    <strong>✓ This Application is Fully Compliant with the EU AI Act</strong>
+                    <p style="margin-top: 10px;">We adhere to all transparency, explainability, and human oversight requirements.</p>
+                </div>
+
+                <ul class="compliance-list">
+                    <li>
+                        <strong>🔍 Transparency</strong>
+                        <p>{ai_act.get('transparency', 'All AI decisions include reasoning')}</p>
+                    </li>
+                    <li>
+                        <strong>📖 Explainability</strong>
+                        <p>{ai_act.get('explainability', 'You can see why the AI made each recommendation')}</p>
+                    </li>
+                    <li>
+                        <strong>👤 Human Oversight</strong>
+                        <p>{ai_act.get('human_oversight', 'You can override any AI decision')}</p>
+                    </li>
+                    <li>
+                        <strong>🎯 Accuracy</strong>
+                        <p>{ai_act.get('accuracy', 'Average confidence tracked and reported')}</p>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- YOUR RIGHTS -->
+            <div class="section">
+                <h2>⚖️ Your Rights Regarding AI Decisions</h2>
+                <ul class="compliance-list">
+                    <li>
+                        <strong>Right to Explanation</strong>
+                        <p>You have the right to understand why an AI system made a specific decision about you. All reasoning is provided above.</p>
+                    </li>
+                    <li>
+                        <strong>Right to Challenge</strong>
+                        <p>You can override, reject, or modify any AI recommendation. Your decisions take precedence.</p>
+                    </li>
+                    <li>
+                        <strong>Right to Human Review</strong>
+                        <p>You can request human review of any AI decision by contacting support@bassline.com</p>
+                    </li>
+                    <li>
+                        <strong>Right to Not Be Subject to Automated Decision-Making</strong>
+                        <p>All AI recommendations are suggestions only. You retain full control and can disable AI features at any time in Settings.</p>
+                    </li>
+                </ul>
+            </div>
+
+            <footer>
+                <p><strong>Bassline Pilates</strong> | GDPR & EU AI Act Compliant</p>
+                <p>Generated on {report_date}</p>
+                <p>This report is for your personal records only</p>
+            </footer>
+        </div>
+    </body>
+    </html>
+    """
+
+    return html
+
+
 @router.get("/api/compliance/ai-decisions")
 async def get_ai_decisions(
     request: Request,
+    format: str = 'html',  # 'json' or 'html'
     limit: int = 50,
     agent_type: str = None,
     user_id: str = Depends(get_current_user_id)
@@ -1094,12 +1490,25 @@ async def get_ai_decisions(
         result = query.execute()
 
         if not result.data:
-            return {
+            empty_report = {
                 'user_id': user_id,
                 'total_decisions': 0,
                 'decisions': [],
-                'message': 'No AI decisions recorded yet'
+                'statistics': {},
+                'message': 'No AI decisions recorded yet',
+                'ai_act_compliance': {
+                    'transparency': 'All AI decisions include reasoning',
+                    'explainability': 'You can see why the AI made each recommendation',
+                    'human_oversight': 'You can override any AI decision',
+                    'accuracy': 'No decisions recorded yet'
+                }
             }
+
+            if format == 'html':
+                html_content = generate_ai_decisions_html_report(empty_report)
+                return HTMLResponse(content=html_content, status_code=200)
+            else:
+                return empty_report
 
         # Calculate statistics
         total_decisions = len(result.data)
@@ -1112,7 +1521,7 @@ async def get_ai_decisions(
             agent = decision['agent_type']
             decisions_by_agent[agent] = decisions_by_agent.get(agent, 0) + 1
 
-        return {
+        report = {
             'user_id': user_id,
             'total_decisions': total_decisions,
             'statistics': {
@@ -1129,6 +1538,12 @@ async def get_ai_decisions(
                 'accuracy': f'Average confidence: {round(avg_confidence * 100, 1)}%'
             }
         }
+
+        if format == 'html':
+            html_content = generate_ai_decisions_html_report(report)
+            return HTMLResponse(content=html_content, status_code=200)
+        else:
+            return report
 
     except Exception as e:
         print(f"Error fetching AI decisions: {e}")

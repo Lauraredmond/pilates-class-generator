@@ -330,80 +330,37 @@ export function Settings() {
   const handleViewAIDecisions = async () => {
     setComplianceLoading(true);
     setComplianceError('');
+    setComplianceSuccess('');
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE_URL}/api/compliance/ai-decisions?limit=50`, {
+      // Request HTML format for beautiful, human-readable report
+      const response = await axios.get(`${API_BASE_URL}/api/compliance/ai-decisions?format=html&limit=50`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
 
-      // Display AI decisions in a modal or new window
-      const decisionsWindow = window.open('', '_blank');
-      if (decisionsWindow) {
-        decisionsWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>AI Decision Explanations</title>
-            <style>
-              body {
-                font-family: system-ui, -apple-system, sans-serif;
-                padding: 2rem;
-                max-width: 1000px;
-                margin: 0 auto;
-                background: #1a1a1a;
-                color: #f5f5f5;
-              }
-              h1 { color: #8b2635; }
-              h2 { color: #a02d3e; margin-top: 2rem; }
-              .decision { background: #2a2a2a; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; }
-              .stat { display: inline-block; margin: 0.5rem 1rem 0.5rem 0; }
-              .confidence { color: #4ade80; }
-              pre { background: #1a1a1a; padding: 1rem; overflow-x: auto; border-left: 3px solid #8b2635; font-size: 0.875rem; }
-            </style>
-          </head>
-          <body>
-            <h1>AI Decision Explanations</h1>
-            <p><strong>Total Decisions:</strong> ${response.data.total_decisions}</p>
-
-            <div class="decision">
-              <h2>Statistics</h2>
-              <div class="stat"><strong>Average Confidence:</strong> <span class="confidence">${(response.data.statistics?.average_confidence * 100).toFixed(1)}%</span></div>
-              <div class="stat"><strong>User Overrides:</strong> ${response.data.statistics?.user_overrides || 0}</div>
-              <div class="stat"><strong>Override Rate:</strong> ${response.data.statistics?.override_rate_percent || 0}%</div>
-            </div>
-
-            <h2>Recent Decisions</h2>
-            ${response.data.total_decisions === 0 ? '<p><em>No AI decisions recorded yet. AI decisions will appear here after you generate classes or receive recommendations.</em></p>' :
-              response.data.decisions.map((decision: any) => `
-                <div class="decision">
-                  <h3>${decision.agent_type.replace('_', ' ')} - ${new Date(decision.timestamp).toLocaleString()}</h3>
-                  <p><strong>Model:</strong> ${decision.model_name}</p>
-                  <p><strong>Confidence:</strong> <span class="confidence">${(decision.confidence_score * 100).toFixed(1)}%</span></p>
-                  <p><strong>Reasoning:</strong> ${decision.reasoning || 'No reasoning provided'}</p>
-                  ${decision.user_overridden ? '<p style="color: #fbbf24;"><strong>⚠️  You overrode this decision</strong></p>' : ''}
-                </div>
-              `).join('')
-            }
-
-            <div class="decision">
-              <h2>EU AI Act Compliance</h2>
-              <ul>
-                <li><strong>Transparency:</strong> All AI decisions include reasoning</li>
-                <li><strong>Explainability:</strong> You can see why the AI made each recommendation</li>
-                <li><strong>Human Oversight:</strong> You can override any AI decision</li>
-                <li><strong>Accuracy:</strong> Average confidence ${response.data.statistics?.average_confidence ? (response.data.statistics.average_confidence * 100).toFixed(1) : '0'}%</li>
-              </ul>
-            </div>
-          </body>
-          </html>
-        `);
+      // Open the HTML report in a new tab
+      const reportWindow = window.open('', '_blank');
+      if (reportWindow) {
+        reportWindow.document.write(response.data);
+        reportWindow.document.close(); // Finish loading the document
+      } else {
+        // Fallback: If popup was blocked, download as HTML file
+        const dataBlob = new Blob([response.data], { type: 'text/html' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `bassline-ai-decisions-${new Date().toISOString().split('T')[0]}.html`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       }
 
-      setComplianceSuccess('AI decisions opened in new window');
-      setTimeout(() => setComplianceSuccess(''), 3000);
+      setComplianceSuccess('AI decisions report opened in new tab');
+      setTimeout(() => setComplianceSuccess(''), 5000);
     } catch (error: any) {
       setComplianceError(error.response?.data?.detail || 'Failed to load AI decisions');
     } finally {
