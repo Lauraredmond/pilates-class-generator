@@ -566,6 +566,31 @@ Users select from classical music periods appropriate for Pilates:
 - **Contemporary/Postmodern (1975–present)** - Minimalist, ambient, neo-classical
 - **Celtic Traditional**
 
+### Additional Internet Archive Music Sources
+
+**Many more royalty-free classical music tracks available from Internet Archive:**
+
+1. **Musopen DVD Collection** (extensive classical music archive)
+   - https://ia802809.us.archive.org/view_archive.php?archive=/20/items/musopen-dvd/Musopen-DVD.zip
+   - Comprehensive collection of public domain performances
+   - High-quality recordings suitable for Pilates classes
+
+2. **Classical Music Mix by Various Artists**
+   - https://archive.org/details/classical-music-mix-by-various-artists/
+   - Curated collection spanning multiple periods
+   - Easy to browse and download individual tracks
+
+3. **Génies du Classique (Vivaldi, Bach, Mozart, Beethoven)**
+   - https://archive.org/details/geniesduclassique_vol1no03/01+Vivaldi_+La+Primavera%2C+Concerto+No.1+In+Mi+Maggiore+-+Allegro.wav
+   - High-quality WAV files
+   - Well-known classical pieces ideal for Pilates
+
+**Usage Notes:**
+- All tracks are public domain or Creative Commons licensed
+- Can be added to database using same SQL pattern as current tracks
+- Remember to add `archive.org` to ALLOWED_STREAMING_DOMAINS whitelist in backend
+- Verify audio quality and BPM suitability before adding to playlists
+
 ### Database Schema (Planned)
 
 **Core Tables:**
@@ -1006,10 +1031,52 @@ supabase db reset && supabase db push
   - **When to Test**: After Session 11 (OpenAI GPT Integration) when AI agents are actively making decisions
   - **Action Item**: Add to appropriate future session in "Pilates App Daily Sessions Final" document
 
+### Session 9: Music Integration ✅ COMPLETED
+
+**Date:** November 26, 2025
+**Status:** ✅ Complete
+
+**Completed:**
+- ✅ Database schema for music tracks and playlists (migration 003_music_integration.sql)
+- ✅ Internet Archive as music source (14 verified public domain classical tracks)
+- ✅ 8 curated playlists covering all stylistic periods
+- ✅ Backend music API endpoints (`/api/music/playlists`, `/api/music/tracks`, `/api/music/health`)
+- ✅ Frontend music playback integration (HTML5 audio in ClassPlayback component)
+- ✅ Fixed CORS issues and streaming URL whitelist
+- ✅ Fixed browser autoplay blocking with manual enable button
+- ✅ Fixed audio element lifecycle (src being lost on re-render)
+- ✅ Replaced temporary user ID system with authenticated user ID
+
+**Tracks Added (14 total):**
+- **Impressionist:** Clair de Lune, Arabesque No. 1 (Debussy)
+- **Romantic:** Minute Waltz, Nocturne Op. 9 No. 2 (Chopin)
+- **Classical:** Eine Kleine Nachtmusik, Symphony No. 40 (Mozart)
+- **Baroque:** Brandenburg Concerto No. 3, Air on G String, Minuet in G (Bach)
+- **Modern:** Gymnopédie No. 1 (Satie), Appalachian Spring (Copland)
+- **Contemporary:** Ambient meditation track
+- **Celtic Traditional:** Anderson's Reel, Humours of Lissadell
+
+**Production URLs:**
+- Frontend: https://basslinemvp.netlify.app
+- Backend API: https://pilates-class-generator-api3.onrender.com
+- Music health check: https://pilates-class-generator-api3.onrender.com/api/music/health
+
+**Key Technical Fixes:**
+1. Added `archive.org` to ALLOWED_STREAMING_DOMAINS whitelist
+2. Fixed audio element being recreated and losing src URL (changed useEffect deps)
+3. Used 'playing' event instead of 'play' event for accurate playback detection
+4. Added manual "Click to Enable Music" button for browser autoplay blocking
+5. Replaced getTempUserId() with real authenticated user from AuthContext
+
+**Next Steps (Future Sessions):**
+- Add more tracks from Internet Archive collections (URLs documented in CLAUDE.md)
+- Implement playlist editing/customization for users
+- Add music volume controls in playback UI
+- Consider adding music fade in/out between movements
+
 **Next Sessions Preview:**
 
-- **Session 9:** MCP Advanced Features (research capabilities)
-- **Session 10:** Music Integration (Musopen/FreePD - royalty-free classical music)
+- **Session 10:** MCP Advanced Features (research capabilities)
 - **Session 11:** OpenAI GPT Integration (LLM narrative variation)
 - **Session 12:** Testing Suite
 
