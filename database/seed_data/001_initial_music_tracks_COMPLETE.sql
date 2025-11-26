@@ -12,6 +12,18 @@
 -- Run this in Supabase SQL Editor to populate initial music data
 -- =============================================================================
 
+-- Add INTERNET_ARCHIVE to music_source enum if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_enum
+        WHERE enumlabel = 'INTERNET_ARCHIVE'
+        AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'music_source')
+    ) THEN
+        ALTER TYPE music_source ADD VALUE 'INTERNET_ARCHIVE';
+    END IF;
+END $$;
+
 -- Insert Tracks with VERIFIED working URLs
 INSERT INTO music_tracks (
     source, title, composer, artist_performer, duration_seconds, bpm,
