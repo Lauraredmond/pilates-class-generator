@@ -96,6 +96,7 @@ export function ClassPlayback({
   const [currentPlaylist, setCurrentPlaylist] = useState<MusicPlaylist | null>(null);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [musicError, setMusicError] = useState<string | null>(null);
+  const [audioBlocked, setAudioBlocked] = useState(false);
 
   const currentItem = items[currentIndex];
   const totalItems = items.length;
@@ -212,16 +213,39 @@ export function ClassPlayback({
         audioRef.current.pause();
       } else {
         // Trigger play - happens after user clicked "Play Class"
-        audioRef.current.play().catch(error => {
-          console.error('Audio play failed:', error);
-          // Browser may block autoplay - user needs to interact first
-        });
-        console.log('Music play triggered');
+        const playPromise = audioRef.current.play();
+
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('Music play triggered successfully');
+              setAudioBlocked(false);
+            })
+            .catch(error => {
+              console.error('Audio play failed:', error);
+              // Browser blocked autoplay - user needs to click to enable audio
+              setAudioBlocked(true);
+            });
+        }
       }
     } catch (error) {
       console.error('Error controlling music playback:', error);
     }
   }, [isPaused, isMusicReady]);
+
+  // Handler for manual audio enable
+  const handleEnableAudio = useCallback(() => {
+    if (audioRef.current && !isPaused) {
+      audioRef.current.play()
+        .then(() => {
+          console.log('Audio manually enabled');
+          setAudioBlocked(false);
+        })
+        .catch(error => {
+          console.error('Failed to enable audio:', error);
+        });
+    }
+  }, [isPaused]);
 
   // Timer countdown logic
   useEffect(() => {
@@ -389,9 +413,20 @@ export function ClassPlayback({
           </p>
         ) : (
           <>
+            {audioBlocked && (
+              <button
+                onClick={handleEnableAudio}
+                className="mb-2 px-3 py-1.5 bg-cream/10 hover:bg-cream/20 border border-cream/30 rounded text-cream text-xs transition-smooth flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.414a2 2 0 001.414.586h3.172a2 2 0 001.414-.586l2.828-2.828A4 4 0 0012 10.828V5" />
+                </svg>
+                Click to Enable Music
+              </button>
+            )}
             <p className="flex items-center gap-2">
-              <span className={`inline-block w-2 h-2 rounded-full ${isMusicReady ? 'bg-green-500' : 'bg-gray-500'}`} />
-              {isMusicReady ? 'Music Playing' : 'Music Loading...'}
+              <span className={`inline-block w-2 h-2 rounded-full ${isMusicReady && !audioBlocked ? 'bg-green-500' : 'bg-gray-500'}`} />
+              {audioBlocked ? 'Music Blocked (click button above)' : isMusicReady ? 'Music Playing' : 'Music Loading...'}
             </p>
             {currentPlaylist && (
               <>
