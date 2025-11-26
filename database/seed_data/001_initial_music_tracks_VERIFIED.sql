@@ -76,7 +76,7 @@ INSERT INTO music_tracks (
     55,
     'ROMANTIC',
     ARRAY['peaceful', 'piano', 'nocturne', 'flowing', 'romantic'],
-    'https://archive.org/download/classical_music_202209/Chopin%20-%20Nocturne.mp3',
+    'https://archive.org/download/chopin-nocturne-op.-9-no.-2/Chopin%20-%20Nocturne%20op.9%20No.2.mp3',
     '{"type": "Public Domain", "attribution": "Internet Archive", "url": "https://archive.org/details/classical_music_202209", "verified": true}'::jsonb,
     0.98,
     true
@@ -122,7 +122,7 @@ INSERT INTO music_tracks (
     65,
     'BAROQUE',
     ARRAY['gentle', 'piano', 'simple', 'classical'],
-    'https://archive.org/download/classical_music_202209/Bach%20-%20Violoncello%20Minuet.mp3',
+    'https://archive.org/download/BachMinuetInGMajor/Bach_Minuet_in_G_major.mp3',
     '{"type": "Public Domain", "attribution": "Internet Archive", "url": "https://archive.org/details/classical_music_202209", "verified": true}'::jsonb,
     0.92,
     true
@@ -154,7 +154,7 @@ INSERT INTO music_tracks (
     72,
     'CLASSICAL',
     ARRAY['dramatic', 'orchestral', 'intense', 'energetic'],
-    'https://archive.org/download/classical_music_202209/Mozart%20-%20Symphony%2040.mp3',
+    'https://archive.org/download/MozartSymphonyNo.40InGMinorKv.5501.moltoAllegroSalzburgMozarteum/11Sym40-1.mp3',
     '{"type": "Public Domain", "attribution": "Internet Archive", "url": "https://archive.org/details/classical_music_202209", "verified": true}'::jsonb,
     0.90,
     true
