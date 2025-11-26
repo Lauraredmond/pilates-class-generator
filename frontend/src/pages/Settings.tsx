@@ -252,25 +252,32 @@ export function Settings() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE_URL}/api/compliance/my-data?format=json`, {
+      // Request HTML format for beautiful, human-readable report
+      const response = await axios.get(`${API_BASE_URL}/api/compliance/my-data?format=html`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
 
-      // Create downloadable JSON file
-      const dataStr = JSON.stringify(response.data, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `bassline-my-data-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Open the HTML report in a new tab
+      const reportWindow = window.open('', '_blank');
+      if (reportWindow) {
+        reportWindow.document.write(response.data);
+        reportWindow.document.close(); // Finish loading the document
+      } else {
+        // Fallback: If popup was blocked, download as HTML file
+        const dataBlob = new Blob([response.data], { type: 'text/html' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `bassline-my-data-${new Date().toISOString().split('T')[0]}.html`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
 
-      setComplianceSuccess('Your data has been downloaded successfully');
+      setComplianceSuccess('Your data report has been opened in a new tab');
       setTimeout(() => setComplianceSuccess(''), 5000);
     } catch (error: any) {
       setComplianceError(error.response?.data?.detail || 'Failed to download data');
