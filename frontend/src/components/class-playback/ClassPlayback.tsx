@@ -172,9 +172,14 @@ export function ClassPlayback({
     try {
       if (audioRef.current && track.audio_url) {
         audioRef.current.src = track.audio_url;
-        audioRef.current.volume = 0.5; // 50% volume
+        audioRef.current.volume = 0.6; // 60% volume (audible but not overwhelming)
         setIsMusicReady(true);
-        console.log('Music track loaded:', track.title, 'by', track.composer);
+        console.log('🎵 Music track loaded:', track.title, 'by', track.composer);
+        console.log('🔗 Audio URL:', track.audio_url);
+
+        // Reset playing state when new track loads
+        setIsAudioPlaying(false);
+        setAudioBlocked(false);
       }
     } catch (error) {
       console.error('Error loading track:', error);
@@ -187,21 +192,28 @@ export function ClassPlayback({
     const audio = new Audio();
     audioRef.current = audio;
 
-    // Track when audio actually starts playing
-    const handlePlay = () => {
-      console.log('Audio playing event fired');
+    // 'playing' fires when audio ACTUALLY starts playing (not just when play() is called)
+    const handlePlaying = () => {
+      console.log('Audio ACTUALLY playing event fired');
       setIsAudioPlaying(true);
       setAudioBlocked(false);
     };
 
-    // Track when audio is paused
+    // Track when audio is paused or stops
     const handlePause = () => {
       console.log('Audio paused event fired');
       setIsAudioPlaying(false);
     };
 
+    // Track when playback is blocked or interrupted
+    const handleStalled = () => {
+      console.log('Audio stalled - may be blocked');
+      setIsAudioPlaying(false);
+    };
+
     // Handle track ending - load next track
     const handleEnded = () => {
+      setIsAudioPlaying(false);
       if (currentPlaylist && currentPlaylist.tracks) {
         const nextIndex = (currentTrackIndex + 1) % currentPlaylist.tracks.length;
         setCurrentTrackIndex(nextIndex);
@@ -209,15 +221,18 @@ export function ClassPlayback({
       }
     };
 
-    audio.addEventListener('play', handlePlay);
+    // Use 'playing' not 'play' - playing fires when audio ACTUALLY plays
+    audio.addEventListener('playing', handlePlaying);
     audio.addEventListener('pause', handlePause);
+    audio.addEventListener('stalled', handleStalled);
     audio.addEventListener('ended', handleEnded);
 
     // Cleanup
     return () => {
       if (audioRef.current) {
-        audioRef.current.removeEventListener('play', handlePlay);
+        audioRef.current.removeEventListener('playing', handlePlaying);
         audioRef.current.removeEventListener('pause', handlePause);
+        audioRef.current.removeEventListener('stalled', handleStalled);
         audioRef.current.removeEventListener('ended', handleEnded);
         audioRef.current.pause();
         audioRef.current.src = '';
@@ -254,19 +269,38 @@ export function ClassPlayback({
     }
   }, [isPaused, isMusicReady]);
 
-  // Handler for manual audio enable
+  // Handler for manual audio enable - works even when class is paused
   const handleEnableAudio = useCallback(() => {
-    if (audioRef.current && !isPaused) {
-      audioRef.current.play()
+    if (!audioRef.current) {
+      console.error('No audio element available');
+      return;
+    }
+
+    console.log('User clicked Enable Audio button');
+    console.log('Audio src:', audioRef.current.src);
+    console.log('Audio readyState:', audioRef.current.readyState);
+    console.log('Audio volume:', audioRef.current.volume);
+
+    // Ensure volume is audible
+    audioRef.current.volume = 0.6;
+
+    // Try to play (this is a direct user gesture, should work)
+    const playPromise = audioRef.current.play();
+
+    if (playPromise !== undefined) {
+      playPromise
         .then(() => {
-          console.log('Audio manually enabled');
+          console.log('✅ Audio manually enabled and playing!');
           setAudioBlocked(false);
+          setIsAudioPlaying(true);
         })
         .catch(error => {
-          console.error('Failed to enable audio:', error);
+          console.error('❌ Failed to enable audio:', error);
+          setAudioBlocked(true);
+          setMusicError(`Audio blocked: ${error.message}. Try clicking the button again.`);
         });
     }
-  }, [isPaused]);
+  }, []);
 
   // Timer countdown logic
   useEffect(() => {
