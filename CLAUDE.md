@@ -1076,8 +1076,8 @@ supabase db reset && supabase db push
 
 **Next Sessions Preview:**
 
-- **Session 10:** MCP Advanced Features (research capabilities)
-- **Session 11:** OpenAI GPT Integration (LLM narrative variation)
+- **Session 10:** OpenAI GPT Integration (LLM narrative variation & personalization)
+- **Session 11:** MCP Advanced Features (web research capabilities - optional/future)
 - **Session 12:** Testing Suite
 
 ---
