@@ -97,6 +97,7 @@ export function ClassPlayback({
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [musicError, setMusicError] = useState<string | null>(null);
   const [audioBlocked, setAudioBlocked] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
   const currentItem = items[currentIndex];
   const totalItems = items.length;
@@ -186,18 +187,38 @@ export function ClassPlayback({
     const audio = new Audio();
     audioRef.current = audio;
 
+    // Track when audio actually starts playing
+    const handlePlay = () => {
+      console.log('Audio playing event fired');
+      setIsAudioPlaying(true);
+      setAudioBlocked(false);
+    };
+
+    // Track when audio is paused
+    const handlePause = () => {
+      console.log('Audio paused event fired');
+      setIsAudioPlaying(false);
+    };
+
     // Handle track ending - load next track
-    audio.addEventListener('ended', () => {
+    const handleEnded = () => {
       if (currentPlaylist && currentPlaylist.tracks) {
         const nextIndex = (currentTrackIndex + 1) % currentPlaylist.tracks.length;
         setCurrentTrackIndex(nextIndex);
         loadTrack(currentPlaylist.tracks[nextIndex]);
       }
-    });
+    };
+
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
 
     // Cleanup
     return () => {
       if (audioRef.current) {
+        audioRef.current.removeEventListener('play', handlePlay);
+        audioRef.current.removeEventListener('pause', handlePause);
+        audioRef.current.removeEventListener('ended', handleEnded);
         audioRef.current.pause();
         audioRef.current.src = '';
       }
@@ -404,41 +425,46 @@ export function ClassPlayback({
         </div>
       )}
 
-      {/* Music info */}
-      <div className="absolute bottom-20 left-4 text-xs text-cream/40 space-y-1">
+      {/* Music control - Always visible */}
+      <div className="absolute bottom-20 left-4 space-y-2">
         {musicError ? (
-          <p className="flex items-center gap-2 text-yellow-400">
+          <p className="flex items-center gap-2 text-yellow-400 text-xs">
             <span className="inline-block w-2 h-2 rounded-full bg-yellow-500" />
             {musicError}
           </p>
         ) : (
           <>
-            {audioBlocked && (
+            {/* Prominent Enable Music Button - Always show when not playing */}
+            {isMusicReady && !isAudioPlaying && (
               <button
                 onClick={handleEnableAudio}
-                className="mb-2 px-3 py-1.5 bg-cream/10 hover:bg-cream/20 border border-cream/30 rounded text-cream text-xs transition-smooth flex items-center gap-2"
+                className="px-4 py-2 bg-cream text-burgundy rounded-lg hover:bg-cream/90 transition-smooth flex items-center gap-2 shadow-lg font-medium"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.414a2 2 0 001.414.586h3.172a2 2 0 001.414-.586l2.828-2.828A4 4 0 0012 10.828V5" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H9a2 2 0 002-2V7a2 2 0 00-2-2H5.586l-3.293 3.293a1 1 0 000 1.414L5.586 15z" />
                 </svg>
-                Click to Enable Music
+                {audioBlocked ? 'Click to Enable Music' : 'Click to Play Music'}
               </button>
             )}
-            <p className="flex items-center gap-2">
-              <span className={`inline-block w-2 h-2 rounded-full ${isMusicReady && !audioBlocked ? 'bg-green-500' : 'bg-gray-500'}`} />
-              {audioBlocked ? 'Music Blocked (click button above)' : isMusicReady ? 'Music Playing' : 'Music Loading...'}
-            </p>
-            {currentPlaylist && (
-              <>
-                <p>Playlist: {currentPlaylist.name}</p>
-                <p>Track {currentTrackIndex + 1} of {currentPlaylist.tracks?.length || 0}</p>
-                {currentPlaylist.tracks && currentPlaylist.tracks[currentTrackIndex] && (
-                  <p className="truncate max-w-xs">
-                    {currentPlaylist.tracks[currentTrackIndex].composer} - {currentPlaylist.tracks[currentTrackIndex].title}
-                  </p>
-                )}
-              </>
-            )}
+
+            {/* Music info - smaller text below button */}
+            <div className="text-xs text-cream/40 space-y-1">
+              <p className="flex items-center gap-2">
+                <span className={`inline-block w-2 h-2 rounded-full ${isAudioPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
+                {isAudioPlaying ? 'Music Playing' : isMusicReady ? 'Music Ready' : 'Music Loading...'}
+              </p>
+              {currentPlaylist && (
+                <>
+                  <p>Playlist: {currentPlaylist.name}</p>
+                  <p>Track {currentTrackIndex + 1} of {currentPlaylist.tracks?.length || 0}</p>
+                  {currentPlaylist.tracks && currentPlaylist.tracks[currentTrackIndex] && (
+                    <p className="truncate max-w-xs">
+                      {currentPlaylist.tracks[currentTrackIndex].composer} - {currentPlaylist.tracks[currentTrackIndex].title}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
           </>
         )}
       </div>
