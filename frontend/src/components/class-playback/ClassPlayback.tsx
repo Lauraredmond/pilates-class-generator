@@ -187,37 +187,38 @@ export function ClassPlayback({
     }
   };
 
-  // Initialize HTML5 audio element
+  // Initialize HTML5 audio element ONCE on mount
   useEffect(() => {
+    console.log('🎧 Initializing audio element');
     const audio = new Audio();
     audioRef.current = audio;
 
     // 'playing' fires when audio ACTUALLY starts playing (not just when play() is called)
     const handlePlaying = () => {
-      console.log('Audio ACTUALLY playing event fired');
+      console.log('✅ Audio ACTUALLY playing event fired');
       setIsAudioPlaying(true);
       setAudioBlocked(false);
     };
 
     // Track when audio is paused or stops
     const handlePause = () => {
-      console.log('Audio paused event fired');
+      console.log('⏸️ Audio paused event fired');
       setIsAudioPlaying(false);
     };
 
     // Track when playback is blocked or interrupted
     const handleStalled = () => {
-      console.log('Audio stalled - may be blocked');
+      console.log('⚠️ Audio stalled - may be blocked');
       setIsAudioPlaying(false);
     };
 
     // Handle track ending - load next track
     const handleEnded = () => {
+      console.log('⏭️ Track ended, loading next track');
       setIsAudioPlaying(false);
       if (currentPlaylist && currentPlaylist.tracks) {
         const nextIndex = (currentTrackIndex + 1) % currentPlaylist.tracks.length;
         setCurrentTrackIndex(nextIndex);
-        loadTrack(currentPlaylist.tracks[nextIndex]);
       }
     };
 
@@ -227,18 +228,24 @@ export function ClassPlayback({
     audio.addEventListener('stalled', handleStalled);
     audio.addEventListener('ended', handleEnded);
 
-    // Cleanup
+    // Cleanup on component unmount
     return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener('playing', handlePlaying);
-        audioRef.current.removeEventListener('pause', handlePause);
-        audioRef.current.removeEventListener('stalled', handleStalled);
-        audioRef.current.removeEventListener('ended', handleEnded);
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
+      console.log('🧹 Cleaning up audio element');
+      audio.removeEventListener('playing', handlePlaying);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('stalled', handleStalled);
+      audio.removeEventListener('ended', handleEnded);
+      audio.pause();
+      audio.src = '';
     };
-  }, [currentPlaylist, currentTrackIndex]);
+  }, []); // Empty deps - only run once on mount!
+
+  // Load next track when track index changes
+  useEffect(() => {
+    if (currentPlaylist && currentPlaylist.tracks && currentPlaylist.tracks[currentTrackIndex]) {
+      loadTrack(currentPlaylist.tracks[currentTrackIndex]);
+    }
+  }, [currentTrackIndex, currentPlaylist]);
 
   // Sync music pause/resume with class timer
   useEffect(() => {
