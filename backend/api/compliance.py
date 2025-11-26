@@ -36,10 +36,12 @@ async def export_my_data(
 
     try:
         # User profile - use admin client to bypass RLS
-        profile = supabase_admin.table('user_profiles').select('*').eq('user_id', user_id).execute()
+        # Note: user_profiles table uses 'id' as primary key, not 'user_id'
+        profile = supabase_admin.table('user_profiles').select('*').eq('id', user_id).execute()
         user_data['profile'] = profile.data[0] if profile.data else None
 
         # User preferences - use admin client to bypass RLS
+        # Note: user_preferences table has 'user_id' column
         preferences = supabase_admin.table('user_preferences').select('*').eq('user_id', user_id).execute()
         user_data['preferences'] = preferences.data[0] if preferences.data else None
 
