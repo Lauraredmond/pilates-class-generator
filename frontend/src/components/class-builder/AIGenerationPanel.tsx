@@ -7,13 +7,14 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { useStore } from '../../store/useStore';
+import { useAuth } from '../../context/AuthContext';
 import { agentsApi } from '../../services/api';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
 import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
-import { getTempUserId } from '../../utils/tempUserId';
 
 export function AIGenerationPanel() {
+  const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [results, setResults] = useState<GeneratedClassResults | null>(null);
@@ -29,15 +30,17 @@ export function AIGenerationPanel() {
     setLastFormData(formData);
 
     try {
-      // Get or create temporary user ID for tracking
-      const userId = getTempUserId();
-      console.log('[AIGenerationPanel] Using user ID:', userId);
+      // Use authenticated user ID
+      if (!user) {
+        throw new Error('You must be logged in to generate a class');
+      }
+      console.log('[AIGenerationPanel] Using authenticated user ID:', user.id);
 
       // Generate all three components in parallel
       const [sequenceResponse, musicResponse, meditationResponse] = await Promise.all([
         // Generate sequence
         agentsApi.generateSequence({
-          user_id: userId, // CRITICAL FIX: Pass user_id for movement tracking
+          user_id: user.id, // Use authenticated user ID for movement tracking
           target_duration_minutes: formData.duration,
           difficulty_level: formData.difficulty,
           strictness_level: 'guided',

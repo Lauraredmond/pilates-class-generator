@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/Card';
 import { analyticsApi } from '../services/api';
-import { getTempUserId } from '../utils/tempUserId';
+import { useAuth } from '../context/AuthContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -44,7 +44,7 @@ interface TimeSeriesData {
 }
 
 export function Analytics() {
-  const userId = getTempUserId();
+  const { user } = useAuth();
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('week');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +71,12 @@ export function Analytics() {
   // Fetch all analytics data
   useEffect(() => {
     const fetchAnalytics = async () => {
+      if (!user) {
+        setIsLoading(false);
+        setError('You must be logged in to view analytics');
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
@@ -83,12 +89,12 @@ export function Analytics() {
           difficultyProgResponse,
           muscleDistResponse,
         ] = await Promise.all([
-          analyticsApi.getSummary(userId),
-          analyticsApi.getMovementHistory(userId, timePeriod),
-          analyticsApi.getMuscleGroupHistory(userId, timePeriod),
-          analyticsApi.getPracticeFrequency(userId, timePeriod),
-          analyticsApi.getDifficultyProgression(userId, timePeriod),
-          analyticsApi.getMuscleDistribution(userId, 'total'), // Always show total for doughnut
+          analyticsApi.getSummary(user.id),
+          analyticsApi.getMovementHistory(user.id, timePeriod),
+          analyticsApi.getMuscleGroupHistory(user.id, timePeriod),
+          analyticsApi.getPracticeFrequency(user.id, timePeriod),
+          analyticsApi.getDifficultyProgression(user.id, timePeriod),
+          analyticsApi.getMuscleDistribution(user.id, 'total'), // Always show total for doughnut
         ]);
 
         // Update stats
@@ -118,7 +124,7 @@ export function Analytics() {
     };
 
     fetchAnalytics();
-  }, [userId, timePeriod]);
+  }, [user, timePeriod]);
 
   // Chart configurations
   const lineChartOptions = {
