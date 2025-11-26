@@ -1035,82 +1035,13 @@ Create comprehensive settings page for user preferences.
 
 ---
 
-## **SESSION 9: MCP Advanced Features**
-
-### Role
-You are an MCP integration specialist.
-
-### Context
-Day 9. Basic MCP integration working. Now add advanced research capabilities.
-
-### Your Task
-Implement advanced MCP features for comprehensive web research.
-
-### What You Should Do
-
-**Step 1: Implement Caching Layer**
-```python
-class MCPCache:
-    def __init__(self, redis_client, ttl_hours=24):
-        self.redis = redis_client
-        self.ttl = ttl_hours * 3600
-        
-    async def get_or_fetch(self, query: str, fetcher):
-        cache_key = f"mcp:{hashlib.md5(query).hexdigest()}"
-        cached = await self.redis.get(cache_key)
-        
-        if cached:
-            return json.loads(cached)
-            
-        result = await fetcher(query)
-        await self.redis.setex(cache_key, self.ttl, json.dumps(result))
-        return result
-```
-
-**Step 2: Quality Scoring System**
-```python
-class ResearchQualityScorer:
-    TRUSTED_DOMAINS = [
-        'pilatesmethod.com',
-        'pilatesfoundation.com',
-        'balancedbody.com',
-        'ncbi.nlm.nih.gov'
-    ]
-    
-    def score_source(self, url: str, content: str) -> float:
-        # Score based on domain authority
-        # Check for citations
-        # Verify author credentials
-        # Check recency
-        return score
-```
-
-**Step 3: Batch Research Operations**
-- Research multiple movements in parallel
-- Organize batch results
-- Progress tracking
-
-**Step 4: Research Scheduling**
-- Weekly automatic updates
-- Popular movement research
-- Stale data detection
-
-### Expected Outputs
-- MCP caching implementation
-- Quality scoring system
-- Batch research API
-- Automated scheduler
-- Research analytics
-
----
-
-## **SESSION 10: Music Integration**
+## **SESSION 9: Music Integration**
 
 ### Role
 You are an API integration specialist with audio streaming experience.
 
 ### Context
-Day 10. Core app works. Add music integration.
+Day 9. Core app works. Add music integration.
 
 ### Your Task
 Integrate music selection and playback features.
@@ -1125,7 +1056,7 @@ Integrate music selection and playback features.
 Music integration ChatGPT instructions (they should override any legacy music integration plans with SoundCloud)
 am building a Pilates fitness platform called Bassline. I need a streamed music integration that:
 Does not depend on Spotify or SoundCloud.
-Has no per-user OAuth step and no “25 user dev cap” style limits.
+Has no per-user OAuth step and no "25 user dev cap" style limits.
 Uses royalty-free / public-domain classical or Pilates-style music, suitable for calm and flowing Pilates sessions.
 Does not require me to self-host audio files (storage is too expensive); audio must be streamed from a third-party CDN.
 Has no ads during playback (YouTube is not acceptable due to ads and big-co constraints).
@@ -1133,7 +1064,7 @@ Can scale to a high number of users without hitting arbitrary vendor caps, as lo
 Must not introduce security risks: no exposed secrets, no open proxy endpoints, strong auth around all APIs, and safe handling of any external URLs or user input.
 I want you to design the integration architecture, backend+frontend flow, and data model, but do not write any actual code yet. Just specify the design in clear technical detail so that we can implement it step by step later.
 1. Music source strategy
-Design a vendor-agnostic “Music Source Layer” for Bassline with these rules:
+Design a vendor-agnostic "Music Source Layer" for Bassline with these rules:
 Primary sources must be:
 Musopen (royalty-free/public-domain classical recordings, streaming and downloads allowed for free, no copyright restrictions).
 FreePD (CC0 public-domain music library).
@@ -1150,11 +1081,11 @@ Document clearly how the Music Source Layer is structured so that we can swap in
 For example, I should end up with an abstract interface like:
 MusicSource (get playlists, get tracks, get streaming URL, optional tempo/mood/period metadata)
 Implementations: MusopenSource, FreePDSource, later JamendoSource, EpidemicSource.
-Also, describe any security considerations specific to this layer: e.g. never exposing provider API keys to the client, validating and whitelisting any external domains used for audio streaming, and avoiding any generic “open proxy” pattern.
+Also, describe any security considerations specific to this layer: e.g. never exposing provider API keys to the client, validating and whitelisting any external domains used for audio streaming, and avoiding any generic "open proxy" pattern.
 2. User experience requirements
 Design the UX flow like this:
-Users do not connect external accounts (no “Login with Spotify/SoundCloud”).
-Instead, Bassline offers musical stylistic periods that are appropriate for Pilates. The user chooses one of these as the “musical style” for the class.
+Users do not connect external accounts (no "Login with Spotify/SoundCloud").
+Instead, Bassline offers musical stylistic periods that are appropriate for Pilates. The user chooses one of these as the "musical style" for the class.
 Use the following musical stylistic periods (and feel free to reference their traits in the design, but keep the labels exactly as written):
 Baroque Period (c. 1600–1750)
 Sound: Ornamentation, contrast, dramatic expression
@@ -1178,7 +1109,7 @@ Composers: Stravinsky, Schoenberg, Bartók, Copland
 Traits: Break from tradition; experimentation
 Contemporary / Postmodern (1975–present)
 Use this as a flexible bucket for more recent classical-style, minimalist, ambient or neo-classical works suitable for Pilates (e.g. piano minimalism, gentle ambient textures).
-Celtic Traditional 
+Celtic Traditional
 The user flow should be:
 The user picks:
 A class type (e.g. 30-min Pilates core, 45-min slow flow), and
@@ -1191,7 +1122,7 @@ Loading available musical stylistic periods.
 Listing or previewing playlists associated with each period (optionally allowing a brief audio preview).
 Starting a class session with a specific stylistic period.
 Keeping the music and the narrative in sync (timing model).
-Throughout, consider security and privacy: avoid exposing any internal IDs that shouldn’t be public, and ensure no sensitive information is leaked in responses.
+Throughout, consider security and privacy: avoid exposing any internal IDs that shouldn't be public, and ensure no sensitive information is leaked in responses.
 3. Data model (Supabase/Postgres)
 Design a relational schema (tables and key fields; no SQL yet) for storing our internal Bassline music library based on Musopen/FreePD:
 Core tables should include at least:
@@ -1212,7 +1143,7 @@ licence_info (text/json; store licence type e.g. CC0, PD, etc.)
 created_at, updated_at
 music_playlists
 id (UUID)
-name (e.g. “Romantic Slow Flow – 30 min”)
+name (e.g. "Romantic Slow Flow – 30 min")
 description
 intended_intensity (enum: LOW, MEDIUM, HIGH)
 intended_use (enum: PILATES_SLOW_FLOW, PILATES_CORE, STRETCHING, etc.)
@@ -1249,11 +1180,11 @@ Start a class:
 Frontend calls backend to create a class_session with selected music_playlist_id and class definition.
 Backend returns an ordered list of tracks with timing metadata.
 Keep music and narrative roughly aligned:
-You don’t need sample-accurate sync; just design for phase-level sync (e.g. warm-up ≈ first 5 minutes of playlist, more flowing pieces in middle, slower tracks at end).
+You don't need sample-accurate sync; just design for phase-level sync (e.g. warm-up ≈ first 5 minutes of playlist, more flowing pieces in middle, slower tracks at end).
 Explain how we could map workout phases to clusters of tracks or sections of tracks while honoring the chosen stylistic period.
 Handle failure scenarios:
 If a track fails to load, how does the player skip to the next track gracefully?
-If a provider goes down temporarily, how does the system fail softly (e.g., “Music unavailable, class still runs”)?
+If a provider goes down temporarily, how does the system fail softly (e.g., "Music unavailable, class still runs")?
 Include any relevant security considerations here too, for example:
 Not allowing arbitrary user-supplied URLs as audio sources.
 Ensuring CORS and Content Security Policy are configured so the app only plays audio from trusted domains.
@@ -1270,7 +1201,7 @@ Expected status codes and error conditions.
 Security requirements for all endpoints:
 All state-changing endpoints (e.g. starting a class) must require authenticated users (e.g. via Supabase auth or another token-based system).
 Do not expose provider API keys or any secrets in responses.
-Do not create any “open proxy” endpoint that fetches arbitrary external URLs based on user input. Any external fetch should be restricted to known, whitelisted domains (e.g. Musopen, FreePD).
+Do not create any "open proxy" endpoint that fetches arbitrary external URLs based on user input. Any external fetch should be restricted to known, whitelisted domains (e.g. Musopen, FreePD).
 Validate and sanitize all request parameters; avoid anything that could lead to injection or path traversal.
 Consider rate limiting on relevant endpoints to protect both my infrastructure and upstream providers.
 6. Guardrails for you (Claude Code) – no spoofing, no unsafe shortcuts
@@ -1281,34 +1212,35 @@ Come from our Supabase music_tracks table, or
 Be fetched from Musopen/FreePD in a backend ingestion/curation step and then stored.
 That is: Claude should not fabricate track data; every track row must correspond to a real track with a real audio URL from Musopen/FreePD.
 When implementing later:
-Do not hard-code “mock data” into the frontend as if it were real.
-If data doesn’t exist yet, you must:
+Do not hard-code "mock data" into the frontend as if it were real.
+If data doesn't exist yet, you must:
 Either show an empty state, or
-Use a clearly marked “development fixtures” mode that is only used in local dev and never presented as production behavior.
+Use a clearly marked "development fixtures" mode that is only used in local dev and never presented as production behavior.
 Explicitly state in your design how you will enforce this rule in the code structure (e.g., by having a single data-access layer that reads from Supabase / real APIs only, and by separating any sample/fixture data into a clearly labeled development-only module).
 Also, never bypass security for convenience:
-Don’t disable auth or RLS “just to make it work”.
-Don’t put credentials, tokens, or secrets in the frontend.
-Don’t create generic “fetch any URL” endpoints.
+Don't disable auth or RLS "just to make it work".
+Don't put credentials, tokens, or secrets in the frontend.
+Don't create generic "fetch any URL" endpoints.
 7. Future-proofing and vendor fallback
 Finally, explain:
 How this architecture allows me to later plug in Jamendo or Epidemic Sound as additional sources without changing the Pilates workout engine or the stylistic-period UX.
 How we could gradually:
-Keep Musopen/FreePD as a free classical “base catalog”, and
+Keep Musopen/FreePD as a free classical "base catalog", and
 Add a richer licensed catalog via Jamendo/Epidemic if/when I have budget and a partnership.
 Make sure the design makes it straightforward to:
 Add new MusicSource implementations.
 Map new catalogs into the same music_tracks / music_playlists schema.
 Preserve all existing security guarantees and guardrails when new sources are added.
+
 ---
 
-## **SESSION 11: OpenAI GPT Integration & Agentic Behavior**
+## **SESSION 10: OpenAI GPT Integration & Agentic Behavior**
 
 ### Role
 You are an AI integration specialist with expertise in LLM APIs and cost optimization.
 
 ### Context
-Day 11. Core agents are using template-based variation. Now we upgrade to real GPT-3.5 for genuine agentic behavior and natural language variation.
+Day 10. Core agents are using template-based variation. Now we upgrade to real GPT-3.5 for genuine agentic behavior and natural language variation.
 
 ### Your Task
 Enable OpenAI API integration for narrative variation, implement cost-optimized caching, and test the full AI agentic platform.
@@ -1489,6 +1421,82 @@ Create `docs/LLM_INTEGRATION.md`:
 - Cache by movement ID + variation type
 - Monitor usage with dashboard
 - Set budget alerts in OpenAI console
+
+---
+
+## **SESSION 11: MCP Advanced Features**
+
+### Role
+You are a full-stack developer with expertise in MCP integration and caching strategies.
+
+### Context
+Day 11. LLM integration complete. Now implement MCP advanced features for web research.
+
+### Your Task
+Implement MCP research capabilities with caching, quality scoring, and batch operations.
+
+### What You Should Do
+
+**Step 1: Implement Caching Layer**
+```python
+class MCPCache:
+    def __init__(self, redis_client, ttl_hours=24):
+        self.redis = redis_client
+        self.ttl = ttl_hours * 3600
+
+    async def get_or_fetch(self, query: str, fetcher):
+        cache_key = f"mcp:{hashlib.md5(query).hexdigest()}"
+        cached = await self.redis.get(cache_key)
+
+        if cached:
+            return json.loads(cached)
+
+        result = await fetcher(query)
+        await self.redis.setex(cache_key, self.ttl, json.dumps(result))
+        return result
+```
+
+**Step 2: Quality Scoring System**
+```python
+class ResearchQualityScorer:
+    TRUSTED_DOMAINS = [
+        'pilatesmethod.com',
+        'pilatesfoundation.com',
+        'balancedbody.com',
+        'ncbi.nlm.nih.gov'
+    ]
+
+    def score_source(self, url: str, content: str) -> float:
+        # Score based on domain authority
+        # Check for citations
+        # Verify author credentials
+        # Check recency
+        return score
+```
+
+**Step 3: Batch Research Operations**
+- Research multiple movements in parallel
+- Organize batch results
+- Progress tracking
+
+**Step 4: Research Scheduling**
+- Weekly automatic updates
+- Popular movement research
+- Stale data detection
+
+### Expected Outputs
+- MCP caching implementation
+- Quality scoring system
+- Batch research API
+- Automated scheduler
+- Research analytics
+
+### Success Criteria
+- [ ] MCP caching reduces duplicate requests by >70%
+- [ ] Quality scoring filters low-quality sources
+- [ ] Batch operations work efficiently
+- [ ] Research results properly attributed
+- [ ] Scheduler runs automatically
 
 ---
 
@@ -2096,13 +2104,7 @@ Good luck! Follow each session sequentially, and you'll have a complete, profess
   - AI strictness preferences
   - Music style preferences (for future Musopen/FreePD integration)
 
-**Session 9:** MCP Advanced Features
-- Implement caching layer for research results
-- Quality scoring system for web sources
-- Batch research operations
-- Research scheduling
-
-**Session 10:** 🎵 **Music Integration** (Musopen/FreePD)
+**Session 9:** 🎵 **Music Integration** (Musopen/FreePD)
 - **Approach:** Royalty-free classical music from Musopen and FreePD
 - **Architecture:** Vendor-agnostic Music Source Layer
 - **Musical Periods:** Baroque, Classical, Romantic, Impressionist, Modern, Contemporary, Celtic
@@ -2113,12 +2115,18 @@ Good luck! Follow each session sequentially, and you'll have a complete, profess
   - Musical stylistic period selection
   - Sync with class timer
 
-**Session 11:** OpenAI GPT Integration & Agentic Behavior
+**Session 10:** OpenAI GPT Integration & Agentic Behavior
 - OpenAI API setup and configuration
 - LLM-based narrative variation
 - Redis caching for cost optimization
 - Cost monitoring dashboard
 - Template fallback configuration
+
+**Session 11:** MCP Advanced Features
+- Implement caching layer for research results
+- Quality scoring system for web sources
+- Batch research operations
+- Research scheduling
 
 **Session 12:** Testing Suite
 - Unit tests (Jest/Pytest)
@@ -2166,9 +2174,9 @@ Good luck! Follow each session sequentially, and you'll have a complete, profess
 - ⚙️ Settings & Preferences (Session 8) - notification, privacy, AI preferences
 
 **Not Yet Started:**
-- MCP research integration (Session 9)
-- Music integration - Musopen/FreePD (Session 10)
-- OpenAI GPT narrative variation (Session 11)
+- Music integration - Musopen/FreePD (Session 9)
+- OpenAI GPT narrative variation (Session 10)
+- MCP research integration (Session 11)
 - Testing suite (Session 12)
 - Compliance dashboard (Session 13)
 - Excel sync tools (future)
