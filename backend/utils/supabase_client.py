@@ -18,3 +18,13 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 # Create singleton Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+def get_supabase_client() -> Client:
+    """
+    FastAPI dependency injection function for Supabase client.
+
+    Returns:
+        Supabase client instance
+    """
+    return supabase
