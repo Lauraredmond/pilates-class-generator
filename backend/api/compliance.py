@@ -510,9 +510,435 @@ async def export_my_data(
         )
 
 
+def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
+    """
+    Generate a beautiful, human-readable HTML ROPA report
+    Shows users exactly how their data has been processed
+    """
+    summary = report_data.get('summary', {})
+    recent_activities = report_data.get('recent_activities', [])
+    third_party = report_data.get('third_party_data_sharing', {})
+    retention = report_data.get('retention_policy', {})
+    rights = report_data.get('your_rights', {})
+    dpo = report_data.get('data_protection_officer', {})
+    authority = report_data.get('supervisory_authority', {})
+
+    # Format date
+    report_date = datetime.fromisoformat(report_data.get('report_date', datetime.utcnow().isoformat())).strftime('%B %d, %Y at %I:%M %p UTC')
+
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Processing Activities Report - Bassline Pilates</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 1000px;
+                margin: 0 auto;
+                padding: 40px 20px;
+                background: #f9f9f9;
+            }}
+            .container {{
+                background: white;
+                padding: 50px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }}
+            h1 {{
+                color: #7a1f1f;
+                font-size: 2.5em;
+                margin-bottom: 10px;
+                border-bottom: 3px solid #7a1f1f;
+                padding-bottom: 15px;
+            }}
+            h2 {{
+                color: #7a1f1f;
+                font-size: 1.8em;
+                margin-top: 40px;
+                margin-bottom: 20px;
+                border-left: 5px solid #7a1f1f;
+                padding-left: 15px;
+            }}
+            h3 {{
+                color: #444;
+                font-size: 1.3em;
+                margin-top: 25px;
+                margin-bottom: 15px;
+            }}
+            .metadata {{
+                background: #f5f5f5;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+                border-left: 4px solid #7a1f1f;
+            }}
+            .section {{
+                margin-bottom: 40px;
+            }}
+            .stat-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin: 20px 0;
+            }}
+            .stat-card {{
+                background: #f9f9f9;
+                padding: 20px;
+                border-radius: 8px;
+                border-left: 4px solid #7a1f1f;
+            }}
+            .stat-number {{
+                font-size: 2em;
+                font-weight: bold;
+                color: #7a1f1f;
+                margin-bottom: 5px;
+            }}
+            .stat-label {{
+                color: #666;
+                font-size: 0.9em;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }}
+            .data-table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 15px;
+                background: white;
+            }}
+            .data-table th {{
+                background: #7a1f1f;
+                color: white;
+                padding: 12px;
+                text-align: left;
+                font-weight: 600;
+            }}
+            .data-table td {{
+                padding: 12px;
+                border-bottom: 1px solid #ddd;
+            }}
+            .data-table tr:hover {{
+                background: #f9f9f9;
+            }}
+            .info-box {{
+                background: #e8f4f8;
+                border-left: 4px solid #0073aa;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+            }}
+            .warning-box {{
+                background: #fff3cd;
+                border-left: 4px solid #856404;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+            }}
+            .badge {{
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 12px;
+                font-size: 0.85em;
+                font-weight: 600;
+                margin: 2px;
+            }}
+            .badge-read {{ background: #d1ecf1; color: #0c5460; }}
+            .badge-create {{ background: #d4edda; color: #155724; }}
+            .badge-update {{ background: #fff3cd; color: #856404; }}
+            .badge-delete {{ background: #f8d7da; color: #721c24; }}
+            .badge-export {{ background: #e2e3e5; color: #383d41; }}
+            .rights-list {{
+                list-style: none;
+                padding: 0;
+            }}
+            .rights-list li {{
+                background: #f9f9f9;
+                padding: 15px;
+                margin: 10px 0;
+                border-radius: 8px;
+                border-left: 4px solid #7a1f1f;
+            }}
+            .rights-list strong {{
+                color: #7a1f1f;
+                display: block;
+                margin-bottom: 5px;
+            }}
+            @media print {{
+                body {{ background: white; }}
+                .container {{ box-shadow: none; }}
+                h1 {{ page-break-before: avoid; }}
+                .section {{ page-break-inside: avoid; }}
+            }}
+            footer {{
+                margin-top: 50px;
+                padding-top: 30px;
+                border-top: 2px solid #ddd;
+                text-align: center;
+                color: #777;
+                font-size: 0.9em;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🗂️ Processing Activities Report</h1>
+
+            <div class="metadata">
+                <p><strong>Report Date:</strong> {report_date}</p>
+                <p><strong>Legal Basis:</strong> GDPR Article 30 - Record of Processing Activities</p>
+                <p><strong>Reference:</strong> <a href="https://gdpr-info.eu/art-30-gdpr/" target="_blank">GDPR Article 30</a></p>
+            </div>
+
+            <div class="info-box">
+                <strong>ℹ️ About This Report:</strong> This document shows every time we accessed, modified,
+                or processed your personal data. We are required by law to maintain this audit log and make
+                it available to you. This ensures full transparency in how we handle your information.
+            </div>
+
+            <!-- SUMMARY STATISTICS -->
+            <div class="section">
+                <h2>📊 Summary Statistics</h2>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">{summary.get('total_processing_activities', 0)}</div>
+                        <div class="stat-label">Total Transactions</div>
+                    </div>
+                </div>
+
+                <h3>By Transaction Type</h3>
+                <div class="stat-grid">
+    """
+
+    # Add transaction type stats
+    for tx_type, count in summary.get('by_transaction_type', {}).items():
+        html += f"""
+                    <div class="stat-card">
+                        <div class="stat-number">{count}</div>
+                        <div class="stat-label">{tx_type.upper()}</div>
+                    </div>
+        """
+
+    html += """
+                </div>
+
+                <h3>By Processing System</h3>
+                <div class="stat-grid">
+    """
+
+    # Add system stats
+    for system, count in summary.get('by_processing_system', {}).items():
+        html += f"""
+                    <div class="stat-card">
+                        <div class="stat-number">{count}</div>
+                        <div class="stat-label">{system}</div>
+                    </div>
+        """
+
+    # Format date range
+    date_range = summary.get('date_range', {})
+    first_activity = date_range.get('first_activity', 'N/A')
+    latest_activity = date_range.get('latest_activity', 'N/A')
+
+    if first_activity != 'N/A':
+        try:
+            first_activity = datetime.fromisoformat(first_activity).strftime('%B %d, %Y')
+        except:
+            pass
+    if latest_activity != 'N/A':
+        try:
+            latest_activity = datetime.fromisoformat(latest_activity).strftime('%B %d, %Y')
+        except:
+            pass
+
+    html += f"""
+                </div>
+
+                <div class="metadata" style="margin-top: 20px;">
+                    <p><strong>Date Range:</strong></p>
+                    <p>First Activity: {first_activity}</p>
+                    <p>Latest Activity: {latest_activity}</p>
+                </div>
+            </div>
+
+            <!-- RECENT ACTIVITIES -->
+            <div class="section">
+                <h2>📝 Recent Processing Activities</h2>
+    """
+
+    if recent_activities:
+        html += """
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Transaction Type</th>
+                            <th>System</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+
+        for activity in recent_activities[:20]:
+            timestamp = activity.get('timestamp', 'N/A')
+            try:
+                timestamp = datetime.fromisoformat(timestamp).strftime('%b %d, %Y %I:%M %p')
+            except:
+                pass
+
+            tx_type = activity.get('transaction_type', 'N/A').upper()
+            badge_class = f"badge-{activity.get('transaction_type', 'read').lower()}"
+
+            html += f"""
+                        <tr>
+                            <td>{timestamp}</td>
+                            <td><span class="badge {badge_class}">{tx_type}</span></td>
+                            <td>{activity.get('processing_system', 'N/A')}</td>
+                            <td>{activity.get('purpose', 'N/A')}</td>
+                        </tr>
+            """
+
+        html += """
+                    </tbody>
+                </table>
+        """
+    else:
+        html += '<p style="color: #999; font-style: italic;">No processing activities recorded yet</p>'
+
+    html += """
+            </div>
+
+            <!-- THIRD PARTY DATA SHARING -->
+            <div class="section">
+                <h2>🔗 Third-Party Data Sharing</h2>
+                <div class="warning-box">
+                    <strong>⚠️ Transparency Notice:</strong> We share certain data with trusted third-party
+                    service providers to deliver our services. All sharing is done securely and in compliance
+                    with GDPR requirements.
+                </div>
+
+                <table class="data-table">
+                    <tbody>
+    """
+
+    html += f"""
+                        <tr>
+                            <td><strong>Recipients</strong></td>
+                            <td>{', '.join(third_party.get('recipients', []))}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Purpose</strong></td>
+                            <td>{third_party.get('purpose', 'N/A')}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Legal Basis</strong></td>
+                            <td>{third_party.get('legal_basis', 'N/A')}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Data Transferred</strong></td>
+                            <td>{third_party.get('data_transferred', 'N/A')}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Safeguards</strong></td>
+                            <td>{third_party.get('safeguards', 'N/A')}</td>
+                        </tr>
+    """
+
+    html += """
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RETENTION POLICY -->
+            <div class="section">
+                <h2>⏱️ Data Retention Policy</h2>
+                <div class="info-box">
+                    <strong>ℹ️ How Long We Keep Your Data:</strong> We retain different types of data for
+                    different periods based on legal requirements and business needs. You can request deletion
+                    at any time.
+                </div>
+
+                <table class="data-table">
+                    <tbody>
+    """
+
+    for data_type, retention_period in retention.items():
+        formatted_type = data_type.replace('_', ' ').title()
+        html += f"""
+                        <tr>
+                            <td><strong>{formatted_type}</strong></td>
+                            <td>{retention_period}</td>
+                        </tr>
+        """
+
+    html += """
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- YOUR RIGHTS -->
+            <div class="section">
+                <h2>⚖️ Your Data Rights Under GDPR</h2>
+                <ul class="rights-list">
+    """
+
+    for right_key, right_info in rights.items():
+        right_name = right_key.replace('_', ' ').title()
+        html += f"""
+                    <li>
+                        <strong>{right_name}</strong>
+                        <p>{right_info.get('description', '')}</p>
+                        <p style="color: #666; font-size: 0.9em; margin-top: 5px;">
+                            <em>How to exercise:</em> {right_info.get('how_to_exercise', '')}
+                        </p>
+                    </li>
+        """
+
+    html += f"""
+                </ul>
+            </div>
+
+            <!-- DATA PROTECTION OFFICER -->
+            <div class="section">
+                <h2>👤 Data Protection Officer</h2>
+                <div class="metadata">
+                    <p><strong>Contact:</strong> {dpo.get('contact', 'N/A')}</p>
+                    <p><strong>Role:</strong> {dpo.get('role', 'N/A')}</p>
+                </div>
+            </div>
+
+            <!-- SUPERVISORY AUTHORITY -->
+            <div class="section">
+                <h2>🏛️ Supervisory Authority</h2>
+                <div class="info-box">
+                    <p><strong>{authority.get('name', 'N/A')}</strong></p>
+                    <p>{authority.get('info', '')}</p>
+                    <p><a href="{authority.get('find_yours', '#')}" target="_blank">Find your local data protection authority</a></p>
+                </div>
+            </div>
+
+            <footer>
+                <p><strong>Bassline Pilates</strong> | GDPR & EU AI Act Compliant</p>
+                <p>Generated on {report_date}</p>
+                <p>This report is for your personal records only</p>
+            </footer>
+        </div>
+    </body>
+    </html>
+    """
+
+    return html
+
+
 @router.get("/api/compliance/ropa-report")
 async def get_ropa_report(
     request: Request,
+    format: str = 'html',  # 'json' or 'html'
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -532,7 +958,7 @@ async def get_ropa_report(
             .execute()
 
         if not ropa_entries.data:
-            return {
+            empty_report = {
                 'data_subject': user_id,
                 'report_date': datetime.utcnow().isoformat(),
                 'summary': {
@@ -540,6 +966,13 @@ async def get_ropa_report(
                     'message': 'No processing activities recorded yet'
                 }
             }
+
+            if format == 'html':
+                # Generate minimal HTML for empty state
+                html_content = generate_ropa_html_report(empty_report)
+                return HTMLResponse(content=html_content, status_code=200)
+            else:
+                return empty_report
 
         # Aggregate statistics
         total_transactions = len(ropa_entries.data)
@@ -617,7 +1050,11 @@ async def get_ropa_report(
             }
         }
 
-        return report
+        if format == 'html':
+            html_content = generate_ropa_html_report(report)
+            return HTMLResponse(content=html_content, status_code=200)
+        else:
+            return report
 
     except Exception as e:
         print(f"Error generating ROPA report: {e}")

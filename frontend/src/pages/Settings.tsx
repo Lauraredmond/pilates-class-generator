@@ -289,69 +289,37 @@ export function Settings() {
   const handleViewROPAReport = async () => {
     setComplianceLoading(true);
     setComplianceError('');
+    setComplianceSuccess('');
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE_URL}/api/compliance/ropa-report`, {
+      // Request HTML format for beautiful, human-readable report
+      const response = await axios.get(`${API_BASE_URL}/api/compliance/ropa-report?format=html`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
 
-      // Display ROPA report in a modal or new window
+      // Open the HTML report in a new tab
       const reportWindow = window.open('', '_blank');
       if (reportWindow) {
-        reportWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>GDPR Processing Activities Report</title>
-            <style>
-              body {
-                font-family: system-ui, -apple-system, sans-serif;
-                padding: 2rem;
-                max-width: 800px;
-                margin: 0 auto;
-                background: #1a1a1a;
-                color: #f5f5f5;
-              }
-              h1 { color: #8b2635; }
-              h2 { color: #a02d3e; margin-top: 2rem; }
-              .section { background: #2a2a2a; padding: 1rem; border-radius: 8px; margin: 1rem 0; }
-              .stat { display: inline-block; margin: 0.5rem 1rem 0.5rem 0; }
-              pre { background: #1a1a1a; padding: 1rem; overflow-x: auto; border-left: 3px solid #8b2635; }
-            </style>
-          </head>
-          <body>
-            <h1>GDPR Processing Activities Report</h1>
-            <p><strong>Report Date:</strong> ${response.data.report_date}</p>
-
-            <div class="section">
-              <h2>Summary</h2>
-              <div class="stat"><strong>Total Activities:</strong> ${response.data.summary.total_processing_activities}</div>
-            </div>
-
-            <div class="section">
-              <h2>Your GDPR Rights</h2>
-              <ul>
-                ${Object.entries(response.data.your_rights).map(([_key, value]: [string, any]) => `
-                  <li><strong>${value.description}</strong><br/>
-                  <em>How to exercise:</em> ${value.how_to_exercise}</li>
-                `).join('')}
-              </ul>
-            </div>
-
-            <div class="section">
-              <h2>Full Report (JSON)</h2>
-              <pre>${JSON.stringify(response.data, null, 2)}</pre>
-            </div>
-          </body>
-          </html>
-        `);
+        reportWindow.document.write(response.data);
+        reportWindow.document.close(); // Finish loading the document
+      } else {
+        // Fallback: If popup was blocked, download as HTML file
+        const dataBlob = new Blob([response.data], { type: 'text/html' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `bassline-processing-activities-${new Date().toISOString().split('T')[0]}.html`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       }
 
-      setComplianceSuccess('ROPA report opened in new window');
-      setTimeout(() => setComplianceSuccess(''), 3000);
+      setComplianceSuccess('Processing activities report opened in new tab');
+      setTimeout(() => setComplianceSuccess(''), 5000);
     } catch (error: any) {
       setComplianceError(error.response?.data?.detail || 'Failed to load ROPA report');
     } finally {
