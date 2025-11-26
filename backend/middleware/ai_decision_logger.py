@@ -5,7 +5,7 @@ Logs all AI decisions with reasoning and explainability
 
 from datetime import datetime
 from typing import Dict, Any, Optional
-from utils.supabase_client import supabase
+from utils.supabase_admin import supabase_admin  # Use admin client to bypass RLS for logging
 
 
 class AIDecisionLogger:
@@ -67,7 +67,7 @@ class AIDecisionLogger:
 
         try:
             # Use service role key to bypass RLS for logging
-            result = supabase.table('ai_decision_log').insert(log_entry).execute()
+            result = supabase_admin.table('ai_decision_log').insert(log_entry).execute()
             return result.data[0] if result.data else None
         except Exception as e:
             print(f"⚠️  AI decision logging failed: {e}")
@@ -91,7 +91,7 @@ class AIDecisionLogger:
             The updated log entry or None if update failed
         """
         try:
-            result = supabase.table('ai_decision_log').update({
+            result = supabase_admin.table('ai_decision_log').update({
                 'user_overridden': True,
                 'override_reason': override_reason
             }).eq('id', decision_id).execute()

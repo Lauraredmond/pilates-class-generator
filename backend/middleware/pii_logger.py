@@ -6,7 +6,7 @@ Records all PII processing activities to ropa_audit_log table
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from fastapi import Request
-from utils.supabase_client import supabase
+from utils.supabase_admin import supabase_admin  # Use admin client to bypass RLS for logging
 
 
 class PIILogger:
@@ -86,7 +86,7 @@ class PIILogger:
 
         try:
             # Use service role key to bypass RLS for logging
-            result = supabase.table('ropa_audit_log').insert(log_entry).execute()
+            result = supabase_admin.table('ropa_audit_log').insert(log_entry).execute()
             return result.data[0] if result.data else None
         except Exception as e:
             # Log to error monitoring but don't fail the request

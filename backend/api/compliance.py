@@ -8,6 +8,7 @@ from typing import Dict, Any, List
 from datetime import datetime
 from api.auth import get_current_user_id
 from utils.supabase_client import supabase
+from utils.supabase_admin import supabase_admin  # Service role client for compliance operations
 from middleware.pii_logger import PIILogger
 
 router = APIRouter()
@@ -34,34 +35,34 @@ async def export_my_data(
     user_data = {}
 
     try:
-        # User profile
-        profile = supabase.table('user_profiles').select('*').eq('user_id', user_id).execute()
+        # User profile - use admin client to bypass RLS
+        profile = supabase_admin.table('user_profiles').select('*').eq('user_id', user_id).execute()
         user_data['profile'] = profile.data[0] if profile.data else None
 
-        # User preferences
-        preferences = supabase.table('user_preferences').select('*').eq('user_id', user_id).execute()
+        # User preferences - use admin client to bypass RLS
+        preferences = supabase_admin.table('user_preferences').select('*').eq('user_id', user_id).execute()
         user_data['preferences'] = preferences.data[0] if preferences.data else None
 
         # Saved classes (if table exists)
         try:
-            classes = supabase.table('saved_classes').select('*').eq('user_id', user_id).execute()
+            classes = supabase_admin.table('saved_classes').select('*').eq('user_id', user_id).execute()
             user_data['saved_classes'] = classes.data
         except:
             user_data['saved_classes'] = []
 
         # Class history (if table exists)
         try:
-            history = supabase.table('class_history').select('*').eq('user_id', user_id).execute()
+            history = supabase_admin.table('class_history').select('*').eq('user_id', user_id).execute()
             user_data['class_history'] = history.data
         except:
             user_data['class_history'] = []
 
-        # ROPA audit log (what we've done with their data)
-        ropa = supabase.table('ropa_audit_log').select('*').eq('user_id', user_id).order('timestamp', desc=True).execute()
+        # ROPA audit log (what we've done with their data) - use admin client to bypass RLS
+        ropa = supabase_admin.table('ropa_audit_log').select('*').eq('user_id', user_id).order('timestamp', desc=True).execute()
         user_data['data_processing_activities'] = ropa.data
 
-        # AI decisions made for this user
-        ai_decisions = supabase.table('ai_decision_log').select('*').eq('user_id', user_id).order('timestamp', desc=True).execute()
+        # AI decisions made for this user - use admin client to bypass RLS
+        ai_decisions = supabase_admin.table('ai_decision_log').select('*').eq('user_id', user_id).order('timestamp', desc=True).execute()
         user_data['ai_decisions'] = ai_decisions.data
 
         # Export metadata
@@ -118,8 +119,8 @@ async def get_ropa_report(
     """
 
     try:
-        # Get all PII transactions for this user
-        ropa_entries = supabase.table('ropa_audit_log') \
+        # Get all PII transactions for this user - use admin client to bypass RLS
+        ropa_entries = supabase_admin.table('ropa_audit_log') \
             .select('*') \
             .eq('user_id', user_id) \
             .order('timestamp', desc=True) \
@@ -237,8 +238,8 @@ async def get_ai_decisions(
     """
 
     try:
-        # Build query
-        query = supabase.table('ai_decision_log') \
+        # Build query - use admin client to bypass RLS
+        query = supabase_admin.table('ai_decision_log') \
             .select('*') \
             .eq('user_id', user_id) \
             .order('timestamp', desc=True) \
