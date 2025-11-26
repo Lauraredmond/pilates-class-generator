@@ -9,20 +9,16 @@
 -- - No ads, no tracking
 -- - Public domain
 --
--- Run this in Supabase SQL Editor to populate initial music data
+-- IMPORTANT: Run this in TWO STEPS in Supabase SQL Editor
+--
+-- STEP 1: Run this ALTER TYPE command FIRST (by itself):
+--         ALTER TYPE music_source ADD VALUE 'INTERNET_ARCHIVE';
+--
+-- STEP 2: Then run the rest of this file (all the INSERT statements below)
+--
+-- This is required because PostgreSQL needs enum values to be committed
+-- before they can be used in INSERT statements.
 -- =============================================================================
-
--- Add INTERNET_ARCHIVE to music_source enum if it doesn't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_enum
-        WHERE enumlabel = 'INTERNET_ARCHIVE'
-        AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'music_source')
-    ) THEN
-        ALTER TYPE music_source ADD VALUE 'INTERNET_ARCHIVE';
-    END IF;
-END $$;
 
 -- Insert Tracks with VERIFIED working URLs
 INSERT INTO music_tracks (
