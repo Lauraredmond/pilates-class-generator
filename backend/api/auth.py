@@ -144,8 +144,8 @@ async def register(user_data: UserCreate, request: Request):
             if "rate limit" in error_message or "too many" in error_message or "email_rate_limit" in error_message:
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Registration temporarily unavailable due to Supabase free tier email limits. Please try again in 24-48 hours, or contact support for immediate access. We apologize for the inconvenience.",
-                    headers={"Retry-After": "7200"}  # 2 hours in seconds
+                    detail=f"Registration temporarily rate limited by Supabase. This may take a few minutes to propagate after upgrading. Please try again in a moment. Error: {str(auth_error)}",
+                    headers={"Retry-After": "300"}  # 5 minutes in seconds
                 )
             elif "invalid" in error_message and "email" in error_message:
                 raise HTTPException(
