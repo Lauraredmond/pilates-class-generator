@@ -44,22 +44,20 @@ const DIFFICULTY_OPTIONS: Array<'Beginner' | 'Intermediate' | 'Advanced' | 'Mixe
 //   'Visualization',
 // ];
 
-// Movement music styles - Stylistic periods appropriate for active movement
-const MOVEMENT_MUSIC_STYLES = [
+// All stylistic periods - Available for both movement and cool down music
+const ALL_MUSIC_STYLES = [
+  { value: 'BAROQUE', label: 'Baroque (Bach, Handel, Vivaldi)' },
+  { value: 'CLASSICAL', label: 'Classical (Mozart, Haydn)' },
+  { value: 'ROMANTIC', label: 'Romantic (Chopin, Beethoven, Brahms)' },
   { value: 'IMPRESSIONIST', label: 'Impressionist (Debussy, Ravel)' },
-  { value: 'ROMANTIC', label: 'Romantic (Chopin, Tchaikovsky)' },
   { value: 'MODERN', label: 'Modern (Satie, Copland)' },
   { value: 'CONTEMPORARY', label: 'Contemporary (Ambient, Meditation)' },
-];
-
-// Cool down music styles - Classical periods for relaxation
-const COOLDOWN_MUSIC_STYLES = [
-  { value: 'BAROQUE', label: 'Baroque (Bach, Handel)' },
-  { value: 'CLASSICAL', label: 'Classical (Mozart, Haydn)' },
-  { value: 'ROMANTIC', label: 'Romantic (Chopin, Brahms)' },
-  { value: 'IMPRESSIONIST', label: 'Impressionist (Debussy, Ravel)' },
   { value: 'CELTIC_TRADITIONAL', label: 'Celtic Traditional (Irish Flute)' },
 ];
+
+// Use same list for both movement and cool down (all periods suitable for Pilates)
+const MOVEMENT_MUSIC_STYLES = ALL_MUSIC_STYLES;
+const COOLDOWN_MUSIC_STYLES = ALL_MUSIC_STYLES;
 
 export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGeneratedClass = false }: GenerationFormProps) {
   const [formData, setFormData] = useState<GenerationFormData>({
@@ -131,7 +129,8 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
         </select>
       </div>
 
-      {/* MCP Research Toggle */}
+      {/* MCP Research Toggle - HIDDEN (MCP not yet implemented) */}
+      {/* Uncomment when MCP server is ready
       <div>
         <button
           type="button"
@@ -175,6 +174,7 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
           </div>
         </button>
       </div>
+      */}
 
       {/* Music Selection */}
       <div className="border-t border-cream/20 pt-6">
