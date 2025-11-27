@@ -1,0 +1,1956 @@
+# ==============================================================================
+# Bassline Pilates API - OpenAPI 3.0 Specification
+# ==============================================================================
+#
+# This OpenAPI specification documents all existing Bassline API endpoints.
+# It serves as the foundation for Arazzo workflows which reference these
+# operations via operationId.
+#
+# JENTIC INTEGRATION NOTE:
+# This spec will be consumed by the Arazzo Engine to orchestrate multi-step
+# class generation workflows. Each operationId below can be referenced in
+# Arazzo YAML files.
+#
+# Created: Phase 1 - Jentic Integration (Session 10)
+# ==============================================================================
+
+openapi: 3.0.3
+info:
+  title: Bassline Pilates API
+  description: |
+    AI-powered Pilates class planning with MCP integration.
+
+    **Key Features:**
+    - 34 classical Pilates movements
+    - AI-powered sequence generation with safety validation
+    - Music integration (Musopen/FreePD classical music)
+    - GDPR & EU AI Act compliant
+    - Meditation script generation
+    - Analytics and progress tracking
+
+    **Architecture:**
+    - FastAPI backend
+    - Supabase PostgreSQL database
+    - React frontend
+    - AI agents: Sequence, Music, Meditation, Research
+  version: 2.0.0
+  contact:
+    name: Bassline Pilates API Support
+    email: support@bassline.com
+  license:
+    name: Proprietary
+    url: https://bassline.com/license
+
+servers:
+  - url: https://pilates-class-generator-api3.onrender.com
+    description: Production server (Render)
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Movements
+    description: Pilates movement catalog (34 classical movements)
+  - name: AI Agents
+    description: AI-powered class generation agents
+  - name: Classes
+    description: Class plan management
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Users
+    description: User profile and preferences
+  - name: Compliance
+    description: GDPR & EU AI Act compliance endpoints
+  - name: Music
+    description: Music catalog and streaming (Musopen/FreePD)
+  - name: Analytics
+    description: Usage analytics and statistics
+
+# ==============================================================================
+# PATHS - API ENDPOINTS
+# ==============================================================================
+
+paths:
+  # ----------------------------------------------------------------------------
+  # HEALTH CHECK ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Health check
+      description: Check API health status
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  version:
+                    type: string
+                    example: "2.0.0"
+                  service:
+                    type: string
+                    example: pilates-class-planner-api
+
+  /:
+    get:
+      operationId: getRoot
+      summary: API root
+      description: Get API information and documentation links
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  docs:
+                    type: string
+                  health:
+                    type: string
+
+  # ----------------------------------------------------------------------------
+  # MOVEMENTS ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /api/movements:
+    get:
+      operationId: getAllMovements
+      summary: Get all movements
+      description: Retrieve all 34 classical Pilates movements from database
+      tags:
+        - Movements
+      responses:
+        '200':
+          description: List of all movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movement'
+
+  /api/movements/search:
+    get:
+      operationId: searchMovements
+      summary: Search movements
+      description: Search and filter movements by difficulty, muscle group, duration, or name
+      tags:
+        - Movements
+      parameters:
+        - name: difficulty
+          in: query
+          description: Filter by difficulty level
+          schema:
+            type: string
+            enum: [Beginner, Intermediate, Advanced]
+        - name: muscle_group
+          in: query
+          description: Filter by primary muscle group
+          schema:
+            type: string
+        - name: duration_min
+          in: query
+          description: Minimum duration in seconds
+          schema:
+            type: integer
+        - name: duration_max
+          in: query
+          description: Maximum duration in seconds
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Text search in movement name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Filtered movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movement'
+
+  /api/movements/difficulty/{level}:
+    get:
+      operationId: getMovementsByDifficulty
+      summary: Get movements by difficulty
+      description: Get movements filtered by difficulty level
+      tags:
+        - Movements
+      parameters:
+        - name: level
+          in: path
+          required: true
+          description: Difficulty level
+          schema:
+            type: string
+            enum: [Beginner, Intermediate, Advanced]
+      responses:
+        '200':
+          description: Movements at specified difficulty
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movement'
+
+  /api/movements/stats/summary:
+    get:
+      operationId: getMovementStats
+      summary: Get movement statistics
+      description: Get summary statistics about movements in database
+      tags:
+        - Movements
+      responses:
+        '200':
+          description: Movement statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_movements:
+                    type: integer
+                  by_difficulty:
+                    type: object
+                  by_category:
+                    type: object
+                  database_connected:
+                    type: boolean
+
+  /api/movements/{movement_id}:
+    get:
+      operationId: getMovementById
+      summary: Get movement by ID
+      description: Get detailed information about a specific movement
+      tags:
+        - Movements
+      parameters:
+        - name: movement_id
+          in: path
+          required: true
+          description: UUID of the movement
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Movement details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movement'
+        '404':
+          description: Movement not found
+
+  # ----------------------------------------------------------------------------
+  # AI AGENTS ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /api/agents/generate-sequence:
+    post:
+      operationId: generateSequence
+      summary: Generate movement sequence
+      description: |
+        Generate a Pilates movement sequence using the Sequence Agent.
+        Validates against 5 critical safety rules and logs decision for EU AI Act compliance.
+      tags:
+        - AI Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SequenceGenerationRequest'
+      responses:
+        '200':
+          description: Sequence generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          description: Validation error or invalid inputs
+        '500':
+          description: Sequence generation failed
+
+  /api/agents/select-music:
+    post:
+      operationId: selectMusic
+      summary: Select music for class
+      description: Select music playlist using the Music Agent based on class parameters
+      tags:
+        - AI Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MusicSelectionRequest'
+      responses:
+        '200':
+          description: Music selected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+
+  /api/agents/create-meditation:
+    post:
+      operationId: createMeditation
+      summary: Generate meditation script
+      description: Generate a meditation/cool-down script using the Meditation Agent
+      tags:
+        - AI Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeditationRequest'
+      responses:
+        '200':
+          description: Meditation script generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+
+  /api/agents/research-cues:
+    post:
+      operationId: researchCues
+      summary: Research movement cues
+      description: Perform web research using Research Agent and MCP Playwright
+      tags:
+        - AI Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResearchRequest'
+      responses:
+        '200':
+          description: Research completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+
+  /api/agents/generate-complete-class:
+    post:
+      operationId: generateCompleteClass
+      summary: Generate complete class
+      description: |
+        Orchestrate all agents to create a full class plan in one request.
+        **NOTE:** This hardcoded workflow will be replaced by Arazzo orchestration.
+      tags:
+        - AI Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteClassRequest'
+      responses:
+        '200':
+          description: Complete class generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      sequence:
+                        type: object
+                      music_recommendation:
+                        type: object
+                      meditation_script:
+                        type: object
+                      research_enhancements:
+                        type: array
+                        items:
+                          type: object
+                      total_processing_time_ms:
+                        type: number
+                  metadata:
+                    type: object
+
+  /api/agents/agent-info:
+    get:
+      operationId: getAgentInfo
+      summary: Get agent information
+      description: Get information about all available AI agents
+      tags:
+        - AI Agents
+      responses:
+        '200':
+          description: Agent information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: object
+
+  /api/agents/decisions/{user_id}:
+    get:
+      operationId: getUserDecisions
+      summary: Get user's AI decision history
+      description: Get user's agent decision history for EU AI Act transparency
+      tags:
+        - AI Agents
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: agent_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Decision history
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # ----------------------------------------------------------------------------
+  # CLASS PLANS ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /api/classes:
+    post:
+      operationId: createClassPlan
+      summary: Create class plan
+      description: |
+        Create new class plan with sequence validation.
+        Validates movement sequence against 5 critical safety rules.
+      tags:
+        - Classes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassPlanCreate'
+      responses:
+        '201':
+          description: Class plan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassPlanResponse'
+        '400':
+          description: Sequence violates safety rules
+
+  /api/classes/{class_id}:
+    get:
+      operationId: getClassPlan
+      summary: Get class plan by ID
+      description: Get detailed class plan with movement details and validation status
+      tags:
+        - Classes
+      parameters:
+        - name: class_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Class plan details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassPlanResponse'
+        '404':
+          description: Class plan not found
+
+    put:
+      operationId: updateClassPlan
+      summary: Update class plan
+      description: Update existing class plan with re-validation
+      tags:
+        - Classes
+      parameters:
+        - name: class_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassPlanUpdate'
+      responses:
+        '200':
+          description: Class plan updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassPlanResponse'
+
+    delete:
+      operationId: deleteClassPlan
+      summary: Delete class plan
+      description: Soft delete a class plan (sets deleted_at timestamp)
+      tags:
+        - Classes
+      parameters:
+        - name: class_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: query
+          required: true
+          description: User ID for ownership verification
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Class plan deleted
+        '403':
+          description: Not authorized to delete
+        '404':
+          description: Class plan not found
+
+  /api/classes/user/{user_id}:
+    get:
+      operationId: getUserClassPlans
+      summary: Get user's class plans
+      description: Get all class plans for a specific user (paginated)
+      tags:
+        - Classes
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of class plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClassPlanResponse'
+
+  # ----------------------------------------------------------------------------
+  # AUTHENTICATION ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /api/auth/register:
+    post:
+      operationId: registerUser
+      summary: Register new user
+      description: Register new user with email and password (Supabase Auth)
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Email already registered or validation error
+        '429':
+          description: Rate limited (Supabase free tier)
+
+  /api/auth/login:
+    post:
+      operationId: loginUser
+      summary: Login user
+      description: Authenticate user with email and password
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials
+
+  /api/auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: Refresh access token
+      description: Refresh access token using refresh token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid refresh token
+
+  /api/auth/logout:
+    post:
+      operationId: logoutUser
+      summary: Logout user
+      description: Logout user (client should discard tokens)
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logout successful
+
+  /api/auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get current user
+      description: Get current authenticated user's profile
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Not authenticated
+        '404':
+          description: User not found
+
+  /api/auth/profile:
+    put:
+      operationId: updateProfile
+      summary: Update user profile
+      description: Update user profile information
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /api/auth/change-password:
+    post:
+      operationId: changePassword
+      summary: Change password
+      description: Change user password (requires current password)
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+        '401':
+          description: Current password incorrect
+
+  /api/auth/account:
+    delete:
+      operationId: deleteAccount
+      summary: Delete account
+      description: Delete user account and all data (GDPR right to be forgotten)
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountDeleteRequest'
+      responses:
+        '200':
+          description: Account deleted successfully
+        '401':
+          description: Password incorrect
+
+  /api/auth/preferences:
+    get:
+      operationId: getPreferences
+      summary: Get user preferences
+      description: Get user preferences (AI settings, notifications, privacy)
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferencesResponse'
+
+    put:
+      operationId: updatePreferences
+      summary: Update user preferences
+      description: Update user preferences
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferencesUpdateRequest'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferencesResponse'
+
+  # ----------------------------------------------------------------------------
+  # USERS ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /api/users/me/stats:
+    get:
+      operationId: getUserStats
+      summary: Get user statistics
+      description: Get user's class planning and usage statistics
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStats'
+
+  # ----------------------------------------------------------------------------
+  # COMPLIANCE ENDPOINTS (GDPR & EU AI Act)
+  # ----------------------------------------------------------------------------
+
+  /api/compliance/my-data:
+    get:
+      operationId: exportMyData
+      summary: Export personal data (GDPR Article 15)
+      description: |
+        Export all personal data for authenticated user.
+        GDPR Article 15 - Right to Access.
+      tags:
+        - Compliance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, html, csv]
+            default: html
+      responses:
+        '200':
+          description: Data export (HTML or JSON)
+          content:
+            application/json:
+              schema:
+                type: object
+            text/html:
+              schema:
+                type: string
+        '500':
+          description: Export failed
+
+  /api/compliance/ropa-report:
+    get:
+      operationId: getROPAReport
+      summary: Get ROPA report (GDPR Article 30)
+      description: |
+        Get Record of Processing Activities report.
+        Shows how user's data has been processed.
+      tags:
+        - Compliance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, html]
+            default: html
+      responses:
+        '200':
+          description: ROPA report
+          content:
+            application/json:
+              schema:
+                type: object
+            text/html:
+              schema:
+                type: string
+
+  /api/compliance/ai-decisions:
+    get:
+      operationId: getAIDecisions
+      summary: Get AI decisions (EU AI Act)
+      description: |
+        View all AI decisions with explanations.
+        EU AI Act transparency requirement.
+      tags:
+        - Compliance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, html]
+            default: html
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: agent_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: AI decisions report
+          content:
+            application/json:
+              schema:
+                type: object
+            text/html:
+              schema:
+                type: string
+
+  /api/compliance/privacy-policy:
+    get:
+      operationId: getPrivacyPolicy
+      summary: Get privacy policy
+      description: Get current privacy policy
+      tags:
+        - Compliance
+      responses:
+        '200':
+          description: Privacy policy information
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/compliance/status:
+    get:
+      operationId: getComplianceStatus
+      summary: Get compliance status
+      description: Get compliance status for current user
+      tags:
+        - Compliance
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Compliance status
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # ----------------------------------------------------------------------------
+  # MUSIC ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /api/music/stylistic-periods:
+    get:
+      operationId: getStylisticPeriods
+      summary: Get stylistic periods
+      description: Get all available musical stylistic periods
+      tags:
+        - Music
+      responses:
+        '200':
+          description: List of stylistic periods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StylisticPeriodInfo'
+
+  /api/music/playlists:
+    get:
+      operationId: getPlaylists
+      summary: Get playlists
+      description: Get curated playlists filtered by period, intensity, or use case
+      tags:
+        - Music
+      parameters:
+        - name: stylistic_period
+          in: query
+          schema:
+            type: string
+        - name: intensity
+          in: query
+          schema:
+            type: string
+            enum: [LOW, MEDIUM, HIGH]
+        - name: use_case
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of playlists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlaylistResponse'
+
+  /api/music/playlists/{playlist_id}:
+    get:
+      operationId: getPlaylistDetails
+      summary: Get playlist details
+      description: Get full details of a playlist including all tracks
+      tags:
+        - Music
+      parameters:
+        - name: playlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Playlist with tracks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistWithTracksResponse'
+        '404':
+          description: Playlist not found
+
+  /api/music/tracks:
+    get:
+      operationId: getTracks
+      summary: Get music tracks
+      description: Browse individual music tracks
+      tags:
+        - Music
+      parameters:
+        - name: stylistic_period
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: List of tracks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackResponse'
+
+  /api/music/tracks/{track_id}/stream-url:
+    get:
+      operationId: getTrackStreamingURL
+      summary: Get track streaming URL
+      description: Get validated streaming URL for a specific track
+      tags:
+        - Music
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Streaming URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  track_id:
+                    type: string
+                  streaming_url:
+                    type: string
+        '404':
+          description: Track not found
+
+  /api/music/health:
+    get:
+      operationId: checkMusicHealth
+      summary: Music system health check
+      description: Check health of music system
+      tags:
+        - Music
+      responses:
+        '200':
+          description: Music system healthy
+          content:
+            application/json:
+              schema:
+                type: object
+        '503':
+          description: Music system unhealthy
+
+  # ----------------------------------------------------------------------------
+  # ANALYTICS ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /api/analytics/summary/{user_id}:
+    get:
+      operationId: getAnalyticsSummary
+      summary: Get user analytics summary
+      description: Get summary analytics for a user
+      tags:
+        - Analytics
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAnalyticsSummary'
+
+  /api/analytics/movement-history/{user_id}:
+    get:
+      operationId: getMovementHistory
+      summary: Get movement usage history
+      description: Get movement usage history with time series data
+      tags:
+        - Analytics
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, total]
+            default: week
+      responses:
+        '200':
+          description: Movement history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSeriesData'
+
+  /api/analytics/muscle-group-history/{user_id}:
+    get:
+      operationId: getMuscleGroupHistory
+      summary: Get muscle group usage history
+      description: Get muscle group usage history with time series data
+      tags:
+        - Analytics
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, total]
+            default: week
+      responses:
+        '200':
+          description: Muscle group history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSeriesData'
+
+  /api/analytics/practice-frequency/{user_id}:
+    get:
+      operationId: getPracticeFrequency
+      summary: Get practice frequency
+      description: Get practice frequency data for line chart
+      tags:
+        - Analytics
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, total]
+            default: week
+      responses:
+        '200':
+          description: Practice frequency data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PracticeFrequencyData'
+
+  /api/analytics/difficulty-progression/{user_id}:
+    get:
+      operationId: getDifficultyProgression
+      summary: Get difficulty progression
+      description: Get difficulty progression data for bar chart
+      tags:
+        - Analytics
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, total]
+            default: week
+      responses:
+        '200':
+          description: Difficulty progression data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DifficultyProgressionData'
+
+  /api/analytics/muscle-distribution/{user_id}:
+    get:
+      operationId: getMuscleDistribution
+      summary: Get muscle distribution
+      description: Get muscle distribution data for doughnut chart
+      tags:
+        - Analytics
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, total]
+            default: total
+      responses:
+        '200':
+          description: Muscle distribution data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MuscleDistributionData'
+
+# ==============================================================================
+# COMPONENTS - REUSABLE SCHEMAS
+# ==============================================================================
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from /api/auth/login or /api/auth/register
+
+  schemas:
+    # --------------------------------------------------------------------------
+    # MOVEMENT SCHEMAS
+    # --------------------------------------------------------------------------
+
+    Movement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        movement_number:
+          type: integer
+          description: Sequential ID (1-34)
+        code:
+          type: string
+          description: URL-friendly identifier (e.g. "the_hundred")
+        name:
+          type: string
+        category:
+          type: string
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+        narrative:
+          type: string
+        visual_cues:
+          type: string
+        setup_position:
+          type: string
+        breathing_pattern:
+          type: string
+        primary_muscles:
+          type: array
+          items:
+            type: string
+        secondary_muscles:
+          type: array
+          items:
+            type: string
+        duration_seconds:
+          type: integer
+        prerequisites:
+          type: array
+          items:
+            type: string
+        contraindications:
+          type: array
+          items:
+            type: string
+        modifications:
+          type: object
+
+    # --------------------------------------------------------------------------
+    # AI AGENT REQUEST/RESPONSE SCHEMAS
+    # --------------------------------------------------------------------------
+
+    SequenceGenerationRequest:
+      type: object
+      required:
+        - target_duration_minutes
+        - difficulty_level
+      properties:
+        target_duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 120
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+        focus_areas:
+          type: array
+          items:
+            type: string
+        strictness_level:
+          type: string
+          enum: [strict, guided, autonomous]
+          default: guided
+        include_mcp_research:
+          type: boolean
+          default: false
+
+    MusicSelectionRequest:
+      type: object
+      required:
+        - class_duration_minutes
+      properties:
+        class_duration_minutes:
+          type: integer
+        energy_curve:
+          type: array
+          items:
+            type: number
+            minimum: 0.0
+            maximum: 1.0
+        preferred_genres:
+          type: array
+          items:
+            type: string
+        target_bpm_range:
+          type: object
+          properties:
+            min:
+              type: integer
+            max:
+              type: integer
+
+    MeditationRequest:
+      type: object
+      required:
+        - duration_minutes
+        - class_intensity
+      properties:
+        duration_minutes:
+          type: integer
+          minimum: 2
+          maximum: 15
+        class_intensity:
+          type: string
+          enum: [low, moderate, high]
+        focus_theme:
+          type: string
+        include_breathing:
+          type: boolean
+          default: true
+
+    ResearchRequest:
+      type: object
+      required:
+        - research_type
+      properties:
+        research_type:
+          type: string
+          enum: [movement_cues, warmup, pregnancy, injury, trends]
+        movement_name:
+          type: string
+        target_muscles:
+          type: array
+          items:
+            type: string
+        condition:
+          type: string
+        trusted_sources_only:
+          type: boolean
+          default: true
+
+    CompleteClassRequest:
+      type: object
+      required:
+        - class_plan
+      properties:
+        class_plan:
+          $ref: '#/components/schemas/SequenceGenerationRequest'
+        include_music:
+          type: boolean
+          default: true
+        include_meditation:
+          type: boolean
+          default: true
+        include_research:
+          type: boolean
+          default: false
+
+    # --------------------------------------------------------------------------
+    # CLASS PLAN SCHEMAS
+    # --------------------------------------------------------------------------
+
+    ClassMovement:
+      type: object
+      required:
+        - movement_id
+        - movement_name
+        - order_index
+      properties:
+        movement_id:
+          type: string
+          format: uuid
+        movement_name:
+          type: string
+        order_index:
+          type: integer
+        duration_seconds:
+          type: integer
+          default: 60
+        custom_cues:
+          type: string
+        notes:
+          type: string
+
+    ClassPlanCreate:
+      type: object
+      required:
+        - name
+        - user_id
+        - movements
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        user_id:
+          type: string
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassMovement'
+        duration:
+          type: integer
+        difficulty:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          default: Beginner
+        notes:
+          type: string
+
+    ClassPlanUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassMovement'
+        duration:
+          type: integer
+        difficulty:
+          type: string
+        notes:
+          type: string
+
+    ClassPlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        user_id:
+          type: string
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassMovement'
+        duration:
+          type: integer
+        difficulty:
+          type: string
+        notes:
+          type: string
+        muscle_balance:
+          type: object
+        validation_status:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+
+    # --------------------------------------------------------------------------
+    # AUTHENTICATION SCHEMAS
+    # --------------------------------------------------------------------------
+
+    UserCreate:
+      type: object
+      required:
+        - email
+        - password
+        - full_name
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        full_name:
+          type: string
+        age_range:
+          type: string
+        gender_identity:
+          type: string
+        country:
+          type: string
+        pilates_experience:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+
+    UserLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          default: bearer
+        expires_in:
+          type: integer
+
+    TokenRefresh:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        full_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_login:
+          type: string
+          format: date-time
+        age_range:
+          type: string
+        gender_identity:
+          type: string
+        country:
+          type: string
+        pilates_experience:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+
+    ProfileUpdateRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+        age_range:
+          type: string
+        gender_identity:
+          type: string
+        country:
+          type: string
+        pilates_experience:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+
+    PasswordChangeRequest:
+      type: object
+      required:
+        - current_password
+        - new_password
+      properties:
+        current_password:
+          type: string
+        new_password:
+          type: string
+          minLength: 8
+
+    AccountDeleteRequest:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+
+    PreferencesResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+        strictness_level:
+          type: string
+        default_class_duration:
+          type: integer
+        favorite_movements:
+          type: array
+          items:
+            type: string
+        music_preferences:
+          type: object
+        research_sources:
+          type: array
+          items:
+            type: string
+        enable_mcp_research:
+          type: boolean
+        email_notifications:
+          type: boolean
+        class_reminders:
+          type: boolean
+        weekly_summary:
+          type: boolean
+        analytics_enabled:
+          type: boolean
+        data_sharing_enabled:
+          type: boolean
+
+    PreferencesUpdateRequest:
+      type: object
+      properties:
+        strictness_level:
+          type: string
+          enum: [guided, strict, autonomous]
+        default_class_duration:
+          type: integer
+        favorite_movements:
+          type: array
+          items:
+            type: string
+        music_preferences:
+          type: object
+        research_sources:
+          type: array
+          items:
+            type: string
+        enable_mcp_research:
+          type: boolean
+        email_notifications:
+          type: boolean
+        class_reminders:
+          type: boolean
+        weekly_summary:
+          type: boolean
+        analytics_enabled:
+          type: boolean
+        data_sharing_enabled:
+          type: boolean
+
+    UserStats:
+      type: object
+      properties:
+        total_classes:
+          type: integer
+        total_practice_time:
+          type: integer
+        current_streak:
+          type: integer
+        favorite_movements:
+          type: array
+          items:
+            type: object
+        muscle_group_distribution:
+          type: object
+        difficulty_distribution:
+          type: object
+        total_research_insights:
+          type: integer
+
+    # --------------------------------------------------------------------------
+    # MUSIC SCHEMAS
+    # --------------------------------------------------------------------------
+
+    StylisticPeriodInfo:
+      type: object
+      properties:
+        value:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        era:
+          type: string
+        composers:
+          type: array
+          items:
+            type: string
+        traits:
+          type: array
+          items:
+            type: string
+
+    TrackResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        title:
+          type: string
+        composer:
+          type: string
+        artist_performer:
+          type: string
+        duration_seconds:
+          type: integer
+        audio_url:
+          type: string
+        stylistic_period:
+          type: string
+        bpm:
+          type: integer
+        mood_tags:
+          type: array
+          items:
+            type: string
+        license_type:
+          type: string
+
+    PlaylistResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        intended_intensity:
+          type: string
+        intended_use:
+          type: string
+        stylistic_period:
+          type: string
+        duration_minutes_target:
+          type: integer
+        track_count:
+          type: integer
+        is_featured:
+          type: boolean
+
+    PlaylistWithTracksResponse:
+      type: object
+      properties:
+        playlist:
+          $ref: '#/components/schemas/PlaylistResponse'
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackResponse'
+        total_duration_seconds:
+          type: integer
+
+    # --------------------------------------------------------------------------
+    # ANALYTICS SCHEMAS
+    # --------------------------------------------------------------------------
+
+    UserAnalyticsSummary:
+      type: object
+      properties:
+        total_classes:
+          type: integer
+        total_practice_time:
+          type: integer
+        current_streak:
+          type: integer
+        favorite_movement:
+          type: string
+        classes_this_week:
+          type: integer
+        avg_class_duration:
+          type: integer
+
+    TimeSeriesData:
+      type: object
+      properties:
+        label:
+          type: string
+        periods:
+          type: array
+          items:
+            type: integer
+        period_labels:
+          type: array
+          items:
+            type: string
+        total:
+          type: integer
+
+    PracticeFrequencyData:
+      type: object
+      properties:
+        period_labels:
+          type: array
+          items:
+            type: string
+        class_counts:
+          type: array
+          items:
+            type: integer
+
+    DifficultyProgressionData:
+      type: object
+      properties:
+        period_labels:
+          type: array
+          items:
+            type: string
+        beginner_counts:
+          type: array
+          items:
+            type: integer
+        intermediate_counts:
+          type: array
+          items:
+            type: integer
+        advanced_counts:
+          type: array
+          items:
+            type: integer
+
+    MuscleDistributionData:
+      type: object
+      properties:
+        muscle_groups:
+          type: array
+          items:
+            type: string
+        percentages:
+          type: array
+          items:
+            type: number
+            format: float
+
+# ==============================================================================
+# END OF OPENAPI SPECIFICATION
+# ==============================================================================
