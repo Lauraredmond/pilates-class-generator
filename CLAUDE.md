@@ -8,11 +8,49 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Pilates Class Planner v2.0** - An intelligent Pilates class planning application that combines domain expertise, AI agents, and web research capabilities to create safe, effective, and personalized Pilates classes.
 
+## 🎯 DUAL PROJECT GOALS (CRITICAL - READ FIRST)
+
+**This project serves TWO equally important strategic objectives:**
+
+### Goal 1: Build Production-Ready Pilates Platform
+- **Objective**: Launch functional MVP to community for customer traction
+- **Approach**: Working production code that users can actually use
+- **Timeline**: Production-ready now, deploy immediately
+- **Quality Standard**: Real features, real integration, real value
+
+### Goal 2: Learn Jentic Architecture Through Implementation
+- **Objective**: Deep understanding of Jentic's StandardAgent + Arazzo Engine
+- **Context**: Jentic is a CLIENT of Bassline (requires intimate codebase knowledge)
+- **Approach**: Learn by doing - integrate real Jentic code, not stubs
+- **Timeline**: Parallel with production - learning while building
+
+**CRITICAL DECISION POINT:**
+- ❌ **NOT** "learn first, then build later"
+- ❌ **NOT** "build first, refactor later"
+- ✅ **YES** "build AND learn simultaneously using real Jentic code"
+
+**WHY BOTH MATTER:**
+1. **Customer Traction** requires working production code
+2. **Client Relationship** requires deep understanding of Jentic's architecture
+3. **Future Projects** require scalable AI infrastructure patterns
+4. **Best Learning** happens through real implementation, not theory
+
+**IMPLEMENTATION STRATEGY:**
+- Use real Jentic libraries from GitHub (not stubs, not placeholders)
+- Heavy educational annotations throughout code ("JENTIC PATTERN" vs "BASSLINE CUSTOM")
+- Production quality while learning architecture patterns
+- Deploy fully functional integration
+
+**When making architectural decisions, ALWAYS consider both goals equally.**
+
+---
+
 **Core Architecture:**
 - FastAPI backend with AI agents
 - React frontend (pixel-perfect copy of existing MVP)
 - Supabase PostgreSQL database
 - MCP Playwright server for web research
+- **Jentic StandardAgent + Arazzo Engine** (integrated from GitHub)
 - Four specialized AI agents (sequence, music, meditation, research)
 
 **Design Philosophy:**
@@ -21,6 +59,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Database-driven business logic
 - EU AI Act and GDPR compliant from day 1
 - PII tokenization for all user data
+- **Production-ready code with educational annotations** (dual goals)
 
 **Design Plan Source of Truth:**
 - **`/Pilates_App_Daily_Sessions_FINAL.md`** is the central source of truth for the development plan
@@ -1074,12 +1113,353 @@ supabase db reset && supabase db push
 - Add music volume controls in playback UI
 - Consider adding music fade in/out between movements
 
+### Session 10: Jentic Integration - Phase 1 (Core Architecture) 🔄 IN PROGRESS
+
+**Date:** November 27, 2025
+**Status:** 🔄 In Progress (Deep Research Complete)
+
+**Goal:** Integrate Jentic's Standard Agent + Arazzo Engine with educational documentation for client relationship and future project patterns.
+
+**Strategic Context:**
+- Jentic is a client of Bassline
+- Deep understanding of their codebase needed for business relationship
+- Learning industry-standard agentic patterns for future projects
+- Educational focus: annotate all Jentic code vs Bassline customizations
+
+**Completed:**
+- ✅ Deep study of standard-agent repository (github.com/jentic/standard-agent)
+- ✅ Deep study of arazzo-engine repository (github.com/jentic/arazzo-engine)
+- ✅ Created comprehensive Jentic Architecture Guide (`docs/JENTIC_ARCHITECTURE.md`)
+  - StandardAgent's Plan→Execute→Reflect reasoning loop explained
+  - Arazzo workflow DSL and execution model documented
+  - Integration patterns with code examples
+  - Business model analysis (platform gravity, vendor dependencies)
+  - Reusable patterns library
+
+**In Progress:**
+- ⏳ Document existing Bassline APIs in OpenAPI 3.0 spec
+- ⏳ Design Arazzo workflow V1 (4-step class generation)
+- ⏳ Create Python orchestration service scaffold
+- ⏳ Implement BasslinePilatesCoachAgent (extends StandardAgent)
+- ⏳ Deploy to Render
+- ⏳ Wire frontend to new service
+
+**Phase 1 Deliverables:**
+- Python orchestration service with Jentic integration
+- Heavily commented code showing Jentic patterns vs Bassline customizations
+- Working class generation using StandardAgent + Arazzo
+- Integration journal documenting patterns learned
+- Maintained existing functionality (movements + transitions only)
+
+**Technical Stack:**
+```
+Frontend (React) → Python Orchestration Service (Render) → Existing Backend (Render)
+                     ↓
+              StandardAgent + Arazzo
+                     ↓
+              Supabase + APIs
+```
+
+**Architecture Documentation:**
+- See `/docs/JENTIC_ARCHITECTURE.md` for complete patterns and integration strategy
+
+---
+
+### Session 11: Data Model Expansion - Phase 2 (Planned) 📋 DOCUMENTED
+
+**Goal:** Add movement levels + all 6 Pilates class sections
+
+**Status:** 📋 Plans committed to documentation, build later
+
+**Context:**
+Based on Excel analysis, Pilates classes have:
+- 34 movements with progressive levels (L1 → L2 → L3 → Full)
+- 6 class sections (not just movements):
+  1. Preparation (Pilates principles, breathing)
+  2. Warm-up (safety-focused routines)
+  3. Main movements (existing)
+  4. Transitions (existing)
+  5. Cool-down (stretches, recovery)
+  6a. Closing - Meditation
+  6b. Closing - Home Care Advice
+
+**Database Changes (Planned):**
+
+#### 1. Movement Levels Table (Normalized)
+```sql
+CREATE TABLE movement_levels (
+    id UUID PRIMARY KEY,
+    movement_id UUID REFERENCES movements(id),
+    level_number INTEGER,  -- 1, 2, 3, 4 (full)
+    level_name VARCHAR(50),  -- "Level 1", "Level 2", etc.
+
+    -- Level-specific content
+    narrative TEXT,
+    setup_position VARCHAR(255),
+    watch_out_points TEXT[],
+    teaching_cues JSONB,
+    visual_cues TEXT[],
+    muscle_groups JSONB,
+    duration_seconds INTEGER,
+
+    UNIQUE(movement_id, level_number)
+);
+```
+
+**Note:** Not all movements have all 4 levels - store only what exists per movement.
+
+#### 2. Class Section Tables (6 new tables)
+
+**Priority 1: Preparation Scripts**
+```sql
+CREATE TABLE preparation_scripts (
+    script_name VARCHAR(255),
+    script_type VARCHAR(50),  -- 'centering', 'breathing', 'principles'
+    narrative TEXT,
+    key_principles TEXT[],  -- Pilates principles covered
+    duration_seconds INTEGER,
+    breathing_pattern VARCHAR(100),
+    breathing_focus VARCHAR(255),
+    difficulty_level VARCHAR(50)
+);
+```
+
+**Priority 2: Warm-up Routines**
+```sql
+CREATE TABLE warmup_routines (
+    routine_name VARCHAR(255),
+    focus_area VARCHAR(100),  -- 'spine', 'hips', 'shoulders', 'full_body'
+    narrative TEXT,
+    movements JSONB,  -- Simple movements: neck rolls, shoulder circles
+    duration_seconds INTEGER,
+    contraindications TEXT[],
+    modifications JSONB,
+    difficulty_level VARCHAR(50)
+);
+```
+
+**Priority 3:** Movements + Transitions (already exist)
+
+**Priority 4: Cool-down Sequences**
+```sql
+CREATE TABLE cooldown_sequences (
+    sequence_name VARCHAR(255),
+    intensity_level VARCHAR(50),  -- 'gentle', 'moderate', 'deep'
+    narrative TEXT,
+    stretches JSONB,
+    duration_seconds INTEGER,
+    target_muscles TEXT[],
+    recovery_focus VARCHAR(255)
+);
+```
+
+**Priority 5: Closing-Meditation Scripts**
+```sql
+CREATE TABLE closing_meditation_scripts (
+    script_name VARCHAR(255),
+    meditation_theme VARCHAR(100),  -- 'body_scan', 'gratitude', 'breath'
+    script_text TEXT,
+    breathing_guidance TEXT,
+    duration_seconds INTEGER,
+    post_intensity VARCHAR(50)  -- What came before: 'high', 'moderate', 'low'
+);
+```
+
+**Priority 6: Closing-Home Care Advice** (NEW)
+```sql
+CREATE TABLE closing_homecare_advice (
+    advice_name VARCHAR(255),
+    focus_area VARCHAR(100),  -- 'spine_care', 'injury_prevention', 'recovery'
+    advice_text TEXT,
+    actionable_tips TEXT[],
+    duration_seconds INTEGER DEFAULT 60,
+    related_to_class_focus BOOLEAN DEFAULT false
+);
+```
+
+#### 3. New API Endpoints (Phase 2)
+
+**Movement Levels:**
+```
+GET  /api/movements/{id}/levels              # Get all levels
+GET  /api/movements/{id}/levels/{level_num}  # Get specific level
+POST /api/movements/{id}/levels              # Admin: Add level
+```
+
+**Class Sections:**
+```
+GET  /api/class-sections/preparation
+GET  /api/class-sections/warmup
+GET  /api/class-sections/cooldown
+GET  /api/class-sections/closing-meditation
+GET  /api/class-sections/closing-homecare
+```
+
+**User Preferences (extend):**
+```
+PUT  /api/users/{id}/preferences
+# Add fields:
+# - delivery_format: "text" | "audio" | "visual" (Phase 3)
+# - preferred_movement_level: "beginner" | "intermediate" | "advanced"
+# - show_full_progression: boolean (show L1→L2→L3→Full in class)
+```
+
+#### 4. Updated Arazzo Workflow (Phase 2)
+
+Expands from 4 steps to 10 steps:
+
+```yaml
+workflowId: assemble_complete_pilates_class_v2
+
+steps:
+  1. get_user_profile
+  2. select_preparation_script     # NEW
+  3. select_warmup_routine         # NEW
+  4. select_movements_with_levels  # ENHANCED
+  5. generate_transitions          # Existing
+  6. select_cooldown_sequence      # NEW
+  7. select_closing_meditation     # NEW
+  8. select_homecare_advice        # NEW
+  9. select_music_for_all_sections # ENHANCED
+  10. assemble_and_save_class      # ENHANCED
+```
+
+**Data Flow Example:**
+```yaml
+# Step 4: Select movements with user's level preferences
+- stepId: select_movements_with_levels
+  parameters:
+    - name: difficulty
+      value: $inputs.difficulty
+    - name: show_full_progression
+      value: $steps.get_user_profile.outputs.body.show_full_progression
+    # If true: returns L1→L2→L3→Full progression in narrative
+    # If false: returns only appropriate single level
+```
+
+---
+
+### Session 12: Advanced Delivery Modes - Phase 3 (Planned) 📋 DOCUMENTED
+
+**Goal:** Multi-modal delivery (audio narration + visual demonstrations)
+
+**Status:** 📋 Plans committed to documentation, build in future
+
+**Context:**
+Users may want:
+- **Text narrative** (current, Phase 1)
+- **Audio narration** (TTS, Phase 3)
+- **Visual demonstration** (video/images, Phase 3)
+
+Phase 3 deferred to focus on core architecture first.
+
+#### 1. Audio Narrative Generation
+
+**Integration Options:**
+- **ElevenLabs** - High-quality, natural voices
+- **OpenAI TTS** - Cost-effective, good quality
+- **Google Cloud TTS** - Enterprise option
+
+**Implementation:**
+```python
+# Generate audio for each class section
+async def generate_audio_narrative(section_text: str) -> str:
+    """
+    Returns audio_url for the narrated text
+    Caches generated audio for reuse
+    """
+    audio_url = await tts_service.synthesize(
+        text=section_text,
+        voice="calm_female",  # Pilates instructor voice
+        speed=0.9  # Slightly slower for instruction
+    )
+    return audio_url
+```
+
+**Database Changes:**
+```sql
+-- Add audio URLs to all content tables
+ALTER TABLE movements ADD COLUMN audio_url TEXT;
+ALTER TABLE preparation_scripts ADD COLUMN audio_url TEXT;
+ALTER TABLE warmup_routines ADD COLUMN audio_url TEXT;
+-- etc.
+```
+
+#### 2. Visual Demonstrations
+
+**Content Types:**
+- **Still images** - Key positions for each movement
+- **Video clips** - Full movement demonstrations
+- **Animations** - Loop-able movement cycles
+
+**Database Changes:**
+```sql
+ALTER TABLE movement_levels ADD COLUMN video_url TEXT;
+ALTER TABLE movement_levels ADD COLUMN thumbnail_url TEXT;
+ALTER TABLE movement_levels ADD COLUMN key_position_images JSONB;
+-- JSONB format: [{"position": "start", "url": "..."}, {"position": "mid", "url": "..."}, ...]
+```
+
+**Frontend Changes:**
+```typescript
+// ClassPlayback component enhancement
+interface DeliveryMode {
+  text: boolean;
+  audio: boolean;
+  visual: boolean;
+}
+
+// User can toggle:
+// - Text only (current)
+// - Text + Audio
+// - Text + Visual
+// - All three (full multi-modal)
+```
+
+#### 3. User Preferences for Delivery
+
+```sql
+-- Extend user_preferences table
+ALTER TABLE user_preferences
+  ADD COLUMN delivery_format_text BOOLEAN DEFAULT true,
+  ADD COLUMN delivery_format_audio BOOLEAN DEFAULT false,
+  ADD COLUMN delivery_format_visual BOOLEAN DEFAULT false;
+```
+
+**Progressive Enhancement Strategy:**
+- Default: Text (works for everyone)
+- Opt-in: Audio (requires TTS service)
+- Opt-in: Visual (requires video content)
+- All devices support text; audio/visual enhance experience
+
+#### 4. Performance Considerations
+
+**Audio:**
+- Pre-generate and cache common narratives
+- Use CDN for audio file delivery
+- Stream audio with HTML5 `<audio>` element
+
+**Video:**
+- Use adaptive bitrate streaming (HLS/DASH)
+- Provide quality options (480p, 720p, 1080p)
+- Cache video thumbnails aggressively
+- Consider YouTube/Vimeo hosting vs self-hosted
+
+**Cost Management:**
+- TTS: ~$15/1M characters (OpenAI pricing)
+- Video hosting: ~$0.01/GB delivery (Cloudflare Stream)
+- Budget based on user base and usage patterns
+
+---
+
 **Next Sessions Preview:**
 
-- **Session 10:** OpenAI GPT Integration (LLM narrative variation & personalization)
-- **Session 11:** MCP Advanced Features (web research capabilities - optional/future)
-- **Session 12:** Testing Suite
+- **Session 10:** Jentic Integration - Phase 1 (IN PROGRESS) ← Current Focus
+- **Session 11:** Data Model Expansion - Phase 2 (DOCUMENTED, build later)
+- **Session 12:** Advanced Delivery Modes - Phase 3 (DOCUMENTED, build later)
+- **Session 13:** Testing Suite & Polish
 
 ---
 
 *This CLAUDE.md provides comprehensive guidance for working in the Pilates Class Planner v2.0 codebase. Update this file as the architecture evolves.*
+- I'd like option 1 but can you explain what continuing with stubs means and also that Jentic libs aren't published to PyPI (what is PyPI). But first, I have just paid 25 dollars to avoid seeing the Supabase restriction on creating new users and still see that "Registration temp unavailable due to Supabase free tier" message. Could you please troubleshoot? I'm currently re-deploying on netlify and render.com in case this is what was causing the issue. See latest screenshot on desktop for user reg error

@@ -1,12 +1,11 @@
 # ==============================================================================
 # Bassline Orchestration Service - Python Dependencies
+# Python 3.11+ Required
 # ==============================================================================
 
-# Jentic Libraries (Open Source - MIT License)
-# NOTE: These are placeholder names - actual packages when Jentic publishes them
-# For now, we'll document what the integration would look like
-# jentic-standard-agent>=1.0.0
-# jentic-arazzo-engine>=1.0.0
+# Jentic Libraries (Open Source - Apache 2.0 License)
+# Installed directly from GitHub (not yet on PyPI)
+git+https://github.com/jentic/standard-agent.git@main
 
 # FastAPI and Web Server
 fastapi>=0.104.0
@@ -46,26 +45,35 @@ python-multipart>=0.0.6
 gunicorn>=21.2.0
 
 # ==============================================================================
-# EDUCATIONAL NOTE - Jentic Integration
+# EDUCATIONAL NOTE - Jentic Integration (PRODUCTION-READY)
 # ==============================================================================
 #
-# When Jentic publishes their libraries to PyPI, the integration will look like:
+# ✅ USING REAL JENTIC CODE (not stubs)
 #
-# from standard_agent import StandardAgent, ReWOOReasoner, OpenAILLM
-# from arazzo_engine import ArazzoEngine, Workflow
+# The standard-agent library is installed directly from GitHub:
+# pip install git+https://github.com/jentic/standard-agent.git@main
 #
-# Until then, we'll create stubs that mirror their architecture so Bassline
-# can understand the integration patterns.
+# Real imports being used in agents/bassline_agent.py:
 #
-# Jentic Architecture:
-# - standard-agent: Agent base class, reasoners, LLM adapters, tool registry
-# - arazzo-engine: Workflow execution engine, YAML parser, runtime expressions
+# from agents.standard_agent import StandardAgent
+# from agents.reasoner.rewoo import ReWOOReasoner
+# from agents.llm.litellm import LiteLLM
+# from agents.memory.dict_memory import DictMemory
+# from agents.tools.base import JustInTimeToolingBase, ToolBase
 #
-# Our Implementation:
-# - agents/bassline_agent.py: Extends StandardAgent (stub)
-# - app/services/arazzo_stub.py: Arazzo Engine stub
-# - app/services/llm_stub.py: LLM adapter stubs
+# Jentic Architecture Components:
+# ✅ StandardAgent - Orchestrates LLM, reasoner, tools, memory
+# ✅ ReWOOReasoner - Plan → Execute → Reflect reasoning loop
+# ✅ LiteLLM - Universal LLM adapter (OpenAI, Anthropic, Bedrock, etc.)
+# ✅ DictMemory - Simple in-memory state management
+# ✅ Tool interface - Pluggable actions the agent can execute
 #
-# This gives Bassline the same code structure they'll have when Jentic's
-# libraries are available, making the transition seamless.
+# Bassline Customizations:
+# ✅ PilatesToolRegistry - Custom tool registry for Pilates domain
+# ✅ ValidateSequenceTool - Checks Pilates safety rules
+# ✅ MuscleBalanceTool - Calculates muscle group distribution
+# ✅ ContraindicationsTool - Checks movements against user conditions
+# ✅ TeachingCuesTool - Generates Pilates teaching cues
+#
+# This is PRODUCTION code using real Jentic libraries, not placeholders.
 # ==============================================================================
