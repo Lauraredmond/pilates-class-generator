@@ -1,13 +1,13 @@
-[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – G
-G
-	(anonymous function) (index-DH4aIlYR.js:260:18063)
-[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-DH4aIlYR.js, line 237)
-[Log] [ClassBuilder] Force fetching movements from API... (index-DH4aIlYR.js, line 237)
-[Log] [ClassBuilder] API response: – 34 – "movements received" (index-DH4aIlYR.js, line 237)
-[Log] [ClassBuilder] Sample movement: – Object (index-DH4aIlYR.js, line 237)
-Object
-[Log] [AIGenerationPanel] Using authenticated user ID: – "50b40bda-45ce-4c03-8e51-35d76341c192" (index-DH4aIlYR.js, line 237)
-[Log] [AIGenerationPanel] Raw sequence data sample: – Object (index-DH4aIlYR.js, line 237)
-Object
 [Error] Failed to load resource: A server with the specified hostname could not be found. (api.js-4950e94a9243.map, line 0)
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-DSfiRfWV.js, line 237)
+[Log] [ClassBuilder] Force fetching movements from API... (index-DSfiRfWV.js, line 237)
+[Log] [ClassBuilder] API response: – 34 – "movements received" (index-DSfiRfWV.js, line 237)
+[Log] [ClassBuilder] Sample movement: – {id: "b12a46d7-1f87-4e14-8463-3a7ed96980bf", movement_number: 23, code: "hip_twist", …} (index-DSfiRfWV.js, line 237)
+{id: "b12a46d7-1f87-4e14-8463-3a7ed96980bf", movement_number: 23, code: "hip_twist", name: "Hip twist", category: "Mat-based", …}Object
+[Log] [AIGenerationPanel] Using authenticated user ID: – "50b40bda-45ce-4c03-8e51-35d76341c192" (index-DSfiRfWV.js, line 237)
+[Error] Failed to load resource: the server responded with a status of 500 () (generate-sequence, line 0)
+[Error] API Error: – {detail: "\"'message'\""}
+	(anonymous function) (index-DSfiRfWV.js:222:22125)
+[Error] Failed to generate complete class: – G {stack: "X0@https://basslinemvp.netlify.app/assets/index-DS…mvp.netlify.app/assets/index-DSfiRfWV.js:201:2102", message: "Request failed with status code 500", name: "AxiosError", …}
+G {stack: "X0@https://basslinemvp.netlify.app/assets/index-DS…mvp.netlify.app/assets/index-DSfiRfWV.js:201:2102", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}G
+	(anonymous function) (index-DSfiRfWV.js:237:12585)

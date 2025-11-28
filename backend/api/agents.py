@@ -213,10 +213,31 @@ async def generate_sequence(
         return result
 
     except KeyError as e:
+        import traceback
         logger.error(f"KeyError in generate_sequence: {e}", exc_info=True)
+
+        # Log to beta_errors table for transparency
+        try:
+            stack_trace = traceback.format_exc()
+            supabase.rpc('log_beta_error', {
+                'p_error_type': 'KEYERROR_BYPASS',
+                'p_severity': 'MEDIUM',
+                'p_endpoint': '/api/agents/generate-sequence',
+                'p_error_message': f"KeyError: {str(e)}",
+                'p_stack_trace': stack_trace,
+                'p_user_id': user_id,
+                'p_request_data': request.dict(),
+                'p_response_data': result if 'result' in locals() else None,
+                'p_was_bypassed': True,
+                'p_bypass_reason': 'Sequence generation succeeded but response serialization failed. Returning successful result to maintain app functionality.',
+                'p_user_notified': True  # Frontend will show beta notification
+            }).execute()
+        except Exception as log_error:
+            logger.warning(f"Failed to log beta error: {log_error}")
+
         # Return successful result anyway - the sequence was generated
         if 'result' in locals() and result.get('success'):
-            logger.info("Returning successful result despite KeyError")
+            logger.info("Returning successful result despite KeyError (logged to beta_errors table)")
             return result
         raise HTTPException(status_code=500, detail=f"KeyError: {str(e)}")
 
