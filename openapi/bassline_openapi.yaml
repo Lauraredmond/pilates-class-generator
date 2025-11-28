@@ -1,0 +1,787 @@
+openapi: 3.0.3
+info:
+  title: Bassline Pilates Class Planner API
+  description: |
+    AI-powered Pilates class planning with intelligent agents, music integration, and compliance features.
+
+    This API enables:
+    - User profile and preference management
+    - AI-powered class sequence generation
+    - Music playlist selection from classical periods
+    - Meditation script generation
+    - Movement database access
+    - Analytics and progress tracking
+
+    **Architecture:**
+    - FastAPI backend with AI agents
+    - Supabase PostgreSQL database
+    - Musopen/FreePD music integration
+    - EU AI Act & GDPR compliant
+  version: 2.0.0
+  contact:
+    name: Bassline Fitness API Support
+    url: https://basslinefitness.app
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://pilates-class-generator-api3.onrender.com
+    description: Production server
+  - url: http://localhost:8000
+    description: Development server
+
+tags:
+  - name: Users
+    description: User profile and preferences management
+  - name: AI Agents
+    description: AI-powered sequence generation, music selection, and meditation
+  - name: Music
+    description: Royalty-free classical music from Musopen and FreePD
+  - name: Movements
+    description: Pilates movement database
+  - name: Analytics
+    description: User progress and statistics
+
+# =============================================================================
+# SECURITY SCHEMES
+# =============================================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Supabase Auth
+
+  # =============================================================================
+  # REUSABLE SCHEMAS
+  # =============================================================================
+  schemas:
+    # -------------------------------------------------------------------------
+    # USER MODELS
+    # -------------------------------------------------------------------------
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User's unique identifier
+        email:
+          type: string
+          format: email
+          description: User's email address
+        full_name:
+          type: string
+          nullable: true
+          description: User's full name
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+        last_login:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last login timestamp
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+      required:
+        - id
+        - email
+        - created_at
+
+    UserPreferences:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        default_difficulty:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          default: Beginner
+        default_duration:
+          type: integer
+          minimum: 15
+          maximum: 120
+          default: 30
+          description: Default class duration in minutes
+        favorite_movements:
+          type: array
+          items:
+            type: string
+            format: uuid
+          default: []
+        preferred_music_period:
+          type: string
+          enum: [BAROQUE, CLASSICAL, ROMANTIC, IMPRESSIONIST, MODERN, CONTEMPORARY, CELTIC_TRADITIONAL]
+          default: CLASSICAL
+        ai_strictness_level:
+          type: string
+          enum: [strict, guided, autonomous]
+          default: guided
+          description: How much creative freedom AI agents have
+        notifications_enabled:
+          type: boolean
+          default: true
+        analytics_enabled:
+          type: boolean
+          default: true
+
+    # -------------------------------------------------------------------------
+    # MOVEMENT MODELS
+    # -------------------------------------------------------------------------
+    Movement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Official movement name (e.g., "The Hundred")
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+        primary_muscles:
+          type: array
+          items:
+            type: string
+          description: Primary muscle groups targeted
+        duration_seconds:
+          type: integer
+          minimum: 10
+          maximum: 300
+        movement_type:
+          type: string
+          enum: [flexion, extension, rotation, lateral, balance]
+        breathing_pattern:
+          type: string
+          description: Breathing guidance for the movement
+        setup_instruction:
+          type: string
+          description: How to position for the movement
+        execution_notes:
+          type: string
+          description: Step-by-step execution guidance
+      required:
+        - id
+        - name
+        - difficulty_level
+
+    # -------------------------------------------------------------------------
+    # SEQUENCE GENERATION MODELS
+    # -------------------------------------------------------------------------
+    SequenceGenerationRequest:
+      type: object
+      properties:
+        target_duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 120
+          description: Desired class duration
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          description: Class difficulty
+        focus_areas:
+          type: array
+          items:
+            type: string
+          description: Muscle groups to emphasize (e.g., ["Core", "Legs"])
+          default: []
+        strictness_level:
+          type: string
+          enum: [strict, guided, autonomous]
+          default: guided
+          description: How much creative freedom the agent has
+        include_mcp_research:
+          type: boolean
+          default: false
+          description: Whether to enhance with web research
+      required:
+        - target_duration_minutes
+        - difficulty_level
+
+    SequenceItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [movement, transition]
+        name:
+          type: string
+        duration_seconds:
+          type: integer
+        setup_instruction:
+          type: string
+        teaching_cues:
+          type: array
+          items:
+            type: string
+        muscle_description:
+          type: string
+        breathing_guidance:
+          type: string
+      required:
+        - type
+        - name
+
+    SequenceGenerationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            sequence:
+              type: array
+              items:
+                $ref: '#/components/schemas/SequenceItem'
+            total_duration:
+              type: integer
+              description: Total class duration in seconds
+            movement_count:
+              type: integer
+            transition_count:
+              type: integer
+            muscle_balance:
+              type: object
+              additionalProperties:
+                type: number
+                format: float
+        metadata:
+          type: object
+          properties:
+            agent_type:
+              type: string
+            model_used:
+              type: string
+            processing_time_ms:
+              type: number
+            reasoning_confidence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+
+    # -------------------------------------------------------------------------
+    # MUSIC MODELS
+    # -------------------------------------------------------------------------
+    MusicPlaylist:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        intended_intensity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+        intended_use:
+          type: string
+          enum: [PILATES_SLOW_FLOW, PILATES_CORE, PILATES_BALANCE, STRETCHING, MEDITATION]
+        stylistic_period:
+          type: string
+          enum: [BAROQUE, CLASSICAL, ROMANTIC, IMPRESSIONIST, MODERN, CONTEMPORARY, CELTIC_TRADITIONAL]
+        duration_minutes_target:
+          type: integer
+        track_count:
+          type: integer
+        is_featured:
+          type: boolean
+      required:
+        - id
+        - name
+        - stylistic_period
+
+    MusicTrack:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+          enum: [MUSOPEN, FREEPD]
+        title:
+          type: string
+        composer:
+          type: string
+          nullable: true
+        artist_performer:
+          type: string
+          nullable: true
+        duration_seconds:
+          type: integer
+        audio_url:
+          type: string
+          format: uri
+          description: Streaming URL (validated and whitelisted)
+        stylistic_period:
+          type: string
+          enum: [BAROQUE, CLASSICAL, ROMANTIC, IMPRESSIONIST, MODERN, CONTEMPORARY, CELTIC_TRADITIONAL]
+        bpm:
+          type: integer
+          nullable: true
+        mood_tags:
+          type: array
+          items:
+            type: string
+        license_type:
+          type: string
+          nullable: true
+      required:
+        - id
+        - title
+        - audio_url
+
+    # -------------------------------------------------------------------------
+    # MEDITATION MODELS
+    # -------------------------------------------------------------------------
+    MeditationRequest:
+      type: object
+      properties:
+        duration_minutes:
+          type: integer
+          minimum: 2
+          maximum: 15
+          default: 5
+        class_intensity:
+          type: string
+          enum: [low, moderate, high]
+          default: moderate
+        focus_theme:
+          type: string
+          enum: [mindfulness, body_scan, gratitude, breath, recovery]
+          nullable: true
+        include_breathing:
+          type: boolean
+          default: true
+      required:
+        - duration_minutes
+        - class_intensity
+
+    MeditationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            meditation_script:
+              type: string
+              description: Full meditation script with timing cues
+            duration_minutes:
+              type: integer
+            theme:
+              type: string
+            breathing_pattern:
+              type: string
+              nullable: true
+        metadata:
+          type: object
+
+    # -------------------------------------------------------------------------
+    # ERROR MODELS
+    # -------------------------------------------------------------------------
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+        type:
+          type: string
+          description: Error type identifier
+      required:
+        - detail
+
+# =============================================================================
+# API ENDPOINTS
+# =============================================================================
+paths:
+  # ===========================================================================
+  # USERS API
+  # ===========================================================================
+  /api/users/me/profile:
+    get:
+      tags: [Users]
+      summary: Get current user's profile
+      description: |
+        Retrieve the authenticated user's complete profile including preferences.
+
+        **JENTIC INTEGRATION NOTE:**
+        This endpoint is typically the FIRST step in an Arazzo workflow.
+        It provides user context (difficulty level, preferences, injuries) that
+        subsequent agent steps use to personalize the class.
+      operationId: getUserProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [Users]
+      summary: Update user profile
+      operationId: updateUserProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                  nullable: true
+                email:
+                  type: string
+                  format: email
+                  nullable: true
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  updated_fields:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/me/preferences:
+    get:
+      tags: [Users]
+      summary: Get user preferences
+      operationId: getUserPreferences
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+
+    put:
+      tags: [Users]
+      summary: Update user preferences
+      operationId: updateUserPreferences
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+
+  # ===========================================================================
+  # AI AGENTS API
+  # ===========================================================================
+  /api/agents/generate-sequence:
+    post:
+      tags: [AI Agents]
+      summary: Generate Pilates movement sequence
+      description: |
+        Generate a safe, effective Pilates class sequence using the Sequence Agent.
+
+        **JENTIC INTEGRATION NOTE:**
+        This is typically STEP 2 in the Arazzo workflow (after getting user profile).
+
+        The agent:
+        1. Selects appropriate movements based on difficulty
+        2. Validates safety rules (spinal progression, muscle balance)
+        3. Generates transitions with narratives
+        4. Optionally enhances with MCP web research
+
+        **Agent Reasoning:**
+        Uses ReWOO (Reasoning WithOut Observation) pattern:
+        - PLAN: Decide which movements to include
+        - EXECUTE: Validate safety, generate transitions
+        - REFLECT: Ensure muscle balance and progression
+      operationId: generateSequence
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SequenceGenerationRequest'
+      responses:
+        '200':
+          description: Sequence generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SequenceGenerationResponse'
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error - sequence generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/agents/select-music:
+    post:
+      tags: [AI Agents]
+      summary: Select music playlist for class
+      description: |
+        Select appropriate music from Musopen/FreePD classical catalog.
+
+        **JENTIC INTEGRATION NOTE:**
+        This is typically STEP 3 in the Arazzo workflow (after generating sequence).
+
+        The agent:
+        1. Considers class duration and intensity
+        2. Matches BPM to movement rhythm
+        3. Selects from appropriate stylistic period
+        4. Provides fallback playlists if needed
+      operationId: selectMusic
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                class_duration_minutes:
+                  type: integer
+                  minimum: 15
+                  maximum: 120
+                energy_curve:
+                  type: array
+                  items:
+                    type: number
+                    format: float
+                  nullable: true
+                  description: Energy levels throughout class (0.0-1.0)
+                preferred_genres:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                target_bpm_range:
+                  type: array
+                  items:
+                    type: integer
+                  minItems: 2
+                  maxItems: 2
+                  nullable: true
+                  default: [90, 130]
+              required:
+                - class_duration_minutes
+      responses:
+        '200':
+          description: Music selected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      playlist:
+                        $ref: '#/components/schemas/MusicPlaylist'
+                      reasoning:
+                        type: string
+                        description: Why this playlist was selected
+                  metadata:
+                    type: object
+
+  /api/agents/create-meditation:
+    post:
+      tags: [AI Agents]
+      summary: Generate meditation/cool-down script
+      description: |
+        Generate a personalized cool-down meditation script.
+
+        **JENTIC INTEGRATION NOTE:**
+        This is typically STEP 4 (final) in the Arazzo workflow.
+
+        The agent:
+        1. Adapts to class intensity (harder class = longer recovery)
+        2. Selects appropriate theme (mindfulness, body scan, etc.)
+        3. Includes breathing guidance
+        4. Provides timing cues for instructor
+      operationId: createMeditation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeditationRequest'
+      responses:
+        '200':
+          description: Meditation script generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeditationResponse'
+
+  # ===========================================================================
+  # MUSIC API
+  # ===========================================================================
+  /api/music/playlists:
+    get:
+      tags: [Music]
+      summary: Get music playlists
+      description: |
+        Browse curated classical music playlists filtered by period, intensity, or use case.
+
+        All music is royalty-free from Musopen and FreePD.
+      operationId: getMusicPlaylists
+      parameters:
+        - name: stylistic_period
+          in: query
+          schema:
+            type: string
+            enum: [BAROQUE, CLASSICAL, ROMANTIC, IMPRESSIONIST, MODERN, CONTEMPORARY, CELTIC_TRADITIONAL]
+          description: Filter by musical period
+        - name: intensity
+          in: query
+          schema:
+            type: string
+            enum: [LOW, MEDIUM, HIGH]
+          description: Filter by workout intensity
+        - name: use_case
+          in: query
+          schema:
+            type: string
+            enum: [PILATES_SLOW_FLOW, PILATES_CORE, PILATES_BALANCE, STRETCHING, MEDITATION]
+          description: Filter by intended use
+      responses:
+        '200':
+          description: Playlists retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MusicPlaylist'
+
+  /api/music/playlists/{playlist_id}:
+    get:
+      tags: [Music]
+      summary: Get playlist details with tracks
+      operationId: getPlaylistDetails
+      parameters:
+        - name: playlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Playlist details retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playlist:
+                    $ref: '#/components/schemas/MusicPlaylist'
+                  tracks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MusicTrack'
+                  total_duration_seconds:
+                    type: integer
+        '404':
+          description: Playlist not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ===========================================================================
+  # HEALTH CHECKS
+  # ===========================================================================
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Basic health check endpoint for monitoring
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  version:
+                    type: string
+                    example: "2.0.0"
+                  service:
+                    type: string
+                    example: pilates-class-planner-api
+
+# =============================================================================
+# SECURITY
+# =============================================================================
+security:
+  - BearerAuth: []
