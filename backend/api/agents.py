@@ -209,7 +209,16 @@ async def generate_sequence(
             # Don't fail the request if database save fails
             logger.error(f"❌ Failed to save class to database: {db_error}", exc_info=True)
 
+        logger.info("Database save block completed, preparing to return result")
         return result
+
+    except KeyError as e:
+        logger.error(f"KeyError in generate_sequence: {e}", exc_info=True)
+        # Return successful result anyway - the sequence was generated
+        if 'result' in locals() and result.get('success'):
+            logger.info("Returning successful result despite KeyError")
+            return result
+        raise HTTPException(status_code=500, detail=f"KeyError: {str(e)}")
 
     except ValueError as e:
         logger.error(f"Validation error: {e}", exc_info=True)
