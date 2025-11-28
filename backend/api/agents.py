@@ -64,35 +64,21 @@ def get_movement_muscle_groups(movement_id: str) -> list[str]:
     Fetch muscle groups for a movement from movement_muscles junction table
     Returns list of muscle group names
 
-    Uses two-step query to avoid PostgREST schema cache issues
+    Uses denormalized schema with muscle_group_name directly in junction table
     """
     try:
-        # Step 1: Get muscle_group_ids from junction table
-        junction_response = supabase.table('movement_muscles') \
-            .select('muscle_group_id') \
+        # Query movement_muscles table (has denormalized muscle_group_name column)
+        response = supabase.table('movement_muscles') \
+            .select('muscle_group_name') \
             .eq('movement_id', movement_id) \
             .eq('is_primary', True) \
             .execute()
 
-        if not junction_response.data:
+        if not response.data:
             return []
 
-        # Extract muscle group IDs
-        muscle_group_ids = [item['muscle_group_id'] for item in junction_response.data]
-
-        if not muscle_group_ids:
-            return []
-
-        # Step 2: Get muscle group names
-        groups_response = supabase.table('muscle_groups') \
-            .select('name') \
-            .in_('id', muscle_group_ids) \
-            .execute()
-
-        if not groups_response.data:
-            return []
-
-        muscle_groups = [item['name'] for item in groups_response.data]
+        # Extract muscle group names
+        muscle_groups = [item['muscle_group_name'] for item in response.data]
         return muscle_groups
 
     except Exception as e:
