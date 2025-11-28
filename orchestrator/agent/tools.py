@@ -54,10 +54,13 @@ import httpx
 from loguru import logger
 
 # ==============================================================================
-# JENTIC IMPORTS (Commented out until libraries installed)
+# ✅ JENTIC IMPORTS - REAL CODE FROM GITHUB
 # ==============================================================================
-# from standard_agent.tools import JustInTimeToolingBase, ToolInfo
-# from arazzo import Runner
+# Installed via: git+https://github.com/jentic/standard-agent.git@main
+#                git+https://github.com/jentic/arazzo-engine.git@main#subdirectory=runner
+
+from agents.tools.base import JustInTimeToolingBase, ToolBase  # ← JENTIC
+from arazzo_runner.runner import ArazzoRunner  # ← JENTIC Arazzo Engine
 
 # ==============================================================================
 # BASSLINE PILATES TOOLS
@@ -92,15 +95,32 @@ class BasslinePilatesTools:
         self.bassline_api_url = bassline_api_url.rstrip('/')
         self.http_client = httpx.AsyncClient(timeout=60.0)
 
-        # Initialize Arazzo workflow runner
-        # NOTE: Uncomment when Arazzo library is installed
-        # self.arazzo_runner = Runner(
-        #     workflow_dir="../arazzo/workflows",
-        #     openapi_spec="../openapi/bassline_openapi.yaml"
-        # )
+        # ======================================================================
+        # ✅ JENTIC: Initialize Arazzo Runner (REAL CODE)
+        # ======================================================================
+        # Using Jentic's ArazzoRunner from:
+        # /tmp/arazzo-engine/runner/arazzo_runner/runner.py
+        #
+        # This provides:
+        # - Workflow execution from .arazzo.yaml files
+        # - OpenAPI operation execution
+        # - Expression evaluation ($inputs, $steps, etc.)
+        # - Authentication handling
+        # ======================================================================
 
-        self.arazzo_runner = None  # Placeholder
-        logger.info(f"Tools initialized with API: {self.bassline_api_url}")
+        workflow_path = "../arazzo/workflows/assemble_pilates_class_v1.yaml"
+        openapi_path = "../openapi/bassline_openapi.yaml"
+
+        try:
+            self.arazzo_runner = ArazzoRunner.from_arazzo_path(
+                arazzo_path=workflow_path
+            )
+            logger.info(f"✅ JENTIC Arazzo Runner initialized from {workflow_path}")
+        except Exception as e:
+            logger.warning(f"⚠️ Arazzo Runner initialization failed: {e}. Will use direct API calls.")
+            self.arazzo_runner = None
+
+        logger.info(f"✅ Tools initialized with API: {self.bassline_api_url}")
 
     # ==========================================================================
     # JENTIC PATTERN: List Tools
@@ -384,30 +404,43 @@ class BasslinePilatesTools:
         """
         logger.info(f"Assembling Pilates class for user {user_id}")
 
-        # NOTE: Uncomment when Arazzo library is installed
-        # result = self.arazzo_runner.run(
-        #     workflow_id="assemblePilatesClass",
-        #     inputs={
-        #         "user_id": user_id,
-        #         "target_duration_minutes": target_duration_minutes,
-        #         "difficulty_level": difficulty_level,
-        #         "focus_areas": focus_areas or [],
-        #         "include_mcp_research": include_mcp_research,
-        #         "strictness_level": strictness_level
-        #     }
-        # )
-        # return result.outputs
+        # ======================================================================
+        # ✅ JENTIC: Execute Arazzo Workflow (REAL CODE)
+        # ======================================================================
+        # This triggers Jentic's workflow execution engine
+        # The engine will:
+        # 1. Load the .arazzo.yaml workflow file
+        # 2. Execute steps sequentially
+        # 3. Pass data between steps using runtime expressions
+        # 4. Return workflow outputs
+        # ======================================================================
 
-        # PLACEHOLDER: Mock workflow execution
-        return {
-            "completeClass": {
-                "userId": user_id,
-                "sequence": [],
-                "musicPlaylist": None,
-                "meditationScript": None,
-                "message": "Workflow execution placeholder - Arazzo engine not yet installed"
+        if self.arazzo_runner:
+            try:
+                result = self.arazzo_runner.execute_workflow(
+                    workflow_id="assemblePilatesClass",
+                    inputs={
+                        "user_id": user_id,
+                        "target_duration_minutes": target_duration_minutes,
+                        "difficulty_level": difficulty_level,
+                        "focus_areas": focus_areas or [],
+                        "include_mcp_research": include_mcp_research,
+                        "strictness_level": strictness_level
+                    }
+                )
+                logger.info(f"✅ JENTIC Arazzo workflow completed: {result.status}")
+                return result.outputs if hasattr(result, 'outputs') else result
+            except Exception as e:
+                logger.error(f"❌ Arazzo workflow execution failed: {e}")
+                return {"error": str(e), "status": "failed"}
+        else:
+            logger.warning("⚠️ Arazzo Runner not available, using fallback")
+            return {
+                "completeClass": {
+                    "userId": user_id,
+                    "message": "Arazzo Runner not initialized - install dependencies"
+                }
             }
-        }
 
     async def _call_bassline_api(
         self,

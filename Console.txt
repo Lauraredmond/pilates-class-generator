@@ -1,1 +1,2 @@
-[Error] Failed to load resource: the server responded with a status of 500 () (my-data, line 0)
+[Error] Failed to load resource: the server responded with a status of 429 () (register, line 0)
+[Error] Failed to load resource: A server with the specified hostname could not be found. (api.js-4950e94a9243.map, line 0)

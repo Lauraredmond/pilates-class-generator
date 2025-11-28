@@ -1,21 +1,21 @@
 # ==============================================================================
 # BASSLINE PILATES ORCHESTRATOR - PYTHON DEPENDENCIES
 # ==============================================================================
-# Session 10: Jentic Integration - Phase 1
+# Session 10: Jentic Integration - Phase 1 (REAL CODE from GitHub)
 # Purpose: AI agent orchestration service using Jentic StandardAgent + Arazzo
 # ==============================================================================
 
 # ----------------------------------------
 # JENTIC CORE LIBRARIES (from GitHub)
 # ----------------------------------------
-# NOTE: These are not on PyPI yet, so we install directly from GitHub
-# PyPI = Python Package Index (like an app store for Python libraries)
+# ✅ CONFIRMED: Installing from GitHub (not PyPI)
+# These are the REAL Jentic libraries, not stubs or placeholders
 
 # Standard Agent - The "brain" (agentic reasoning with Plan→Execute→Reflect)
 git+https://github.com/jentic/standard-agent.git@main
 
 # Arazzo Engine - The "hands" (workflow orchestration and API execution)
-git+https://github.com/jentic/arazzo-engine.git@main
+git+https://github.com/jentic/arazzo-engine.git@main#subdirectory=runner
 
 # ----------------------------------------
 # WEB FRAMEWORK
@@ -27,8 +27,18 @@ python-multipart>=0.0.6
 # ----------------------------------------
 # LLM INTEGRATION
 # ----------------------------------------
-# OpenAI for LLM calls within StandardAgent
+# LiteLLM for unified LLM interface (used by StandardAgent)
+litellm>=1.0.0
+
+# OpenAI SDK (backend for LiteLLM)
 openai>=1.3.0
+
+# ----------------------------------------
+# HTTP CLIENT
+# ----------------------------------------
+# Used by Arazzo Engine for API calls
+httpx>=0.25.0
+requests>=2.31.0
 
 # ----------------------------------------
 # DATA VALIDATION
@@ -37,10 +47,10 @@ pydantic>=2.5.0
 pydantic-settings>=2.1.0
 
 # ----------------------------------------
-# HTTP CLIENT (for calling Bassline APIs)
+# YAML PARSING
 # ----------------------------------------
-httpx>=0.25.0
-requests>=2.31.0
+# Required by Arazzo Engine for .arazzo.yaml files
+pyyaml>=6.0.1
 
 # ----------------------------------------
 # ENVIRONMENT & CONFIG
