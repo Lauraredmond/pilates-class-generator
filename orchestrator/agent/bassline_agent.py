@@ -127,7 +127,8 @@ class BasslinePilatesCoachAgent(StandardAgent):
         # ======================================================================
 
         self.llm = LiteLLM(
-            model="gpt-4",  # Can switch to "claude-3-sonnet", "gpt-3.5-turbo", etc.
+            model="gpt-4-turbo",  # Use gpt-4-turbo (supports JSON mode) instead of base gpt-4
+            # Alternative models: "gpt-4o", "gpt-3.5-turbo", "claude-3-sonnet"
             temperature=0.7,  # Balance creativity and consistency
             max_tokens=4000
         )

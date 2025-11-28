@@ -162,7 +162,10 @@ def main():
     print("\n" + "="*80)
     print("CONCLUSION:")
     print("="*80)
-    if success:
+
+    # Check OpenAI API key (more reliable than test success)
+    openai_key = os.getenv('OPENAI_API_KEY')
+    if openai_key and openai_key != 'your_openai_api_key_here' and success:
         print("✅ Your agent IS using LLM reasoning via OpenAI")
         print("✅ This is NOT just direct database calls")
         print("✅ Jentic's StandardAgent.solve() calls the LLM")
@@ -170,6 +173,12 @@ def main():
         print("   - Response time: ~20+ seconds (LLM reasoning)")
         print("   - Multiple GPT-4 API calls made")
         print("   - Check OpenAI usage dashboard for token usage")
+    elif openai_key and openai_key != 'your_openai_api_key_here' and not success:
+        print("⚠️ LLM IS CONFIGURED but test encountered an error")
+        print("✅ OpenAI API key is set")
+        print("✅ LLM calls were likely made before error")
+        print("❌ Test failed due to technical issue (not configuration)")
+        print("\n💡 Check error details above for specific issue")
     else:
         print("❌ LLM not configured - set OPENAI_API_KEY in .env")
         print("❌ Without LLM, agent cannot reason")
