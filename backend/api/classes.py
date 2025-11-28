@@ -640,6 +640,61 @@ async def generate_class(request: ClassGenerationRequest):
                 processing_time_ms = (time.time() - start_time) * 1000
 
                 # ==============================================================================
+                # SAVE TO DATABASE: Persist generated class for analytics
+                # ==============================================================================
+                try:
+                    now = datetime.now().isoformat()
+                    class_plan_db = {
+                        'name': class_plan['name'],
+                        'user_id': request.user_id,
+                        'movements': class_plan.get('agent_result', {}).get('movements', []),  # Extract movements if structured
+                        'duration_minutes': request.duration_minutes,
+                        'difficulty_level': request.difficulty,
+                        'notes': f"AI-generated class using GPT-4. Iterations: {result.iterations}",
+                        'muscle_balance': {},  # Agent should provide this
+                        'validation_status': {
+                            'valid': True,
+                            'safety_score': 1.0,
+                            'warnings': []
+                        },
+                        'created_at': now,
+                        'updated_at': now
+                    }
+
+                    db_response = supabase.table('class_plans').insert(class_plan_db).execute()
+                    if db_response.data:
+                        class_plan['id'] = db_response.data[0]['id']  # Add DB ID to response
+                        logger.info(f"✅ Saved AI-generated class to class_plans table for user {request.user_id}")
+
+                        # ==============================================================================
+                        # ANALYTICS FIX: Also save to class_history table for analytics tracking
+                        # ==============================================================================
+                        try:
+                            class_history_entry = {
+                                'class_plan_id': db_response.data[0]['id'],
+                                'user_id': request.user_id,
+                                'taught_date': datetime.now().date().isoformat(),
+                                'actual_duration_minutes': request.duration_minutes,
+                                'attendance_count': 1,  # Generated = 1 attendance (self)
+                                'movements_snapshot': class_plan.get('agent_result', {}).get('movements', []),
+                                'instructor_notes': f"AI-generated {request.difficulty} class using GPT-4. Iterations: {result.iterations}",
+                                'difficulty_rating': None,
+                                'muscle_groups_targeted': [],  # Agent should provide this
+                                'total_movements_taught': len(class_plan.get('agent_result', {}).get('movements', [])),
+                                'created_at': now
+                            }
+
+                            supabase.table('class_history').insert(class_history_entry).execute()
+                            logger.info(f"✅ Saved to class_history table for analytics tracking (user {request.user_id})")
+                        except Exception as history_error:
+                            logger.error(f"❌ Failed to save to class_history for analytics: {history_error}", exc_info=True)
+                            # Continue anyway - class plan was saved successfully
+
+                except Exception as db_error:
+                    logger.error(f"❌ Failed to save class to database: {db_error}", exc_info=True)
+                    # Continue anyway - user still gets the class plan
+
+                # ==============================================================================
                 # ADMIN LOGGING: Log AI Agent invocation to database
                 # ==============================================================================
                 try:
@@ -766,6 +821,59 @@ async def generate_class(request: ClassGenerationRequest):
             }
 
             processing_time_ms = (time.time() - start_time) * 1000
+
+            # ==============================================================================
+            # SAVE TO DATABASE: Persist class for analytics (Direct API route)
+            # ==============================================================================
+            try:
+                now = datetime.now().isoformat()
+                class_plan_db = {
+                    'name': class_plan['name'],
+                    'user_id': request.user_id,
+                    'movements': selected_movements,
+                    'duration_minutes': current_duration // 60,
+                    'difficulty_level': request.difficulty,
+                    'notes': "Rule-based class generation (no LLM)",
+                    'muscle_balance': {},
+                    'validation_status': {
+                        'valid': True,
+                        'safety_score': 1.0,
+                        'warnings': []
+                    },
+                    'created_at': now,
+                    'updated_at': now
+                }
+
+                db_response = supabase.table('class_plans').insert(class_plan_db).execute()
+                if db_response.data:
+                    class_plan['id'] = db_response.data[0]['id']
+                    logger.info(f"✅ Saved Direct API class to class_plans table for user {request.user_id}")
+
+                    # ==============================================================================
+                    # ANALYTICS FIX: Also save to class_history table for analytics tracking
+                    # ==============================================================================
+                    try:
+                        class_history_entry = {
+                            'class_plan_id': db_response.data[0]['id'],
+                            'user_id': request.user_id,
+                            'taught_date': datetime.now().date().isoformat(),
+                            'actual_duration_minutes': current_duration // 60,
+                            'attendance_count': 1,
+                            'movements_snapshot': selected_movements,
+                            'instructor_notes': f"Rule-based {request.difficulty} class (no LLM)",
+                            'difficulty_rating': None,
+                            'muscle_groups_targeted': [],
+                            'total_movements_taught': len(selected_movements),
+                            'created_at': now
+                        }
+
+                        supabase.table('class_history').insert(class_history_entry).execute()
+                        logger.info(f"✅ Saved to class_history table for analytics tracking (user {request.user_id})")
+                    except Exception as history_error:
+                        logger.error(f"❌ Failed to save to class_history for analytics: {history_error}", exc_info=True)
+
+            except Exception as db_error:
+                logger.error(f"❌ Failed to save Direct API class to database: {db_error}", exc_info=True)
 
             # ==============================================================================
             # ADMIN LOGGING: Log Direct API usage (no LLM)
