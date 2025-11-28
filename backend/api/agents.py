@@ -77,12 +77,16 @@ def get_movement_muscle_groups(movement_id: str) -> list[str]:
         if not response.data:
             return []
 
-        # Extract muscle group names
-        muscle_groups = [item['muscle_group_name'] for item in response.data]
+        # Extract muscle group names safely with .get()
+        muscle_groups = [
+            item.get('muscle_group_name', 'Unknown')
+            for item in response.data
+            if isinstance(item, dict) and item.get('muscle_group_name')
+        ]
         return muscle_groups
 
     except Exception as e:
-        logger.warning(f"Failed to fetch muscle groups for movement {movement_id}: {e}")
+        logger.warning(f"Failed to fetch muscle groups for movement {movement_id}: {e}", exc_info=True)
         return []
 
 
@@ -171,27 +175,35 @@ async def generate_sequence(
 
                 db_response = supabase.table('class_plans').insert(class_plan_data).execute()
 
-                if db_response.data:
-                    class_plan_id = db_response.data[0]['id']
-                    logger.info(f"✅ Saved class to class_plans table (ID: {class_plan_id}) for user {actual_user_id}")
+                if db_response.data and len(db_response.data) > 0:
+                    # Safely extract class_plan_id
+                    class_plan_record = db_response.data[0]
+                    class_plan_id = class_plan_record.get('id')
 
-                    # Save to class_history table for analytics
-                    class_history_entry = {
-                        'class_plan_id': class_plan_id,
-                        'user_id': actual_user_id,  # FIXED: Use actual_user_id
-                        'taught_date': datetime.now().date().isoformat(),
-                        'actual_duration_minutes': request.target_duration_minutes,
-                        'attendance_count': 1,  # Generated = 1 attendance (self)
-                        'movements_snapshot': movements_for_history,  # With muscle groups!
-                        'instructor_notes': f"AI-generated {request.difficulty_level} class",
-                        'difficulty_rating': None,
-                        'muscle_groups_targeted': [],
-                        'total_movements_taught': len(movements_for_history),
-                        'created_at': now
-                    }
+                    if not class_plan_id:
+                        logger.warning("Class plan saved but no ID returned - skipping class_history save")
+                    else:
+                        logger.info(f"✅ Saved class to class_plans table (ID: {class_plan_id}) for user {actual_user_id}")
 
-                    supabase.table('class_history').insert(class_history_entry).execute()
-                    logger.info(f"✅ Saved to class_history table for analytics tracking (user {actual_user_id})")
+                        # Save to class_history table for analytics
+                        class_history_entry = {
+                            'class_plan_id': class_plan_id,
+                            'user_id': actual_user_id,  # FIXED: Use actual_user_id
+                            'taught_date': datetime.now().date().isoformat(),
+                            'actual_duration_minutes': request.target_duration_minutes,
+                            'attendance_count': 1,  # Generated = 1 attendance (self)
+                            'movements_snapshot': movements_for_history,  # With muscle groups!
+                            'instructor_notes': f"AI-generated {request.difficulty_level} class",
+                            'difficulty_rating': None,
+                            'muscle_groups_targeted': [],
+                            'total_movements_taught': len(movements_for_history),
+                            'created_at': now
+                        }
+
+                        supabase.table('class_history').insert(class_history_entry).execute()
+                        logger.info(f"✅ Saved to class_history table for analytics tracking (user {actual_user_id})")
+                else:
+                    logger.warning("No data returned from class_plans insert - class may not have been saved")
 
         except Exception as db_error:
             # Don't fail the request if database save fails
