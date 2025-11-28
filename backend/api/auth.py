@@ -104,6 +104,8 @@ class UserResponse(BaseModel):
     country: Optional[str] = None
     pilates_experience: Optional[str] = None
     goals: Optional[list[str]] = None
+    # Admin flag (Session 10: Admin LLM Observability)
+    is_admin: Optional[bool] = None
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -422,7 +424,8 @@ async def get_current_user(request: Request, user_id: str = Depends(get_current_
             gender_identity=user.get("gender_identity"),
             country=user.get("country"),
             pilates_experience=user.get("pilates_experience"),
-            goals=user.get("goals", [])
+            goals=user.get("goals", []),
+            is_admin=user.get("is_admin", False)
         )
 
     except HTTPException:
@@ -496,7 +499,8 @@ async def update_profile(
             gender_identity=user.get("gender_identity"),
             country=user.get("country"),
             pilates_experience=user.get("pilates_experience"),
-            goals=user.get("goals", [])
+            goals=user.get("goals", []),
+            is_admin=user.get("is_admin", False)
         )
 
     except HTTPException:
