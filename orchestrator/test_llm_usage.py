@@ -89,12 +89,15 @@ def test_with_llm():
         print("\n✅ LLM REASONING COMPLETED!")
         print(f"   Result type: {type(result)}")
         print(f"   Success: {result.success}")
-        print(f"   Duration: {result.duration_ms}ms")
-        print(f"   Model: {result.model}")
         print(f"   Iterations: {result.iterations}")
-        print(f"   Tool calls: {result.tool_calls_count}")
+        print(f"   Tool calls: {len(result.tool_calls)}")
+        print(f"   Error message: {result.error_message}")
         print(f"\n   Final answer preview:")
-        print(f"   {result.final_answer[:300]}...")
+        print(f"   {result.final_answer[:400]}...")
+
+        # Additional details
+        if result.transcript:
+            print(f"\n   Transcript length: {len(result.transcript)} characters")
 
         return True
 
