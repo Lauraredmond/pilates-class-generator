@@ -146,8 +146,8 @@ async def register(user_data: UserCreate, request: Request):
             if "rate limit" in error_message or "too many" in error_message or "email_rate_limit" in error_message:
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail=f"Registration temporarily rate limited by Supabase. This may take a few minutes to propagate after upgrading. Please try again in a moment. Error: {str(auth_error)}",
-                    headers={"Retry-After": "300"}  # 5 minutes in seconds
+                    detail=f"Supabase Auth rate limit detected. If you recently upgraded to a paid plan: (1) Wait 10-15 minutes for changes to propagate, (2) Check Supabase Dashboard → Authentication → Settings → Enable email confirmations is ON, (3) Verify your plan upgrade completed successfully in Billing. Technical error: {str(auth_error)}",
+                    headers={"Retry-After": "900"}  # 15 minutes in seconds
                 )
             elif "invalid" in error_message and "email" in error_message:
                 raise HTTPException(
