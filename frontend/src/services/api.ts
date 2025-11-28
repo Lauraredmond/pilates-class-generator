@@ -19,7 +19,7 @@ export const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Get token from localStorage (stored by AuthContext during login)
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access_token'); // FIXED: Match AuthContext key
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
