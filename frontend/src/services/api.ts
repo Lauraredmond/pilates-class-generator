@@ -91,6 +91,23 @@ export const analyticsApi = {
     api.get(`/api/analytics/difficulty-progression/${userId}`, { params: { period } }),
   getMuscleDistribution: (userId: string, period?: string) =>
     api.get(`/api/analytics/muscle-distribution/${userId}`, { params: { period } }),
+  // Session 10: Admin LLM Observability
+  getLLMLogs: (params: {
+    admin_user_id: string;
+    page?: number;
+    page_size?: number;
+    method_filter?: 'ai_agent' | 'direct_api';
+    user_id_filter?: string;
+    days_back?: number;
+  }) => api.get('/api/analytics/llm-logs', { params }),
+  getLLMUsageStats: (adminUserId: string, daysBack?: number) =>
+    api.get('/api/analytics/llm-usage-stats', {
+      params: { admin_user_id: adminUserId, days_back: daysBack },
+    }),
+  getSingleLLMLog: (logId: string, adminUserId: string) =>
+    api.get(`/api/analytics/llm-logs/${logId}`, {
+      params: { admin_user_id: adminUserId },
+    }),
 };
 
 export default api;

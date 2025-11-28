@@ -580,6 +580,315 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           )}
         </CardBody>
       </Card>
+
+      {/* Session 10: Admin LLM Usage Logs - Admin Only Section */}
+      {user?.is_admin && (
+        <AdminLLMUsageLogs userId={user.id} />
+      )}
+    </div>
+  );
+}
+
+// ==============================================================================
+// ADMIN LLM USAGE LOGS COMPONENT - Session 10: Jentic Integration
+// ==============================================================================
+
+interface AdminLLMUsageLogsProps {
+  userId: string;
+}
+
+function AdminLLMUsageLogs({ userId }: AdminLLMUsageLogsProps) {
+  const [llmStats, setLLMStats] = useState<any>(null);
+  const [llmLogs, setLLMLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [daysBack, setDaysBack] = useState(30);
+  const [methodFilter, setMethodFilter] = useState<'all' | 'ai_agent' | 'direct_api'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLLMData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Fetch stats and logs in parallel
+        const [statsResponse, logsResponse] = await Promise.all([
+          analyticsApi.getLLMUsageStats(userId, daysBack),
+          analyticsApi.getLLMLogs({
+            admin_user_id: userId,
+            page: currentPage,
+            page_size: 20,
+            method_filter: methodFilter === 'all' ? undefined : methodFilter,
+            days_back: daysBack,
+          }),
+        ]);
+
+        setLLMStats(statsResponse.data);
+        setLLMLogs(logsResponse.data.logs);
+      } catch (err: any) {
+        console.error('Failed to fetch LLM data:', err);
+        if (err.response?.status === 403) {
+          setError('Admin access required to view LLM logs');
+        } else {
+          setError(err.response?.data?.detail || 'Failed to load LLM usage data');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLLMData();
+  }, [userId, daysBack, methodFilter, currentPage]);
+
+  if (isLoading) {
+    return (
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>
+            <span className="bg-burgundy px-3 py-1 rounded text-sm mr-2">ADMIN</span>
+            LLM Usage Logs
+          </CardTitle>
+        </CardHeader>
+        <CardBody className="p-6">
+          <div className="flex items-center justify-center h-32">
+            <div className="text-cream/60">Loading LLM usage data...</div>
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>
+            <span className="bg-burgundy px-3 py-1 rounded text-sm mr-2">ADMIN</span>
+            LLM Usage Logs
+          </CardTitle>
+        </CardHeader>
+        <CardBody className="p-6">
+          <div className="flex items-center justify-center h-32">
+            <div className="text-red-400">{error}</div>
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="mt-8 space-y-6">
+      {/* Admin Badge and Header */}
+      <div className="bg-burgundy/20 border-2 border-burgundy p-4 rounded-lg">
+        <div className="flex items-center gap-3">
+          <span className="bg-burgundy px-3 py-1 rounded text-sm font-bold">ADMIN ONLY</span>
+          <h2 className="text-2xl font-bold text-cream">LLM Usage & Observability</h2>
+        </div>
+        <p className="text-cream/70 mt-2">
+          Monitor AI agent invocations, costs, and prompts sent to the LLM
+        </p>
+      </div>
+
+      {/* LLM Usage Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>LLM Usage Statistics (Last {daysBack} Days)</CardTitle>
+        </CardHeader>
+        <CardBody className="p-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="bg-burgundy/10 p-4 rounded-lg">
+              <p className="text-cream/60 text-xs font-medium mb-1">Total Invocations</p>
+              <p className="text-2xl font-bold text-cream">{llmStats.total_invocations}</p>
+            </div>
+            <div className="bg-burgundy/10 p-4 rounded-lg">
+              <p className="text-cream/60 text-xs font-medium mb-1">AI Agent Calls</p>
+              <p className="text-2xl font-bold text-cream">{llmStats.ai_agent_calls}</p>
+              <p className="text-cream/50 text-xs mt-1">Used LLM</p>
+            </div>
+            <div className="bg-burgundy/10 p-4 rounded-lg">
+              <p className="text-cream/60 text-xs font-medium mb-1">Direct API Calls</p>
+              <p className="text-2xl font-bold text-cream">{llmStats.direct_api_calls}</p>
+              <p className="text-cream/50 text-xs mt-1">No LLM</p>
+            </div>
+            <div className="bg-burgundy/10 p-4 rounded-lg">
+              <p className="text-cream/60 text-xs font-medium mb-1">LLM Success Rate</p>
+              <p className="text-2xl font-bold text-cream">{llmStats.llm_success_rate}%</p>
+            </div>
+            <div className="bg-burgundy/10 p-4 rounded-lg">
+              <p className="text-cream/60 text-xs font-medium mb-1">Avg Processing Time</p>
+              <p className="text-2xl font-bold text-cream">
+                {(llmStats.avg_processing_time_ms / 1000).toFixed(1)}s
+              </p>
+            </div>
+            <div className="bg-burgundy/10 p-4 rounded-lg border-2 border-burgundy/50">
+              <p className="text-cream/60 text-xs font-medium mb-1">Estimated Cost</p>
+              <p className="text-2xl font-bold text-cream">{llmStats.total_estimated_cost}</p>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Invocation Logs</CardTitle>
+        </CardHeader>
+        <CardBody className="p-6">
+          <div className="flex gap-4 mb-6">
+            <div>
+              <label className="block text-cream/60 text-sm mb-2">Time Period</label>
+              <select
+                value={daysBack}
+                onChange={(e) => setDaysBack(Number(e.target.value))}
+                className="bg-burgundy-dark border border-cream/30 rounded-lg px-4 py-2 text-cream"
+              >
+                <option value={7}>Last 7 Days</option>
+                <option value={30}>Last 30 Days</option>
+                <option value={90}>Last 90 Days</option>
+                <option value={365}>Last Year</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-cream/60 text-sm mb-2">Method Filter</label>
+              <select
+                value={methodFilter}
+                onChange={(e) => setMethodFilter(e.target.value as any)}
+                className="bg-burgundy-dark border border-cream/30 rounded-lg px-4 py-2 text-cream"
+              >
+                <option value="all">All Methods</option>
+                <option value="ai_agent">AI Agent Only</option>
+                <option value="direct_api">Direct API Only</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Logs Table */}
+          {llmLogs.length === 0 ? (
+            <div className="text-center text-cream/60 py-8">
+              No LLM invocation logs found for the selected period
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {llmLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="bg-burgundy/10 border border-cream/20 rounded-lg overflow-hidden"
+                >
+                  {/* Log Header - Always Visible */}
+                  <div
+                    className="p-4 cursor-pointer hover:bg-burgundy/20 transition-colors"
+                    onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`px-3 py-1 rounded text-xs font-bold ${
+                            log.llm_called
+                              ? 'bg-burgundy text-cream'
+                              : 'bg-cream/20 text-cream/60'
+                          }`}
+                        >
+                          {log.llm_called ? 'AI AGENT' : 'DIRECT API'}
+                        </span>
+                        <span className="text-cream text-sm">
+                          {new Date(log.created_at).toLocaleString()}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs ${
+                            log.success ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                          }`}
+                        >
+                          {log.success ? 'SUCCESS' : 'FAILED'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-cream/70">
+                        <span>{(log.processing_time_ms / 1000).toFixed(2)}s</span>
+                        <span className="font-semibold">{log.cost_estimate}</span>
+                        <svg
+                          className={`w-5 h-5 transition-transform ${
+                            expandedLogId === log.id ? 'rotate-180' : ''
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Details */}
+                  {expandedLogId === log.id && (
+                    <div className="p-4 bg-burgundy-dark/50 border-t border-cream/20 space-y-3">
+                      {/* LLM Model */}
+                      {log.llm_model && (
+                        <div>
+                          <p className="text-cream/60 text-xs font-medium mb-1">LLM Model</p>
+                          <p className="text-cream font-mono text-sm">{log.llm_model}</p>
+                        </div>
+                      )}
+
+                      {/* LLM Prompt */}
+                      {log.llm_prompt && (
+                        <div>
+                          <p className="text-cream/60 text-xs font-medium mb-1">Prompt Sent to LLM</p>
+                          <div className="bg-burgundy-dark p-3 rounded border border-cream/10">
+                            <p className="text-cream font-mono text-sm">{log.llm_prompt}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* LLM Response */}
+                      {log.llm_response && (
+                        <div>
+                          <p className="text-cream/60 text-xs font-medium mb-1">LLM Response</p>
+                          <div className="bg-burgundy-dark p-3 rounded border border-cream/10 max-h-64 overflow-y-auto">
+                            <p className="text-cream/80 font-mono text-sm whitespace-pre-wrap">
+                              {log.llm_response}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Iterations */}
+                      {log.llm_iterations !== null && (
+                        <div>
+                          <p className="text-cream/60 text-xs font-medium mb-1">Reasoning Iterations</p>
+                          <p className="text-cream font-mono text-sm">{log.llm_iterations}</p>
+                        </div>
+                      )}
+
+                      {/* Error Message */}
+                      {log.error_message && (
+                        <div>
+                          <p className="text-red-400 text-xs font-medium mb-1">Error Message</p>
+                          <div className="bg-red-500/10 border border-red-500/30 p-3 rounded">
+                            <p className="text-red-300 font-mono text-sm">{log.error_message}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Request Data */}
+                      <div>
+                        <p className="text-cream/60 text-xs font-medium mb-1">Request Details</p>
+                        <div className="bg-burgundy-dark p-3 rounded border border-cream/10">
+                          <pre className="text-cream/80 font-mono text-xs">
+                            {JSON.stringify(log.request_data, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
     </div>
   );
 }

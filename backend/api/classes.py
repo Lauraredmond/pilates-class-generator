@@ -639,6 +639,40 @@ async def generate_class(request: ClassGenerationRequest):
 
                 processing_time_ms = (time.time() - start_time) * 1000
 
+                # ==============================================================================
+                # ADMIN LOGGING: Log AI Agent invocation to database
+                # ==============================================================================
+                try:
+                    log_entry = {
+                        'user_id': request.user_id,
+                        'method_used': 'ai_agent',
+                        'llm_called': True,
+                        'llm_model': 'gpt-4-turbo',
+                        'llm_prompt': goal,  # The goal sent to agent.solve()
+                        'llm_response': result.final_answer if result.final_answer else str(result),
+                        'llm_iterations': result.iterations,
+                        'request_data': {
+                            'duration_minutes': request.duration_minutes,
+                            'difficulty': request.difficulty,
+                            'use_agent': True
+                        },
+                        'processing_time_ms': processing_time_ms,
+                        'success': result.success,
+                        'error_message': result.error_message if hasattr(result, 'error_message') and result.error_message else None,
+                        'cost_estimate': '$0.12-0.15',
+                        'result_summary': {
+                            'movements_count': len(class_plan.get('agent_result', {}).get('final_answer', '').split('Movement') if isinstance(class_plan.get('agent_result', {}).get('final_answer'), str) else []),
+                            'iterations': result.iterations,
+                            'success': result.success
+                        }
+                    }
+
+                    supabase.table('llm_invocation_log').insert(log_entry).execute()
+                    logger.info(f"✅ Logged AI Agent invocation for user {request.user_id}")
+                except Exception as log_error:
+                    # Don't fail the request if logging fails
+                    logger.error(f"❌ Failed to log AI agent invocation: {log_error}", exc_info=True)
+
                 return ClassGenerationResponse(
                     class_plan=class_plan,
                     method="ai_agent",
@@ -650,6 +684,40 @@ async def generate_class(request: ClassGenerationRequest):
 
             except Exception as agent_error:
                 logger.error(f"AI Agent failed: {agent_error}", exc_info=True)
+
+                # ==============================================================================
+                # ADMIN LOGGING: Log AI Agent FAILURE
+                # ==============================================================================
+                processing_time_ms = (time.time() - start_time) * 1000
+                try:
+                    log_entry = {
+                        'user_id': request.user_id,
+                        'method_used': 'ai_agent',
+                        'llm_called': True,  # Attempted to call LLM
+                        'llm_model': 'gpt-4-turbo',
+                        'llm_prompt': f"Create a {request.duration_minutes}-minute {request.difficulty} Pilates class",
+                        'llm_response': None,  # Failed before getting response
+                        'llm_iterations': None,
+                        'request_data': {
+                            'duration_minutes': request.duration_minutes,
+                            'difficulty': request.difficulty,
+                            'use_agent': True
+                        },
+                        'processing_time_ms': processing_time_ms,
+                        'success': False,
+                        'error_message': str(agent_error),
+                        'cost_estimate': '$0.00',  # Failed before completion
+                        'result_summary': {
+                            'error': 'AI agent initialization or execution failed',
+                            'fallback': 'Will use direct API'
+                        }
+                    }
+
+                    supabase.table('llm_invocation_log').insert(log_entry).execute()
+                    logger.info(f"✅ Logged AI Agent FAILURE for user {request.user_id}")
+                except Exception as log_error:
+                    logger.error(f"❌ Failed to log AI agent failure: {log_error}", exc_info=True)
+
                 # Fallback to direct API if agent fails
                 logger.warning("Falling back to direct API due to agent error")
                 use_agent = False  # Continue to direct API below
@@ -698,6 +766,40 @@ async def generate_class(request: ClassGenerationRequest):
             }
 
             processing_time_ms = (time.time() - start_time) * 1000
+
+            # ==============================================================================
+            # ADMIN LOGGING: Log Direct API usage (no LLM)
+            # ==============================================================================
+            try:
+                log_entry = {
+                    'user_id': request.user_id,
+                    'method_used': 'direct_api',
+                    'llm_called': False,  # No LLM used
+                    'llm_model': None,
+                    'llm_prompt': None,
+                    'llm_response': None,
+                    'llm_iterations': None,
+                    'request_data': {
+                        'duration_minutes': request.duration_minutes,
+                        'difficulty': request.difficulty,
+                        'use_agent': False
+                    },
+                    'processing_time_ms': processing_time_ms,
+                    'success': True,
+                    'error_message': None,
+                    'cost_estimate': '$0.00',  # Free - no LLM
+                    'result_summary': {
+                        'movements_count': len(selected_movements),
+                        'method': 'simple_rule_based_selection',
+                        'total_duration_seconds': current_duration
+                    }
+                }
+
+                supabase.table('llm_invocation_log').insert(log_entry).execute()
+                logger.info(f"✅ Logged Direct API usage for user {request.user_id} (no LLM)")
+            except Exception as log_error:
+                # Don't fail the request if logging fails
+                logger.error(f"❌ Failed to log direct API usage: {log_error}", exc_info=True)
 
             return ClassGenerationResponse(
                 class_plan=class_plan,

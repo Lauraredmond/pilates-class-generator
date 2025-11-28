@@ -729,7 +729,7 @@ export function Settings() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">Disabled:</span>
-                    <span>Direct API, <1s, free (basic sequencing)</span>
+                    <span>Direct API, {'<'}1s, free (basic sequencing)</span>
                   </div>
                 </div>
               </div>

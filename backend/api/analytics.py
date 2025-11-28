@@ -563,3 +563,280 @@ async def _get_favorite_movement(user_id: str) -> str:
     except Exception as e:
         logger.warning(f"Error getting favorite movement: {e}")
         return "The Hundred"
+
+
+# ==============================================================================
+# ADMIN LLM OBSERVABILITY - Session 10: Jentic Integration
+# ==============================================================================
+
+async def verify_admin(user_id: str) -> bool:
+    """
+    Verify if user is an admin
+
+    Returns True if user has is_admin=true in user_profiles table
+    Raises HTTPException 403 if not admin
+    """
+    try:
+        response = supabase.table("user_profiles").select("is_admin").eq("id", user_id).execute()
+
+        if not response.data:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found"
+            )
+
+        is_admin = response.data[0].get("is_admin", False)
+
+        if not is_admin:
+            raise HTTPException(
+                status_code=403,
+                detail="Admin access required. Only administrators can view LLM usage logs."
+            )
+
+        return True
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error verifying admin status: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to verify admin status"
+        )
+
+
+# Pydantic models for LLM logging
+class LLMInvocationLogEntry(BaseModel):
+    """Single LLM invocation log entry"""
+    id: str
+    created_at: str
+    user_id: str
+    method_used: str  # "ai_agent" or "direct_api"
+    llm_called: bool
+    llm_model: Optional[str] = None
+    llm_prompt: Optional[str] = None
+    llm_response: Optional[str] = None
+    llm_iterations: Optional[int] = None
+    request_data: dict
+    processing_time_ms: float
+    success: bool
+    error_message: Optional[str] = None
+    cost_estimate: str
+    result_summary: Optional[dict] = None
+
+
+class LLMLogsResponse(BaseModel):
+    """Response for LLM logs endpoint"""
+    logs: List[LLMInvocationLogEntry]
+    total_count: int
+    page: int
+    page_size: int
+    has_more: bool
+
+
+class LLMUsageStats(BaseModel):
+    """Aggregated LLM usage statistics"""
+    total_invocations: int
+    ai_agent_calls: int
+    direct_api_calls: int
+    llm_success_rate: float  # Percentage
+    avg_processing_time_ms: float
+    total_estimated_cost: str
+    date_range: dict
+
+
+@router.get("/llm-logs", response_model=LLMLogsResponse)
+async def get_llm_invocation_logs(
+    admin_user_id: str = Query(..., description="Admin user ID for authorization"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    method_filter: Optional[str] = Query(default=None, description="Filter by method: 'ai_agent' or 'direct_api'"),
+    user_id_filter: Optional[str] = Query(default=None, description="Filter by specific user ID"),
+    days_back: int = Query(default=30, ge=1, le=365, description="Number of days to look back")
+):
+    """
+    Get LLM invocation logs (admin only)
+
+    Returns paginated list of all LLM invocations with full details including:
+    - Whether LLM was called or not
+    - The prompt sent to LLM
+    - The response from LLM
+    - Processing time and cost estimates
+    - Success/failure status
+
+    **Admin Authorization Required**
+    """
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    try:
+        # Calculate date filter
+        cutoff_date = (datetime.now() - timedelta(days=days_back)).isoformat()
+
+        # Build query
+        query = supabase.table('llm_invocation_log').select('*', count='exact')
+
+        # Apply filters
+        query = query.gte('created_at', cutoff_date)
+
+        if method_filter:
+            query = query.eq('method_used', method_filter)
+
+        if user_id_filter:
+            query = query.eq('user_id', user_id_filter)
+
+        # Order by most recent first
+        query = query.order('created_at', desc=True)
+
+        # Apply pagination
+        offset = (page - 1) * page_size
+        query = query.range(offset, offset + page_size - 1)
+
+        # Execute query
+        response = query.execute()
+
+        logs = response.data or []
+        total_count = response.count if hasattr(response, 'count') and response.count else len(logs)
+
+        has_more = total_count > (page * page_size)
+
+        return LLMLogsResponse(
+            logs=[LLMInvocationLogEntry(**log) for log in logs],
+            total_count=total_count,
+            page=page,
+            page_size=page_size,
+            has_more=has_more
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching LLM logs: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch LLM logs: {str(e)}"
+        )
+
+
+@router.get("/llm-usage-stats", response_model=LLMUsageStats)
+async def get_llm_usage_statistics(
+    admin_user_id: str = Query(..., description="Admin user ID for authorization"),
+    days_back: int = Query(default=30, ge=1, le=365, description="Number of days to aggregate")
+):
+    """
+    Get aggregated LLM usage statistics (admin only)
+
+    Returns summary statistics about LLM usage:
+    - Total invocations (AI agent vs direct API)
+    - Success rates
+    - Average processing times
+    - Estimated costs
+
+    **Admin Authorization Required**
+    """
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    try:
+        # Calculate date filter
+        cutoff_date = (datetime.now() - timedelta(days=days_back)).isoformat()
+
+        # Fetch all logs in date range
+        response = supabase.table('llm_invocation_log').select('*').gte('created_at', cutoff_date).execute()
+
+        logs = response.data or []
+
+        if not logs:
+            return LLMUsageStats(
+                total_invocations=0,
+                ai_agent_calls=0,
+                direct_api_calls=0,
+                llm_success_rate=0.0,
+                avg_processing_time_ms=0.0,
+                total_estimated_cost="$0.00",
+                date_range={
+                    "start_date": cutoff_date,
+                    "end_date": datetime.now().isoformat(),
+                    "days": days_back
+                }
+            )
+
+        # Calculate statistics
+        total_invocations = len(logs)
+        ai_agent_calls = len([log for log in logs if log['llm_called']])
+        direct_api_calls = total_invocations - ai_agent_calls
+
+        # Success rate (only for LLM calls)
+        llm_logs = [log for log in logs if log['llm_called']]
+        llm_success_count = len([log for log in llm_logs if log['success']])
+        llm_success_rate = (llm_success_count / len(llm_logs) * 100) if llm_logs else 0.0
+
+        # Average processing time
+        processing_times = [log['processing_time_ms'] for log in logs if log['processing_time_ms']]
+        avg_processing_time_ms = sum(processing_times) / len(processing_times) if processing_times else 0.0
+
+        # Estimate total cost (rough calculation)
+        # Assume $0.135 average per AI agent call (middle of $0.12-0.15 range)
+        estimated_cost = ai_agent_calls * 0.135
+        total_estimated_cost = f"${estimated_cost:.2f}"
+
+        return LLMUsageStats(
+            total_invocations=total_invocations,
+            ai_agent_calls=ai_agent_calls,
+            direct_api_calls=direct_api_calls,
+            llm_success_rate=round(llm_success_rate, 2),
+            avg_processing_time_ms=round(avg_processing_time_ms, 2),
+            total_estimated_cost=total_estimated_cost,
+            date_range={
+                "start_date": cutoff_date,
+                "end_date": datetime.now().isoformat(),
+                "days": days_back
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating LLM usage stats: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate LLM usage statistics: {str(e)}"
+        )
+
+
+@router.get("/llm-logs/{log_id}", response_model=LLMInvocationLogEntry)
+async def get_single_llm_log(
+    log_id: str,
+    admin_user_id: str = Query(..., description="Admin user ID for authorization")
+):
+    """
+    Get detailed information about a single LLM invocation (admin only)
+
+    Returns full details including the exact prompt and response.
+
+    **Admin Authorization Required**
+    """
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    try:
+        response = supabase.table('llm_invocation_log').select('*').eq('id', log_id).execute()
+
+        if not response.data:
+            raise HTTPException(
+                status_code=404,
+                detail=f"LLM log with ID {log_id} not found"
+            )
+
+        log = response.data[0]
+
+        return LLMInvocationLogEntry(**log)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching LLM log: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch LLM log: {str(e)}"
+        )
