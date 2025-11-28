@@ -15,6 +15,8 @@ interface User {
   country?: string;
   pilates_experience?: string;
   goals?: string[];
+  // Admin flag (Session 10: Admin LLM Observability)
+  is_admin?: boolean;
 }
 
 interface RegistrationData {

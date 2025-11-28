@@ -604,7 +604,7 @@ function AdminLLMUsageLogs({ userId }: AdminLLMUsageLogsProps) {
   const [error, setError] = useState<string | null>(null);
   const [daysBack, setDaysBack] = useState(30);
   const [methodFilter, setMethodFilter] = useState<'all' | 'ai_agent' | 'direct_api'>('all');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, _setCurrentPage] = useState(1); // Pagination not yet implemented
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
   useEffect(() => {
