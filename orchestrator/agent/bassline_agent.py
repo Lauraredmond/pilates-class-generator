@@ -146,28 +146,11 @@ class BasslinePilatesCoachAgent(StandardAgent):
         logger.info("✅ BASSLINE tools initialized")
 
         # ======================================================================
-        # ✅ JENTIC PATTERN: Configure Reasoner
-        # ======================================================================
-        # Using Jentic's ReWOOReasoner from:
-        # /tmp/standard-agent/agents/reasoner/rewoo.py
-        #
-        # This implements the Plan→Execute→Reflect loop:
-        # - PLAN: Break goal into steps (LLM-powered)
-        # - EXECUTE: Run tools, handle results
-        # - REFLECT: Validate, retry on errors (self-healing)
-        # ======================================================================
-
-        self.reasoner = ReWOOReasoner(
-            llm=self.llm,
-            tools=self.tools
-        )
-        logger.info("✅ JENTIC ReWOO reasoner initialized")
-
-        # ======================================================================
         # ✅ JENTIC PATTERN: Configure Memory
         # ======================================================================
         # Start simple (dict), upgrade later (Redis, Vector DB)
         # Jentic's StandardAgent uses MutableMapping interface
+        # IMPORTANT: Create memory BEFORE reasoner (reasoner needs it)
         # ======================================================================
 
         self.memory: Dict[str, Any] = {
@@ -178,6 +161,27 @@ class BasslinePilatesCoachAgent(StandardAgent):
             }
         }
         logger.info("✅ Memory initialized")
+
+        # ======================================================================
+        # ✅ JENTIC PATTERN: Configure Reasoner
+        # ======================================================================
+        # Using Jentic's ReWOOReasoner from:
+        # /tmp/standard-agent/agents/reasoner/rewoo.py
+        #
+        # This implements the Plan→Execute→Reflect loop:
+        # - PLAN: Break goal into steps (LLM-powered)
+        # - EXECUTE: Run tools, handle results
+        # - REFLECT: Validate, retry on errors (self-healing)
+        #
+        # IMPORTANT: ReWOOReasoner requires memory parameter
+        # ======================================================================
+
+        self.reasoner = ReWOOReasoner(
+            llm=self.llm,
+            tools=self.tools,
+            memory=self.memory  # ← Required parameter
+        )
+        logger.info("✅ JENTIC ReWOO reasoner initialized")
 
         # ======================================================================
         # ✅ JENTIC PATTERN: Initialize StandardAgent Parent Class
