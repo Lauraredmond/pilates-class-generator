@@ -463,21 +463,54 @@ class BasslinePilatesTools(JustInTimeToolingBase):
 
         BASSLINE (this file):
         Same pattern, but routes to Pilates-specific handlers.
+        Also handles tool name → ID mapping for LLM flexibility.
         """
         logger.info(f"Executing tool: {tool.id} with params: {parameters}")
 
+        # Map tool names to IDs (LLM sometimes uses names instead of IDs)
+        tool_id = self._normalize_tool_id(tool.id)
+
         # Route to appropriate handler
-        if tool.id == "get_user_profile":
+        if tool_id == "get_user_profile":
             return self._get_user_profile(**parameters)
 
-        elif tool.id == "assemble_pilates_class":
+        elif tool_id == "assemble_pilates_class":
             return self._assemble_pilates_class(**parameters)
 
-        elif tool.id == "call_bassline_api":
+        elif tool_id == "call_bassline_api":
             return self._call_bassline_api(**parameters)
 
         else:
-            raise ValueError(f"Unknown tool: {tool.id}")
+            raise ValueError(f"Unknown tool: {tool.id} (normalized: {tool_id})")
+
+    # ==========================================================================
+    # HELPER METHODS
+    # ==========================================================================
+
+    def _normalize_tool_id(self, tool_id: str) -> str:
+        """
+        Normalize tool ID by mapping tool names to their actual IDs.
+
+        BASSLINE CUSTOM: LLM Flexibility
+
+        The LLM sometimes uses tool names instead of IDs when suggesting tools.
+        This helper maps common variations back to the canonical ID.
+
+        Args:
+            tool_id: Tool ID or name
+
+        Returns:
+            Canonical tool ID
+        """
+        # Create name → ID mapping
+        name_to_id = {
+            "Get User Profile": "get_user_profile",
+            "Assemble Complete Pilates Class": "assemble_pilates_class",
+            "Call Bassline API Endpoint": "call_bassline_api",
+        }
+
+        # Return mapped ID if it's a name, otherwise return as-is
+        return name_to_id.get(tool_id, tool_id)
 
     # ==========================================================================
     # TOOL IMPLEMENTATIONS (Private Methods)
