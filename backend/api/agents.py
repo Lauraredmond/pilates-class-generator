@@ -28,6 +28,8 @@ from agents import (
     ResearchAgent
 )
 
+from utils.auth import get_current_user_id  # REAL JWT authentication
+
 from datetime import datetime
 from uuid import uuid4
 import os
@@ -54,29 +56,43 @@ music_agent = MusicAgent(strictness_level="guided")
 meditation_agent = MeditationAgent(strictness_level="guided")
 research_agent = ResearchAgent(strictness_level="guided")
 
-
-# Temporary user ID function (replace with real auth in Session 4+)
-def get_current_user_id() -> str:
-    """Get current user ID (placeholder until auth is implemented)"""
-    return "demo-user-id"
+# NOTE: get_current_user_id() is now imported from utils.auth (extracts from JWT token)
 
 
 def get_movement_muscle_groups(movement_id: str) -> list[str]:
     """
     Fetch muscle groups for a movement from movement_muscles junction table
     Returns list of muscle group names
+
+    Uses two-step query to avoid PostgREST schema cache issues
     """
     try:
-        response = supabase.table('movement_muscles') \
-            .select('muscle_group_id, muscle_groups(name)') \
+        # Step 1: Get muscle_group_ids from junction table
+        junction_response = supabase.table('movement_muscles') \
+            .select('muscle_group_id') \
             .eq('movement_id', movement_id) \
             .eq('is_primary', True) \
             .execute()
 
-        if not response.data:
+        if not junction_response.data:
             return []
 
-        muscle_groups = [item['muscle_groups']['name'] for item in response.data if item.get('muscle_groups')]
+        # Extract muscle group IDs
+        muscle_group_ids = [item['muscle_group_id'] for item in junction_response.data]
+
+        if not muscle_group_ids:
+            return []
+
+        # Step 2: Get muscle group names
+        groups_response = supabase.table('muscle_groups') \
+            .select('name') \
+            .in_('id', muscle_group_ids) \
+            .execute()
+
+        if not groups_response.data:
+            return []
+
+        muscle_groups = [item['name'] for item in groups_response.data]
         return muscle_groups
 
     except Exception as e:
