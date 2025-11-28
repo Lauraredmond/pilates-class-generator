@@ -128,7 +128,10 @@ async def generate_sequence(
             sequence_data = result.get('data', {})
             sequence = sequence_data.get('sequence', [])
 
-            if sequence and request.user_id:
+            # Use user_id from request body (passed by frontend with real authenticated user ID)
+            actual_user_id = inputs_with_user.get('user_id', user_id)
+
+            if sequence and actual_user_id:
                 now = datetime.now().isoformat()
 
                 # Prepare movements_snapshot with muscle groups for analytics
@@ -149,7 +152,7 @@ async def generate_sequence(
                 # Save to class_plans table
                 class_plan_data = {
                     'name': f"{request.difficulty_level} Pilates Class ({request.target_duration_minutes} min)",
-                    'user_id': request.user_id,
+                    'user_id': actual_user_id,  # FIXED: Use actual_user_id instead of request.user_id
                     'movements': sequence,  # Full sequence with all details
                     'duration_minutes': request.target_duration_minutes,
                     'difficulty_level': request.difficulty_level,
@@ -168,12 +171,12 @@ async def generate_sequence(
 
                 if db_response.data:
                     class_plan_id = db_response.data[0]['id']
-                    logger.info(f"✅ Saved class to class_plans table (ID: {class_plan_id}) for user {request.user_id}")
+                    logger.info(f"✅ Saved class to class_plans table (ID: {class_plan_id}) for user {actual_user_id}")
 
                     # Save to class_history table for analytics
                     class_history_entry = {
                         'class_plan_id': class_plan_id,
-                        'user_id': request.user_id,
+                        'user_id': actual_user_id,  # FIXED: Use actual_user_id
                         'taught_date': datetime.now().date().isoformat(),
                         'actual_duration_minutes': request.target_duration_minutes,
                         'attendance_count': 1,  # Generated = 1 attendance (self)
@@ -186,7 +189,7 @@ async def generate_sequence(
                     }
 
                     supabase.table('class_history').insert(class_history_entry).execute()
-                    logger.info(f"✅ Saved to class_history table for analytics tracking (user {request.user_id})")
+                    logger.info(f"✅ Saved to class_history table for analytics tracking (user {actual_user_id})")
 
         except Exception as db_error:
             # Don't fail the request if database save fails
