@@ -15,14 +15,14 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor (for adding auth tokens later)
+// Request interceptor - Add JWT token to all requests
 api.interceptors.request.use(
   (config) => {
-    // TODO: Add JWT token when auth is implemented
-    // const token = localStorage.getItem('auth_token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // Get token from localStorage (stored by AuthContext during login)
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
