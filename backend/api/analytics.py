@@ -586,35 +586,29 @@ def _calculate_streak(classes: List[Dict[str, Any]]) -> int:
 
 
 async def _get_favorite_movement(user_id: str) -> str:
-    """Get the most frequently used movement from class_history"""
+    """Get the most frequently used movement"""
     try:
         user_uuid = _convert_to_uuid(user_id)
 
-        # Query class_history to count movement usage
-        response = supabase.table('class_history') \
-            .select('movements_snapshot') \
+        response = supabase.table('movement_usage') \
+            .select('movement_id, usage_count') \
             .eq('user_id', user_uuid) \
+            .order('usage_count', desc=True) \
+            .limit(1) \
             .execute()
 
-        if not response.data:
-            return "The Hundred"
+        if response.data and len(response.data) > 0:
+            movement_id = response.data[0]['movement_id']
 
-        # Count movement usage from movements_snapshot
-        movement_counts = defaultdict(int)
-        for class_item in response.data:
-            movements_snapshot = class_item.get('movements_snapshot', [])
-            for movement in movements_snapshot:
-                if movement.get('type') == 'movement':
-                    movement_name = movement.get('name', '')
-                    if movement_name:
-                        movement_counts[movement_name] += 1
+            movement_response = supabase.table('movements') \
+                .select('name') \
+                .eq('id', movement_id) \
+                .execute()
 
-        if not movement_counts:
-            return "The Hundred"
+            if movement_response.data:
+                return movement_response.data[0]['name']
 
-        # Return most frequent movement
-        favorite = max(movement_counts.items(), key=lambda x: x[1])
-        return favorite[0]
+        return "The Hundred"
 
     except Exception as e:
         logger.warning(f"Error getting favorite movement: {e}")
