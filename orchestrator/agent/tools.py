@@ -246,6 +246,11 @@ class BasslinePilatesTools(JustInTimeToolingBase):
 
                 Returns complete class structure ready for playback.
 
+                Can be called with no parameters - uses sensible defaults:
+                - user_id: "test-user"
+                - target_duration_minutes: 30
+                - difficulty_level: "Beginner"
+
                 JENTIC PATTERN: Workflow as Tool
                 ================================
                 The agent can call Arazzo workflows just like any other tool.
@@ -257,16 +262,22 @@ class BasslinePilatesTools(JustInTimeToolingBase):
                     "properties": {
                         "user_id": {
                             "type": "string",
-                            "format": "uuid"
+                            "format": "uuid",
+                            "default": "test-user",
+                            "description": "User ID (defaults to test-user)"
                         },
                         "target_duration_minutes": {
                             "type": "integer",
                             "minimum": 15,
-                            "maximum": 120
+                            "maximum": 120,
+                            "default": 30,
+                            "description": "Class duration in minutes (defaults to 30)"
                         },
                         "difficulty_level": {
                             "type": "string",
-                            "enum": ["Beginner", "Intermediate", "Advanced"]
+                            "enum": ["Beginner", "Intermediate", "Advanced"],
+                            "default": "Beginner",
+                            "description": "Difficulty level (defaults to Beginner)"
                         },
                         "focus_areas": {
                             "type": "array",
@@ -283,7 +294,7 @@ class BasslinePilatesTools(JustInTimeToolingBase):
                             "default": "guided"
                         }
                     },
-                    "required": ["user_id", "target_duration_minutes", "difficulty_level"]
+                    "required": []
                 }
             },
 
@@ -547,9 +558,9 @@ class BasslinePilatesTools(JustInTimeToolingBase):
 
     async def _assemble_pilates_class(
         self,
-        user_id: str,
-        target_duration_minutes: int,
-        difficulty_level: str,
+        user_id: str = "test-user",
+        target_duration_minutes: int = 30,
+        difficulty_level: str = "Beginner",
         focus_areas: List[str] = None,
         include_mcp_research: bool = False,
         strictness_level: str = "guided"
