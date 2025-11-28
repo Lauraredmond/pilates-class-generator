@@ -40,7 +40,7 @@ tags:
   - name: Movements
     description: Pilates movement database
   - name: Analytics
-    description: User progress and statistics
+    description: User progress tracking and admin LLM observability
 
 # =============================================================================
 # SECURITY SCHEMES
@@ -387,6 +387,132 @@ components:
               nullable: true
         metadata:
           type: object
+
+    # -------------------------------------------------------------------------
+    # ADMIN LLM LOGGING MODELS (Session 10)
+    # -------------------------------------------------------------------------
+    LLMInvocationLogEntry:
+      type: object
+      description: |
+        Single LLM invocation log entry showing when LLM reasoning was called,
+        the exact prompt sent, and the response received. Admin-only access.
+      properties:
+        id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        user_id:
+          type: string
+          format: uuid
+        method_used:
+          type: string
+          enum: [ai_agent, direct_api]
+          description: Whether AI agent with LLM or direct API was used
+        llm_called:
+          type: boolean
+          description: True if LLM reasoning was invoked
+        llm_model:
+          type: string
+          nullable: true
+          example: gpt-4-turbo
+          description: LLM model used (if llm_called=true)
+        llm_prompt:
+          type: string
+          nullable: true
+          description: The exact prompt/goal sent to the LLM
+        llm_response:
+          type: string
+          nullable: true
+          description: The full response received from the LLM
+        llm_iterations:
+          type: integer
+          nullable: true
+          description: Number of reasoning iterations (ReWOO cycles)
+        request_data:
+          type: object
+          description: Full request parameters (duration, difficulty, etc.)
+        processing_time_ms:
+          type: number
+          format: float
+          description: Total processing time in milliseconds
+        success:
+          type: boolean
+        error_message:
+          type: string
+          nullable: true
+        cost_estimate:
+          type: string
+          example: "$0.12-0.15"
+          description: Estimated cost for this invocation
+        result_summary:
+          type: object
+          nullable: true
+          description: Brief summary of generation result
+      required:
+        - id
+        - created_at
+        - user_id
+        - method_used
+        - llm_called
+        - processing_time_ms
+        - success
+        - cost_estimate
+
+    LLMLogsResponse:
+      type: object
+      description: Paginated response for LLM invocation logs
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/LLMInvocationLogEntry'
+        total_count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+
+    LLMUsageStats:
+      type: object
+      description: Aggregated statistics about LLM usage and costs
+      properties:
+        total_invocations:
+          type: integer
+          description: Total class generation attempts
+        ai_agent_calls:
+          type: integer
+          description: Number of times LLM was actually called
+        direct_api_calls:
+          type: integer
+          description: Number of times direct API was used (no LLM)
+        llm_success_rate:
+          type: number
+          format: float
+          description: Percentage of successful LLM calls
+        avg_processing_time_ms:
+          type: number
+          format: float
+          description: Average processing time across all invocations
+        total_estimated_cost:
+          type: string
+          example: "$3.45"
+          description: Total estimated cost for the period
+        date_range:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+            days:
+              type: integer
 
     # -------------------------------------------------------------------------
     # ERROR MODELS
@@ -748,6 +874,208 @@ paths:
                     type: integer
         '404':
           description: Playlist not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ===========================================================================
+  # ANALYTICS API (Admin LLM Observability - Session 10)
+  # ===========================================================================
+  /api/analytics/llm-logs:
+    get:
+      tags: [Analytics]
+      summary: Get LLM invocation logs (Admin Only)
+      description: |
+        **ADMIN ONLY** - Retrieve paginated list of all LLM invocations with full details.
+
+        Shows when LLM reasoning was called vs direct API usage, including:
+        - Exact prompts sent to the LLM
+        - Full responses received from the LLM
+        - Processing times and cost estimates
+        - Success/failure status
+
+        **Use Cases:**
+        - Cost monitoring and budget tracking
+        - Debugging failed LLM calls
+        - Performance analysis (AI agent vs direct API)
+        - Usage pattern analysis
+        - Error investigation with full context
+
+        **Authorization:**
+        Requires `is_admin=true` in user_profiles table.
+        Non-admin users receive HTTP 403 Forbidden.
+      operationId: getLLMInvocationLogs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: admin_user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Admin user ID for authorization
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of results per page
+        - name: method_filter
+          in: query
+          schema:
+            type: string
+            enum: [ai_agent, direct_api]
+          description: Filter by generation method
+        - name: user_id_filter
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by specific user
+        - name: days_back
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+          description: Number of days to look back
+      responses:
+        '200':
+          description: LLM logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LLMLogsResponse'
+        '403':
+          description: Forbidden - admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Admin access required. Only administrators can view LLM usage logs."
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/analytics/llm-usage-stats:
+    get:
+      tags: [Analytics]
+      summary: Get LLM usage statistics (Admin Only)
+      description: |
+        **ADMIN ONLY** - Get aggregated statistics about LLM usage and costs.
+
+        Returns summary metrics including:
+        - Total invocations (AI agent vs direct API)
+        - LLM success rates
+        - Average processing times
+        - Estimated total costs
+
+        **Authorization:**
+        Requires `is_admin=true` in user_profiles table.
+      operationId: getLLMUsageStatistics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: admin_user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Admin user ID for authorization
+        - name: days_back
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+          description: Number of days to aggregate
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LLMUsageStats'
+              example:
+                total_invocations: 100
+                ai_agent_calls: 25
+                direct_api_calls: 75
+                llm_success_rate: 96.0
+                avg_processing_time_ms: 8542.3
+                total_estimated_cost: "$3.38"
+                date_range:
+                  start_date: "2025-10-28T00:00:00Z"
+                  end_date: "2025-11-28T23:59:59Z"
+                  days: 30
+        '403':
+          description: Forbidden - admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/analytics/llm-logs/{log_id}:
+    get:
+      tags: [Analytics]
+      summary: Get single LLM log entry (Admin Only)
+      description: |
+        **ADMIN ONLY** - Retrieve detailed information about a specific LLM invocation.
+
+        Returns full details including the exact prompt and response.
+
+        **Authorization:**
+        Requires `is_admin=true` in user_profiles table.
+      operationId: getSingleLLMLog
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: log_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: LLM log entry ID
+        - name: admin_user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Admin user ID for authorization
+      responses:
+        '200':
+          description: Log entry retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LLMInvocationLogEntry'
+        '403':
+          description: Forbidden - admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Log entry not found
           content:
             application/json:
               schema:
