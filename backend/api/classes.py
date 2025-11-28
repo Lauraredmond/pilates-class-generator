@@ -795,17 +795,29 @@ async def generate_class(request: ClassGenerationRequest):
             # Simple selection: first N movements that fit duration
             target_seconds = request.duration_minutes * 60
             selected_movements = []
+            movements_for_history = []  # For analytics with muscle groups
             current_duration = 0
 
             for i, movement in enumerate(movements):
                 movement_duration = movement.get('duration_seconds', 60)
                 if current_duration + movement_duration <= target_seconds:
+                    # For API response
                     selected_movements.append({
                         "movement_id": movement['id'],
                         "movement_name": movement['name'],
                         "order_index": i,
                         "duration_seconds": movement_duration
                     })
+
+                    # For class_history analytics (needs muscle groups!)
+                    movements_for_history.append({
+                        "type": "movement",
+                        "name": movement['name'],
+                        "muscle_groups": movement.get('muscle_groups', []),
+                        "duration_seconds": movement_duration,
+                        "order_index": i
+                    })
+
                     current_duration += movement_duration
 
                 if current_duration >= target_seconds:
@@ -859,7 +871,7 @@ async def generate_class(request: ClassGenerationRequest):
                             'taught_date': datetime.now().date().isoformat(),
                             'actual_duration_minutes': current_duration // 60,
                             'attendance_count': 1,
-                            'movements_snapshot': selected_movements,
+                            'movements_snapshot': movements_for_history,  # FIXED: Use movements_for_history with muscle_groups!
                             'instructor_notes': f"Rule-based {request.difficulty} class (no LLM)",
                             'difficulty_rating': None,
                             'muscle_groups_targeted': [],

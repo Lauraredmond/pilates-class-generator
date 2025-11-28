@@ -1,2 +1,13 @@
-[Error] Failed to load resource: the server responded with a status of 429 () (register, line 0)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – G
+G
+	(anonymous function) (index-DH4aIlYR.js:260:18063)
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-DH4aIlYR.js, line 237)
+[Log] [ClassBuilder] Force fetching movements from API... (index-DH4aIlYR.js, line 237)
+[Log] [ClassBuilder] API response: – 34 – "movements received" (index-DH4aIlYR.js, line 237)
+[Log] [ClassBuilder] Sample movement: – Object (index-DH4aIlYR.js, line 237)
+Object
+[Log] [AIGenerationPanel] Using authenticated user ID: – "50b40bda-45ce-4c03-8e51-35d76341c192" (index-DH4aIlYR.js, line 237)
+[Log] [AIGenerationPanel] Raw sequence data sample: – Object (index-DH4aIlYR.js, line 237)
+Object
 [Error] Failed to load resource: A server with the specified hostname could not be found. (api.js-4950e94a9243.map, line 0)
