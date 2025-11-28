@@ -1063,6 +1063,12 @@ supabase db reset && supabase db push
     - Test endpoint with valid JWT token directly
     - Verify PIILogger.log_data_export() middleware call
 
+**Resolved Issues:**
+- ✅ **Supabase Registration Rate Limit** - RESOLVED (2025-11-28)
+  - User upgraded to paid Supabase plan ($25)
+  - Rate limits removed after plan upgrade propagated
+  - **⚠️ DO NOT BRING UP THIS ISSUE AGAIN - IT IS FULLY RESOLVED**
+
 **Deferred Testing:**
 - ⏸️ **AI Compliance System Testing** - Deferred to future session
   - **Reason**: AI behavior not yet incorporated into application
@@ -1511,3 +1517,4 @@ ALTER TABLE user_preferences
 
 *This CLAUDE.md provides comprehensive guidance for working in the Pilates Class Planner v2.0 codebase. Update this file as the architecture evolves.*
 - I'd like option 1 but can you explain what continuing with stubs means and also that Jentic libs aren't published to PyPI (what is PyPI). But first, I have just paid 25 dollars to avoid seeing the Supabase restriction on creating new users and still see that "Registration temp unavailable due to Supabase free tier" message. Could you please troubleshoot? I'm currently re-deploying on netlify and render.com in case this is what was causing the issue. See latest screenshot on desktop for user reg error
+- #Can you ensure to update the OpenAPI yaml and Arazzo yaml files as well as the list of OpenAPI endpoints every time, where applicable?
