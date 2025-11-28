@@ -179,10 +179,18 @@ async def get_user_analytics_summary(user_id: str):
         # Classes this week
         today = date.today()
         week_start = today - timedelta(days=today.weekday())
-        classes_this_week = sum(
-            1 for c in classes
-            if datetime.fromisoformat(c.get('taught_date', '')).date() >= week_start
-        ) if classes else 0
+        classes_this_week = 0
+        if classes:
+            for c in classes:
+                taught_date_str = c.get('taught_date')
+                if taught_date_str:
+                    try:
+                        class_date = datetime.fromisoformat(taught_date_str).date()
+                        if class_date >= week_start:
+                            classes_this_week += 1
+                    except (ValueError, TypeError):
+                        logger.warning(f"Invalid taught_date format: {taught_date_str}")
+                        continue
 
         return UserAnalyticsSummary(
             total_classes=total_classes,
@@ -235,7 +243,16 @@ async def get_movement_history(
 
         # Aggregate counts
         for class_item in classes:
-            class_date = datetime.fromisoformat(class_item.get('taught_date', '')).date()
+            taught_date_str = class_item.get('taught_date')
+            if not taught_date_str:
+                continue
+
+            try:
+                class_date = datetime.fromisoformat(taught_date_str).date()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid taught_date in movement_history: {taught_date_str}")
+                continue
+
             movements_snapshot = class_item.get('movements_snapshot', [])
 
             # Find which period this class belongs to
@@ -305,7 +322,16 @@ async def get_muscle_group_history(
 
         # Aggregate counts
         for class_item in classes:
-            class_date = datetime.fromisoformat(class_item.get('taught_date', '')).date()
+            taught_date_str = class_item.get('taught_date')
+            if not taught_date_str:
+                continue
+
+            try:
+                class_date = datetime.fromisoformat(taught_date_str).date()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid taught_date in muscle_group_history: {taught_date_str}")
+                continue
+
             movements_snapshot = class_item.get('movements_snapshot', [])
 
             # Find which period this class belongs to
@@ -366,7 +392,15 @@ async def get_practice_frequency(
 
         # Count classes per period
         for class_item in classes:
-            class_date = datetime.fromisoformat(class_item.get('taught_date', '')).date()
+            taught_date_str = class_item.get('taught_date')
+            if not taught_date_str:
+                continue
+
+            try:
+                class_date = datetime.fromisoformat(taught_date_str).date()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid taught_date in practice_frequency: {taught_date_str}")
+                continue
 
             for period_idx, (start_date, end_date) in enumerate(date_ranges):
                 if start_date <= class_date <= end_date:
@@ -412,7 +446,15 @@ async def get_difficulty_progression(
 
         # Count classes by difficulty per period
         for class_item in classes:
-            class_date = datetime.fromisoformat(class_item.get('taught_date', '')).date()
+            taught_date_str = class_item.get('taught_date')
+            if not taught_date_str:
+                continue
+
+            try:
+                class_date = datetime.fromisoformat(taught_date_str).date()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid taught_date in difficulty_progression: {taught_date_str}")
+                continue
             notes = class_item.get('instructor_notes', '')
 
             # Determine difficulty from instructor notes
@@ -508,10 +550,18 @@ def _calculate_streak(classes: List[Dict[str, Any]]) -> int:
     if not classes:
         return 0
 
-    class_dates = sorted(
-        set(datetime.fromisoformat(c.get('taught_date', '')).date() for c in classes),
-        reverse=True
-    )
+    # Parse dates with error handling
+    class_dates = []
+    for c in classes:
+        taught_date_str = c.get('taught_date')
+        if taught_date_str:
+            try:
+                class_dates.append(datetime.fromisoformat(taught_date_str).date())
+            except (ValueError, TypeError):
+                continue
+
+    # Remove duplicates and sort
+    class_dates = sorted(set(class_dates), reverse=True)
 
     if not class_dates:
         return 0
