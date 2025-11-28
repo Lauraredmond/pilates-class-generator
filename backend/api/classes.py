@@ -35,6 +35,33 @@ if not supabase_url or not supabase_key:
 supabase: Client = create_client(supabase_url, supabase_key)
 
 
+# Helper functions
+def get_movement_muscle_groups(movement_id: str) -> List[str]:
+    """
+    Fetch muscle groups for a movement from movement_muscles junction table
+
+    Returns list of muscle group names (e.g., ["Core Strength", "Hip Mobility"])
+    """
+    try:
+        # Query movement_muscles junction table with JOIN to muscle_groups
+        response = supabase.table('movement_muscles') \
+            .select('muscle_group_id, muscle_groups(name)') \
+            .eq('movement_id', movement_id) \
+            .eq('is_primary', True) \
+            .execute()
+
+        if not response.data:
+            return []
+
+        # Extract muscle group names from the response
+        muscle_groups = [item['muscle_groups']['name'] for item in response.data if item.get('muscle_groups')]
+        return muscle_groups
+
+    except Exception as e:
+        logger.warning(f"Failed to fetch muscle groups for movement {movement_id}: {e}")
+        return []
+
+
 # Pydantic models
 class ClassMovement(BaseModel):
     """Movement within a class sequence"""
@@ -801,6 +828,9 @@ async def generate_class(request: ClassGenerationRequest):
             for i, movement in enumerate(movements):
                 movement_duration = movement.get('duration_seconds', 60)
                 if current_duration + movement_duration <= target_seconds:
+                    # Fetch muscle groups from junction table
+                    muscle_groups = get_movement_muscle_groups(movement['id'])
+
                     # For API response
                     selected_movements.append({
                         "movement_id": movement['id'],
@@ -813,7 +843,7 @@ async def generate_class(request: ClassGenerationRequest):
                     movements_for_history.append({
                         "type": "movement",
                         "name": movement['name'],
-                        "muscle_groups": movement.get('muscle_groups', []),
+                        "muscle_groups": muscle_groups,  # FIXED: Use real muscle groups from junction table!
                         "duration_seconds": movement_duration,
                         "order_index": i
                     })
