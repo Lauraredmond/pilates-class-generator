@@ -66,16 +66,21 @@ from arazzo_runner.runner import ArazzoRunner  # ← JENTIC Arazzo Engine
 # BASSLINE PILATES TOOLS
 # ==============================================================================
 
-class BasslinePilatesTools:
+class BasslinePilatesTools(JustInTimeToolingBase):
     """
     BASSLINE CUSTOMIZATION: Pilates-specific tool implementations
 
-    JENTIC PATTERN: Inherit from JustInTimeToolingBase
+    ✅ JENTIC PATTERN: Inherits from JustInTimeToolingBase
 
     Each tool:
     1. Has a unique ID (e.g., "get_user_profile")
     2. Has a JSON schema (parameters it accepts)
     3. Has an execute method (what it does)
+
+    Required methods (from JustInTimeToolingBase interface):
+    - search(query: str, top_k: int) -> List[Tool]  ← Find tools matching query
+    - list_tools() -> List[Dict]                    ← Return all tools
+    - execute(tool_id: str, params: Dict) -> Any    ← Run the tool
 
     Tools can:
     - Call existing Bassline API endpoints (HTTP requests)
@@ -286,6 +291,83 @@ class BasslinePilatesTools:
                 }
             }
         ]
+
+    # ==========================================================================
+    # JENTIC PATTERN: Search Tools
+    # ==========================================================================
+    def search(self, query: str, top_k: int = 5) -> List[ToolBase]:
+        """
+        Find tools matching the given query.
+
+        JENTIC PATTERN: Tool Discovery with Search
+
+        The ReWOOReasoner generates a plan with steps like:
+        - "Identify beginner Pilates exercises"
+        - "Estimate duration for each exercise"
+        - "Create a class schedule"
+
+        For each step, it calls search(step.text) to find relevant tools.
+
+        COMPARISON TO JENTIC RAW CODE:
+        =============================
+
+        JENTIC (from GitHub):
+        ```python
+        def search(self, query: str, top_k: int = 5) -> List[Tool]:
+            # Use semantic similarity or keyword matching
+            # to find tools matching the query
+            matches = []
+            for tool in self.all_tools:
+                if self._matches(query, tool.description):
+                    matches.append(tool)
+            return matches[:top_k]
+        ```
+
+        BASSLINE (this file):
+        We use simple keyword matching on tool names and descriptions.
+        Could upgrade to semantic embeddings later for better matching.
+
+        Args:
+            query: Natural language query (e.g., "get user information")
+            top_k: Maximum number of tools to return (default 5)
+
+        Returns:
+            List of tools matching the query, sorted by relevance
+        """
+        all_tools = self.list_tools()
+        matches = []
+
+        query_lower = query.lower()
+
+        for tool_dict in all_tools:
+            # Calculate simple relevance score based on keyword matches
+            score = 0
+
+            # Check if query keywords appear in tool name
+            if any(word in tool_dict["name"].lower() for word in query_lower.split()):
+                score += 10
+
+            # Check if query keywords appear in tool description
+            if any(word in tool_dict["description"].lower() for word in query_lower.split()):
+                score += 5
+
+            # Check if query keywords appear in tool ID
+            if any(word in tool_dict["id"].lower() for word in query_lower.split()):
+                score += 3
+
+            if score > 0:
+                # Convert dict to ToolBase instance
+                tool_base = ToolBase(
+                    id=tool_dict["id"],
+                    name=tool_dict["name"],
+                    description=tool_dict["description"],
+                    schema=tool_dict["schema"]
+                )
+                matches.append((score, tool_base))
+
+        # Sort by score (descending) and return top_k
+        matches.sort(key=lambda x: x[0], reverse=True)
+        return [tool for score, tool in matches[:top_k]]
 
     # ==========================================================================
     # JENTIC PATTERN: Execute Tool
