@@ -484,42 +484,19 @@ class BasslinePilatesTools:
 JENTIC PATTERN vs BASSLINE CUSTOM - Tool Implementation Comparison
 ===================================================================
 
-┌────────────────────────────────────────────────────────────────────┐
-│ JENTIC PATTERN (from GitHub repo)                                  │
-│ ================================================================== │
-│ Abstract tool interface:                                           │
-│ │                                                                  │
-│ class JustInTimeToolingBase(ABC):                                  │
-│     @abstractmethod                                                 │
-│     def list_tools(self) -> List[ToolInfo]:                        │
-│         """Tell agent what tools exist"""                          │
-│         pass                                                        │
-│                                                                    │
-│     @abstractmethod                                                 │
-│     def execute(self, tool_id: str, params: Dict) -> Any:          │
-│         """Execute the tool"""                                     │
-│         pass                                                        │
-└────────────────────────────────────────────────────────────────────┘
+JENTIC PATTERN (from GitHub repo):
+- Abstract tool interface (JustInTimeToolingBase)
+- Defines what methods tools must implement
+- Generic, domain-agnostic design
 
-┌────────────────────────────────────────────────────────────────────┐
-│ BASSLINE CUSTOM (this file)                                        │
-│ ================================================================== │
-│ Concrete Pilates tools:                                            │
-│ │                                                                  │
-│ class BasslinePilatesTools(JustInTimeToolingBase):  # ← INHERIT    │
-│     def list_tools(self):                                          │
-│         return [                                                    │
-│             {"id": "get_user_profile", ...},      # ← DOMAIN TOOL  │
-│             {"id": "assemble_pilates_class", ...},# ← WORKFLOW     │
-│             {"id": "call_bassline_api", ...}      # ← GENERIC      │
-│         ]                                                           │
-│                                                                    │
-│     def execute(self, tool_id, params):                             │
-│         if tool_id == "assemble_pilates_class":                    │
-│             return self.arazzo_runner.run(...)  # ← ARAZZO ENGINE  │
-└────────────────────────────────────────────────────────────────────┘
+BASSLINE CUSTOM (this file):
+- Concrete Pilates tools implementation
+- Inherits from JustInTimeToolingBase
+- Domain-specific logic for Pilates
 
 KEY TAKEAWAY:
 Jentic provides the INTERFACE (what a tool should look like).
 We provide the IMPLEMENTATION (actual Pilates-specific tools).
+
+For detailed comparison, see docs/JENTIC_REAL_CODE_ANALYSIS.md
 """
