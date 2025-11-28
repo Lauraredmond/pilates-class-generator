@@ -30,6 +30,21 @@ from agents import (
 
 from datetime import datetime
 from uuid import uuid4
+import os
+from supabase import create_client, Client
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Initialize Supabase client
+supabase_url = os.getenv('SUPABASE_URL')
+supabase_key = os.getenv('SUPABASE_KEY')
+
+if not supabase_url or not supabase_key:
+    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in .env file")
+
+supabase: Client = create_client(supabase_url, supabase_key)
 
 router = APIRouter()
 
@@ -44,6 +59,29 @@ research_agent = ResearchAgent(strictness_level="guided")
 def get_current_user_id() -> str:
     """Get current user ID (placeholder until auth is implemented)"""
     return "demo-user-id"
+
+
+def get_movement_muscle_groups(movement_id: str) -> list[str]:
+    """
+    Fetch muscle groups for a movement from movement_muscles junction table
+    Returns list of muscle group names
+    """
+    try:
+        response = supabase.table('movement_muscles') \
+            .select('muscle_group_id, muscle_groups(name)') \
+            .eq('movement_id', movement_id) \
+            .eq('is_primary', True) \
+            .execute()
+
+        if not response.data:
+            return []
+
+        muscle_groups = [item['muscle_groups']['name'] for item in response.data if item.get('muscle_groups')]
+        return muscle_groups
+
+    except Exception as e:
+        logger.warning(f"Failed to fetch muscle groups for movement {movement_id}: {e}")
+        return []
 
 
 @router.post("/generate-sequence", response_model=dict)
@@ -82,6 +120,77 @@ async def generate_sequence(
                 status_code=500,
                 detail=f"Sequence generation failed: {result.get('error')}"
             )
+
+        # ============================================================================
+        # ANALYTICS FIX: Save generated class to database for analytics tracking
+        # ============================================================================
+        try:
+            sequence_data = result.get('data', {})
+            sequence = sequence_data.get('sequence', [])
+
+            if sequence and request.user_id:
+                now = datetime.now().isoformat()
+
+                # Prepare movements_snapshot with muscle groups for analytics
+                movements_for_history = []
+                for idx, movement in enumerate(sequence):
+                    if movement.get('type') == 'movement':
+                        # Fetch muscle groups from junction table
+                        muscle_groups = get_movement_muscle_groups(movement.get('id', ''))
+
+                        movements_for_history.append({
+                            "type": "movement",
+                            "name": movement.get('name', ''),
+                            "muscle_groups": muscle_groups,
+                            "duration_seconds": movement.get('duration_seconds', 60),
+                            "order_index": idx
+                        })
+
+                # Save to class_plans table
+                class_plan_data = {
+                    'name': f"{request.difficulty_level} Pilates Class ({request.target_duration_minutes} min)",
+                    'user_id': request.user_id,
+                    'movements': sequence,  # Full sequence with all details
+                    'duration_minutes': request.target_duration_minutes,
+                    'difficulty_level': request.difficulty_level,
+                    'notes': f"AI-generated {request.difficulty_level} class",
+                    'muscle_balance': sequence_data.get('muscle_balance', {}),
+                    'validation_status': {
+                        'valid': True,
+                        'safety_score': 1.0,
+                        'warnings': []
+                    },
+                    'created_at': now,
+                    'updated_at': now
+                }
+
+                db_response = supabase.table('class_plans').insert(class_plan_data).execute()
+
+                if db_response.data:
+                    class_plan_id = db_response.data[0]['id']
+                    logger.info(f"✅ Saved class to class_plans table (ID: {class_plan_id}) for user {request.user_id}")
+
+                    # Save to class_history table for analytics
+                    class_history_entry = {
+                        'class_plan_id': class_plan_id,
+                        'user_id': request.user_id,
+                        'taught_date': datetime.now().date().isoformat(),
+                        'actual_duration_minutes': request.target_duration_minutes,
+                        'attendance_count': 1,  # Generated = 1 attendance (self)
+                        'movements_snapshot': movements_for_history,  # With muscle groups!
+                        'instructor_notes': f"AI-generated {request.difficulty_level} class",
+                        'difficulty_rating': None,
+                        'muscle_groups_targeted': [],
+                        'total_movements_taught': len(movements_for_history),
+                        'created_at': now
+                    }
+
+                    supabase.table('class_history').insert(class_history_entry).execute()
+                    logger.info(f"✅ Saved to class_history table for analytics tracking (user {request.user_id})")
+
+        except Exception as db_error:
+            # Don't fail the request if database save fails
+            logger.error(f"❌ Failed to save class to database: {db_error}", exc_info=True)
 
         return result
 
