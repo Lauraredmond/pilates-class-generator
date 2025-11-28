@@ -507,6 +507,9 @@ class BasslinePilatesTools(JustInTimeToolingBase):
             "Get User Profile": "get_user_profile",
             "Assemble Complete Pilates Class": "assemble_pilates_class",
             "Call Bassline API Endpoint": "call_bassline_api",
+            # Agent sometimes suggests "Arazzo" based on tool descriptions
+            "Arazzo": "assemble_pilates_class",
+            "arazzo": "assemble_pilates_class",
         }
 
         # Return mapped ID if it's a name, otherwise return as-is
