@@ -63,6 +63,45 @@ from agents.tools.base import JustInTimeToolingBase, ToolBase  # ← JENTIC
 from arazzo_runner.runner import ArazzoRunner  # ← JENTIC Arazzo Engine
 
 # ==============================================================================
+# BASSLINE TOOL IMPLEMENTATION (extends Jentic's ToolBase)
+# ==============================================================================
+
+class BasslineTool(ToolBase):
+    """
+    BASSLINE CUSTOM: Concrete tool implementation.
+
+    ✅ JENTIC PATTERN: Extends ToolBase abstract class
+
+    Each tool provides:
+    - Summary: Short description for LLM tool selection
+    - Details: Full description for LLM reflection
+    - Parameter schema: JSON schema for LLM parameter generation
+    """
+
+    def __init__(self, id: str, name: str, description: str, schema: Dict[str, Any]):
+        super().__init__(id)
+        self.name = name
+        self.description = description
+        self.schema = schema
+
+    def get_summary(self) -> str:
+        """Return summary information for LLM tool selection."""
+        return f"{self.name}: {self.description[:100]}..."
+
+    def get_details(self) -> str:
+        """Return detailed information for LLM reflection."""
+        return f"""
+Tool: {self.name}
+ID: {self.id}
+Description: {self.description}
+Parameters: {self.schema}
+"""
+
+    def get_parameter_schema(self) -> Dict[str, Any]:
+        """Return detailed parameter schema for LLM parameter generation."""
+        return self.schema
+
+# ==============================================================================
 # BASSLINE PILATES TOOLS
 # ==============================================================================
 
@@ -295,7 +334,7 @@ class BasslinePilatesTools(JustInTimeToolingBase):
     # ==========================================================================
     # JENTIC PATTERN: Search Tools
     # ==========================================================================
-    def search(self, query: str, top_k: int = 5) -> List[ToolBase]:
+    def search(self, query: str, top_k: int = 5) -> List[BasslineTool]:
         """
         Find tools matching the given query.
 
@@ -356,23 +395,45 @@ class BasslinePilatesTools(JustInTimeToolingBase):
                 score += 3
 
             if score > 0:
-                # Convert dict to ToolBase instance
-                tool_base = ToolBase(
+                # Convert dict to BasslineTool instance
+                tool = BasslineTool(
                     id=tool_dict["id"],
                     name=tool_dict["name"],
                     description=tool_dict["description"],
                     schema=tool_dict["schema"]
                 )
-                matches.append((score, tool_base))
+                matches.append((score, tool))
 
         # Sort by score (descending) and return top_k
         matches.sort(key=lambda x: x[0], reverse=True)
         return [tool for score, tool in matches[:top_k]]
 
     # ==========================================================================
+    # JENTIC PATTERN: Load Tool
+    # ==========================================================================
+    def load(self, tool: ToolBase) -> ToolBase:
+        """
+        Load the full specification for a single tool.
+
+        JENTIC PATTERN: Tool Loading
+
+        Since we already return full tool specifications in search(),
+        we can just return the tool as-is. In more complex implementations,
+        this could fetch additional details, validate permissions, etc.
+
+        Args:
+            tool: The tool to load
+
+        Returns:
+            The fully loaded tool (same object in our case)
+        """
+        # Already have full specification
+        return tool
+
+    # ==========================================================================
     # JENTIC PATTERN: Execute Tool
     # ==========================================================================
-    def execute(self, tool_id: str, params: Dict[str, Any]) -> Any:
+    def execute(self, tool: ToolBase, parameters: Dict[str, Any]) -> Any:
         """
         Execute a tool with given parameters.
 
@@ -382,8 +443,8 @@ class BasslinePilatesTools(JustInTimeToolingBase):
         Tools respond: "Routing to handler for X... here's the result"
 
         Args:
-            tool_id: Unique tool identifier
-            params: Parameters matching tool's JSON schema
+            tool: The tool to execute (ToolBase instance)
+            parameters: Parameters matching tool's JSON schema
 
         Returns:
             Tool execution result
@@ -393,30 +454,30 @@ class BasslinePilatesTools(JustInTimeToolingBase):
 
         JENTIC (from GitHub):
         ```python
-        def execute(self, tool_id: str, params: Dict) -> Any:
-            if tool_id == "weather":
-                return self._get_weather(**params)
+        def execute(self, tool: ToolBase, parameters: Dict) -> Any:
+            if tool.id == "weather":
+                return self._get_weather(**parameters)
             else:
-                raise ValueError(f"Unknown tool: {tool_id}")
+                raise ValueError(f"Unknown tool: {tool.id}")
         ```
 
         BASSLINE (this file):
         Same pattern, but routes to Pilates-specific handlers.
         """
-        logger.info(f"Executing tool: {tool_id} with params: {params}")
+        logger.info(f"Executing tool: {tool.id} with params: {parameters}")
 
         # Route to appropriate handler
-        if tool_id == "get_user_profile":
-            return self._get_user_profile(**params)
+        if tool.id == "get_user_profile":
+            return self._get_user_profile(**parameters)
 
-        elif tool_id == "assemble_pilates_class":
-            return self._assemble_pilates_class(**params)
+        elif tool.id == "assemble_pilates_class":
+            return self._assemble_pilates_class(**parameters)
 
-        elif tool_id == "call_bassline_api":
-            return self._call_bassline_api(**params)
+        elif tool.id == "call_bassline_api":
+            return self._call_bassline_api(**parameters)
 
         else:
-            raise ValueError(f"Unknown tool: {tool_id}")
+            raise ValueError(f"Unknown tool: {tool.id}")
 
     # ==========================================================================
     # TOOL IMPLEMENTATIONS (Private Methods)
