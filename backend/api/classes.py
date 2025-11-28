@@ -541,3 +541,178 @@ async def update_class_plan(class_id: str, update: ClassPlanUpdate):
             status_code=500,
             detail=f"Internal server error: {str(e)}"
         )
+
+
+# ==============================================================================
+# AI-GENERATED CLASS ENDPOINT - Session 10: Jentic Integration
+# ==============================================================================
+
+class ClassGenerationRequest(BaseModel):
+    """Request for AI-generated Pilates class"""
+    user_id: str
+    duration_minutes: int = Field(default=30, ge=10, le=120)
+    difficulty: str = Field(default="Beginner")
+    use_agent: Optional[bool] = None  # If None, fetch from user preferences
+
+
+class ClassGenerationResponse(BaseModel):
+    """Response from AI-generated class"""
+    class_plan: dict
+    method: str  # "ai_agent" or "direct_api"
+    iterations: Optional[int] = None  # Only for AI agent
+    success: bool
+    cost_estimate: str
+    processing_time_ms: float
+
+
+@router.post("/generate", response_model=ClassGenerationResponse)
+async def generate_class(request: ClassGenerationRequest):
+    """
+    Generate a Pilates class using AI Agent or Direct API
+
+    This endpoint routes between two generation methods:
+
+    1. **AI Agent (GPT-4)** - Costly but intelligent
+       - Uses Jentic StandardAgent with ReWOO reasoner
+       - LLM-powered planning and reflection
+       - Cost: ~$0.12-0.15 per class
+       - Time: 15-20 seconds
+
+    2. **Direct API** - Free but basic
+       - Simple rule-based sequence generation
+       - No LLM calls
+       - Cost: $0.00
+       - Time: <1 second
+
+    Toggle is controlled by `use_agent` parameter or user preferences.
+    """
+    start_time = time.time()
+
+    try:
+        # Determine which method to use
+        use_agent = request.use_agent
+
+        # If not specified, fetch from user preferences
+        if use_agent is None:
+            prefs_response = supabase.table("user_preferences").select("use_ai_agent").eq("user_id", request.user_id).execute()
+
+            if prefs_response.data:
+                use_agent = prefs_response.data[0].get("use_ai_agent", False)
+            else:
+                use_agent = False  # Default to free tier
+
+        logger.info(f"Generating class for user {request.user_id} using {'AI Agent' if use_agent else 'Direct API'}")
+
+        # ==============================================================================
+        # ROUTE 1: AI AGENT (Jentic StandardAgent + GPT-4)
+        # ==============================================================================
+        if use_agent:
+            try:
+                # Import Jentic agent (only if needed to avoid startup overhead)
+                sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'orchestrator'))
+                from agent.bassline_agent import BasslinePilatesCoachAgent
+
+                # Create agent instance
+                agent = BasslinePilatesCoachAgent()
+
+                # Define goal for agent
+                goal = f"Create a {request.duration_minutes}-minute {request.difficulty} Pilates class"
+
+                # Call agent.solve() (synchronous - Jentic design)
+                logger.info(f"Calling agent.solve() with goal: {goal}")
+                result = agent.solve(goal)
+
+                # Extract class plan from result
+                class_plan = {
+                    "name": f"{request.difficulty} Pilates Class ({request.duration_minutes} min)",
+                    "user_id": request.user_id,
+                    "duration_minutes": request.duration_minutes,
+                    "difficulty_level": request.difficulty,
+                    "generated_by": "ai_agent",
+                    "agent_result": {
+                        "final_answer": result.final_answer,
+                        "success": result.success,
+                        "iterations": result.iterations,
+                        "error_message": result.error_message
+                    }
+                }
+
+                processing_time_ms = (time.time() - start_time) * 1000
+
+                return ClassGenerationResponse(
+                    class_plan=class_plan,
+                    method="ai_agent",
+                    iterations=result.iterations,
+                    success=result.success,
+                    cost_estimate="$0.12-0.15",
+                    processing_time_ms=processing_time_ms
+                )
+
+            except Exception as agent_error:
+                logger.error(f"AI Agent failed: {agent_error}", exc_info=True)
+                # Fallback to direct API if agent fails
+                logger.warning("Falling back to direct API due to agent error")
+                use_agent = False  # Continue to direct API below
+
+        # ==============================================================================
+        # ROUTE 2: DIRECT API (Simple Rule-Based Generation)
+        # ==============================================================================
+        if not use_agent:
+            # Fetch appropriate movements from database
+            movements_response = supabase.table('movements').select('*').eq('difficulty_level', request.difficulty).limit(10).execute()
+
+            if not movements_response.data:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No movements found for difficulty level: {request.difficulty}"
+                )
+
+            movements = movements_response.data
+
+            # Simple selection: first N movements that fit duration
+            target_seconds = request.duration_minutes * 60
+            selected_movements = []
+            current_duration = 0
+
+            for i, movement in enumerate(movements):
+                movement_duration = movement.get('duration_seconds', 60)
+                if current_duration + movement_duration <= target_seconds:
+                    selected_movements.append({
+                        "movement_id": movement['id'],
+                        "movement_name": movement['name'],
+                        "order_index": i,
+                        "duration_seconds": movement_duration
+                    })
+                    current_duration += movement_duration
+
+                if current_duration >= target_seconds:
+                    break
+
+            class_plan = {
+                "name": f"{request.difficulty} Pilates Class ({request.duration_minutes} min)",
+                "user_id": request.user_id,
+                "movements": selected_movements,
+                "duration_minutes": current_duration // 60,
+                "difficulty_level": request.difficulty,
+                "generated_by": "direct_api"
+            }
+
+            processing_time_ms = (time.time() - start_time) * 1000
+
+            return ClassGenerationResponse(
+                class_plan=class_plan,
+                method="direct_api",
+                iterations=None,
+                success=True,
+                cost_estimate="$0.00",
+                processing_time_ms=processing_time_ms
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating class: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Class generation failed: {str(e)}"
+        )

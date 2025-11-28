@@ -70,6 +70,13 @@ export const classPlansApi = {
   create: (data: any) => api.post('/api/classes', data),
   update: (id: string, data: any) => api.put(`/api/classes/${id}`, data),
   delete: (id: string) => api.delete(`/api/classes/${id}`),
+  // Session 10: Jentic Integration - AI Agent Toggle
+  generate: (data: {
+    user_id: string;
+    duration_minutes: number;
+    difficulty: string;
+    use_agent?: boolean;  // Optional - if not provided, uses user preference from database
+  }) => api.post('/api/classes/generate', data),
 };
 
 export const analyticsApi = {

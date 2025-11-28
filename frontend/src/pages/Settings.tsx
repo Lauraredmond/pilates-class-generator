@@ -44,6 +44,7 @@ export function Settings() {
     strictness_level: 'guided',
     default_class_duration: 60,
     enable_mcp_research: true,
+    use_ai_agent: false,  // Session 10: Jentic Integration toggle
     email_notifications: true,
     class_reminders: true,
     weekly_summary: false,
@@ -711,6 +712,49 @@ export function Settings() {
           <p className="text-cream/50">Loading preferences...</p>
         ) : (
           <div className="space-y-4">
+            {/* AI Agent Toggle - Session 10: Jentic Integration */}
+            <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors border-2 border-burgundy/30">
+              <div>
+                <div className="font-medium text-cream flex items-center gap-2">
+                  Use AI Agent for Class Generation
+                  <span className="text-xs bg-burgundy px-2 py-0.5 rounded text-cream/90">Jentic StandardAgent</span>
+                </div>
+                <div className="text-sm text-cream/60 mt-1">
+                  Enable intelligent AI reasoning for class creation with GPT-4.
+                </div>
+                <div className="text-xs text-cream/50 mt-2 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">Enabled:</span>
+                    <span>LLM-powered planning, ~15-20s, costs $0.12-0.15 per class</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">Disabled:</span>
+                    <span>Direct API, <1s, free (basic sequencing)</span>
+                  </div>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={preferences.use_ai_agent || false}
+                onChange={(e) => updatePreference('use_ai_agent', e.target.checked)}
+                disabled={preferencesSaving}
+                className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+              />
+            </label>
+
+            {preferences.use_ai_agent && (
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded p-4">
+                <p className="text-blue-400 font-semibold mb-2">AI Agent Enabled</p>
+                <p className="text-cream/70 text-sm mb-2">
+                  Your classes will be generated using advanced AI reasoning with GPT-4 via Jentic's StandardAgent framework.
+                  This provides more intelligent and adaptive class planning, but incurs OpenAI API costs.
+                </p>
+                <p className="text-cream/50 text-xs">
+                  Estimated cost: $0.12-0.15 per class generated (varies with class complexity)
+                </p>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-cream mb-2">AI Strictness Level</label>
               <select

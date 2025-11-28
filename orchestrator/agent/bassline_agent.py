@@ -4,6 +4,14 @@ BASSLINE PILATES COACH AGENT
 ==============================================================================
 ✅ USING REAL JENTIC CODE FROM GITHUB (Not stubs, not placeholders)
 
+Integration developed by: Laura Redmond (Bassline Pilates)
+Integration date: November 2025
+Purpose: Production-ready Pilates class generation with AI reasoning
+
+Special thanks to Jentic for their excellent open-source StandardAgent framework.
+This integration demonstrates the power and flexibility of Jentic's architecture
+for domain-specific AI applications.
+
 This file demonstrates integration of:
 1. Jentic's StandardAgent (from github.com/jentic/standard-agent)
 2. Jentic's ReWOOReasoner (Plan→Execute→Reflect loop)
