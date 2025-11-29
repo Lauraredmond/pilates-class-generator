@@ -1,13 +1,16 @@
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-hzyWEs-q.js, line 287)
+[Log] [ClassBuilder] Force fetching movements from API... (index-hzyWEs-q.js, line 287)
+[Log] [ClassBuilder] API response: – 34 – "movements received" (index-hzyWEs-q.js, line 287)
+[Log] [ClassBuilder] Sample movement: – Object (index-hzyWEs-q.js, line 287)
+Object
+[Log] [AIGenerationPanel] Using authenticated user ID: – "50b40bda-45ce-4c03-8e51-35d76341c192" (index-hzyWEs-q.js, line 287)
+[Error] Origin https://basslinemvp.netlify.app is not allowed by Access-Control-Allow-Origin. Status code: 500
+[Error] XMLHttpRequest cannot load https://pilates-class-generator-api3.onrender.com/api/class-sections/cooldown?intensity=moderate due to access control checks.
+[Error] Failed to assemble complete class: – G
+G
+	(anonymous function) (index-hzyWEs-q.js:227:333)
+[Error] Failed to generate complete class: – Error: Network Error
+Error: Network Error
+	(anonymous function) (index-hzyWEs-q.js:287:11697)
+[Error] Failed to load resource: Origin https://basslinemvp.netlify.app is not allowed by Access-Control-Allow-Origin. Status code: 500 (cooldown, line 0)
 [Error] Failed to load resource: A server with the specified hostname could not be found. (api.js-4950e94a9243.map, line 0)
-[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-DSfiRfWV.js, line 237)
-[Log] [ClassBuilder] Force fetching movements from API... (index-DSfiRfWV.js, line 237)
-[Log] [ClassBuilder] API response: – 34 – "movements received" (index-DSfiRfWV.js, line 237)
-[Log] [ClassBuilder] Sample movement: – {id: "b12a46d7-1f87-4e14-8463-3a7ed96980bf", movement_number: 23, code: "hip_twist", …} (index-DSfiRfWV.js, line 237)
-{id: "b12a46d7-1f87-4e14-8463-3a7ed96980bf", movement_number: 23, code: "hip_twist", name: "Hip twist", category: "Mat-based", …}Object
-[Log] [AIGenerationPanel] Using authenticated user ID: – "50b40bda-45ce-4c03-8e51-35d76341c192" (index-DSfiRfWV.js, line 237)
-[Error] Failed to load resource: the server responded with a status of 500 () (generate-sequence, line 0)
-[Error] API Error: – {detail: "\"'message'\""}
-	(anonymous function) (index-DSfiRfWV.js:222:22125)
-[Error] Failed to generate complete class: – G {stack: "X0@https://basslinemvp.netlify.app/assets/index-DS…mvp.netlify.app/assets/index-DSfiRfWV.js:201:2102", message: "Request failed with status code 500", name: "AxiosError", …}
-G {stack: "X0@https://basslinemvp.netlify.app/assets/index-DS…mvp.netlify.app/assets/index-DSfiRfWV.js:201:2102", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}G
-	(anonymous function) (index-DSfiRfWV.js:237:12585)

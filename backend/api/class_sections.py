@@ -46,10 +46,10 @@ class WarmupRoutine(BaseModel):
     routine_name: str
     focus_area: str  # 'spine', 'hips', 'shoulders', 'full_body'
     narrative: str
-    movements: Dict[str, Any]  # JSONB
+    movements: Any  # JSONB - can be array or object
     duration_seconds: int
     contraindications: List[str]
-    modifications: Optional[Dict[str, Any]] = None
+    modifications: Optional[Any] = None  # JSONB - can be array or object
     difficulty_level: str
     created_at: datetime
     updated_at: datetime
@@ -60,7 +60,7 @@ class CooldownSequence(BaseModel):
     sequence_name: str
     intensity_level: str  # 'gentle', 'moderate', 'deep'
     narrative: str
-    stretches: Dict[str, Any]  # JSONB
+    stretches: Any  # JSONB - can be array or object
     duration_seconds: int
     target_muscles: List[str]
     recovery_focus: str
