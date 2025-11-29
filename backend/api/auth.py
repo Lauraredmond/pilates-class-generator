@@ -67,6 +67,9 @@ class PreferencesUpdateRequest(BaseModel):
     research_sources: Optional[list[str]] = None
     enable_mcp_research: Optional[bool] = None
     use_ai_agent: Optional[bool] = None  # Session 10: Jentic AI Agent toggle
+    # Session 11: Movement level preferences
+    preferred_movement_level: Optional[str] = None  # beginner, intermediate, advanced
+    show_full_progression: Optional[bool] = None  # Show L1→L2→L3→Full (for instructors)
     # Notification preferences
     email_notifications: Optional[bool] = None
     class_reminders: Optional[bool] = None
@@ -85,6 +88,9 @@ class PreferencesResponse(BaseModel):
     research_sources: list[str]
     enable_mcp_research: bool
     use_ai_agent: bool  # Session 10: Jentic AI Agent toggle
+    # Session 11: Movement level preferences
+    preferred_movement_level: str  # beginner, intermediate, advanced
+    show_full_progression: bool  # Show L1→L2→L3→Full (for instructors)
     # Notification preferences
     email_notifications: bool
     class_reminders: bool
@@ -682,6 +688,8 @@ async def get_preferences(user_id: str = Depends(get_current_user_id)):
             research_sources=prefs.get("research_sources", []),
             enable_mcp_research=prefs.get("enable_mcp_research", True),
             use_ai_agent=prefs.get("use_ai_agent", False),  # Session 10: default to free tier
+            preferred_movement_level=prefs.get("preferred_movement_level", "beginner"),  # Session 11
+            show_full_progression=prefs.get("show_full_progression", False),  # Session 11
             email_notifications=prefs.get("email_notifications", True),
             class_reminders=prefs.get("class_reminders", True),
             weekly_summary=prefs.get("weekly_summary", False),
@@ -743,6 +751,17 @@ async def update_preferences(
         if preferences_data.use_ai_agent is not None:
             update_data["use_ai_agent"] = preferences_data.use_ai_agent  # Session 10: AI Agent toggle
 
+        if preferences_data.preferred_movement_level is not None:
+            if preferences_data.preferred_movement_level not in ["beginner", "intermediate", "advanced"]:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Movement level must be 'beginner', 'intermediate', or 'advanced'"
+                )
+            update_data["preferred_movement_level"] = preferences_data.preferred_movement_level  # Session 11
+
+        if preferences_data.show_full_progression is not None:
+            update_data["show_full_progression"] = preferences_data.show_full_progression  # Session 11
+
         if preferences_data.email_notifications is not None:
             update_data["email_notifications"] = preferences_data.email_notifications
 
@@ -787,6 +806,8 @@ async def update_preferences(
             research_sources=prefs.get("research_sources", []),
             enable_mcp_research=prefs.get("enable_mcp_research", True),
             use_ai_agent=prefs.get("use_ai_agent", False),  # Session 10: default to free tier
+            preferred_movement_level=prefs.get("preferred_movement_level", "beginner"),  # Session 11
+            show_full_progression=prefs.get("show_full_progression", False),  # Session 11
             email_notifications=prefs.get("email_notifications", True),
             class_reminders=prefs.get("class_reminders", True),
             weekly_summary=prefs.get("weekly_summary", False),
