@@ -137,37 +137,37 @@ export async function assembleCompleteClass(
       meditationRes,
       homecareRes
     ] = await Promise.all([
-      // Section 1: Preparation
+      // Section 1: Preparation (no difficulty filter - works for all levels)
       axios.get(`${API_BASE_URL}/api/class-sections/preparation`, {
         headers,
-        params: { difficulty, script_type: 'centering' }
+        params: { script_type: 'centering' }
       }),
 
-      // Section 2: Warm-up
+      // Section 2: Warm-up (no difficulty filter - works for all levels)
       axios.get(`${API_BASE_URL}/api/class-sections/warmup`, {
         headers,
-        params: { difficulty, focus_area: 'full_body' }
+        params: { focus_area: 'full_body' }
       }),
 
-      // Section 3: Main movements
+      // Section 3: Main movements (filter by difficulty)
       axios.get(`${API_BASE_URL}/api/movements`, {
         headers,
         params: { difficulty, limit: movementCount }
       }),
 
-      // Section 4: Cool-down
+      // Section 4: Cool-down (no filters - generic stretch sequence)
       axios.get(`${API_BASE_URL}/api/class-sections/cooldown`, {
         headers,
         params: { intensity: 'moderate' }
       }),
 
-      // Section 5: Closing Meditation
+      // Section 5: Closing Meditation (no filters - generic meditation)
       axios.get(`${API_BASE_URL}/api/class-sections/closing-meditation`, {
         headers,
         params: { post_intensity: 'moderate', theme: 'body_scan' }
       }),
 
-      // Section 6: HomeCare Advice
+      // Section 6: HomeCare Advice (no filters - generic advice)
       axios.get(`${API_BASE_URL}/api/class-sections/closing-homecare`, {
         headers,
         params: { focus_area: 'spine_care' }
