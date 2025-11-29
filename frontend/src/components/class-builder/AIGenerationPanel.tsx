@@ -9,7 +9,7 @@ import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../context/AuthContext';
 import { agentsApi } from '../../services/api';
-import { assembleCompleteClass, CompleteClass } from '../../services/classAssembly';
+import { assembleCompleteClass } from '../../services/classAssembly';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
 import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';

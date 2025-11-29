@@ -858,6 +858,53 @@ supabase db reset && supabase db push
 - **Test on same browsers** - Ensure compatibility matches MVP
 - **Avoid adding features** - Only replicate existing functionality
 
+### 🚨 CRITICAL: When Working on Class Builder Modal 🚨
+
+**ALWAYS reference `/docs/Visual_regression_baseline.md` when making ANY changes that impact the class builder modal.**
+
+This document (commit `a53672e`) defines the approved visual appearance and behavior:
+
+**Required Specifications:**
+- Movement count: ~9 movements (AI-selected, NOT all 34 from database)
+- Transition count: ~8 transitions (generated between movements)
+- Transitions styled with:
+  - Light background (`bg-burgundy/50`)
+  - Italic text (`italic text-cream/70`)
+  - Left accent border (`border-l-4 border-l-cream/40`)
+  - Arrow icon (→)
+- Muscle balance from database (NOT generic core/legs/arms)
+- Balance Score calculated (NOT NaN)
+- Primary Focus shows actual muscle group name from database
+
+**Before Committing Changes:**
+1. Read `/docs/Visual_regression_baseline.md`
+2. Verify modal matches ALL specifications
+3. Test that movement count is ~9 (not 34)
+4. Verify transitions appear with correct styling
+5. Check muscle balance shows database values
+6. Confirm no visual regressions
+
+**If Visual Regression Occurs:**
+```bash
+# Revert to baseline commit
+git checkout a53672e -- frontend/src/components/class-builder/AIGenerationPanel.tsx
+git checkout a53672e -- frontend/src/components/class-builder/ai-generation/SequenceResultsTab.tsx
+git checkout a53672e -- frontend/src/components/class-builder/ai-generation/GeneratedResults.tsx
+```
+
+**Testing Checklist:**
+- [ ] Movement count shows movements only (not total items)
+- [ ] Transition count shows below movement count
+- [ ] Transitions have lighter background than movements
+- [ ] Transitions have left accent border (visual key)
+- [ ] Transition text is italic
+- [ ] Transition has arrow icon (→)
+- [ ] Balance Score is not NaN
+- [ ] Primary Focus shows actual muscle group name from database
+- [ ] Muscle Balance chart shows database muscle groups
+
+**This is a zero-tolerance policy. Always verify against Visual_regression_baseline.md before committing.**
+
 ### When Working with MCP
 
 - **Cache aggressively** - 24-hour TTL for research results
