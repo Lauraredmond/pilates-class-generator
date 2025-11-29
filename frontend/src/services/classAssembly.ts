@@ -174,6 +174,34 @@ export async function assembleCompleteClass(
       })
     ]);
 
+    // Validate that we got data for all sections
+    const missingDataErrors: string[] = [];
+
+    if (!preparationRes.data || preparationRes.data.length === 0) {
+      missingDataErrors.push('Preparation scripts table is empty');
+    }
+    if (!warmupRes.data || warmupRes.data.length === 0) {
+      missingDataErrors.push('Warmup routines table is empty');
+    }
+    if (!movementsRes.data || movementsRes.data.length === 0) {
+      missingDataErrors.push('Movements table is empty');
+    }
+    if (!cooldownRes.data || cooldownRes.data.length === 0) {
+      missingDataErrors.push('Cooldown sequences table is empty');
+    }
+    if (!meditationRes.data || meditationRes.data.length === 0) {
+      missingDataErrors.push('Closing meditation scripts table is empty');
+    }
+    if (!homecareRes.data || homecareRes.data.length === 0) {
+      missingDataErrors.push('HomeCare advice table is empty');
+    }
+
+    if (missingDataErrors.length > 0) {
+      const errorMessage = `Cannot assemble complete class - database tables need seed data:\n\n${missingDataErrors.join('\n')}\n\nPlease populate the database with sample data for all 6 class sections.`;
+      console.error('[ClassAssembly]', errorMessage);
+      throw new Error(errorMessage);
+    }
+
     // Assemble complete class
     const completeClass: CompleteClass = {
       preparation: preparationRes.data[0],
@@ -191,7 +219,7 @@ export async function assembleCompleteClass(
 
   } catch (error: any) {
     console.error('Failed to assemble complete class:', error);
-    throw new Error(error.response?.data?.detail || 'Failed to assemble class');
+    throw new Error(error.response?.data?.detail || error.message || 'Failed to assemble class');
   }
 }
 
