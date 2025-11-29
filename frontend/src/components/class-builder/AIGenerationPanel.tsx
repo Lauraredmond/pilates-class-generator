@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../context/AuthContext';
+import { agentsApi } from '../../services/api';
 import { assembleCompleteClass, CompleteClass } from '../../services/classAssembly';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
@@ -36,68 +37,110 @@ export function AIGenerationPanel() {
       }
       console.log('[AIGenerationPanel] Using authenticated user ID:', user.id);
 
-      // SESSION 11: Assemble complete 6-section class using new assembly service
-      const completeClass: CompleteClass = await assembleCompleteClass(
-        formData.difficulty,
-        formData.duration,
-        user.id
-      );
+      // SESSION 11: Generate both AI sequence AND 6-section structure in parallel
+      const [sequenceResponse, musicResponse, meditationResponse, framingSections] = await Promise.all([
+        // BASELINE: AI-powered intelligent movement selection + transitions (9 movements + 8 transitions)
+        agentsApi.generateSequence({
+          target_duration_minutes: formData.duration,
+          difficulty_level: formData.difficulty,
+          strictness_level: 'guided',
+          include_mcp_research: formData.enableMcpResearch,
+          focus_areas: formData.focusAreas,
+        }),
+        // Select music
+        agentsApi.selectMusic({
+          class_duration_minutes: formData.duration,
+          target_bpm_range: [formData.musicBpmMin, formData.musicBpmMax],
+          exclude_explicit: true,
+          energy_level: formData.energyLevel,
+        }),
+        // Create meditation
+        agentsApi.createMeditation({
+          duration_minutes: 5,
+          class_intensity: formData.energyLevel > 0.7 ? 'high' : formData.energyLevel > 0.4 ? 'moderate' : 'low',
+          focus_theme: formData.meditationTheme.toLowerCase(),
+          include_breathing: true,
+        }),
+        // SESSION 11: Fetch framing sections (preparation, warmup, cooldown, homecare)
+        assembleCompleteClass(formData.difficulty, formData.duration, user.id),
+      ]);
 
-      console.log('[AIGenerationPanel] Complete class assembled:', {
-        hasPreparation: !!completeClass.preparation,
-        hasWarmup: !!completeClass.warmup,
-        movementCount: completeClass.movements.length,
-        hasCooldown: !!completeClass.cooldown,
-        hasMeditation: !!completeClass.meditation,
-        hasHomecare: !!completeClass.homecare,
+      // Validate AI responses
+      if (!sequenceResponse.data.success) {
+        throw new Error(sequenceResponse.data.error || 'Failed to generate sequence');
+      }
+      if (!musicResponse.data.success) {
+        throw new Error(musicResponse.data.error || 'Failed to select music');
+      }
+      if (!meditationResponse.data.success) {
+        throw new Error(meditationResponse.data.error || 'Failed to create meditation');
+      }
+
+      console.log('[AIGenerationPanel] AI sequence generated:', {
+        movementCount: sequenceResponse.data.data.movement_count,
+        transitionCount: sequenceResponse.data.data.transition_count,
+        totalItems: sequenceResponse.data.data.sequence.length,
       });
 
-      // Transform to existing GeneratedClassResults format for backward compatibility
+      console.log('[AIGenerationPanel] Framing sections fetched:', {
+        hasPreparation: !!framingSections.preparation,
+        hasWarmup: !!framingSections.warmup,
+        hasCooldown: !!framingSections.cooldown,
+        hasHomecare: !!framingSections.homecare,
+      });
+
+      // COMBINED RESULTS: AI sequence for modal, 6-section structure for playback
       const completeResults: GeneratedClassResults = {
         sequence: {
-          movements: completeClass.movements.map((m: any) => ({
+          // Use AI-generated movements + transitions for modal display
+          movements: sequenceResponse.data.data.sequence.map((m: any) => ({
             id: m.id,
             name: m.name,
             duration_seconds: m.duration_seconds || 60,
             primary_muscles: m.primary_muscles || [],
             difficulty_level: m.difficulty_level || 'Beginner',
-            type: 'movement',
+            type: m.type || 'movement',
+            from_position: m.from_position,
+            to_position: m.to_position,
             narrative: m.narrative,
-            setup_position: m.setup_position,
-            watch_out_points: m.watch_out_points,
-            teaching_cues: m.teaching_cues || [],
-            muscle_groups: m.muscle_groups || [],
           })),
-          movement_count: completeClass.movements.length,
-          transition_count: completeClass.transitions?.length || 0,
-          total_duration: formData.duration * 60,
-          muscle_balance: {},
+          movement_count: sequenceResponse.data.data.movement_count || 0,
+          transition_count: sequenceResponse.data.data.transition_count || 0,
+          total_duration: sequenceResponse.data.data.total_duration_minutes
+            ? sequenceResponse.data.data.total_duration_minutes * 60
+            : formData.duration * 60,
+          muscle_balance: sequenceResponse.data.data.muscle_balance || {},
         },
-        music: completeClass.music_playlist
-          ? {
-              playlist: completeClass.music_playlist.tracks?.map((track: any) => ({
-                title: track.title || 'Unknown Track',
-                artist: track.artist || 'Unknown Artist',
-                bpm: track.bpm || 120,
-                duration_seconds: track.duration_seconds || 180,
-                url: track.url,
-              })) || [],
-              total_duration: formData.duration * 60,
-              average_bpm: 120,
-            }
-          : {
-              playlist: [],
-              total_duration: formData.duration * 60,
-              average_bpm: 120,
-            },
+        music: {
+          playlist: musicResponse.data.data.playlist.map((track: any) => ({
+            title: track.title || 'Unknown Track',
+            artist: track.artist || 'Unknown Artist',
+            bpm: track.bpm || 120,
+            duration_seconds: track.duration_seconds || 180,
+            url: track.url,
+          })),
+          total_duration: musicResponse.data.data.total_duration || formData.duration * 60,
+          average_bpm: musicResponse.data.data.average_bpm || 120,
+        },
         meditation: {
-          script: completeClass.meditation?.script_text || '',
-          duration_minutes: (completeClass.meditation?.duration_seconds || 240) / 60,
-          theme: completeClass.meditation?.meditation_theme || formData.meditationTheme,
-          breathing_pattern: completeClass.meditation?.breathing_guidance,
+          script: meditationResponse.data.data.script || '',
+          duration_minutes: meditationResponse.data.data.duration_minutes || 5,
+          theme: meditationResponse.data.data.theme || formData.meditationTheme,
+          breathing_pattern: meditationResponse.data.data.breathing_pattern,
         },
-        // SESSION 11: Store complete class for playback
-        completeClass,
+        // SESSION 11: Store complete 6-section class for playback
+        completeClass: {
+          preparation: framingSections.preparation,
+          warmup: framingSections.warmup,
+          movements: sequenceResponse.data.data.sequence.filter((item: any) => item.type === 'movement'),
+          transitions: sequenceResponse.data.data.sequence.filter((item: any) => item.type === 'transition'),
+          cooldown: framingSections.cooldown,
+          meditation: framingSections.meditation,
+          homecare: framingSections.homecare,
+          difficulty: formData.difficulty,
+          total_duration_minutes: formData.duration,
+          music_playlist: musicResponse.data.data,
+        },
       };
 
       setResults(completeResults);
@@ -165,6 +208,7 @@ export function AIGenerationPanel() {
   };
 
   // SESSION 11: Transform complete class to playback format with all 6 sections
+  // Uses AI-generated movements (9 movements + 8 transitions) with framing sections
   const playbackItems: PlaybackItem[] = results && (results as any).completeClass
     ? [
         // Section 1: Preparation
@@ -186,20 +230,33 @@ export function AIGenerationPanel() {
           duration_seconds: (results as any).completeClass.warmup.duration_seconds,
           focus_area: (results as any).completeClass.warmup.focus_area,
         },
-        // Section 3: Main movements
-        ...results.sequence.movements.map((m) => ({
-          type: 'movement' as const,
-          id: m.id || 'unknown',
-          name: m.name,
-          duration_seconds: m.duration_seconds,
-          narrative: (m as any).narrative,
-          setup_position: (m as any).setup_position,
-          watch_out_points: (m as any).watch_out_points,
-          teaching_cues: (m as any).teaching_cues || [],
-          muscle_groups: (m as any).muscle_groups || [],
-          difficulty_level: m.difficulty_level,
-          primary_muscles: m.primary_muscles,
-        })),
+        // Section 3: Main movements (AI-generated, includes movements + transitions)
+        // Use results.sequence.movements which contains BOTH movements and transitions from AI
+        ...results.sequence.movements.map((m) => {
+          if (m.type === 'transition') {
+            return {
+              type: 'transition' as const,
+              from_position: (m as any).from_position || 'Unknown',
+              to_position: (m as any).to_position || 'Unknown',
+              narrative: (m as any).narrative || '',
+              duration_seconds: m.duration_seconds || 60,
+              name: m.name || 'Transition',
+            };
+          }
+          return {
+            type: 'movement' as const,
+            id: m.id || 'unknown',
+            name: m.name,
+            duration_seconds: m.duration_seconds,
+            narrative: (m as any).narrative,
+            setup_position: (m as any).setup_position,
+            watch_out_points: (m as any).watch_out_points,
+            teaching_cues: (m as any).teaching_cues || [],
+            muscle_groups: (m as any).muscle_groups || [],
+            difficulty_level: m.difficulty_level,
+            primary_muscles: m.primary_muscles,
+          };
+        }),
         // Section 4: Cool-down
         {
           type: 'cooldown' as const,
