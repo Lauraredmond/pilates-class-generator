@@ -66,6 +66,7 @@ class PreferencesUpdateRequest(BaseModel):
     music_preferences: Optional[dict] = None
     research_sources: Optional[list[str]] = None
     enable_mcp_research: Optional[bool] = None
+    use_ai_agent: Optional[bool] = None  # Session 10: Jentic AI Agent toggle
     # Notification preferences
     email_notifications: Optional[bool] = None
     class_reminders: Optional[bool] = None
@@ -83,6 +84,7 @@ class PreferencesResponse(BaseModel):
     music_preferences: dict
     research_sources: list[str]
     enable_mcp_research: bool
+    use_ai_agent: bool  # Session 10: Jentic AI Agent toggle
     # Notification preferences
     email_notifications: bool
     class_reminders: bool
@@ -201,6 +203,7 @@ async def register(user_data: UserCreate, request: Request):
             "music_preferences": {},
             "research_sources": [],
             "enable_mcp_research": True,
+            "use_ai_agent": False,  # Session 10: Default to free tier (Direct API)
             # Notification preferences (default: all enabled)
             "email_notifications": True,
             "class_reminders": True,
@@ -678,6 +681,7 @@ async def get_preferences(user_id: str = Depends(get_current_user_id)):
             music_preferences=prefs.get("music_preferences", {}),
             research_sources=prefs.get("research_sources", []),
             enable_mcp_research=prefs.get("enable_mcp_research", True),
+            use_ai_agent=prefs.get("use_ai_agent", False),  # Session 10: default to free tier
             email_notifications=prefs.get("email_notifications", True),
             class_reminders=prefs.get("class_reminders", True),
             weekly_summary=prefs.get("weekly_summary", False),
@@ -736,6 +740,9 @@ async def update_preferences(
         if preferences_data.enable_mcp_research is not None:
             update_data["enable_mcp_research"] = preferences_data.enable_mcp_research
 
+        if preferences_data.use_ai_agent is not None:
+            update_data["use_ai_agent"] = preferences_data.use_ai_agent  # Session 10: AI Agent toggle
+
         if preferences_data.email_notifications is not None:
             update_data["email_notifications"] = preferences_data.email_notifications
 
@@ -779,6 +786,7 @@ async def update_preferences(
             music_preferences=prefs.get("music_preferences", {}),
             research_sources=prefs.get("research_sources", []),
             enable_mcp_research=prefs.get("enable_mcp_research", True),
+            use_ai_agent=prefs.get("use_ai_agent", False),  # Session 10: default to free tier
             email_notifications=prefs.get("email_notifications", True),
             class_reminders=prefs.get("class_reminders", True),
             weekly_summary=prefs.get("weekly_summary", False),
