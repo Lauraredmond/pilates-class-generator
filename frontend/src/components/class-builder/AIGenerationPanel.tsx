@@ -9,6 +9,7 @@ import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../context/AuthContext';
 import { agentsApi } from '../../services/api';
+import { assembleCompleteClass, CompleteClass } from '../../services/classAssembly';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
 import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
@@ -36,101 +37,73 @@ export function AIGenerationPanel() {
       }
       console.log('[AIGenerationPanel] Using authenticated user ID:', user.id);
 
-      // Generate all three components in parallel
-      const [sequenceResponse, musicResponse, meditationResponse] = await Promise.all([
-        // Generate sequence
-        agentsApi.generateSequence({
-          user_id: user.id, // Use authenticated user ID for movement tracking
-          target_duration_minutes: formData.duration,
-          difficulty_level: formData.difficulty,
-          strictness_level: 'guided',
-          include_mcp_research: formData.enableMcpResearch,
-          focus_areas: formData.focusAreas,
-        }),
-        // Select music
-        agentsApi.selectMusic({
-          class_duration_minutes: formData.duration,
-          target_bpm_range: [formData.musicBpmMin, formData.musicBpmMax],
-          exclude_explicit: true,
-          energy_level: formData.energyLevel,
-        }),
-        // Create meditation
-        agentsApi.createMeditation({
-          duration_minutes: 5,
-          class_intensity: formData.energyLevel > 0.7 ? 'high' : formData.energyLevel > 0.4 ? 'moderate' : 'low',
-          focus_theme: formData.meditationTheme.toLowerCase(),
-          include_breathing: true,
-        }),
-      ]);
+      // SESSION 11: Assemble complete 6-section class using new assembly service
+      const completeClass: CompleteClass = await assembleCompleteClass(
+        formData.difficulty,
+        formData.duration,
+        user.id
+      );
 
-      // Validate responses
-      if (!sequenceResponse.data.success) {
-        throw new Error(sequenceResponse.data.error || 'Failed to generate sequence');
-      }
-      if (!musicResponse.data.success) {
-        throw new Error(musicResponse.data.error || 'Failed to select music');
-      }
-      if (!meditationResponse.data.success) {
-        throw new Error(meditationResponse.data.error || 'Failed to create meditation');
-      }
-
-      // DEBUG: Log raw API response
-      console.log('[AIGenerationPanel] Raw sequence data sample:', {
-        firstMovement: sequenceResponse.data.data.sequence[0],
-        hasTeachingCues: !!sequenceResponse.data.data.sequence[0]?.teaching_cues,
-        hasSetupPosition: !!sequenceResponse.data.data.sequence[0]?.setup_position,
-        hasMuscleGroups: !!sequenceResponse.data.data.sequence[0]?.muscle_groups,
-        hasWatchOutPoints: !!sequenceResponse.data.data.sequence[0]?.watch_out_points
+      console.log('[AIGenerationPanel] Complete class assembled:', {
+        hasPreparation: !!completeClass.preparation,
+        hasWarmup: !!completeClass.warmup,
+        movementCount: completeClass.movements.length,
+        hasCooldown: !!completeClass.cooldown,
+        hasMeditation: !!completeClass.meditation,
+        hasHomecare: !!completeClass.homecare,
       });
 
-      // Transform API responses to match our result types
+      // Transform to existing GeneratedClassResults format for backward compatibility
       const completeResults: GeneratedClassResults = {
         sequence: {
-          movements: sequenceResponse.data.data.sequence.map((m: any) => ({
+          movements: completeClass.movements.map((m: any) => ({
             id: m.id,
             name: m.name,
             duration_seconds: m.duration_seconds || 60,
             primary_muscles: m.primary_muscles || [],
             difficulty_level: m.difficulty_level || 'Beginner',
-            type: m.type || 'movement',
-            from_position: m.from_position,
-            to_position: m.to_position,
+            type: 'movement',
             narrative: m.narrative,
-            // NEW FIELDS - Pass through from API
             setup_position: m.setup_position,
             watch_out_points: m.watch_out_points,
             teaching_cues: m.teaching_cues || [],
             muscle_groups: m.muscle_groups || [],
           })),
-          movement_count: sequenceResponse.data.data.movement_count || 0,
-          transition_count: sequenceResponse.data.data.transition_count || 0,
-          total_duration: sequenceResponse.data.data.total_duration_minutes
-            ? sequenceResponse.data.data.total_duration_minutes * 60
-            : formData.duration * 60,
-          muscle_balance: sequenceResponse.data.data.muscle_balance || {},
+          movement_count: completeClass.movements.length,
+          transition_count: completeClass.transitions?.length || 0,
+          total_duration: formData.duration * 60,
+          muscle_balance: {},
         },
-        music: {
-          playlist: musicResponse.data.data.playlist.map((track: any) => ({
-            title: track.title || 'Unknown Track',
-            artist: track.artist || 'Unknown Artist',
-            bpm: track.bpm || 120,
-            duration_seconds: track.duration_seconds || 180,
-            url: track.url,
-          })),
-          total_duration: musicResponse.data.data.total_duration || formData.duration * 60,
-          average_bpm: musicResponse.data.data.average_bpm || 120,
-        },
+        music: completeClass.music_playlist
+          ? {
+              playlist: completeClass.music_playlist.tracks?.map((track: any) => ({
+                title: track.title || 'Unknown Track',
+                artist: track.artist || 'Unknown Artist',
+                bpm: track.bpm || 120,
+                duration_seconds: track.duration_seconds || 180,
+                url: track.url,
+              })) || [],
+              total_duration: formData.duration * 60,
+              average_bpm: 120,
+            }
+          : {
+              playlist: [],
+              total_duration: formData.duration * 60,
+              average_bpm: 120,
+            },
         meditation: {
-          script: meditationResponse.data.data.script || '',
-          duration_minutes: meditationResponse.data.data.duration_minutes || 5,
-          theme: meditationResponse.data.data.theme || formData.meditationTheme,
-          breathing_pattern: meditationResponse.data.data.breathing_pattern,
+          script: completeClass.meditation?.script_text || '',
+          duration_minutes: (completeClass.meditation?.duration_seconds || 240) / 60,
+          theme: completeClass.meditation?.meditation_theme || formData.meditationTheme,
+          breathing_pattern: completeClass.meditation?.breathing_guidance,
         },
+        // SESSION 11: Store complete class for playback
+        completeClass,
       };
 
       setResults(completeResults);
       setShowResultsModal(true); // Show the modal
-      showToast('Complete class generated successfully!', 'success');
+      showToast('Complete 6-section class generated successfully!', 'success');
     } catch (error: any) {
       console.error('Failed to generate complete class:', error);
       const errorMessage =
@@ -192,26 +165,79 @@ export function AIGenerationPanel() {
     showToast('Class completed! Great work!', 'success');
   };
 
-  // Transform results to playback format
-  const playbackItems: PlaybackItem[] = results
-    ? results.sequence.movements.map((m) => ({
-        type: m.type || 'movement',
-        id: m.id || 'unknown',
-        name: m.name,
-        duration_seconds: m.duration_seconds,
-        // New fields from Supabase (cast to any to bypass type checking for now)
-        narrative: (m as any).narrative,
-        setup_position: (m as any).setup_position,
-        watch_out_points: (m as any).watch_out_points,
-        teaching_cues: (m as any).teaching_cues,
-        muscle_groups: (m as any).muscle_groups,
-        // Legacy fields
-        difficulty_level: m.difficulty_level,
-        primary_muscles: m.primary_muscles,
-        // Transition fields (for transitions)
-        from_position: m.from_position,
-        to_position: m.to_position,
-      } as PlaybackItem))
+  // SESSION 11: Transform complete class to playback format with all 6 sections
+  const playbackItems: PlaybackItem[] = results && (results as any).completeClass
+    ? [
+        // Section 1: Preparation
+        {
+          type: 'preparation' as const,
+          script_name: (results as any).completeClass.preparation.script_name,
+          narrative: (results as any).completeClass.preparation.narrative,
+          key_principles: (results as any).completeClass.preparation.key_principles || [],
+          duration_seconds: (results as any).completeClass.preparation.duration_seconds,
+          breathing_pattern: (results as any).completeClass.preparation.breathing_pattern,
+          breathing_focus: (results as any).completeClass.preparation.breathing_focus,
+          script_type: (results as any).completeClass.preparation.script_type,
+          difficulty_level: (results as any).completeClass.preparation.difficulty_level,
+        },
+        // Section 2: Warm-up
+        {
+          type: 'warmup' as const,
+          routine_name: (results as any).completeClass.warmup.routine_name,
+          narrative: (results as any).completeClass.warmup.narrative,
+          movements: (results as any).completeClass.warmup.movements || [],
+          duration_seconds: (results as any).completeClass.warmup.duration_seconds,
+          focus_area: (results as any).completeClass.warmup.focus_area,
+          contraindications: (results as any).completeClass.warmup.contraindications || [],
+          modifications: (results as any).completeClass.warmup.modifications,
+          difficulty_level: (results as any).completeClass.warmup.difficulty_level,
+        },
+        // Section 3: Main movements
+        ...results.sequence.movements.map((m) => ({
+          type: 'movement' as const,
+          id: m.id || 'unknown',
+          name: m.name,
+          duration_seconds: m.duration_seconds,
+          narrative: (m as any).narrative,
+          setup_position: (m as any).setup_position,
+          watch_out_points: (m as any).watch_out_points,
+          teaching_cues: (m as any).teaching_cues || [],
+          muscle_groups: (m as any).muscle_groups || [],
+          difficulty_level: m.difficulty_level,
+          primary_muscles: m.primary_muscles,
+        })),
+        // Section 4: Cool-down
+        {
+          type: 'cooldown' as const,
+          sequence_name: (results as any).completeClass.cooldown.sequence_name,
+          narrative: (results as any).completeClass.cooldown.narrative,
+          stretches: (results as any).completeClass.cooldown.stretches || [],
+          duration_seconds: (results as any).completeClass.cooldown.duration_seconds,
+          target_muscles: (results as any).completeClass.cooldown.target_muscles || [],
+          recovery_focus: (results as any).completeClass.cooldown.recovery_focus,
+          intensity_level: (results as any).completeClass.cooldown.intensity_level,
+        },
+        // Section 5: Closing Meditation
+        {
+          type: 'meditation' as const,
+          script_name: (results as any).completeClass.meditation.script_name,
+          script_text: (results as any).completeClass.meditation.script_text,
+          duration_seconds: (results as any).completeClass.meditation.duration_seconds,
+          breathing_guidance: (results as any).completeClass.meditation.breathing_guidance,
+          meditation_theme: (results as any).completeClass.meditation.meditation_theme,
+          post_intensity: (results as any).completeClass.meditation.post_intensity,
+        },
+        // Section 6: HomeCare Advice
+        {
+          type: 'homecare' as const,
+          advice_name: (results as any).completeClass.homecare.advice_name,
+          advice_text: (results as any).completeClass.homecare.advice_text,
+          actionable_tips: (results as any).completeClass.homecare.actionable_tips || [],
+          duration_seconds: (results as any).completeClass.homecare.duration_seconds,
+          focus_area: (results as any).completeClass.homecare.focus_area,
+          related_to_class_focus: (results as any).completeClass.homecare.related_to_class_focus,
+        },
+      ]
     : [];
 
   return (

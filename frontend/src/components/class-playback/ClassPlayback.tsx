@@ -36,6 +36,27 @@ interface MusicPlaylist {
   tracks: MusicTrack[];
 }
 
+// Session 11: Extended playback types for all 6 class sections
+
+export interface PlaybackPreparation {
+  type: 'preparation';
+  script_name: string;
+  narrative: string;
+  key_principles: string[];
+  duration_seconds: number;
+  breathing_pattern?: string;
+  breathing_focus?: string;
+}
+
+export interface PlaybackWarmup {
+  type: 'warmup';
+  routine_name: string;
+  narrative: string;
+  movements: any; // JSONB - simple movements like neck rolls
+  duration_seconds: number;
+  focus_area: string;
+}
+
 export interface PlaybackMovement {
   type: 'movement';
   id?: string;
@@ -71,7 +92,42 @@ export interface PlaybackTransition {
   to_position?: string;
 }
 
-export type PlaybackItem = PlaybackMovement | PlaybackTransition;
+export interface PlaybackCooldown {
+  type: 'cooldown';
+  sequence_name: string;
+  narrative: string;
+  stretches: any; // JSONB - stretch descriptions
+  duration_seconds: number;
+  target_muscles: string[];
+  recovery_focus: string;
+}
+
+export interface PlaybackMeditation {
+  type: 'meditation';
+  script_name: string;
+  script_text: string;
+  duration_seconds: number;
+  breathing_guidance?: string;
+  meditation_theme: string;
+}
+
+export interface PlaybackHomeCare {
+  type: 'homecare';
+  advice_name: string;
+  advice_text: string;
+  actionable_tips: string[];
+  duration_seconds: number;
+  focus_area: string;
+}
+
+export type PlaybackItem =
+  | PlaybackPreparation
+  | PlaybackWarmup
+  | PlaybackMovement
+  | PlaybackTransition
+  | PlaybackCooldown
+  | PlaybackMeditation
+  | PlaybackHomeCare;
 
 interface ClassPlaybackProps {
   items: PlaybackItem[];

@@ -9,6 +9,7 @@ import { Button } from '../../ui/Button';
 import { SequenceResultsTab } from './SequenceResultsTab';
 import { MusicResultsTab } from './MusicResultsTab';
 import { MeditationResultsTab } from './MeditationResultsTab';
+import { CompleteClass } from '../../../services/classAssembly';
 
 export interface SequenceResult {
   movements: Array<{
@@ -51,6 +52,8 @@ export interface GeneratedClassResults {
   sequence: SequenceResult;
   music: MusicResult;
   meditation: MeditationResult;
+  // SESSION 11: Optional complete class with all 6 sections
+  completeClass?: CompleteClass;
 }
 
 interface GeneratedResultsProps {

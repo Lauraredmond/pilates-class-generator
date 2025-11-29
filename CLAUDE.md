@@ -1511,11 +1511,223 @@ ALTER TABLE user_preferences
 - **Session 10:** Jentic Integration - Phase 1 (IN PROGRESS) ← Current Focus
 - **Session 11:** Data Model Expansion - Phase 2 (DOCUMENTED, build later)
 - **Session 12:** Advanced Delivery Modes - Phase 3 (DOCUMENTED, build later)
-- **Session 13:** Testing Suite & Polish
+- **Session 13:** ### Role
+You are a compliance specialist with expertise in EU AI Act requirements.
 
+### Context
+Day 13. Core app functional. Implement compliance dashboard for AI decision transparency.
+
+### Your Task
+Build compliance dashboard for EU AI Act requirements.
+
+### What You Should Do
+
+**Step 1: Decision Transparency View**
+- Display all AI agent decisions for user
+- Show input parameters and outputs
+- Explain reasoning for each decision
+- Confidence scores
+
+**Step 2: Bias Monitoring Dashboard**
+- Track model drift over time
+- Display fairness metrics
+- Alert on bias detection
+- Historical comparison charts
+
+**Step 3: Audit Trail Interface**
+- Complete decision history
+- Export functionality (CSV, JSON)
+- Filter by date, agent type, user
+- Search capabilities
+
+**Step 4: Research Source Tracking**
+- Display MCP research sources
+- Source attribution for all web content
+- Quality scores
+- Trust indicators
+
+**Step 5: AI Compliance System End-to-End Testing (Deferred from Session 8)**
+- **Context**: Compliance infrastructure built in Session 8, but testing deferred until AI behaviors are active
+- **Prerequisites**: Session 11 (OpenAI GPT Integration) must be complete - AI agents actively making decisions
+- **What to Test**:
+  - AI decision logging with real AI operations
+    - Verify all agent decisions logged to `ai_decision_log` table
+    - Check input parameters, outputs, reasoning, confidence scores
+    - Test with sequence, music, and meditation agents
+  - Bias monitoring with actual model outputs
+    - Run model drift detection scripts
+    - Verify fairness metrics tracking
+    - Test alert system for bias detection
+  - Model drift detection with real data
+    - Check historical comparison charts
+    - Verify drift threshold alerts working
+    - Test with varied input patterns
+  - GDPR data export functionality
+    - Test `/api/compliance/my-data` endpoint with valid JWT
+    - Verify all user compliance data exported correctly
+    - Test ROPA audit log access
+    - Verify AI decision history export
+- **Known Issue to Fix**: GDPR Article 15 data download (HTTP 500 error)
+  - Check Render backend logs for error details
+  - Verify Row-Level Security (RLS) policies on compliance tables
+  - Test endpoint authentication flow
+  - Fix PIILogger.log_data_export() if needed
+- **Integration Testing**:
+  - Generate 10 test classes with AI
+  - Verify each class generation logged
+  - Check bias metrics after generation
+  - Export compliance data and verify completeness
+
+### Expected Outputs
+- Compliance dashboard page
+- Agent decision log viewer
+- Bias monitoring charts
+- Export functionality
+- Source attribution display
+- **AI compliance testing report** (new)
+- **GDPR data export fix** (addresses Session 8 known issue)
+
+### Success Criteria
+- [ ] All AI decisions logged and visible
+- [ ] Bias monitoring operational
+- [ ] Export works correctly
+- [ ] Source attribution complete
+- [ ] EU AI Act compliant
+- [ ] AI compliance system tested end-to-end with real AI operations
+- [ ] GDPR Article 15 data download working (500 error fixed)
+
+
+### Role
+You are a QA engineer specializing in React and FastAPI testing.
+
+### Context
+Day 12. Features complete including LLM integration. Now comprehensive testing.
+
+### Your Task
+Create complete test suite for frontend and backend.
+
+### What You Should Do
+- Unit tests (Jest/Pytest)
+- Integration tests
+- E2E tests (Playwright)
+- MCP mock server
+- Performance tests
+
+### Expected Coverage
+- Backend: >80%
+- Frontend: >70%
+- Critical paths: 100%
+
+## **SESSION 14: Mobile Responsiveness**
+
+### Role
+You are a mobile-first UI developer.
+
+### Context
+Day 15. Desktop complete. Optimize for mobile.
+
+### Your Task
+Ensure complete mobile responsiveness.
+
+### What You Should Do
+- Touch-optimized drag-and-drop
+- Mobile navigation
+- Responsive charts
+- Mobile-specific layouts
+- PWA features
 ---
+## **SESSION 15: Performance Optimization & OpenAI/MCP Enhancements**
 
-*This CLAUDE.md provides comprehensive guidance for working in the Pilates Class Planner v2.0 codebase. Update this file as the architecture evolves.*
-- I'd like option 1 but can you explain what continuing with stubs means and also that Jentic libs aren't published to PyPI (what is PyPI). But first, I have just paid 25 dollars to avoid seeing the Supabase restriction on creating new users and still see that "Registration temp unavailable due to Supabase free tier" message. Could you please troubleshoot? I'm currently re-deploying on netlify and render.com in case this is what was causing the issue. See latest screenshot on desktop for user reg error
-- #Can you ensure to update the OpenAPI yaml and Arazzo yaml files as well as the list of OpenAPI endpoints every time, where applicable?
-- #Agreed, let's do a phased approach and do quick fix now for analytics page and then first thing in next phase, let's refactor to ensure we are using Jentic's architecture to its best advantage so we are building something scalable to the highest degree possible. This should be our mantra for our development style and practise
+### Role
+You are a full-stack developer with expertise in MCP integration and caching strategies.
+
+### Context
+Day 11. LLM integration complete. Now implement MCP advanced features for web research.
+
+### Your Task
+Implement MCP research capabilities with caching, quality scoring, and batch operations.
+
+### What You Should Do
+
+**Step 1: Implement Caching Layer**
+```python
+class MCPCache:
+    def __init__(self, redis_client, ttl_hours=24):
+        self.redis = redis_client
+        self.ttl = ttl_hours * 3600
+
+    async def get_or_fetch(self, query: str, fetcher):
+        cache_key = f"mcp:{hashlib.md5(query).hexdigest()}"
+        cached = await self.redis.get(cache_key)
+
+        if cached:
+            return json.loads(cached)
+
+        result = await fetcher(query)
+        await self.redis.setex(cache_key, self.ttl, json.dumps(result))
+        return result
+```
+
+**Step 2: Quality Scoring System**
+```python
+class ResearchQualityScorer:
+    TRUSTED_DOMAINS = [
+        'pilatesmethod.com',
+        'pilatesfoundation.com',
+        'balancedbody.com',
+        'ncbi.nlm.nih.gov'
+    ]
+
+    def score_source(self, url: str, content: str) -> float:
+        # Score based on domain authority
+        # Check for citations
+        # Verify author credentials
+        # Check recency
+        return score
+```
+
+**Step 3: Batch Research Operations**
+- Research multiple movements in parallel
+- Organize batch results
+- Progress tracking
+
+**Step 4: Research Scheduling**
+- Weekly automatic updates
+- Popular movement research
+- Stale data detection
+
+### Expected Outputs
+- MCP caching implementation
+- Quality scoring system
+- Batch research API
+- Automated scheduler
+- Research analytics
+
+### Success Criteria
+- [ ] MCP caching reduces duplicate requests by >70%
+- [ ] Quality scoring filters low-quality sources
+- [ ] Batch operations work efficiently
+- [ ] Research results properly attributed
+- [ ] Scheduler runs automatically
+### Role
+You are a performance engineer and integration specialist.
+
+### Context
+Day 16. Features complete. Optimize performance and address Session 11.5 backlog items.
+
+### Your Task
+Optimize frontend and backend performance, add MCP Playwright integration, and implement OpenAI Redis caching.
+
+### What You Should Do
+
+**Performance Optimization:**
+- Code splitting
+- Lazy loading
+- Database query optimization
+- Caching strategies (Redis setup)
+- CDN setup
+- Bundle size reduction
+
+## **SESSION 16: Class Builder modal bug**
+
+Class builder modal screen is buggy. Unclear on memory over details but it should be reviewed in due course.

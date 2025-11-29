@@ -56,6 +56,7 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
     };
   }, [item.duration_seconds]);
 
+  // Handle different section types
   if (item.type === 'transition') {
     return (
       <div className="h-full flex items-center justify-center px-8">
@@ -63,6 +64,131 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
           <p className="text-3xl text-cream/90 leading-relaxed font-light italic">
             {item.narrative || `Moving from ${item.from_position} to ${item.to_position}`}
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (item.type === 'preparation') {
+    const buildPreparationNarrative = () => {
+      const parts: string[] = [];
+      parts.push(`PREPARATION: ${item.script_name.toUpperCase()}\n\n`);
+      if (item.narrative) parts.push(`${item.narrative}\n\n`);
+      if (item.breathing_focus) parts.push(`Breathing Focus: ${item.breathing_focus}\n\n`);
+      if (item.breathing_pattern) parts.push(`Pattern: ${item.breathing_pattern}\n\n`);
+      if (item.key_principles && item.key_principles.length > 0) {
+        parts.push(`Key Principles:\n`);
+        item.key_principles.forEach(principle => {
+          parts.push(`• ${principle}\n`);
+        });
+      }
+      return parts.join('');
+    };
+    return renderTeleprompter(buildPreparationNarrative());
+  }
+
+  if (item.type === 'warmup') {
+    const buildWarmupNarrative = () => {
+      const parts: string[] = [];
+      parts.push(`WARM-UP: ${item.routine_name.toUpperCase()}\n\n`);
+      if (item.narrative) parts.push(`${item.narrative}\n\n`);
+      parts.push(`Focus Area: ${item.focus_area}\n\n`);
+      if (item.movements && Array.isArray(item.movements)) {
+        parts.push(`Movements:\n`);
+        item.movements.forEach((movement: any) => {
+          parts.push(`• ${movement.name || movement}\n`);
+        });
+      }
+      return parts.join('');
+    };
+    return renderTeleprompter(buildWarmupNarrative());
+  }
+
+  if (item.type === 'cooldown') {
+    const buildCooldownNarrative = () => {
+      const parts: string[] = [];
+      parts.push(`COOL-DOWN: ${item.sequence_name.toUpperCase()}\n\n`);
+      if (item.narrative) parts.push(`${item.narrative}\n\n`);
+      parts.push(`Recovery Focus: ${item.recovery_focus}\n\n`);
+      if (item.target_muscles && item.target_muscles.length > 0) {
+        parts.push(`Target Muscles: ${item.target_muscles.join(', ')}\n\n`);
+      }
+      if (item.stretches && Array.isArray(item.stretches)) {
+        parts.push(`Stretches:\n`);
+        item.stretches.forEach((stretch: any) => {
+          parts.push(`• ${stretch.name || stretch}\n`);
+        });
+      }
+      return parts.join('');
+    };
+    return renderTeleprompter(buildCooldownNarrative());
+  }
+
+  if (item.type === 'meditation') {
+    const buildMeditationNarrative = () => {
+      const parts: string[] = [];
+      parts.push(`CLOSING MEDITATION: ${item.script_name.toUpperCase()}\n\n`);
+      parts.push(`Theme: ${item.meditation_theme}\n\n`);
+      if (item.breathing_guidance) parts.push(`${item.breathing_guidance}\n\n`);
+      if (item.script_text) parts.push(`${item.script_text}\n\n`);
+      return parts.join('');
+    };
+    return renderTeleprompter(buildMeditationNarrative());
+  }
+
+  if (item.type === 'homecare') {
+    const buildHomecareNarrative = () => {
+      const parts: string[] = [];
+      parts.push(`HOME CARE ADVICE: ${item.advice_name.toUpperCase()}\n\n`);
+      parts.push(`Focus: ${item.focus_area}\n\n`);
+      if (item.advice_text) parts.push(`${item.advice_text}\n\n`);
+      if (item.actionable_tips && item.actionable_tips.length > 0) {
+        parts.push(`Actionable Tips:\n`);
+        item.actionable_tips.forEach(tip => {
+          parts.push(`• ${tip}\n`);
+        });
+      }
+      return parts.join('');
+    };
+    return renderTeleprompter(buildHomecareNarrative());
+  }
+
+  // Helper function to render teleprompter-style content
+  function renderTeleprompter(narrative: string) {
+    return (
+      <div
+        ref={scrollContainerRef}
+        className="h-full overflow-y-auto px-8 py-16 flex items-start justify-center"
+        style={{ scrollBehavior: 'auto' }}
+      >
+        <div className="max-w-4xl w-full">
+          <div className="text-center space-y-8">
+            {narrative.split('\n').map((line, index) => {
+              if (index === 0 || line.includes(':')) {
+                return (
+                  <h1 key={index} className="text-5xl font-bold text-cream mb-8 tracking-wide">
+                    {line}
+                  </h1>
+                );
+              }
+              if (line.trim() === '') {
+                return <div key={index} className="h-8" />;
+              }
+              if (line.startsWith('•')) {
+                return (
+                  <p key={index} className="text-3xl text-cream/90 leading-loose font-light px-8 text-left">
+                    {line}
+                  </p>
+                );
+              }
+              return (
+                <p key={index} className="text-4xl text-cream/90 leading-loose font-light px-8">
+                  {line}
+                </p>
+              );
+            })}
+            <div className="h-96" />
+          </div>
         </div>
       </div>
     );
