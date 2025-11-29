@@ -8,7 +8,6 @@ import { useState } from 'react';
 import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../context/AuthContext';
-import { agentsApi } from '../../services/api';
 import { assembleCompleteClass, CompleteClass } from '../../services/classAssembly';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
@@ -177,8 +176,6 @@ export function AIGenerationPanel() {
           duration_seconds: (results as any).completeClass.preparation.duration_seconds,
           breathing_pattern: (results as any).completeClass.preparation.breathing_pattern,
           breathing_focus: (results as any).completeClass.preparation.breathing_focus,
-          script_type: (results as any).completeClass.preparation.script_type,
-          difficulty_level: (results as any).completeClass.preparation.difficulty_level,
         },
         // Section 2: Warm-up
         {
@@ -188,9 +185,6 @@ export function AIGenerationPanel() {
           movements: (results as any).completeClass.warmup.movements || [],
           duration_seconds: (results as any).completeClass.warmup.duration_seconds,
           focus_area: (results as any).completeClass.warmup.focus_area,
-          contraindications: (results as any).completeClass.warmup.contraindications || [],
-          modifications: (results as any).completeClass.warmup.modifications,
-          difficulty_level: (results as any).completeClass.warmup.difficulty_level,
         },
         // Section 3: Main movements
         ...results.sequence.movements.map((m) => ({
@@ -215,7 +209,6 @@ export function AIGenerationPanel() {
           duration_seconds: (results as any).completeClass.cooldown.duration_seconds,
           target_muscles: (results as any).completeClass.cooldown.target_muscles || [],
           recovery_focus: (results as any).completeClass.cooldown.recovery_focus,
-          intensity_level: (results as any).completeClass.cooldown.intensity_level,
         },
         // Section 5: Closing Meditation
         {
@@ -225,7 +218,6 @@ export function AIGenerationPanel() {
           duration_seconds: (results as any).completeClass.meditation.duration_seconds,
           breathing_guidance: (results as any).completeClass.meditation.breathing_guidance,
           meditation_theme: (results as any).completeClass.meditation.meditation_theme,
-          post_intensity: (results as any).completeClass.meditation.post_intensity,
         },
         // Section 6: HomeCare Advice
         {
@@ -235,7 +227,6 @@ export function AIGenerationPanel() {
           actionable_tips: (results as any).completeClass.homecare.actionable_tips || [],
           duration_seconds: (results as any).completeClass.homecare.duration_seconds,
           focus_area: (results as any).completeClass.homecare.focus_area,
-          related_to_class_focus: (results as any).completeClass.homecare.related_to_class_focus,
         },
       ]
     : [];

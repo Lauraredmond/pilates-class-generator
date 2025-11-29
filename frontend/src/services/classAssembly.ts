@@ -119,7 +119,7 @@ export function calculateMovementCount(totalMinutes: number, avgMovementMinutes:
 export async function assembleCompleteClass(
   difficulty: string,
   totalDurationMinutes: number,
-  userId: string
+  _userId: string // Prefixed with _ to indicate intentionally unused (for future use)
 ): Promise<CompleteClass> {
   try {
     const token = localStorage.getItem('access_token');
