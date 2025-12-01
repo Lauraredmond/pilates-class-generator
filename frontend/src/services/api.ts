@@ -1,5 +1,11 @@
 /**
  * API Service - Axios client configured for backend communication
+ *
+ * JENTIC INTEGRATION (Session 11.5):
+ * - Direct backend API (this file)
+ * - Orchestrator service (orchestrator.ts) - uses StandardAgent + Arazzo
+ *
+ * See orchestrator.ts for Jentic integration details.
  */
 
 import axios from 'axios';
