@@ -40,6 +40,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Heavy educational annotations throughout code ("JENTIC PATTERN" vs "BASSLINE CUSTOM")
 - Production quality while learning architecture patterns
 - Deploy fully functional integration
+- **🎯 CRITICAL: Standardize code using Jentic patterns for maximum scalability**
+  - Leverage StandardAgent and Arazzo Engine to their fullest potential
+  - Standardized code = easily scalable code
+  - Replace custom implementations with Jentic patterns wherever possible
+  - Document all deviations from Jentic standards with clear justification
 
 **When making architectural decisions, ALWAYS consider both goals equally.**
 
@@ -1266,25 +1271,36 @@ Frontend (React) → Python Orchestration Service (Render) → Existing Backend 
 
 ---
 
-### Session 11: Data Model Expansion - Phase 2 (Planned) 📋 DOCUMENTED
+### Session 11: Data Model Expansion (6-Section Class Structure) ✅ COMPLETED
 
-**Goal:** Add movement levels + all 6 Pilates class sections
+**Date:** November 29, 2025
+**Status:** ✅ Complete
 
-**Status:** 📋 Plans committed to documentation, build later
+**Goal:** Add all 6 Pilates class sections for complete class flow
+
+**Completed:**
+- ✅ Created 5 new database tables (preparation_scripts, warmup_routines, cooldown_sequences, closing_meditation_scripts, closing_homecare_advice)
+- ✅ Created database migration with comprehensive seed data
+- ✅ Built 10 new backend API endpoints for class sections
+- ✅ Extended frontend ClassPlayback component for all 6 section types
+- ✅ Updated MovementDisplay with teleprompter-style rendering
+- ✅ Created classAssembly.ts service with SECTION_DURATIONS constants
+- ✅ Fixed AI sequence generation regression (9 movements + 8 transitions)
+- ✅ Combined AI-generated movements with 6-section structure
+- ✅ Documented Visual_regression_baseline.md policy in CLAUDE.md
+- ✅ Deployed to production (Netlify + Render)
 
 **Context:**
-Based on Excel analysis, Pilates classes have:
-- 34 movements with progressive levels (L1 → L2 → L3 → Full)
-- 6 class sections (not just movements):
-  1. Preparation (Pilates principles, breathing)
-  2. Warm-up (safety-focused routines)
-  3. Main movements (existing)
-  4. Transitions (existing)
-  5. Cool-down (stretches, recovery)
-  6a. Closing - Meditation
-  6b. Closing - Home Care Advice
+Pilates classes have 6 distinct sections:
+  1. Preparation (Pilates principles, breathing) - 4 minutes
+  2. Warm-up (safety-focused routines) - 3 minutes
+  3. Main movements (AI-selected) - variable (total - 15 min overhead)
+  4. Transitions (AI-generated between movements) - 1 min each
+  5. Cool-down (stretches, recovery) - 3 minutes
+  6a. Closing Meditation - 4 minutes
+  6b. Closing HomeCare Advice - 1 minute
 
-**Database Changes (Planned):**
+**Database Tables Created:**
 
 #### 1. Movement Levels Table (Normalized)
 ```sql
@@ -1437,6 +1453,422 @@ steps:
     # If true: returns L1→L2→L3→Full progression in narrative
     # If false: returns only appropriate single level
 ```
+
+---
+
+### Session 11.5: Jentic Formalization & Standardization 📋 PLANNED
+
+**Date:** TBD (High Priority for Scalability)
+**Status:** 📋 Planned
+
+**Goal:** Fully leverage Jentic's StandardAgent and Arazzo Engine patterns to ensure maximum scalability through code standardization.
+
+**Strategic Rationale:**
+> "Standardizing code is the best way to ensure it is easily scalable. We need to leverage Jentic's inserted code to achieve that goal to the best of our ability." - Project Owner
+
+**Why This Session Matters:**
+1. **Scalability First**: Standardized code using industry patterns = easily scalable across projects
+2. **Client Relationship**: Deepens understanding of Jentic's architecture (Jentic is our client)
+3. **Educational Goal**: Clear, simple explanations of HOW Jentic integrates and WHY it brings advantages
+4. **Production Quality**: Replace any remaining custom implementations with proven Jentic patterns
+
+**Current State Analysis:**
+
+**✅ What We've Done (Session 10):**
+- Real StandardAgent + Arazzo libraries installed from GitHub
+- BasslinePilatesCoachAgent extends StandardAgent correctly
+- ArazzoRunner integrated with real workflow execution
+- Heavy educational annotations ("JENTIC PATTERN" vs "BASSLINE CUSTOM")
+- 5 comprehensive documentation guides created
+
+**🎯 What Needs Formalization:**
+1. **Arazzo Workflows**: We have stubs, need complete YAML workflows
+2. **OpenAPI Specs**: Backend APIs not yet documented in OpenAPI 3.0 format
+3. **Workflow-First Architecture**: Need to move more logic from code into declarative Arazzo workflows
+4. **StandardAgent Usage**: Maximize use of inherited StandardAgent patterns vs custom code
+5. **Educational Documentation**: Add clear, simple explanations for all integrations
+
+**Implementation Plan:**
+
+**Step 1: Audit Current Code Against Jentic Patterns** (2 hours)
+- Review all custom agent code in `backend/agents/` and `orchestrator/agent/`
+- Identify logic that can be moved to Arazzo workflows (declarative > imperative)
+- Document deviations from StandardAgent patterns with justifications
+- Create checklist of standardization opportunities
+
+**Educational Focus:**
+- **WHY**: Jentic's StandardAgent provides battle-tested reasoning loops, memory management, and tool orchestration that we don't need to reinvent
+- **HOW**: By inheriting from StandardAgent, we get Plan→Execute→Reflect for free, reducing custom code
+- **ADVANTAGE**: Less code to maintain, proven patterns, easier onboarding for new developers
+
+**Step 2: Complete OpenAPI 3.0 Specifications** (3 hours)
+- Document all `/api/agents/*` endpoints in OpenAPI format
+- Document all `/api/class-sections/*` endpoints
+- Document all `/api/movements/*` endpoints
+- Add request/response schemas
+- Include authentication requirements
+- Save as `backend/openapi/bassline-api-v1.yaml`
+
+**Educational Focus:**
+- **WHY**: Arazzo workflows need OpenAPI specs to call our APIs programmatically
+- **HOW**: OpenAPI provides machine-readable API contracts that Arazzo can execute
+- **ADVANTAGE**: Arazzo can orchestrate complex workflows across multiple API calls without custom code
+
+**Step 3: Create Complete Arazzo Workflows** (4 hours)
+
+**Current State**: Stub workflow files exist but not functional
+**Target State**: Production-ready declarative workflows
+
+Create `orchestrator/workflows/pilates_class_generation_v1.arazzo.yaml`:
+
+```yaml
+arazzo: 1.0.0
+info:
+  title: Pilates Class Generation Workflow
+  version: 1.0.0
+  description: Complete 6-section Pilates class generation using AI agents
+
+sourceDescriptions:
+  - name: bassline-api
+    url: /backend/openapi/bassline-api-v1.yaml
+    type: openapi
+
+workflows:
+  - workflowId: generate_complete_class
+    description: Generate a complete Pilates class with all 6 sections
+
+    inputs:
+      type: object
+      properties:
+        user_id:
+          type: string
+        difficulty:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+        duration_minutes:
+          type: integer
+        focus_areas:
+          type: array
+          items:
+            type: string
+
+    steps:
+      # Step 1: Fetch user preferences
+      - stepId: get_user_profile
+        operationId: getUserProfile
+        parameters:
+          - name: user_id
+            in: path
+            value: $inputs.user_id
+        outputs:
+          preferred_music_style: $response.body.preferred_music_style
+          ai_strictness: $response.body.ai_strictness
+
+      # Step 2: Select preparation script (Section 1)
+      - stepId: select_preparation
+        operationId: getPreparationScripts
+        parameters:
+          - name: difficulty
+            in: query
+            value: $inputs.difficulty
+          - name: script_type
+            in: query
+            value: centering
+        outputs:
+          preparation_script: $response.body[0]
+
+      # Step 3: Select warmup routine (Section 2)
+      - stepId: select_warmup
+        operationId: getWarmupRoutines
+        parameters:
+          - name: focus_area
+            in: query
+            value: full_body
+          - name: difficulty
+            in: query
+            value: $inputs.difficulty
+        outputs:
+          warmup_routine: $response.body[0]
+
+      # Step 4: Generate AI sequence (Section 3: Movements + Transitions)
+      - stepId: generate_sequence
+        operationId: generateSequence
+        parameters:
+          - name: target_duration_minutes
+            in: body
+            value: $inputs.duration_minutes
+          - name: difficulty_level
+            in: body
+            value: $inputs.difficulty
+          - name: focus_areas
+            in: body
+            value: $inputs.focus_areas
+          - name: strictness_level
+            in: body
+            value: $steps.get_user_profile.outputs.ai_strictness
+        outputs:
+          movements: $response.body.data.sequence
+          muscle_balance: $response.body.data.muscle_balance
+
+      # Step 5: Select music playlist
+      - stepId: select_music
+        operationId: selectMusic
+        parameters:
+          - name: class_duration_minutes
+            in: body
+            value: $inputs.duration_minutes
+          - name: energy_level
+            in: body
+            value: 0.6
+          - name: stylistic_period
+            in: body
+            value: $steps.get_user_profile.outputs.preferred_music_style
+        outputs:
+          music_playlist: $response.body.data.playlist
+
+      # Step 6: Select cooldown sequence (Section 4)
+      - stepId: select_cooldown
+        operationId: getCooldownSequences
+        parameters:
+          - name: intensity
+            in: query
+            value: moderate
+        outputs:
+          cooldown_sequence: $response.body[0]
+
+      # Step 7: Select closing meditation (Section 5)
+      - stepId: select_meditation
+        operationId: getClosingMeditations
+        parameters:
+          - name: theme
+            in: query
+            value: body_scan
+          - name: post_intensity
+            in: query
+            value: moderate
+        outputs:
+          meditation_script: $response.body[0]
+
+      # Step 8: Select homecare advice (Section 6)
+      - stepId: select_homecare
+        operationId: getHomecareAdvice
+        parameters:
+          - name: focus_area
+            in: query
+            value: spine_care
+        outputs:
+          homecare_advice: $response.body[0]
+
+      # Step 9: Assemble complete class
+      - stepId: assemble_class
+        operationId: saveGeneratedClass
+        parameters:
+          - name: user_id
+            in: body
+            value: $inputs.user_id
+          - name: preparation
+            in: body
+            value: $steps.select_preparation.outputs.preparation_script
+          - name: warmup
+            in: body
+            value: $steps.select_warmup.outputs.warmup_routine
+          - name: movements
+            in: body
+            value: $steps.generate_sequence.outputs.movements
+          - name: cooldown
+            in: body
+            value: $steps.select_cooldown.outputs.cooldown_sequence
+          - name: meditation
+            in: body
+            value: $steps.select_meditation.outputs.meditation_script
+          - name: homecare
+            in: body
+            value: $steps.select_homecare.outputs.homecare_advice
+          - name: music_playlist
+            in: body
+            value: $steps.select_music.outputs.music_playlist
+          - name: muscle_balance
+            in: body
+            value: $steps.generate_sequence.outputs.muscle_balance
+
+    outputs:
+      complete_class_id: $steps.assemble_class.outputs.class_id
+      total_duration: $steps.assemble_class.outputs.total_duration
+      sections_count: 6
+```
+
+**Educational Focus:**
+- **WHY**: Declarative workflows are easier to test, debug, and modify than imperative code
+- **HOW**: Arazzo workflows describe WHAT to do (call these APIs in this order), not HOW to do it (connection pooling, retry logic, etc.)
+- **ADVANTAGE**: Non-developers (domain experts) can understand and even modify workflows; no Python knowledge required
+
+**Step 4: Refactor Backend Agents to Use StandardAgent Patterns** (3 hours)
+
+**Current Custom Code** (`backend/agents/sequence_agent.py`):
+```python
+class SequenceAgent:
+    def __init__(self):
+        self.model = get_openai_client()
+
+    async def generate_sequence(self, params):
+        # Custom reasoning loop
+        prompt = self._build_prompt(params)
+        response = await self.model.complete(prompt)
+        return self._parse_response(response)
+```
+
+**Standardized with Jentic** (new):
+```python
+from jentic.standard_agent import StandardAgent
+from jentic.reasoners import ReWOOReasoner
+
+# JENTIC PATTERN: Inherit from StandardAgent for free Plan→Execute→Reflect
+class SequenceAgent(StandardAgent):
+    """
+    EDUCATIONAL NOTE: By extending StandardAgent, we inherit:
+    - Plan→Execute→Reflect reasoning loop (proven pattern)
+    - State management and memory handling
+    - Tool orchestration infrastructure
+    - Logging and observability hooks
+
+    BASSLINE CUSTOM: We only add domain-specific logic:
+    - Pilates sequencing rules
+    - Muscle balance calculations
+    - Safety validation
+    """
+
+    def __init__(self):
+        super().__init__(
+            reasoner=ReWOOReasoner(),  # JENTIC: ReWOO = Reasoning WithOut Observation
+            tools=self._get_pilates_tools()
+        )
+
+    def _get_pilates_tools(self):
+        """BASSLINE CUSTOM: Pilates-specific tools"""
+        return [
+            self._validate_safety_rules,
+            self._calculate_muscle_balance,
+            self._check_prerequisites
+        ]
+
+    async def solve(self, task: str) -> dict:
+        """
+        JENTIC PATTERN: Inherited solve() method handles:
+        1. Planning: Break task into steps
+        2. Execution: Call tools as needed
+        3. Reflection: Verify result quality
+
+        We don't reimplement reasoning - we inherit it!
+        """
+        return await super().solve(task)
+```
+
+**Educational Focus:**
+- **WHY**: StandardAgent encapsulates years of research on effective agent reasoning patterns
+- **HOW**: We compose our agent with a Reasoner (brain) + Tools (hands) instead of custom loops
+- **ADVANTAGE**: Proven reasoning patterns, automatic observability, easier debugging, less code
+
+**Step 5: Wire Frontend to Orchestrator Service** (2 hours)
+
+Update `frontend/src/services/api.ts`:
+
+```typescript
+// BEFORE (Session 10): Direct calls to backend
+export const agentsApi = {
+  generateSequence: (params) =>
+    axios.post(`${BACKEND_URL}/api/agents/generate-sequence`, params)
+}
+
+// AFTER (Session 11.5): Route through Jentic orchestrator
+export const agentsApi = {
+  generateSequence: (params) =>
+    // JENTIC PATTERN: Orchestrator handles Arazzo workflow execution
+    // ADVANTAGE: Workflow changes don't require frontend redeployment
+    axios.post(`${ORCHESTRATOR_URL}/api/workflows/generate_complete_class`, {
+      inputs: params
+    })
+}
+```
+
+**Educational Focus:**
+- **WHY**: Orchestrator provides a stable API even as underlying workflows evolve
+- **HOW**: Frontend calls one endpoint; orchestrator manages complex multi-step workflows
+- **ADVANTAGE**: Decoupling allows backend/workflow changes without frontend updates
+
+**Expected Deliverables:**
+
+1. ✅ **Audit Report**: `docs/JENTIC_STANDARDIZATION_AUDIT.md`
+   - Lists all custom code vs Jentic patterns
+   - Justifications for any necessary deviations
+   - Standardization opportunities identified
+
+2. ✅ **OpenAPI Specifications**: `backend/openapi/bassline-api-v1.yaml`
+   - Complete API documentation
+   - All endpoints machine-readable
+   - Ready for Arazzo consumption
+
+3. ✅ **Production Arazzo Workflows**: `orchestrator/workflows/*.arazzo.yaml`
+   - Complete class generation workflow
+   - All 6 sections orchestrated
+   - Tested and validated
+
+4. ✅ **Refactored Agents**: Updated `backend/agents/*` files
+   - All agents extend StandardAgent
+   - Custom logic moved to tools
+   - Educational annotations throughout
+
+5. ✅ **Updated Frontend**: Modified `frontend/src/services/api.ts`
+   - Routes through orchestrator
+   - Simplified API calls
+   - Error handling standardized
+
+6. ✅ **Educational Documentation**: Updated `docs/JENTIC_*.md`
+   - Clear explanations of WHY Jentic brings advantages
+   - Simple HOW guides for each integration point
+   - Comparison of before/after code
+
+**Success Criteria:**
+
+- [ ] **100% Jentic Compliance**: All agents extend StandardAgent (no custom reasoning loops)
+- [ ] **Declarative Workflows**: Class generation fully defined in Arazzo YAML (testable, modifiable)
+- [ ] **OpenAPI Complete**: All backend APIs documented and machine-readable
+- [ ] **Frontend Decoupled**: Routes through orchestrator, not directly to backend
+- [ ] **Educational Goal Met**: User can explain to others HOW and WHY Jentic integrates
+- [ ] **Scalability Achieved**: Code follows industry standards, easily portable to future projects
+
+**Testing Plan:**
+
+1. **Workflow Validation**: Use Arazzo validator to check YAML syntax
+2. **Integration Testing**: Execute workflow end-to-end with real APIs
+3. **Performance Testing**: Compare workflow execution time vs custom code
+4. **Documentation Review**: User reviews educational annotations for clarity
+5. **Portability Test**: Create new agent for different domain using same patterns
+
+**Impact on Project Goals:**
+
+**Goal 1 (Production-Ready Platform):**
+- ✅ Improves: Standardized patterns = fewer bugs, easier maintenance
+- ✅ Improves: Declarative workflows = faster feature development
+
+**Goal 2 (Learn Jentic Architecture):**
+- ✅ Maximizes: Deep hands-on experience with StandardAgent composition
+- ✅ Maximizes: Real-world Arazzo workflow creation and debugging
+- ✅ Maximizes: Clear understanding of advantages for future client work
+
+**Why This Session is High Priority:**
+> "Standardizing code is the best way to ensure it is easily scalable."
+
+Without this formalization:
+- ❌ We have Jentic code but don't leverage it fully
+- ❌ Custom implementations mask Jentic's proven patterns
+- ❌ Future projects won't benefit from standardization investment
+- ❌ Educational goal incomplete (know WHAT Jentic does, not WHY/HOW)
+
+With this formalization:
+- ✅ Jentic patterns become our default development style
+- ✅ Every new feature starts with "Can Arazzo handle this declaratively?"
+- ✅ Future projects copy standardized patterns, not custom code
+- ✅ Educational goal complete (can teach others Jentic advantages)
 
 ---
 

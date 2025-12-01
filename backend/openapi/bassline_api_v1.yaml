@@ -1,0 +1,1169 @@
+openapi: 3.0.3
+info:
+  title: Bassline Pilates Class Planner API
+  description: |
+    AI-powered Pilates class planning with intelligent agents, movement database,
+    music selection, and compliance tracking.
+
+    ## Features
+    - AI-powered sequence generation with safety validation
+    - Music selection from royalty-free classical music
+    - Meditation script generation
+    - Web research integration (MCP Playwright)
+    - GDPR & EU AI Act compliance logging
+    - 6-section class structure (preparation, warmup, movements, cooldown, meditation, homecare)
+
+    ## Authentication
+    All endpoints require JWT authentication via Bearer token in Authorization header.
+
+    ## Educational Note
+    This OpenAPI specification enables:
+    - Arazzo workflow orchestration (declarative API calling)
+    - Auto-generated API documentation
+    - Request/response validation
+    - Client SDK generation
+
+  version: 2.0.0
+  contact:
+    name: Bassline Pilates
+    url: https://basslinemvp.netlify.app
+
+servers:
+  - url: https://pilates-class-generator-api3.onrender.com
+    description: Production API
+  - url: http://localhost:8000
+    description: Local development
+
+tags:
+  - name: AI Agents
+    description: Intelligent agents for sequence generation, music selection, and meditation
+  - name: Movements
+    description: Pilates movement database
+  - name: Music
+    description: Royalty-free music selection
+  - name: Class Sections
+    description: 6-section class structure
+  - name: Authentication
+    description: User authentication and registration
+  - name: Compliance
+    description: GDPR & EU AI Act compliance
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from /api/auth/login endpoint
+
+  schemas:
+    # ==========================================================================
+    # AI AGENT SCHEMAS
+    # ==========================================================================
+    SequenceGenerationRequest:
+      type: object
+      required:
+        - target_duration_minutes
+        - difficulty_level
+      properties:
+        target_duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 120
+          description: Total class duration in minutes
+          example: 30
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          description: Student difficulty level
+          example: "Beginner"
+        focus_areas:
+          type: array
+          items:
+            type: string
+          description: Optional muscle groups to emphasize
+          example: ["core", "back"]
+        required_movements:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Movement IDs that must be included
+        excluded_movements:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Movement IDs to exclude
+        include_mcp_research:
+          type: boolean
+          default: false
+          description: Enhance cues with web research
+        strictness_level:
+          type: string
+          enum: [strict, guided, autonomous]
+          default: guided
+          description: AI decision-making strictness
+
+    SequenceGenerationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            sequence:
+              type: array
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/Movement'
+                  - $ref: '#/components/schemas/Transition'
+            movement_count:
+              type: integer
+              description: Number of movements (excluding transitions)
+            transition_count:
+              type: integer
+              description: Number of transitions
+            total_duration_minutes:
+              type: integer
+            muscle_balance:
+              type: object
+              additionalProperties:
+                type: number
+                format: float
+              description: Percentage load per muscle group
+              example:
+                core: 45.2
+                legs: 30.1
+                back: 24.7
+            validation:
+              type: object
+              properties:
+                is_valid:
+                  type: boolean
+                safety_score:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 1
+                violations:
+                  type: array
+                  items:
+                    type: string
+                warnings:
+                  type: array
+                  items:
+                    type: string
+            mcp_enhancements:
+              type: object
+              nullable: true
+              description: Web research results (if include_mcp_research=true)
+        metadata:
+          $ref: '#/components/schemas/AgentMetadata'
+
+    Movement:
+      type: object
+      required:
+        - id
+        - name
+        - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "The Hundred"
+        type:
+          type: string
+          enum: [movement]
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+        narrative:
+          type: string
+          description: Teaching narrative/script
+        setup_position:
+          type: string
+          example: "Supine"
+        watch_out_points:
+          type: array
+          items:
+            type: string
+        teaching_cues:
+          type: array
+          items:
+            type: object
+            properties:
+              cue_type:
+                type: string
+              cue_text:
+                type: string
+              cue_order:
+                type: integer
+              is_primary:
+                type: boolean
+        muscle_groups:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Core"
+              is_primary:
+                type: boolean
+        duration_seconds:
+          type: integer
+          example: 240
+
+    Transition:
+      type: object
+      required:
+        - type
+        - from_position
+        - to_position
+      properties:
+        type:
+          type: string
+          enum: [transition]
+        from_position:
+          type: string
+          example: "Supine"
+        to_position:
+          type: string
+          example: "Prone"
+        narrative:
+          type: string
+          description: Transition cue text
+        duration_seconds:
+          type: integer
+          example: 60
+        name:
+          type: string
+          example: "Transition: Supine → Prone"
+
+    MusicSelectionRequest:
+      type: object
+      required:
+        - class_duration_minutes
+      properties:
+        class_duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 120
+        energy_level:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Energy intensity (0=low, 1=high)
+          example: 0.6
+        stylistic_period:
+          type: string
+          enum:
+            - BAROQUE
+            - CLASSICAL
+            - ROMANTIC
+            - IMPRESSIONIST
+            - MODERN
+            - CONTEMPORARY
+            - CELTIC_TRADITIONAL
+          description: Classical music period
+          example: "CLASSICAL"
+
+    MusicSelectionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            playlist:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                tracks:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/MusicTrack'
+                total_duration_minutes:
+                  type: integer
+        metadata:
+          $ref: '#/components/schemas/AgentMetadata'
+
+    MusicTrack:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "Eine Kleine Nachtmusik"
+        composer:
+          type: string
+          example: "Mozart"
+        duration_seconds:
+          type: integer
+        audio_url:
+          type: string
+          format: uri
+        stylistic_period:
+          type: string
+
+    MeditationRequest:
+      type: object
+      required:
+        - duration_minutes
+        - class_intensity
+      properties:
+        duration_minutes:
+          type: integer
+          minimum: 2
+          maximum: 15
+          example: 5
+        class_intensity:
+          type: string
+          enum: [low, moderate, high]
+          example: "moderate"
+        focus_theme:
+          type: string
+          enum: [mindfulness, body_scan, gratitude, breath_awareness]
+          example: "mindfulness"
+        include_breathing:
+          type: boolean
+          default: true
+
+    MeditationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            script:
+              type: string
+              description: Generated meditation script
+            duration_minutes:
+              type: integer
+            breathing_guidance:
+              type: string
+            theme:
+              type: string
+        metadata:
+          $ref: '#/components/schemas/AgentMetadata'
+
+    AgentMetadata:
+      type: object
+      properties:
+        decision_id:
+          type: string
+          format: uuid
+          description: Unique decision ID (EU AI Act compliance)
+        agent_type:
+          type: string
+          enum: [sequence, music, meditation, research]
+        model_used:
+          type: string
+          example: "gpt-3.5-turbo"
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        reasoning:
+          type: string
+          description: Human-readable explanation of decision
+        processing_time_ms:
+          type: number
+          format: float
+        strictness_level:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    # ==========================================================================
+    # CLASS SECTION SCHEMAS
+    # ==========================================================================
+    PreparationScript:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        script_name:
+          type: string
+        script_type:
+          type: string
+          enum: [centering, breathing, principles]
+        narrative:
+          type: string
+        key_principles:
+          type: array
+          items:
+            type: string
+        duration_seconds:
+          type: integer
+        breathing_pattern:
+          type: string
+        difficulty_level:
+          type: string
+
+    WarmupRoutine:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        routine_name:
+          type: string
+        focus_area:
+          type: string
+          enum: [spine, hips, shoulders, full_body]
+        narrative:
+          type: string
+        movements:
+          type: object
+          description: Simple warmup movements (JSONB)
+        duration_seconds:
+          type: integer
+        contraindications:
+          type: array
+          items:
+            type: string
+        difficulty_level:
+          type: string
+
+    CooldownSequence:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sequence_name:
+          type: string
+        intensity_level:
+          type: string
+          enum: [gentle, moderate, deep]
+        narrative:
+          type: string
+        stretches:
+          type: object
+          description: Stretching exercises (JSONB)
+        duration_seconds:
+          type: integer
+        target_muscles:
+          type: array
+          items:
+            type: string
+
+    ClosingMeditationScript:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        script_name:
+          type: string
+        meditation_theme:
+          type: string
+        script_text:
+          type: string
+        breathing_guidance:
+          type: string
+        duration_seconds:
+          type: integer
+
+    ClosingHomecareAdvice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        advice_name:
+          type: string
+        focus_area:
+          type: string
+        advice_text:
+          type: string
+        actionable_tips:
+          type: array
+          items:
+            type: string
+        duration_seconds:
+          type: integer
+
+    # ==========================================================================
+    # USER & AUTH SCHEMAS
+    # ==========================================================================
+    UserRegistration:
+      type: object
+      required:
+        - email
+        - password
+        - full_name
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        full_name:
+          type: string
+
+    UserLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+        role:
+          type: string
+          enum: [student, instructor, admin]
+        preferences:
+          type: object
+          properties:
+            default_difficulty:
+              type: string
+              enum: [Beginner, Intermediate, Advanced]
+            preferred_music_period:
+              type: string
+            ai_strictness_level:
+              type: string
+              enum: [strict, guided, autonomous]
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+        type:
+          type: string
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ===========================================================================
+  # AI AGENTS ENDPOINTS
+  # ===========================================================================
+  /api/agents/generate-sequence:
+    post:
+      tags: [AI Agents]
+      summary: Generate Pilates movement sequence
+      description: |
+        Generate a safe and effective Pilates movement sequence using AI.
+
+        **Features:**
+        - Enforces safety rules (spinal progression, muscle balance)
+        - Adds transitions between movements
+        - Calculates muscle balance
+        - Optional web research enhancement
+        - Logs decisions for EU AI Act compliance
+
+        **JENTIC INTEGRATION NOTE:**
+        This endpoint can be called by Arazzo workflows programmatically.
+        See `orchestrator/arazzo/workflows/assemble_pilates_class_v1.arazzo.yaml`
+
+      operationId: generateSequence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SequenceGenerationRequest'
+      responses:
+        '200':
+          description: Sequence generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SequenceGenerationResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized (missing or invalid JWT token)
+        '500':
+          description: Agent processing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+
+  /api/agents/select-music:
+    post:
+      tags: [AI Agents]
+      summary: Select music playlist for class
+      description: |
+        Select appropriate music playlist based on class duration and energy level.
+
+        **Music Sources:**
+        - Internet Archive (public domain classical music)
+        - Musopen (royalty-free classical)
+        - FreePD (Creative Commons)
+
+        **JENTIC INTEGRATION NOTE:**
+        Called by Arazzo workflow step 3 (after sequence generation).
+
+      operationId: selectMusic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MusicSelectionRequest'
+      responses:
+        '200':
+          description: Music selected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MusicSelectionResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Music selection failed
+      security:
+        - BearerAuth: []
+
+  /api/agents/create-meditation:
+    post:
+      tags: [AI Agents]
+      summary: Generate meditation/cool-down script
+      description: |
+        Generate personalized meditation script using AI.
+
+        **Features:**
+        - Adapts to class intensity
+        - Customizable theme (mindfulness, body scan, gratitude)
+        - Includes breathing guidance
+        - Appropriate duration (2-15 minutes)
+
+        **JENTIC INTEGRATION NOTE:**
+        Called by Arazzo workflow step 4 (final step).
+
+      operationId: createMeditation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeditationRequest'
+      responses:
+        '200':
+          description: Meditation script created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeditationResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Meditation creation failed
+      security:
+        - BearerAuth: []
+
+  /api/agents/agent-info:
+    get:
+      tags: [AI Agents]
+      summary: Get agent information
+      description: Returns configuration and status of all AI agents
+      operationId: getAgentInfo
+      responses:
+        '200':
+          description: Agent information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: object
+                    properties:
+                      sequence:
+                        type: object
+                      music:
+                        type: object
+                      meditation:
+                        type: object
+                      research:
+                        type: object
+      security:
+        - BearerAuth: []
+
+  # ===========================================================================
+  # MOVEMENTS ENDPOINTS
+  # ===========================================================================
+  /api/movements:
+    get:
+      tags: [Movements]
+      summary: List all Pilates movements
+      description: Get all movements in the database (34 classical Pilates movements)
+      operationId: listMovements
+      parameters:
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [Beginner, Intermediate, Advanced]
+          description: Filter by difficulty level
+      responses:
+        '200':
+          description: List of movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movement'
+        '401':
+          description: Unauthorized
+      security:
+        - BearerAuth: []
+
+  /api/movements/{id}:
+    get:
+      tags: [Movements]
+      summary: Get movement by ID
+      description: Get detailed information about a specific movement
+      operationId: getMovement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Movement details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movement'
+        '404':
+          description: Movement not found
+        '401':
+          description: Unauthorized
+      security:
+        - BearerAuth: []
+
+  # ===========================================================================
+  # MUSIC ENDPOINTS
+  # ===========================================================================
+  /api/music/playlists:
+    get:
+      tags: [Music]
+      summary: List music playlists
+      description: Get all available music playlists
+      operationId: listPlaylists
+      parameters:
+        - name: stylistic_period
+          in: query
+          schema:
+            type: string
+          description: Filter by musical period
+      responses:
+        '200':
+          description: List of playlists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    name:
+                      type: string
+                    stylistic_period:
+                      type: string
+                    track_count:
+                      type: integer
+      security:
+        - BearerAuth: []
+
+  /api/music/tracks/{track_id}:
+    get:
+      tags: [Music]
+      summary: Get music track details
+      description: Get details about a specific music track
+      operationId: getTrack
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Track details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MusicTrack'
+        '404':
+          description: Track not found
+      security:
+        - BearerAuth: []
+
+  # ===========================================================================
+  # CLASS SECTIONS ENDPOINTS (Session 11: 6-section structure)
+  # ===========================================================================
+  /api/class-sections/preparation:
+    get:
+      tags: [Class Sections]
+      summary: List preparation scripts (Section 1)
+      description: Get preparation/centering scripts for class opening
+      operationId: listPreparationScripts
+      parameters:
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+          description: Filter by difficulty level
+      responses:
+        '200':
+          description: List of preparation scripts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PreparationScript'
+      security:
+        - BearerAuth: []
+
+  /api/class-sections/warmup:
+    get:
+      tags: [Class Sections]
+      summary: List warmup routines (Section 2)
+      description: Get safety-focused warmup routines
+      operationId: listWarmupRoutines
+      parameters:
+        - name: focus_area
+          in: query
+          schema:
+            type: string
+            enum: [spine, hips, shoulders, full_body]
+      responses:
+        '200':
+          description: List of warmup routines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WarmupRoutine'
+      security:
+        - BearerAuth: []
+
+  /api/class-sections/cooldown:
+    get:
+      tags: [Class Sections]
+      summary: List cooldown sequences (Section 4)
+      description: Get stretching and recovery sequences
+      operationId: listCooldownSequences
+      parameters:
+        - name: intensity
+          in: query
+          schema:
+            type: string
+            enum: [gentle, moderate, deep]
+      responses:
+        '200':
+          description: List of cooldown sequences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CooldownSequence'
+      security:
+        - BearerAuth: []
+
+  /api/class-sections/closing-meditation:
+    get:
+      tags: [Class Sections]
+      summary: List closing meditation scripts (Section 5)
+      description: Get meditation scripts for class closing
+      operationId: listClosingMeditations
+      parameters:
+        - name: theme
+          in: query
+          schema:
+            type: string
+        - name: post_intensity
+          in: query
+          schema:
+            type: string
+            enum: [low, moderate, high]
+          description: Intensity of class that came before
+      responses:
+        '200':
+          description: List of meditation scripts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClosingMeditationScript'
+      security:
+        - BearerAuth: []
+
+  /api/class-sections/closing-homecare:
+    get:
+      tags: [Class Sections]
+      summary: List homecare advice (Section 6)
+      description: Get homecare advice for students
+      operationId: listHomecareAdvice
+      parameters:
+        - name: focus_area
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of homecare advice
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClosingHomecareAdvice'
+      security:
+        - BearerAuth: []
+
+  # ===========================================================================
+  # AUTHENTICATION ENDPOINTS
+  # ===========================================================================
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      description: Create new user account
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user_id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid registration data
+      security: []
+
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and get JWT token
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: JWT token for subsequent requests
+                  token_type:
+                    type: string
+                    example: "bearer"
+                  user:
+                    $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Invalid credentials
+      security: []
+
+  /api/users/me/profile:
+    get:
+      tags: [Authentication]
+      summary: Get current user profile
+      description: |
+        Get authenticated user's profile and preferences.
+
+        **JENTIC INTEGRATION NOTE:**
+        This is typically the first step in Arazzo workflows to personalize class generation.
+
+      operationId: getUserProfile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+      security:
+        - BearerAuth: []
+
+  # ===========================================================================
+  # COMPLIANCE ENDPOINTS (GDPR & EU AI Act)
+  # ===========================================================================
+  /api/compliance/my-data:
+    get:
+      tags: [Compliance]
+      summary: Export user data (GDPR Article 15)
+      description: Export all data associated with authenticated user
+      operationId: exportMyData
+      responses:
+        '200':
+          description: Complete data export
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_data:
+                    type: object
+                  ai_decisions:
+                    type: array
+                    items:
+                      type: object
+                  class_history:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          description: Unauthorized
+      security:
+        - BearerAuth: []
+
+  /api/compliance/ai-decisions:
+    get:
+      tags: [Compliance]
+      summary: Get AI decision log (EU AI Act transparency)
+      description: Get log of all AI decisions for authenticated user
+      operationId: getAIDecisions
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of recent decisions to return
+      responses:
+        '200':
+          description: AI decision log
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    decision_id:
+                      type: string
+                      format: uuid
+                    agent_type:
+                      type: string
+                    timestamp:
+                      type: string
+                      format: date-time
+                    input_parameters:
+                      type: object
+                    output_data:
+                      type: object
+                    confidence_score:
+                      type: number
+                      format: float
+                    reasoning:
+                      type: string
+        '401':
+          description: Unauthorized
+      security:
+        - BearerAuth: []
+
+  # ===========================================================================
+  # HEALTH CHECK
+  # ===========================================================================
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Check if API is healthy
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  version:
+                    type: string
+                    example: "2.0.0"
+                  service:
+                    type: string
+                    example: "pilates-class-planner-api"
+      security: []
