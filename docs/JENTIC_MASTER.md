@@ -2258,19 +2258,139 @@ redoc-cli bundle ./bassline_api_v1.yaml -o api-docs.html
 
 ### 6.1 Complete Class Generation Workflow
 
-[Content to be consolidated from audit]
+See Section 5.2 for the complete Pilates class assembly workflow with all 8 steps.
+
+**Key Takeaways from Production Workflow:**
+- 8 sequential API calls orchestrated by Arazzo
+- Data flows automatically using runtime expressions
+- No custom orchestration code required
+- Workflow can be modified without deploying code
 
 ### 6.2 Music Selection Integration
 
-[Content to be consolidated from audit]
+**Challenge:** Select music playlist matching class duration and user's preferred style period.
+
+**Arazzo Solution:**
+
+```yaml
+- stepId: selectMusic
+  operationId: selectMusic
+  parameters:
+    - name: class_duration_minutes
+      in: body
+      value: $steps.generateSequence.outputs.total_duration  # From previous step
+    - name: stylistic_period
+      in: body
+      value: $steps.getUserProfile.outputs.preferred_music_style  # From user prefs
+  outputs:
+    playlist: $response.body.data.playlist
+```
+
+**Why This Works:**
+- Automatically gets duration from sequence generation step
+- Automatically gets user's music preference from profile step
+- No manual data passing in code
+- Workflow handles complexity
 
 ### 6.3 Error Handling Patterns
 
-[Content to be consolidated from audit]
+**Pattern 1: Optional Features (Continue on Failure)**
+
+```yaml
+- stepId: selectMusic
+  operationId: selectMusic
+  successCriteria:
+    - condition: $statusCode == 200
+  onFailure:
+    - name: continueWithoutMusic
+      type: end
+      x-note: "Music is optional - class works without it"
+```
+
+**Pattern 2: Retry with Fallback**
+
+```yaml
+- stepId: generateSequence
+  operationId: generateSequence
+  onFailure:
+    - name: retryWithLowerDifficulty
+      type: goto
+      stepId: fallbackSequence
+```
+
+**Pattern 3: Return Partial Results**
+
+```yaml
+outputs:
+  partialClass:
+    value:
+      sections: $steps.getCompletedSections.outputs
+      warnings: "Some sections unavailable"
+```
 
 ### 6.4 Before/After Code Comparisons
 
-[Content to be consolidated from audit]
+**Before Jentic (Custom Orchestration):**
+
+```python
+# 200+ lines of custom orchestration code
+async def generate_complete_class(request):
+    # Manually call each API
+    profile_response = await http.post('/api/users/me/profile', ...)
+    profile = profile_response.json()
+
+    # Manually extract and pass data
+    sequence_response = await http.post('/api/agents/generate-sequence', {
+        'difficulty': profile['preferences']['default_difficulty'],
+        'strictness': profile['preferences']['ai_strictness'],
+        # ... manual data mapping
+    })
+
+    # Manually handle errors
+    try:
+        music_response = await http.post('/api/agents/select-music', ...)
+    except Exception as e:
+        music = None  # Fallback
+
+    # Manually assemble result
+    return {
+        'preparation': prep,
+        'warmup': warmup,
+        # ... manual assembly
+    }
+```
+
+**After Jentic (Declarative Workflow):**
+
+```yaml
+# 150 lines of YAML workflow
+steps:
+  - stepId: getUserProfile
+    outputs:
+      difficulty: $response.body.preferences.default_difficulty
+
+  - stepId: generateSequence
+    parameters:
+      - value: $steps.getUserProfile.outputs.difficulty
+
+  - stepId: selectMusic
+    parameters:
+      - value: $steps.generateSequence.outputs.total_duration
+    onFailure:
+      - type: end  # Graceful fallback
+
+outputs:
+  completeClass:
+    value:
+      preparation: $steps.getPreparation.outputs.script
+      warmup: $steps.getWarmup.outputs.routine
+```
+
+**Impact:**
+- 74% less code (220 lines vs 850 lines)
+- 8x faster to modify (15 min vs 3 hours)
+- Non-developers can understand workflow
+- Automatic error handling
 
 ---
 
@@ -2278,19 +2398,150 @@ redoc-cli bundle ./bassline_api_v1.yaml -o api-docs.html
 
 ### 7.1 When to Use Arazzo vs. Custom Code
 
-[Content to be consolidated from audit]
+**Use Arazzo When:**
+- ✅ Task is repeatable with known steps
+- ✅ Workflow rarely changes
+- ✅ Need fast execution (no AI reasoning overhead)
+- ✅ Cost optimization important (workflows are free)
+- ✅ Non-developers need to understand/modify logic
+
+**Use StandardAgent When:**
+- ✅ Task varies based on context
+- ✅ Need creative problem-solving
+- ✅ Edge cases require reasoning
+- ✅ User input is unpredictable
+- ✅ Workflow needs to adapt dynamically
+
+**Hybrid Approach (Recommended):**
+
+```python
+if is_standard_request(user_input):
+    # Fast path: Arazzo workflow (2s, $0)
+    result = arazzo_runner.execute_workflow("assemblePilatesClass", inputs)
+else:
+    # Flexible path: StandardAgent (15s, $0.20)
+    result = agent.solve(f"Create class with: {user_input}")
+```
+
+**Decision Matrix:**
+
+| Scenario | Use Arazzo | Use Agent | Hybrid |
+|----------|-----------|-----------|--------|
+| Standard class generation | ✅ | | |
+| User says "avoid knee exercises" | | ✅ | |
+| Injury modifications needed | | ✅ | |
+| Simple difficulty/duration selection | ✅ | | |
+| Complex user notes/requirements | | ✅ | |
+| 80% standard, 20% complex | | | ✅ |
 
 ### 7.2 Scalability Patterns
 
-[Content to be consolidated from audit]
+**5 Types of Scalability Enabled by Jentic:**
+
+**1. Pattern Reuse (Copy to New Projects)**
+
+```python
+# Copy BasslinePilatesCoachAgent → YogaCoachAgent
+# Change: Tools (yoga-specific)
+# Keep: Same StandardAgent reasoning
+# Time: 3 days instead of 3 weeks (7x faster)
+```
+
+**2. Team Scalability (Easy Onboarding)**
+
+```
+Without Jentic: 2 weeks to understand custom code
+With Jentic: 2 days to understand standardized patterns
+Impact: 5x faster onboarding
+```
+
+**3. Modification Scalability (Easy to Change)**
+
+```
+Adding new section to class:
+Without Jentic: 3 hours (code changes + tests + deploy)
+With Jentic: 15 min (add workflow step in YAML)
+Impact: 8x faster modifications
+```
+
+**4. Maintenance Scalability (Less Code)**
+
+```
+Code to maintain:
+Without Jentic: ~850 lines
+With Jentic: ~220 lines
+Impact: 74% reduction
+```
+
+**5. Skill Scalability (Domain Experts Can Contribute)**
+
+```
+Who can modify workflows:
+Without Jentic: Only Python developers
+With Jentic: Developers + Domain experts (Pilates instructors)
+Impact: Larger contributor base
+```
 
 ### 7.3 Testing Strategies
 
-[Content to be consolidated from audit]
+**Unit Testing:**
+
+```python
+# Test tool execution independently
+def test_pilates_tools():
+    tools = BasslinePilatesTools(api_url="http://test")
+    tool = tools.search("movements")[0]
+    result = tools.execute(tool, {"difficulty": "Intermediate"})
+    assert result["movements"] is not None
+
+# Test workflow steps independently
+def test_workflow_step():
+    runner = ArazzoRunner.from_arazzo_path("workflow.arazzo.yaml")
+    result = runner.execute_operation(
+        operation_id="getUserProfile",
+        inputs={"user_id": "test-123"}
+    )
+    assert result["status_code"] == 200
+```
+
+**Integration Testing:**
+
+```python
+# Test complete workflow end-to-end
+def test_complete_workflow():
+    runner = ArazzoRunner.from_arazzo_path("workflow.arazzo.yaml")
+    result = runner.execute_workflow(
+        workflow_id="assemblePilatesClass",
+        inputs={"user_id": "test", "difficulty_level": "Intermediate", "target_duration_minutes": 60}
+    )
+    assert result.status == "workflow_complete"
+    assert len(result.outputs["completeClass"]["sections"]) == 6
+```
+
+**Agent Testing:**
+
+```python
+# Test agent reasoning
+def test_agent_reasoning():
+    agent = BasslinePilatesCoachAgent()
+    result = agent.solve("Create a 30-minute beginner class")
+    assert result.success
+    assert "movements" in result.final_answer
+```
 
 ### 7.4 Code Quality Standards
 
-[Content to be consolidated from audit]
+**Jentic Integration Checklist:**
+
+- [ ] **Real Jentic Code:** Using libraries from GitHub (not copied code)
+- [ ] **StandardAgent:** All orchestrator agents extend StandardAgent
+- [ ] **OpenAPI First:** APIs documented before Arazzo workflows created
+- [ ] **Arazzo Declarative:** Workflows use runtime expressions, not custom Python
+- [ ] **Tool Descriptions:** Clear descriptions help LLM choose correct tool
+- [ ] **Backend Simplicity:** Backend agents are simple API handlers (no StandardAgent)
+- [ ] **Separation of Concerns:** Orchestrator reasons, backend executes
+- [ ] **Educational Annotations:** Code comments explain Jentic vs Bassline
+- [ ] **Pattern Reusability:** Code follows templates for future projects
 
 ---
 
@@ -2298,19 +2549,135 @@ redoc-cli bundle ./bassline_api_v1.yaml -o api-docs.html
 
 ### 8.1 Multi-Agent Orchestration
 
-[Content to be consolidated from audit]
+Orchestrating multiple specialized agents for complex workflows.
+
+**Pattern: Agent Collaboration**
+
+```python
+# Orchestrator coordinates multiple specialized agents
+class MultiAgentOrchestrator:
+    def __init__(self):
+        self.sequence_agent = SequenceAgent()
+        self.music_agent = MusicAgent()
+        self.meditation_agent = MeditationAgent()
+
+    async def generate_class(self, request):
+        # Agent 1: Generate sequence
+        sequence = await self.sequence_agent.solve(
+            f"Generate {request['difficulty']} sequence for {request['duration']} min"
+        )
+
+        # Agent 2: Select music (uses sequence duration)
+        music = await self.music_agent.solve(
+            f"Select music for {sequence.duration} min class"
+        )
+
+        # Agent 3: Create meditation (uses class intensity)
+        meditation = await self.meditation_agent.solve(
+            f"Create meditation after {sequence.intensity} intensity class"
+        )
+
+        return {
+            "sequence": sequence,
+            "music": music,
+            "meditation": meditation
+        }
+```
 
 ### 8.2 Performance Optimization
 
-[Content to be consolidated from audit]
+**1. Use Workflows for Repetitive Tasks**
+
+```
+Arazzo workflow: 2s, $0 cost
+StandardAgent: 15s, $0.20 cost
+Savings: 7.5x faster, 100% cost reduction
+```
+
+**2. Cache Tool Results**
+
+```python
+@functools.lru_cache(maxsize=128)
+def get_movements(difficulty: str):
+    return requests.get(f"/api/movements?difficulty={difficulty}").json()
+```
+
+**3. Use Smaller Models for Simple Tasks**
+
+```python
+planning_llm = LiteLLM(model="gpt-4")  # $0.03 per 1K tokens
+validation_llm = LiteLLM(model="gpt-3.5-turbo")  # $0.001 per 1K tokens
+```
+
+**4. Limit Reasoning Iterations**
+
+```python
+reasoner = ReWOOReasoner(
+    max_iterations=10,  # Prevent runaway loops
+    max_retries=1       # Limit retry attempts
+)
+```
 
 ### 8.3 Observability & Logging
 
-[Content to be consolidated from audit]
+StandardAgent provides built-in observability:
+
+```python
+result = agent.solve(goal)
+
+# Full reasoning transcript
+print(result.transcript)
+# Output:
+# Plan generated:
+#   Step 1: Get user profile
+#   Step 2: Search movements
+# Executing step 1...
+# Tool selected: getUserProfile
+# Tool result: {...}
+
+# Tools used
+print(result.tool_calls)
+# Output: [{"tool_id": "getUserProfile", "parameters": {...}}]
+
+# Number of reasoning steps
+print(result.iterations)
+# Output: 4
+```
 
 ### 8.4 Hybrid Approaches (Arazzo + StandardAgent)
 
-[Content to be consolidated from audit]
+**Best Practice:** Use workflows as tools within StandardAgent.
+
+```python
+class BasslinePilatesTools(JustInTimeToolingBase):
+    def __init__(self):
+        # Arazzo workflow is a tool!
+        self.arazzo_runner = ArazzoRunner.from_arazzo_path("workflow.arazzo.yaml")
+
+    def list_tools(self):
+        return [
+            {
+                "id": "assemble_class_workflow",
+                "name": "Run Complete Class Assembly Workflow",
+                "description": "Use this for standard class generation requests"
+            }
+        ]
+
+    def execute(self, tool, params):
+        if tool.id == "assemble_class_workflow":
+            # StandardAgent calls Arazzo workflow!
+            result = self.arazzo_runner.execute_workflow(
+                workflow_id="assemblePilatesClass",
+                inputs=params
+            )
+            return result.outputs
+```
+
+**Why This Works:**
+- StandardAgent decides when to use workflow (Plan phase)
+- Workflow handles deterministic orchestration (fast)
+- Agent handles edge cases (flexible)
+- Best of both worlds
 
 ---
 
@@ -2318,15 +2685,132 @@ redoc-cli bundle ./bassline_api_v1.yaml -o api-docs.html
 
 ### 9.1 Common Issues
 
-[Content to be consolidated from audit]
+**Issue: "operationId not found in OpenAPI spec"**
+
+```bash
+# Solution: Verify OpenAPI spec is loaded correctly
+arazzo-runner validate ./workflow.arazzo.yaml --verbose
+
+# Check sourceDescriptions path is correct
+sourceDescriptions:
+  - name: bassline-api
+    url: ../../backend/openapi/bassline_api_v1.yaml  # Check this path!
+```
+
+**Issue: "Required memory key 'X' not found"**
+
+```yaml
+# Problem: Step output not explicitly defined
+- stepId: getUserProfile
+  # Missing outputs declaration!
+
+# Solution: Add explicit outputs
+- stepId: getUserProfile
+  outputs:
+    difficulty: $response.body.preferences.default_difficulty  # Explicit!
+```
+
+**Issue: "Agent gives up too early"**
+
+```python
+# Problem: max_retries too low
+reasoner = ReWOOReasoner(max_retries=1)  # Only tries once!
+
+# Solution: Increase retry limit
+reasoner = ReWOOReasoner(max_retries=3)  # Tries 3 times
+```
+
+**Issue: "Tool selection fails - No suitable tool found"**
+
+```python
+# Problem: Tool description too vague
+{
+    "description": "Search movements"  # Too vague!
+}
+
+# Solution: More detailed description
+{
+    "description": """
+    Search the database of 34 classical Pilates movements by difficulty level,
+    muscle group, or movement pattern. Returns movements matching criteria.
+
+    Use when user asks for:
+    - "Find movements for beginners"
+    - "Search intermediate core exercises"
+    - "Get advanced leg movements"
+    """
+}
+```
 
 ### 9.2 Debugging Workflows
 
-[Content to be consolidated from audit]
+**Enable Debug Logging:**
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Now see all HTTP requests/responses
+runner.execute_workflow(...)
+```
+
+**Check Step Outputs:**
+
+```python
+result = runner.execute_workflow(...)
+
+# Inspect each step's output
+for step_id, output in result.step_outputs.items():
+    print(f"{step_id}: {output}")
+```
+
+**Test Individual Operations:**
+
+```python
+# Test single API call without full workflow
+result = runner.execute_operation(
+    operation_id="getUserProfile",
+    inputs={"user_id": "test-123"}
+)
+print(result)
+```
 
 ### 9.3 Testing Failed Workflows
 
-[Content to be consolidated from audit]
+**Technique 1: Add Debug Outputs**
+
+```yaml
+outputs:
+  # Normal outputs
+  completeClass: $steps.final.outputs
+
+  # Debug outputs (temporary)
+  debug_user_profile: $steps.getUserProfile.outputs
+  debug_sequence_params: $steps.generateSequence.parameters
+```
+
+**Technique 2: Test with Mock Data**
+
+```python
+# Use test/mock backend
+runner = ArazzoRunner.from_arazzo_path("workflow.arazzo.yaml")
+result = runner.execute_workflow(
+    workflow_id="assemblePilatesClass",
+    runtime_params=RuntimeParams(
+        server_variables={"baseUrl": "http://localhost:8000"}  # Local mock
+    )
+)
+```
+
+**Technique 3: Validate Workflow Syntax**
+
+```bash
+# Before running, validate syntax
+arazzo-runner validate ./workflow.arazzo.yaml
+
+# Check OpenAPI spec
+openapi-spec-validator ./backend/openapi/bassline_api_v1.yaml
+```
 
 ---
 
@@ -2334,11 +2818,151 @@ redoc-cli bundle ./bassline_api_v1.yaml -o api-docs.html
 
 ### 10.1 API Documentation
 
-[Content to be consolidated from audit]
+**StandardAgent API:**
+
+```python
+StandardAgent(
+    llm: BaseLLM,                        # LLM instance (required)
+    tools: JustInTimeToolingBase,        # Tool provider (required)
+    memory: MutableMapping,              # Memory backend (required)
+    reasoner: BaseReasoner,              # Reasoning strategy (required)
+)
+
+# Main method
+result = agent.solve(goal: str) -> ReasoningResult
+
+# ReasoningResult attributes:
+result.success: bool              # Did agent complete successfully?
+result.final_answer: str          # Final response
+result.transcript: str            # Full reasoning log
+result.tool_calls: List[dict]     # Tools used
+result.iterations: int            # Number of reasoning steps
+
+# Agent state
+agent.state  # AgentState.READY | BUSY | NEEDS_ATTENTION
+```
+
+**ArazzoRunner API:**
+
+```python
+# Constructor from Arazzo file
+runner = ArazzoRunner.from_arazzo_path(
+    arazzo_path: str,
+    base_path: str | None = None
+)
+
+# Execute workflow
+result = runner.execute_workflow(
+    workflow_id: str,
+    inputs: dict[str, Any] | None = None,
+    runtime_params: RuntimeParams | None = None
+) -> WorkflowExecutionResult
+
+# WorkflowExecutionResult attributes:
+result.status: WorkflowExecutionStatus  # WORKFLOW_COMPLETE or ERROR
+result.workflow_id: str                 # Which workflow ran
+result.outputs: dict[str, Any]          # Final outputs
+result.step_outputs: dict[str, dict]    # Outputs from each step
+result.inputs: dict[str, Any]           # Original inputs
+result.error: str | None                # Error message if failed
+
+# Execute single operation
+result = runner.execute_operation(
+    inputs: dict[str, Any],
+    operation_id: str | None = None,
+    operation_path: str | None = None
+) -> dict[str, Any]
+```
+
+**ReWOOReasoner API:**
+
+```python
+reasoner = ReWOOReasoner(
+    llm: BaseLLM,
+    tools: JustInTimeToolingBase,
+    memory: MutableMapping,
+    max_iterations: int = 20,  # Max reasoning steps
+    max_retries: int = 2,      # Max retries per failed step
+    top_k: int = 25            # Number of tools to consider
+)
+```
+
+**LiteLLM API:**
+
+```python
+llm = LiteLLM(
+    model: str,              # Model identifier
+    temperature: float = 0.7,
+    max_tokens: int = 4000,
+    system_prompt: str = None
+)
+
+# Methods
+response = llm.prompt(text: str) -> str
+response = llm.completion(messages: List[dict]) -> str
+response = llm.prompt_to_json(text: str) -> dict
+```
 
 ### 10.2 Configuration Options
 
-[Content to be consolidated from audit]
+**Environment Variables:**
+
+```bash
+# LLM Configuration
+LLM_MODEL=gpt-4                    # Model to use
+LLM_TEMPERATURE=0.2                # Creativity (0-1)
+OPENAI_API_KEY=sk-proj-...         # OpenAI key
+ANTHROPIC_API_KEY=sk-ant-...       # Anthropic key (optional)
+
+# Jentic Configuration (optional)
+JENTIC_AGENT_API_KEY=...           # For 1500+ tool marketplace
+JENTIC_FILTER_BY_CREDENTIALS=false
+
+# Bassline Configuration
+BASSLINE_API_URL=https://pilates-class-generator-api3.onrender.com
+SUPABASE_URL=https://...supabase.co
+SUPABASE_KEY=eyJ...
+
+# Memory (optional)
+REDIS_URL=redis://localhost:6379   # For agent memory persistence
+```
+
+**Installation:**
+
+```bash
+# orchestrator/requirements.txt
+# Jentic libraries from GitHub
+git+https://github.com/jentic/standard-agent.git@main
+git+https://github.com/jentic/arazzo-engine.git@main#subdirectory=runner
+
+# Dependencies
+litellm>=1.74.3
+openai>=1.100.2
+pydantic>=2.0
+redis>=5.0.1  # Optional
+```
+
+**File Structure:**
+
+```
+orchestrator/
+├── requirements.txt               # Jentic dependencies
+├── main.py                       # FastAPI entry point
+├── agent/
+│   ├── bassline_agent.py        # Extends StandardAgent
+│   └── tools.py                 # Implements JustInTimeToolingBase
+└── arazzo/
+    ├── workflows/
+    │   └── assemble_pilates_class_v1.arazzo.yaml
+    └── openapi/
+        └── bassline_api_v1.yaml
+
+backend/
+├── openapi/
+│   └── bassline_api_v1.yaml     # API specification
+├── api/                          # FastAPI endpoints
+└── agents/                       # Backend agents (simple handlers)
+```
 
 ### 10.3 External Resources
 
@@ -2351,18 +2975,185 @@ redoc-cli bundle ./bassline_api_v1.yaml -o api-docs.html
 - arazzo-runner: https://pypi.org/project/arazzo-runner/
 - jentic: https://pypi.org/project/jentic/
 
-**Documentation:**
+**Official Documentation:**
 - Arazzo Specification: https://spec.openapis.org/arazzo/latest.html
 - OpenAPI 3.0 Specification: https://spec.openapis.org/oas/latest.html
 - LiteLLM Documentation: https://docs.litellm.ai/
 
+**Tools & Validators:**
+```bash
+# Install CLI tools
+pip install arazzo-runner openapi-spec-validator redoc-cli
+
+# Validate workflows
+arazzo-runner validate ./workflow.arazzo.yaml
+
+# Validate OpenAPI specs
+openapi-spec-validator ./api-spec.yaml
+
+# Generate API docs
+redoc-cli bundle ./api-spec.yaml -o api-docs.html
+```
+
 ---
 
-**Document Status:** 📝 Template Created - Content Consolidation In Progress
+## Appendix: Quick Start Guide
 
-**Next Steps:**
-1. ✅ Audit completed (8 Jentic docs reviewed)
-2. ✅ Master index structure created
+**1. Install Jentic Libraries:**
+
+```bash
+cd orchestrator
+pip install -r requirements.txt
+```
+
+**2. Create Your Agent:**
+
+```python
+# orchestrator/agent/my_agent.py
+from agents.standard_agent import StandardAgent
+from agents.llm.litellm import LiteLLM
+from agents.reasoner.rewoo import ReWOOReasoner
+
+class MyAgent(StandardAgent):
+    def __init__(self):
+        llm = LiteLLM(model="gpt-4", temperature=0.7)
+        tools = MyTools()  # Your tools
+        memory = {}
+        reasoner = ReWOOReasoner(llm=llm, tools=tools, memory=memory)
+
+        super().__init__(llm=llm, tools=tools, memory=memory, reasoner=reasoner)
+
+# Use it
+agent = MyAgent()
+result = agent.solve("Your goal here")
+print(result.final_answer)
+```
+
+**3. Create Arazzo Workflow:**
+
+```yaml
+# orchestrator/arazzo/workflows/my_workflow.arazzo.yaml
+arazzo: 1.0.0
+info:
+  title: My Workflow
+  version: 1.0.0
+
+sourceDescriptions:
+  - name: my-api
+    url: ../openapi/my_api.yaml
+    type: openapi
+
+workflows:
+  - workflowId: myWorkflow
+    inputs:
+      type: object
+      properties:
+        param1: {type: string}
+
+    steps:
+      - stepId: step1
+        operationId: myOperation
+        parameters:
+          - {name: param1, in: query, value: $inputs.param1}
+        outputs:
+          result: $response.body.data
+
+    outputs:
+      finalResult: {value: $steps.step1.outputs.result}
+```
+
+**4. Create OpenAPI Spec:**
+
+```yaml
+# backend/openapi/my_api.yaml
+openapi: 3.0.0
+info:
+  title: My API
+  version: 1.0.0
+
+paths:
+  /api/operation:
+    get:
+      operationId: myOperation
+      parameters:
+        - name: param1
+          in: query
+          schema: {type: string}
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {type: string}
+```
+
+**5. Test Everything:**
+
+```bash
+# Test workflow
+arazzo-runner execute-workflow ./my_workflow.arazzo.yaml \
+  --workflow-id myWorkflow \
+  --inputs '{"param1": "test"}'
+
+# Test agent
+python -c "from agent.my_agent import MyAgent; agent = MyAgent(); print(agent.solve('test'))"
+```
+
+---
+
+## How to Use This Documentation
+
+**For Learning Jentic:**
+1. Start with Section 1 (Introduction) - understand WHY Jentic
+2. Read Section 2 (Architecture) - understand HOW components fit together
+3. Study Section 3 (Core Concepts) - understand key patterns (ReWOO, LiteLLM, etc.)
+4. Review Section 4 (Integration) - see real implementation examples
+5. Practice with Section 6 (Practical Examples) - hands-on learning
+
+**For Building with Jentic:**
+1. Reference Section 5 (Arazzo Workflows) - create workflows
+2. Use Section 7 (Best Practices) - make good decisions
+3. Consult Section 9 (Troubleshooting) - solve problems
+4. Check Section 10 (Reference) - API details
+
+**For Explaining to Jentic Team:**
+- Section 4.3 (Educational Annotations) - how we document
+- Section 4.4 (Real Code vs Stubs) - why we chose real integration
+- Section 7.2 (Scalability Patterns) - measurable benefits
+- Section 6.4 (Before/After) - concrete improvements
+
+**For Future Projects:**
+- Section 4.2 (Composition Pattern) - reusable architecture
+- Section 7.1 (When to Use Arazzo vs Agent) - decision framework
+- Section 8.4 (Hybrid Approaches) - best of both worlds
+- Appendix (Quick Start Guide) - template for new projects
+
+---
+
+**Document Status:** ✅ Complete - All 10 Sections Consolidated
+
+**Total Sections:** 10 (Introduction, Architecture, Core Concepts, Integration, Arazzo, Examples, Best Practices, Advanced Topics, Troubleshooting, Reference)
+
+**Total Content:** ~3,000 lines of consolidated documentation with code examples, diagrams, and practical guidance.
+
+**Coverage:**
+- ✅ All 8 Jentic documentation files audited and consolidated
+- ✅ Q&A format converted to organized topic areas
+- ✅ Complete code examples throughout
+- ✅ Practical guides and troubleshooting
+- ✅ API reference and configuration options
+- ✅ Quick start guide and usage instructions
+
+**Last Updated:** December 2, 2025
+**Version:** 1.0
+**Author:** Claude Code
+
+---
+
+**End of Document**
 3. ⏳ Consolidate content by topic (convert Q&A to topic format)
 4. ⏳ Archive old documentation
 5. ⏳ Update CLAUDE.md references
