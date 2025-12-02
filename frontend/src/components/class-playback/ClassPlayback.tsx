@@ -66,6 +66,7 @@ export interface PlaybackMovement {
   narrative?: string; // Teaching story/approach
   setup_position?: string; // Supine, Prone, Kneeling, Seated, Side-lying
   watch_out_points?: string; // Safety warnings
+  visual_cues?: string; // Visual imagery for cueing
   teaching_cues?: Array<{
     cue_type: string;
     cue_text: string;
@@ -77,6 +78,11 @@ export interface PlaybackMovement {
     category?: string;
     is_primary?: boolean;
   }>;
+  // Level flags (Y/N indicating which levels exist)
+  level_1_description?: string; // 'Y' or 'N'
+  level_2_description?: string; // 'Y' or 'N'
+  level_3_description?: string; // 'Y' or 'N'
+  full_version_description?: string; // 'Y' or 'N'
   // Legacy fields (for backwards compatibility)
   setup_instructions?: string;
   breathing_pattern?: string;

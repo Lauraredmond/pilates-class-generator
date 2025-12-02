@@ -22,6 +22,7 @@ class Movement(MovementBase):
     id: UUID
     narrative: Optional[str] = None
     visual_cues: Optional[str] = None
+    watch_out_points: Optional[str] = None
     setup_position: Optional[str] = None
     breathing_pattern: Optional[str] = None
     primary_muscles: Optional[List[str]] = Field(default_factory=list)
@@ -30,6 +31,12 @@ class Movement(MovementBase):
     prerequisites: Optional[List[str]] = Field(default_factory=list)
     contraindications: Optional[List[str]] = Field(default_factory=list)
     modifications: Optional[dict] = Field(default_factory=dict)
+
+    # Level flags (Y/N indicating which levels exist)
+    level_1_description: Optional[str] = Field(None, description="Y if Level 1 exists, N otherwise")
+    level_2_description: Optional[str] = Field(None, description="Y if Level 2 exists, N otherwise")
+    level_3_description: Optional[str] = Field(None, description="Y if Level 3 exists, N otherwise")
+    full_version_description: Optional[str] = Field(None, description="Y if Full Version exists, N otherwise")
 
     class Config:
         from_attributes = True

@@ -14,9 +14,16 @@ interface Movement {
   difficulty_level: string;
   narrative?: string;
   visual_cues?: string;
+  watch_out_points?: string;
   setup_position?: string;
   duration_seconds?: number;
   primary_muscles?: string[];
+
+  // Level flags (Y/N indicating which levels exist for this movement)
+  level_1_description?: string; // 'Y' or 'N'
+  level_2_description?: string; // 'Y' or 'N'
+  level_3_description?: string; // 'Y' or 'N'
+  full_version_description?: string; // 'Y' or 'N'
 }
 
 interface SequenceMovement extends Movement {
