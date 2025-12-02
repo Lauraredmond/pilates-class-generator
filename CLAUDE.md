@@ -1874,6 +1874,88 @@ With this formalization:
 
 ---
 
+### Session 11.75: Movement Data Population (Watch Points, Visual Cues, Level Flags) ✅ COMPLETED
+
+**Date:** December 2, 2025
+**Status:** ✅ Complete
+
+**Goal:** Populate movement table with safety warnings, visual cues, and level existence flags from Excel source data
+
+**Completed:**
+- ✅ Created SQL scripts to populate watch_out_points and visual_cues for all 34 movements
+- ✅ Created database migration to convert level fields from TEXT to VARCHAR(1) Y/N flags
+- ✅ Added missing level_3_description column
+- ✅ Populated level flags (L1, L2, L3, FV) for all movements based on Excel data
+- ✅ Updated backend Movement Pydantic model with new fields
+- ✅ Updated frontend TypeScript interfaces (Movement, PlaybackMovement)
+- ✅ Created comprehensive documentation (README_LEVEL_FLAGS_UPDATE.md)
+- ✅ Committed all changes to GitHub (commits 04d8653, 9d41cee)
+
+**Database Changes:**
+
+**Migration 011:** Convert Level Fields to Flags
+- Added `level_3_description` column (was missing from original schema)
+- Converted level description fields from TEXT to VARCHAR(1):
+  - `level_1_description`: TEXT → VARCHAR(1) with CHECK constraint (Y/N only)
+  - `level_2_description`: TEXT → VARCHAR(1) with CHECK constraint
+  - `level_3_description`: VARCHAR(1) with CHECK constraint (new)
+  - `full_version_description`: TEXT → VARCHAR(1) with CHECK constraint
+- Purpose: Level fields now indicate which levels exist for each movement (Y/N flags)
+- Rationale: All level narratives stored in main `narrative` field; separate flags enable future progressive difficulty selection
+
+**Data Population Scripts:**
+
+1. **update_movement_watch_points_and_visual_cues.sql**
+   - Source: Movements_summaries.xlsx (Watch Out Points + Visualisations columns)
+   - Watch out points: All 34 movements populated
+   - Visual cues: 18 movements populated (16 have no visual cues in source)
+   - Multiple columns merged per field (up to 5 watch out point columns, 3 visual cue columns)
+
+2. **update_movement_level_flags.sql**
+   - Source: Movements_summaries.xlsx (Levels column)
+   - Level 1: 17 movements have L1
+   - Level 2: 15 movements have L2
+   - Level 3: 5 movements have L3 (One leg stretch, Double leg stretch, Scissors, Leg pull prone, Side bend)
+   - Full Version: All 34 movements have FV
+   - Special cases: "One level with modifications???" → FV only
+
+**Code Changes:**
+
+**Backend:**
+- `backend/models/movement.py`:
+  - Added `watch_out_points: Optional[str]` field
+  - Added 4 level flag fields: `level_1_description`, `level_2_description`, `level_3_description`, `full_version_description`
+
+**Frontend:**
+- `frontend/src/store/useStore.ts`:
+  - Added `watch_out_points?: string` to Movement interface
+  - Added 4 level flag fields with TypeScript comments
+- `frontend/src/components/class-playback/ClassPlayback.tsx`:
+  - Added `visual_cues?: string` to PlaybackMovement interface
+  - Added 4 level flag fields
+
+**Documentation:**
+- `database/README_LEVEL_FLAGS_UPDATE.md`:
+  - Complete migration guide with execution order
+  - Verification queries
+  - Data sources and statistics
+  - Rollback plan
+  - Future enhancements roadmap
+
+**Key Design Decision:**
+Level fields repurposed as existence flags rather than storing narratives:
+- **Before:** `level_1_description TEXT` (stored narrative)
+- **After:** `level_1_description VARCHAR(1)` (stores 'Y' or 'N')
+- **Rationale:** Simplifies data model; all narratives in one place; enables easy querying of which levels exist; future option to separate narratives into movement_levels table
+
+**Next Steps (To Execute in Supabase):**
+1. Run migration 011 (convert fields to VARCHAR(1))
+2. Run update_movement_watch_points_and_visual_cues.sql
+3. Run update_movement_level_flags.sql
+4. Verify with provided SQL queries
+
+---
+
 ### Session 12: Advanced Delivery Modes - Phase 3 (Planned) 📋 DOCUMENTED
 
 **Goal:** Multi-modal delivery (audio narration + visual demonstrations)
@@ -2212,3 +2294,117 @@ Optimize frontend and backend performance, add MCP Playwright integration, and i
 ## **SESSION 16: Class Builder modal bug**
 
 Class builder modal screen is buggy. Unclear on memory over details but it should be reviewed in due course.
+
+---
+
+## 📚 FUTURE PLANS
+
+### Jentic Documentation Consolidation & Reorganization
+
+**Goal:** Create master Jentic documentation with comprehensive index and organized topic areas
+
+**Current State:**
+- Multiple Jentic documents exist across the project (JENTIC_ARCHITECTURE.md, JENTIC_REAL_CODE_ANALYSIS.md, JENTIC_CONCEPTS_EXPLAINED.md, JENTIC_INTEGRATION_EXAMPLES.md, JENTIC_PATTERNS_LIBRARY.md, etc.)
+- Significant duplication across documents
+- Information organized in Q&A format in some places
+- Difficult to quickly find specific topics (e.g., "How does Arazzo work?", "What is ReWOO?", "Architecture overview")
+
+**Planned Work:**
+
+**1. Consolidation**
+- Review all existing Jentic documentation files
+- Identify duplicate content across documents
+- Merge related content into single comprehensive sections
+- Archive old/outdated documentation to `/docs/archive/`
+
+**2. Index Creation**
+Create master index with quick navigation to key topics:
+- **Architecture**: StandardAgent structure, Arazzo Engine, workflow orchestration
+- **Core Concepts**: ReWOO reasoner, LiteLLM, JustInTimeToolingBase, Plan→Execute→Reflect loop
+- **Integration Patterns**: How we integrate Jentic with Bassline, composition patterns, inheritance vs. delegation
+- **Practical Examples**: Real code samples, before/after comparisons, common use cases
+- **Educational Annotations**: "JENTIC PATTERN" vs "BASSLINE CUSTOM" explanations
+- **Troubleshooting**: Common issues, debugging workflows, testing strategies
+- **Future Enhancements**: Scaling patterns, multi-agent orchestration, workflow optimization
+
+**3. Format Reorganization**
+- Convert Q&A format to statements of fact organized in broader topic areas
+- Example transformation:
+  - **Before (Q&A):** "Q: What is ReWOO? A: ReWOO stands for Reasoning WithOut Observation..."
+  - **After (Topic):** Under "Core Concepts > Reasoning Patterns": "ReWOO (Reasoning WithOut Observation) is a reasoning pattern that..."
+- Organize by topic hierarchy rather than question-answer pairs
+- Add cross-references between related topics
+
+**4. Single Source of Truth**
+Create `/docs/JENTIC_MASTER.md` that:
+- Serves as the primary Jentic documentation
+- Includes comprehensive table of contents with anchor links
+- Organizes all Jentic knowledge in logical topic hierarchy
+- Provides examples from our actual codebase
+- Links to specific files for deep dives when needed
+
+**Expected Structure:**
+
+```markdown
+# Jentic Integration Guide (Master Documentation)
+
+## Table of Contents
+1. Introduction & Overview
+2. Architecture
+   - StandardAgent Structure
+   - Arazzo Engine
+   - Workflow Orchestration
+3. Core Concepts
+   - Reasoning Patterns (ReWOO)
+   - LLM Integration (LiteLLM)
+   - Tool Management (JustInTimeToolingBase)
+   - Agent Lifecycle (Plan→Execute→Reflect)
+4. Integration with Bassline
+   - BasslinePilatesCoachAgent Implementation
+   - Composition Pattern
+   - Educational Annotations
+5. Arazzo Workflows
+   - Workflow DSL Syntax
+   - Creating Workflows
+   - Testing & Debugging
+6. Practical Examples
+   - Complete Class Generation Workflow
+   - Music Selection Integration
+   - Error Handling Patterns
+7. Best Practices
+   - When to Use Arazzo vs. Custom Code
+   - Scalability Patterns
+   - Testing Strategies
+8. Advanced Topics
+   - Multi-Agent Orchestration
+   - Performance Optimization
+   - Observability & Logging
+9. Troubleshooting
+10. Reference
+    - API Documentation
+    - Configuration Options
+    - External Resources
+
+## 1. Introduction & Overview
+[Consolidated content from multiple docs...]
+
+## 2. Architecture
+
+### StandardAgent Structure
+StandardAgent provides a battle-tested foundation for agentic reasoning with Plan→Execute→Reflect loop...
+[Organized facts, not Q&A]
+
+### Arazzo Engine
+Arazzo is a declarative workflow DSL that orchestrates multi-step API operations...
+[Clear statements in topic areas]
+```
+
+**Benefits:**
+1. **Easier Navigation**: Index allows quick jump to any topic
+2. **Less Duplication**: Single source of truth reduces maintenance
+3. **Better Learning**: Topic organization (vs Q&A) supports conceptual understanding
+4. **Scalability**: New Jentic features added to existing topic structure
+5. **Client Relationship**: Clear documentation demonstrates deep Jentic expertise
+6. **Future Projects**: Reusable patterns documented for easy application
+
+**Timeline:** Schedule after core features complete; requires ~6-8 hours
