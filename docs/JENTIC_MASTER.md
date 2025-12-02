@@ -1017,19 +1017,530 @@ READY ──────────→ BUSY ──────────→ R
 
 ### 4.1 BasslinePilatesCoachAgent Implementation
 
-[Content to be consolidated from audit]
+Our Pilates agent extends Jentic's StandardAgent to add domain-specific logic while inheriting proven reasoning patterns.
+
+**File:** `orchestrator/agent/bassline_agent.py`
+
+**Complete Implementation:**
+
+```python
+from agents.standard_agent import StandardAgent
+from agents.llm.litellm import LiteLLM
+from agents.reasoner.rewoo import ReWOOReasoner
+from .tools import BasslinePilatesTools
+import os
+
+class BasslinePilatesCoachAgent(StandardAgent):
+    """
+    JENTIC PATTERN: Inherit from StandardAgent for Plan→Execute→Reflect
+
+    BASSLINE CUSTOM: Pilates-specific domain knowledge and tools
+
+    What we get from Jentic (inherited):
+    - ✅ solve() method - Main entry point for agentic reasoning
+    - ✅ State management - READY, BUSY, ERROR states
+    - ✅ Memory handling - Conversation history and context
+    - ✅ Decision logging - For compliance and monitoring
+    - ✅ Observability - Built-in logging and tracing
+
+    What we add (Bassline-specific):
+    - ✅ Pilates system prompt (instructor expertise)
+    - ✅ Pilates tools (movement search, validation, workflows)
+    - ✅ Safety constraints (spinal progression, muscle balance)
+    - ✅ OpenAI GPT-4 configuration
+    """
+
+    def __init__(self):
+        # JENTIC PATTERN: Configure LLM using LiteLLM abstraction
+        self.llm = LiteLLM(
+            model="gpt-4-turbo",
+            temperature=0.7,
+            max_tokens=4000,
+            # BASSLINE CUSTOM: Pilates instructor system prompt
+            system_prompt="""
+            You are a certified Pilates instructor with 20 years of experience
+            specializing in Joseph Pilates' classical mat method.
+
+            Your expertise includes:
+            - All 34 classical Pilates mat movements
+            - Safe movement sequencing (spinal progression rules)
+            - Muscle balance optimization
+            - Injury modifications and contraindications
+            - Breath work and mindfulness integration
+
+            When generating classes, you MUST:
+            1. Prioritize student safety (flexion before extension)
+            2. Balance muscle groups (no more than 40% load per group)
+            3. Adapt to student's experience level
+            4. Include proper warm-up and cool-down
+            5. Provide clear, encouraging cues
+
+            Your teaching style:
+            - Clear and precise
+            - Encouraging and supportive
+            - Safety-conscious
+            - Anatomically informed
+
+            CRITICAL RULES (NEVER VIOLATE):
+            - NEVER violate spinal progression (flexion before extension)
+            - ALWAYS check contraindications
+            - NEVER exceed student's declared difficulty level
+            - ALWAYS include breathing cues
+            """
+        )
+
+        # BASSLINE CUSTOM: Configure Pilates-specific tools
+        bassline_api_url = os.getenv("BASSLINE_API_URL", "http://localhost:8000")
+        self.tools = BasslinePilatesTools(bassline_api_url=bassline_api_url)
+
+        # JENTIC PATTERN: Configure memory backend
+        # Simple dict for now; could use Redis for persistence
+        self.memory = {
+            "conversation_history": [],
+            "context": {},
+            "user_preferences": {}
+        }
+
+        # JENTIC PATTERN: Configure ReWOO reasoner
+        self.reasoner = ReWOOReasoner(
+            llm=self.llm,
+            tools=self.tools,
+            memory=self.memory,
+            max_iterations=20,  # Safety limit
+            max_retries=2       # Retry failed steps twice
+        )
+
+        # JENTIC PATTERN: Initialize parent StandardAgent
+        # This activates all inherited functionality
+        super().__init__(
+            llm=self.llm,
+            tools=self.tools,
+            memory=self.memory,
+            reasoner=self.reasoner
+        )
+
+    # solve() method inherited from StandardAgent ✓
+    # No need to implement reasoning loop - we inherit it!
+```
+
+**Key Architectural Decisions:**
+
+1. **Inheritance Over Implementation**
+   - We extend StandardAgent, not reimplement it
+   - Get 300+ lines of reasoning logic for free
+   - Only write domain-specific code (~50 lines)
+
+2. **Composition Pattern**
+   - Agent composed from: LLM + Tools + Memory + Reasoner
+   - Each component is swappable independently
+   - Example: Switch LLM from GPT-4 to Claude without changing agent code
+
+3. **System Prompt as Configuration**
+   - Pilates expertise defined in natural language
+   - Easy to modify without changing code
+   - Can be loaded from file for version control
+
+4. **Environment-Based Configuration**
+   - Backend URL from environment variable
+   - Works in development (localhost) and production (Render)
+   - No hardcoded URLs in code
+
+---
 
 ### 4.2 Composition Pattern
 
-[Content to be consolidated from audit]
+Jentic's composition pattern allows mixing and matching components without tight coupling.
+
+**Composition vs Configuration:**
+
+**Bad (Configuration Monolith):**
+```python
+# Everything hardcoded in one class
+class PilatesAgent:
+    def __init__(self):
+        self.model = "gpt-4"  # Hardcoded
+        self.temperature = 0.7  # Hardcoded
+        self.tools = self._init_tools()  # Hardcoded
+        self.reasoning_strategy = "rewoo"  # Hardcoded
+
+    def solve(self, goal):
+        # Custom reasoning loop (200+ lines)
+        # Reinvents StandardAgent
+        ...
+```
+
+**Good (Composition Pattern):**
+```python
+# Each component is independent
+llm = LiteLLM(model="gpt-4", temperature=0.7)  # Swappable
+tools = BasslinePilatesTools()  # Swappable
+memory = {}  # Swappable
+reasoner = ReWOOReasoner(llm, tools, memory)  # Swappable
+
+agent = StandardAgent(llm, tools, memory, reasoner)  # Composed!
+```
+
+**Benefits of Composition:**
+
+1. **Swap Components Easily**
+
+   ```python
+   # Try different LLM
+   llm_gpt4 = LiteLLM(model="gpt-4")
+   llm_claude = LiteLLM(model="claude-sonnet-4")
+
+   # Compare performance
+   agent_gpt4 = StandardAgent(llm_gpt4, tools, memory, reasoner)
+   agent_claude = StandardAgent(llm_claude, tools, memory, reasoner)
+   ```
+
+2. **Test Components Independently**
+
+   ```python
+   # Test tools without LLM
+   tool = tools.search("search movements")[0]
+   result = tools.execute(tool, {"difficulty": "intermediate"})
+
+   # Test reasoner with mock LLM
+   mock_llm = MockLLM()
+   reasoner = ReWOOReasoner(mock_llm, tools, memory)
+   ```
+
+3. **Reuse Components Across Projects**
+
+   ```python
+   # Same LLM config for all agents
+   llm_config = LiteLLM(model="gpt-4", temperature=0.7)
+
+   pilates_agent = PilatesAgent(llm=llm_config, ...)
+   yoga_agent = YogaAgent(llm=llm_config, ...)
+   nutrition_agent = NutritionAgent(llm=llm_config, ...)
+   ```
+
+4. **Add Features Without Breaking Existing Code**
+
+   ```python
+   # Add Redis memory without changing agent
+   redis_memory = RedisMemory(redis_url=REDIS_URL)
+   agent = StandardAgent(llm, tools, redis_memory, reasoner)
+   # Agent automatically uses Redis instead of dict
+   ```
+
+**Composition in BasslinePilatesCoachAgent:**
+
+```python
+class BasslinePilatesCoachAgent(StandardAgent):
+    def __init__(self):
+        # STEP 1: Create independent components
+        llm = LiteLLM(...)           # Component 1
+        tools = BasslinePilatesTools(...)  # Component 2
+        memory = {}                   # Component 3
+        reasoner = ReWOOReasoner(...) # Component 4
+
+        # STEP 2: Compose agent from components
+        super().__init__(llm, tools, memory, reasoner)
+
+        # Agent now has all StandardAgent capabilities
+        # Plus our Pilates-specific components
+```
+
+**Why This Matters:**
+
+- ✅ **Testability**: Test each component in isolation
+- ✅ **Flexibility**: Swap components without refactoring
+- ✅ **Reusability**: Same components work in different agents
+- ✅ **Maintainability**: Update one component, all agents benefit
+
+---
 
 ### 4.3 Educational Annotations
 
-[Content to be consolidated from audit]
+All Jentic integration code includes educational annotations to distinguish Jentic patterns from Bassline customizations.
+
+**Annotation Standard:**
+
+```python
+# ✅ JENTIC PATTERN: <explanation>
+# Describes what comes from Jentic's architecture
+
+# ✅ BASSLINE CUSTOM: <explanation>
+# Describes what we added for Pilates domain
+
+# ❌ ANTI-PATTERN: <explanation>
+# Shows what NOT to do (with justification)
+```
+
+**Example from `bassline_agent.py`:**
+
+```python
+class BasslinePilatesCoachAgent(StandardAgent):
+    """
+    ✅ JENTIC PATTERN: Inherit from StandardAgent
+
+    EXPLANATION: By extending StandardAgent, we get:
+    - Plan→Execute→Reflect reasoning loop (proven pattern)
+    - State management (READY, BUSY, ERROR)
+    - Memory handling (conversation history)
+    - Decision logging (EU AI Act compliance)
+    - Observability (logging and tracing)
+
+    We don't reinvent these - we inherit them!
+    """
+
+    def __init__(self):
+        # ✅ JENTIC PATTERN: Use LiteLLM for vendor independence
+        self.llm = LiteLLM(model="gpt-4-turbo", temperature=0.7)
+
+        # ✅ BASSLINE CUSTOM: Pilates-specific tools
+        # These wrap our backend APIs (movements, sequences, etc.)
+        self.tools = BasslinePilatesTools(bassline_api_url=...)
+
+        # ✅ JENTIC PATTERN: Use ReWOO reasoner
+        # ReWOO = Reasoning WithOut Observation
+        # Proven reasoning strategy from research
+        self.reasoner = ReWOOReasoner(llm=self.llm, tools=self.tools, ...)
+
+        # ✅ JENTIC PATTERN: Composition via super().__init__()
+        # Activates all StandardAgent functionality
+        super().__init__(llm=self.llm, tools=self.tools, ...)
+```
+
+**Example from `tools.py`:**
+
+```python
+class BasslinePilatesTools(JustInTimeToolingBase):
+    """
+    ✅ JENTIC PATTERN: Inherit from JustInTimeToolingBase
+
+    EXPLANATION: Just-In-Time tooling means:
+    - Don't load all 1500 tools upfront
+    - Search for relevant tools when needed
+    - Only load full details when selected
+    - Keeps context small and focused
+    """
+
+    def __init__(self, bassline_api_url: str):
+        # ✅ BASSLINE CUSTOM: Store backend URL
+        self.bassline_api_url = bassline_api_url
+
+        # ✅ JENTIC PATTERN: Initialize Arazzo runner
+        # Arazzo = declarative workflow engine
+        # Workflows are tools in our system!
+        workflow_path = "../arazzo/workflows/assemble_pilates_class_v1.yaml"
+        self.arazzo_runner = ArazzoRunner.from_arazzo_path(workflow_path)
+
+    def list_tools(self) -> List[Dict]:
+        """
+        ✅ JENTIC PATTERN: Required method from JustInTimeToolingBase
+
+        Returns lightweight tool descriptions for LLM to browse.
+        """
+        return [
+            {
+                "id": "assemble_pilates_class",
+                # ⚠️ IMPORTANT: This description is a PROMPT to the LLM
+                # Write it to help LLM decide when to use this tool
+                "description": """
+                Run the complete Pilates class assembly workflow.
+
+                Use this when user asks for:
+                - "Generate a complete class"
+                - "Create a full session"
+                - "Plan my Pilates workout"
+
+                This orchestrates 8 steps automatically:
+                1. Get user profile
+                2. Get preparation script
+                3. Get warmup routine
+                4. Generate AI movement sequence
+                5. Select music playlist
+                6. Get cooldown sequence
+                7. Get closing meditation
+                8. Get homecare advice
+
+                Returns complete 6-section class ready for playback.
+                """
+            }
+        ]
+```
+
+**Purpose of Annotations:**
+
+1. **Educational Goal**: Help you learn Jentic patterns for client relationship
+2. **Maintainability**: Future developers understand why code is structured this way
+3. **Knowledge Transfer**: Can explain to Jentic team what we learned
+4. **Pattern Library**: Reusable examples for future projects
+
+**Annotation Checklist:**
+
+Every Jentic integration file should have:
+- [ ] File-level docstring explaining JENTIC vs BASSLINE
+- [ ] Class-level docstring explaining inheritance/interface
+- [ ] Method-level comments for key Jentic patterns
+- [ ] Inline comments for non-obvious design decisions
+
+---
 
 ### 4.4 Real Code vs Stubs
 
-[Content to be consolidated from audit]
+**Critical Decision:** Use real Jentic libraries, not placeholder stubs.
+
+**What Are Stubs?**
+
+Stubs = Fake code written for learning purposes only
+
+**Example Stub (Bad):**
+
+```python
+# ❌ STUB: Pretend StandardAgent (doesn't actually work)
+class FakeStandardAgent:
+    def solve(self, goal):
+        return "I'm just pretending to be an agent"
+        # This doesn't actually do Plan→Execute→Reflect
+        # It's a learning placeholder, not production code
+```
+
+**Example Real Code (Good):**
+
+```python
+# ✅ REAL: Actual StandardAgent from Jentic's GitHub
+from agents.standard_agent import StandardAgent
+
+class BasslinePilatesCoachAgent(StandardAgent):
+    # Inherits real Plan→Execute→Reflect reasoning
+    # Used by Fortune 500 companies in production
+    # Proven, battle-tested code
+    pass
+```
+
+**Why Stubs Are Bad:**
+
+1. **Waste of Time**
+   - Spend weeks building fake code
+   - Then throw it away and rebuild with real code
+   - Two development cycles instead of one
+
+2. **No Production Value**
+   - Stubs don't work for users
+   - Can't serve customers while learning
+   - Theory only, no practical benefit
+
+3. **Shallow Learning**
+   - Don't encounter real integration challenges
+   - Don't learn edge cases and gotchas
+   - Miss deep understanding from production experience
+
+4. **Delayed Feedback**
+   - Don't know if integration works until you try real code
+   - Assumptions about how Jentic works might be wrong
+   - Discover issues late in development
+
+**Why Real Code Is Better:**
+
+1. **Dual Value**
+   - Serve customers immediately ✓
+   - Learn Jentic architecture simultaneously ✓
+   - One development cycle serves both goals
+
+2. **Deep Learning**
+   - Encounter real integration challenges
+   - Learn by solving actual problems
+   - Understand edge cases and limitations
+
+3. **Fast Feedback**
+   - Know immediately if integration works
+   - Can ask Jentic team informed questions
+   - Iterate based on real experience
+
+4. **Production Quality**
+   - Code written today works in production
+   - No "throw away and rebuild" phase
+   - Professional-grade from day one
+
+**Our Approach (Real Code):**
+
+```python
+# orchestrator/requirements.txt
+# ✅ REAL: Install from Jentic's GitHub repos
+git+https://github.com/jentic/standard-agent.git@main
+git+https://github.com/jentic/arazzo-engine.git@main#subdirectory=runner
+
+# ❌ NOT STUBS: We don't copy-paste Jentic code
+# ❌ NOT PLACEHOLDERS: We don't write fake versions
+# ✅ REAL LIBRARIES: We use Jentic as a dependency
+```
+
+**Installation:**
+
+```bash
+# Install real Jentic libraries
+cd orchestrator
+pip install -r requirements.txt
+
+# This installs:
+# - StandardAgent (151 lines of proven reasoning code)
+# - ReWOOReasoner (326 lines of Plan→Execute→Reflect)
+# - ArazzoRunner (809 lines of workflow execution)
+# - All dependencies and interfaces
+
+# We get ~1300 lines of production code for free!
+```
+
+**How We Use Real Code:**
+
+```python
+# ✅ IMPORT from Jentic library (not our code)
+from agents.standard_agent import StandardAgent
+from agents.reasoner.rewoo import ReWOOReasoner
+from agents.llm.litellm import LiteLLM
+from agents.tools.base import JustInTimeToolingBase
+
+# ✅ EXTEND Jentic classes (don't copy them)
+class BasslinePilatesCoachAgent(StandardAgent):
+    pass
+
+# ✅ IMPLEMENT Jentic interfaces (don't reinvent them)
+class BasslinePilatesTools(JustInTimeToolingBase):
+    pass
+
+# ✅ USE Jentic components (don't rewrite them)
+reasoner = ReWOOReasoner(llm, tools, memory)
+```
+
+**Verification:**
+
+You can verify we're using real code by checking:
+
+```bash
+# Check installed packages
+pip list | grep -E "standard-agent|arazzo-runner"
+
+# Check import sources
+python -c "import agents.standard_agent; print(agents.standard_agent.__file__)"
+# Output: .../site-packages/agents/standard_agent.py (from Jentic)
+
+# Check it's not our code
+ls orchestrator/agent/
+# Should NOT contain standard_agent.py (we don't have a copy)
+```
+
+**Analogy: Toy Car vs Real Car**
+
+- **Toy Car (Stub)**: Learn how cars work, but can't drive to work
+- **Real Car (Jentic)**: Learn by actually driving to work
+
+We chose the real car approach.
+
+**Impact on Dual Goals:**
+
+| Goal | With Stubs | With Real Code |
+|------|-----------|----------------|
+| **Customer Traction** | ❌ Delayed (rebuild later) | ✅ Immediate (works now) |
+| **Learning Jentic** | ⚠️ Shallow (theory only) | ✅ Deep (real integration) |
+| **Client Relationship** | ⚠️ Weak (no experience) | ✅ Strong (production knowledge) |
+| **Future Projects** | ❌ Can't reuse stubs | ✅ Can reuse patterns |
+
+**Conclusion:** Using real Jentic code serves both project goals simultaneously and provides production value from day one.
 
 ---
 
@@ -1037,19 +1548,709 @@ READY ──────────→ BUSY ──────────→ R
 
 ### 5.1 Workflow DSL Syntax
 
-[Content to be consolidated from audit]
+Arazzo uses YAML to define declarative workflows with a specific syntax for steps, parameters, and data flow.
+
+**Basic Workflow Structure:**
+
+```yaml
+arazzo: 1.0.0  # Arazzo specification version
+
+info:
+  title: Workflow Name
+  version: 1.0.0
+  description: What this workflow does
+
+sourceDescriptions:
+  # Link to OpenAPI specs that define available operations
+  - name: api-name
+    url: ./path/to/openapi.yaml
+    type: openapi
+
+workflows:
+  - workflowId: unique_workflow_id
+    description: What this workflow accomplishes
+
+    inputs:
+      # Schema for workflow input parameters
+      type: object
+      properties:
+        param_name:
+          type: string
+        param_number:
+          type: integer
+
+    steps:
+      # Sequential steps that execute operations
+      - stepId: step_1
+        operationId: operationFromOpenAPI
+        parameters:
+          - name: param_name
+            in: query
+            value: $inputs.param_name
+        outputs:
+          result_name: $response.body.field
+
+      - stepId: step_2
+        operationId: anotherOperation
+        parameters:
+          - name: input_data
+            in: body
+            value: $steps.step_1.outputs.result_name
+
+    outputs:
+      # Final workflow outputs
+      final_result:
+        value: $steps.step_2.outputs.data
+```
+
+**Key Components:**
+
+1. **sourceDescriptions**: Link to OpenAPI specs
+   - Arazzo reads these to know what operations are available
+   - `operationId` in steps references operations from OpenAPI
+
+2. **inputs**: Workflow parameters
+   - Defines what data workflow needs
+   - Uses JSON Schema for validation
+
+3. **steps**: Sequential operations
+   - Each step calls an API operation
+   - Steps execute in order (unless using dependsOn)
+
+4. **parameters**: Step-level inputs
+   - Map workflow inputs to API parameters
+   - Use runtime expressions (`$inputs`, `$steps`, etc.)
+
+5. **outputs**: Step-level results
+   - Extract data from API responses
+   - Store for use in later steps
+
+6. **workflows.outputs**: Final results
+   - Aggregates data from multiple steps
+   - Returns to caller
+
+**Runtime Expression Syntax:**
+
+| Expression | Description | Example |
+|------------|-------------|---------|
+| `$inputs.X` | Access workflow input | `$inputs.user_id` |
+| `$steps.stepId.outputs.X` | Access previous step output | `$steps.getUserProfile.outputs.email` |
+| `$response.body.X` | Access HTTP response body | `$response.body.data.movements` |
+| `$response.statusCode` | Access HTTP status | `$response.statusCode` |
+| `$response.headers.X` | Access response header | `$response.headers.Content-Type` |
+| `$workflows.workflowId.outputs.X` | Access dependency workflow output | `$workflows.prepare.outputs.config` |
+
+**Data Types:**
+
+```yaml
+# String
+value: "hello"
+value: $inputs.name
+
+# Integer
+value: 42
+value: $inputs.count
+
+# Boolean
+value: true
+value: $inputs.is_active
+
+# Array
+value: ["a", "b", "c"]
+value: $steps.search.outputs.items
+
+# Object
+value: {key: "value"}
+value: $steps.fetch.outputs.user
+```
+
+**Conditional Logic:**
+
+```yaml
+# Simple success criteria
+successCriteria:
+  - condition: $statusCode == 200
+    type: simple
+
+# Multiple conditions (AND)
+successCriteria:
+  - condition: $statusCode == 200
+    type: simple
+  - condition: $response.body.success == true
+    type: simple
+
+# Failure handling
+onFailure:
+  - name: skip_step
+    type: end
+  - name: retry_with_fallback
+    type: goto
+    stepId: fallback_step
+```
+
+---
 
 ### 5.2 Creating Workflows
 
-[Content to be consolidated from audit]
+Step-by-step guide to creating a production Arazzo workflow.
+
+**Step 1: Define Workflow Inputs**
+
+Identify what data the workflow needs from the caller:
+
+```yaml
+workflows:
+  - workflowId: assemble_pilates_class
+    inputs:
+      type: object
+      required:
+        - user_id
+        - difficulty_level
+        - target_duration_minutes
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Authenticated user ID
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          description: Class difficulty level
+        target_duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 120
+          description: Desired class length
+        focus_areas:
+          type: array
+          items:
+            type: string
+          description: Optional muscle groups to emphasize
+```
+
+**Step 2: Map Input to First API Call**
+
+Create first step that uses workflow inputs:
+
+```yaml
+steps:
+  - stepId: getUserProfile
+    description: Fetch user preferences for personalization
+    operationId: getUserProfile  # From OpenAPI spec
+    parameters:
+      - name: user_id
+        in: path
+        value: $inputs.user_id  # Runtime expression
+    outputs:
+      # Extract fields we'll need later
+      preferred_music: $response.body.preferences.preferred_music_style
+      ai_strictness: $response.body.preferences.ai_strictness
+      default_difficulty: $response.body.preferences.default_difficulty
+```
+
+**Step 3: Chain Steps with Data Flow**
+
+Each step uses outputs from previous steps:
+
+```yaml
+  - stepId: generateSequence
+    description: Generate AI-selected movement sequence
+    operationId: generateSequence
+    parameters:
+      - name: user_id
+        in: body
+        value: $inputs.user_id
+      - name: target_duration_minutes
+        in: body
+        value: $inputs.target_duration_minutes
+      - name: difficulty_level
+        in: body
+        value: $inputs.difficulty_level
+      - name: strictness_level
+        in: body
+        value: $steps.getUserProfile.outputs.ai_strictness  # From step 1!
+    outputs:
+      movements: $response.body.data.sequence
+      muscle_balance: $response.body.data.muscle_balance
+      total_duration: $response.body.data.total_duration_minutes
+```
+
+**Step 4: Add Parallel Steps (Optional)**
+
+Steps without dependencies can run in parallel:
+
+```yaml
+  # Step 3a: Get warmup (independent)
+  - stepId: getWarmup
+    operationId: getWarmupRoutines
+    parameters:
+      - name: difficulty
+        in: query
+        value: $inputs.difficulty_level
+
+  # Step 3b: Get cooldown (independent)
+  - stepId: getCooldown
+    operationId: getCooldownSequences
+    parameters:
+      - name: intensity
+        in: query
+        value: moderate
+
+# Both steps 3a and 3b can run simultaneously
+# because neither depends on the other
+```
+
+**Step 5: Aggregate Final Outputs**
+
+Collect results from all steps:
+
+```yaml
+outputs:
+  completeClass:
+    value:
+      class_id: $steps.saveClass.outputs.class_id
+      user_id: $inputs.user_id
+      duration_minutes: $steps.generateSequence.outputs.total_duration
+      sections:
+        preparation: $steps.getPreparation.outputs.script
+        warmup: $steps.getWarmup.outputs.routine
+        movements: $steps.generateSequence.outputs.movements
+        music: $steps.selectMusic.outputs.playlist
+        cooldown: $steps.getCooldown.outputs.sequence
+        meditation: $steps.getMeditation.outputs.script
+        homecare: $steps.getHomecare.outputs.advice
+      muscle_balance: $steps.generateSequence.outputs.muscle_balance
+```
+
+**Step 6: Add Error Handling**
+
+Handle failures gracefully:
+
+```yaml
+  - stepId: selectMusic
+    operationId: selectMusic
+    parameters:
+      - name: duration
+        value: $steps.generateSequence.outputs.total_duration
+    successCriteria:
+      - condition: $statusCode == 200
+        type: simple
+    onFailure:
+      # If music selection fails, continue without music
+      - name: use_default_silence
+        type: end
+        x-note: "Music is optional - class can work without it"
+```
+
+**Complete Example: Pilates Class Assembly Workflow**
+
+```yaml
+arazzo: 1.0.0
+info:
+  title: Complete Pilates Class Generation Workflow
+  version: 1.0.0
+  description: Assembles a complete 6-section Pilates class
+
+sourceDescriptions:
+  - name: bassline-api
+    url: ../../backend/openapi/bassline_api_v1.yaml
+    type: openapi
+
+workflows:
+  - workflowId: assemblePilatesClass
+    description: Generate complete class with all 6 sections
+
+    inputs:
+      type: object
+      required: [user_id, difficulty_level, target_duration_minutes]
+      properties:
+        user_id: {type: string, format: uuid}
+        difficulty_level: {type: string, enum: [Beginner, Intermediate, Advanced]}
+        target_duration_minutes: {type: integer, minimum: 15, maximum: 120}
+
+    steps:
+      # Step 1: Get user preferences
+      - stepId: getUserProfile
+        operationId: getUserProfile
+        parameters:
+          - {name: user_id, in: path, value: $inputs.user_id}
+        outputs:
+          preferredMusic: $response.body.preferences.preferred_music_style
+
+      # Step 2: Get preparation script (Section 1)
+      - stepId: getPreparation
+        operationId: getPreparationScripts
+        parameters:
+          - {name: difficulty, in: query, value: $inputs.difficulty_level}
+        outputs:
+          script: $response.body[0]
+
+      # Step 3: Get warmup routine (Section 2)
+      - stepId: getWarmup
+        operationId: getWarmupRoutines
+        parameters:
+          - {name: difficulty, in: query, value: $inputs.difficulty_level}
+        outputs:
+          routine: $response.body[0]
+
+      # Step 4: Generate AI sequence (Section 3)
+      - stepId: generateSequence
+        operationId: generateSequence
+        parameters:
+          - {name: user_id, in: body, value: $inputs.user_id}
+          - {name: target_duration_minutes, in: body, value: $inputs.target_duration_minutes}
+          - {name: difficulty_level, in: body, value: $inputs.difficulty_level}
+        outputs:
+          movements: $response.body.data.sequence
+          totalDuration: $response.body.data.total_duration_minutes
+
+      # Step 5: Select music
+      - stepId: selectMusic
+        operationId: selectMusic
+        parameters:
+          - {name: duration, in: body, value: $steps.generateSequence.outputs.totalDuration}
+          - {name: period, in: body, value: $steps.getUserProfile.outputs.preferredMusic}
+        outputs:
+          playlist: $response.body.data.playlist
+
+      # Step 6: Get cooldown (Section 4)
+      - stepId: getCooldown
+        operationId: getCooldownSequences
+        parameters:
+          - {name: intensity, in: query, value: moderate}
+        outputs:
+          sequence: $response.body[0]
+
+      # Step 7: Get meditation (Section 5)
+      - stepId: getMeditation
+        operationId: getClosingMeditations
+        parameters:
+          - {name: theme, in: query, value: body_scan}
+        outputs:
+          meditation: $response.body[0]
+
+      # Step 8: Get homecare (Section 6)
+      - stepId: getHomecare
+        operationId: getHomecareAdvice
+        parameters:
+          - {name: focus_area, in: query, value: spine_care}
+        outputs:
+          advice: $response.body[0]
+
+    outputs:
+      completeClass:
+        value:
+          sections:
+            preparation: $steps.getPreparation.outputs.script
+            warmup: $steps.getWarmup.outputs.routine
+            movements: $steps.generateSequence.outputs.movements
+            music: $steps.selectMusic.outputs.playlist
+            cooldown: $steps.getCooldown.outputs.sequence
+            meditation: $steps.getMeditation.outputs.meditation
+            homecare: $steps.getHomecare.outputs.advice
+```
+
+---
 
 ### 5.3 Testing & Debugging
 
-[Content to be consolidated from audit]
+**CLI Testing (Fastest):**
+
+```bash
+# Install arazzo-runner CLI
+pip install arazzo-runner
+
+# Execute workflow with test inputs
+arazzo-runner execute-workflow ./assemble_class.arazzo.yaml \
+  --workflow-id assemblePilatesClass \
+  --inputs '{"user_id": "test-123", "difficulty_level": "Intermediate", "target_duration_minutes": 60}' \
+  --log-level DEBUG
+```
+
+**Python Testing:**
+
+```python
+from arazzo_runner import ArazzoRunner
+
+# Load workflow
+runner = ArazzoRunner.from_arazzo_path("./assemble_class.arazzo.yaml")
+
+# Execute with test inputs
+result = runner.execute_workflow(
+    workflow_id="assemblePilatesClass",
+    inputs={
+        "user_id": "test-123",
+        "difficulty_level": "Intermediate",
+        "target_duration_minutes": 60
+    }
+)
+
+# Check results
+if result.status == "workflow_complete":
+    print("✓ Workflow succeeded")
+    print(f"Outputs: {result.outputs}")
+else:
+    print(f"✗ Workflow failed: {result.error}")
+    print(f"Failed at step: {result.step_outputs}")
+```
+
+**Common Debugging Techniques:**
+
+1. **Check Step Outputs:**
+
+   ```python
+   # See output from each step
+   for step_id, output in result.step_outputs.items():
+       print(f"Step {step_id}: {output}")
+   ```
+
+2. **Verify Runtime Expressions:**
+
+   ```yaml
+   # Add temporary output to see what expression evaluates to
+   outputs:
+     debug_user_profile: $steps.getUserProfile.outputs
+     debug_music_param: $steps.getUserProfile.outputs.preferredMusic
+   ```
+
+3. **Validate Against OpenAPI:**
+
+   ```bash
+   # Ensure OpenAPI spec is valid
+   openapi-spec-validator ./bassline_api_v1.yaml
+   ```
+
+4. **Test Individual Operations:**
+
+   ```python
+   # Test single operation without full workflow
+   result = runner.execute_operation(
+       operation_id="getUserProfile",
+       inputs={"user_id": "test-123"}
+   )
+   print(result)
+   ```
+
+5. **Enable Debug Logging:**
+
+   ```python
+   import logging
+   logging.basicConfig(level=logging.DEBUG)
+
+   # Now runner logs all HTTP requests/responses
+   result = runner.execute_workflow(...)
+   ```
+
+**Common Errors & Fixes:**
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "operationId not found" | OpenAPI spec not loaded | Check sourceDescriptions URL |
+| "Required memory key 'X' not found" | Step output not defined | Add explicit outputs: declaration |
+| "Parameter 'X' required but not provided" | Missing parameter in step | Check OpenAPI spec for required params |
+| "Invalid runtime expression" | Syntax error in $expression | Use debugger to print expression value |
+| "Workflow timeout" | Step taking too long | Add timeout parameter to step |
+
+---
 
 ### 5.4 OpenAPI Specification Integration
 
-[Content to be consolidated from audit]
+Arazzo workflows depend on OpenAPI specs to know what operations are available and how to call them.
+
+**Why OpenAPI is Required:**
+
+Arazzo workflows reference operations by `operationId`, which comes from OpenAPI:
+
+```yaml
+# assemble_class.arazzo.yaml
+steps:
+  - stepId: getUserProfile
+    operationId: getUserProfile  # ← Must exist in OpenAPI spec
+```
+
+**Creating OpenAPI Spec for Backend:**
+
+**File:** `backend/openapi/bassline_api_v1.yaml`
+
+```yaml
+openapi: 3.0.0
+info:
+  title: Bassline Pilates API
+  version: 1.0.0
+  description: Backend API for Pilates class generation
+
+servers:
+  - url: https://pilates-class-generator-api3.onrender.com
+    description: Production
+  - url: http://localhost:8000
+    description: Local development
+
+paths:
+  /api/users/{user_id}/profile:
+    get:
+      operationId: getUserProfile  # ← Referenced by Arazzo
+      summary: Get user profile and preferences
+      tags: [Users]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id: {type: string}
+                  email: {type: string}
+                  preferences:
+                    type: object
+                    properties:
+                      preferred_music_style: {type: string}
+                      ai_strictness: {type: string}
+                      default_difficulty: {type: string}
+
+  /api/agents/generate-sequence:
+    post:
+      operationId: generateSequence
+      summary: Generate AI movement sequence
+      tags: [AI Agents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, target_duration_minutes, difficulty_level]
+              properties:
+                user_id: {type: string, format: uuid}
+                target_duration_minutes: {type: integer, minimum: 15}
+                difficulty_level: {type: string, enum: [Beginner, Intermediate, Advanced]}
+                strictness_level: {type: string, enum: [Low, Medium, High]}
+      responses:
+        '200':
+          description: Sequence generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: object
+                    properties:
+                      sequence: {type: array}
+                      muscle_balance: {type: object}
+                      total_duration_minutes: {type: integer}
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
+```
+
+**Linking OpenAPI to Arazzo:**
+
+```yaml
+# assemble_class.arazzo.yaml
+sourceDescriptions:
+  - name: bassline-api
+    url: ../../backend/openapi/bassline_api_v1.yaml  # Relative path
+    type: openapi
+
+# Now workflow can reference operations:
+steps:
+  - stepId: getUser
+    operationId: getUserProfile  # Found in OpenAPI spec
+```
+
+**How Arazzo Uses OpenAPI:**
+
+1. **Operation Discovery**: Finds endpoint by `operationId`
+   - `getUserProfile` → `GET /api/users/{user_id}/profile`
+
+2. **URL Construction**: Builds complete URL
+   - Server: `https://pilates-class-generator-api3.onrender.com`
+   - Path: `/api/users/123/profile`
+   - Result: `https://pilates-class-generator-api3.onrender.com/api/users/123/profile`
+
+3. **Parameter Validation**: Checks required parameters
+   - OpenAPI says `user_id` is required in path
+   - Arazzo ensures `value: $inputs.user_id` is provided
+
+4. **Request Building**: Constructs HTTP request
+   - Method: `GET` (from OpenAPI)
+   - Headers: `Authorization: Bearer <token>` (from security)
+   - Body: N/A for GET
+
+5. **Response Parsing**: Validates and extracts data
+   - OpenAPI defines response schema
+   - Arazzo validates `$response.body` matches schema
+   - Extracts fields using JSON paths
+
+**OpenAPI Best Practices:**
+
+1. **Clear operationIds:**
+   ```yaml
+   # Good
+   operationId: getUserProfile
+
+   # Bad
+   operationId: get_api_users_user_id_profile
+   ```
+
+2. **Detailed Descriptions:**
+   ```yaml
+   summary: Get user profile and preferences
+   description: |
+     Retrieves complete user profile including:
+     - Personal information
+     - Pilates preferences
+     - AI strictness settings
+     - Music style preferences
+   ```
+
+3. **Required vs Optional:**
+   ```yaml
+   required: [user_id, difficulty_level]  # Must provide
+   properties:
+     focus_areas: {type: array}  # Optional
+   ```
+
+4. **Response Examples:**
+   ```yaml
+   responses:
+     '200':
+       content:
+         application/json:
+           example:
+             user_id: "123e4567-e89b-12d3-a456-426614174000"
+             preferences:
+               preferred_music_style: "Classical"
+   ```
+
+**Validation Tools:**
+
+```bash
+# Validate OpenAPI spec
+openapi-spec-validator ./bassline_api_v1.yaml
+
+# Validate Arazzo workflow
+arazzo-runner validate ./assemble_class.arazzo.yaml
+
+# Generate API documentation from OpenAPI
+redoc-cli bundle ./bassline_api_v1.yaml -o api-docs.html
+```
 
 ---
 
