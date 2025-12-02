@@ -1877,7 +1877,7 @@ With this formalization:
 ### Session 11.75: Movement Data Population (Watch Points, Visual Cues, Level Flags) ✅ COMPLETED
 
 **Date:** December 2, 2025
-**Status:** ✅ Complete
+**Status:** ✅ Complete - **SQL Migrations Executed by User on December 1, 2025**
 
 **Goal:** Populate movement table with safety warnings, visual cues, and level existence flags from Excel source data
 
@@ -1890,6 +1890,7 @@ With this formalization:
 - ✅ Updated frontend TypeScript interfaces (Movement, PlaybackMovement)
 - ✅ Created comprehensive documentation (README_LEVEL_FLAGS_UPDATE.md)
 - ✅ Committed all changes to GitHub (commits 04d8653, 9d41cee)
+- ✅ **User executed all 3 SQL migrations in Supabase on December 1, 2025**
 
 **Database Changes:**
 
@@ -1949,18 +1950,200 @@ Level fields repurposed as existence flags rather than storing narratives:
 - **Rationale:** Simplifies data model; all narratives in one place; enables easy querying of which levels exist; future option to separate narratives into movement_levels table
 
 **Next Steps (To Execute in Supabase):**
-1. Run migration 011 (convert fields to VARCHAR(1))
-2. Run update_movement_watch_points_and_visual_cues.sql
-3. Run update_movement_level_flags.sql
-4. Verify with provided SQL queries
+1. ~~Run migration 011 (convert fields to VARCHAR(1))~~ ✅ DONE December 1, 2025
+2. ~~Run update_movement_watch_points_and_visual_cues.sql~~ ✅ DONE December 1, 2025
+3. ~~Run update_movement_level_flags.sql~~ ✅ DONE December 1, 2025
+4. ~~Verify with provided SQL queries~~ ✅ DONE December 1, 2025
 
 ---
 
-### Session 12: Advanced Delivery Modes - Phase 3 (Planned) 📋 DOCUMENTED
+### Session 12: Jentic Documentation Consolidation & Reorganization 🎯 NEXT SESSION
+
+**Date:** December 2, 2025 (planned)
+**Status:** 🎯 Ready to Start
+
+**Goal:** Create master Jentic documentation with comprehensive index and organized topic areas
+
+**Current Problem:**
+- **8 separate Jentic documentation files** exist across the project
+- Significant duplication across documents (JENTIC_ARCHITECTURE.md, JENTIC_REAL_CODE_ANALYSIS.md, JENTIC_CONCEPTS_EXPLAINED.md, etc.)
+- Information organized in Q&A format in some places
+- Difficult to quickly find specific topics (e.g., "How does Arazzo work?", "What is ReWOO?", "Architecture overview")
+- User discussed this consolidation plan in last session - it was agreed but not added to CLAUDE.md
+
+**Why This Matters:**
+1. **Client Relationship**: Clean, professional documentation demonstrates deep Jentic expertise
+2. **Educational Goal**: Easier to learn and teach Jentic patterns
+3. **Future Projects**: Single source of truth for reusable patterns
+4. **Maintainability**: Updates only need to happen in one place
+
+**Planned Work:**
+
+**Step 1: Audit Existing Documentation** (1 hour)
+- Review all 8 Jentic documentation files:
+  - `JENTIC_ARCHITECTURE.md`
+  - `JENTIC_REAL_CODE_ANALYSIS.md`
+  - `JENTIC_CONCEPTS_EXPLAINED.md`
+  - `JENTIC_QUICK_REFERENCE.md`
+  - `JENTIC_ANALYSIS_SUMMARY.md`
+  - `JENTIC_STANDARDIZATION_AUDIT.md`
+  - `JENTIC_INTEGRATION_COMPLETE_GUIDE.md`
+  - `JENTIC_ARCHITECTURE_STYLE_GUIDE.md`
+- Identify duplicate content across documents
+- Map content to logical topic hierarchy
+- Note which content is outdated or redundant
+
+**Step 2: Create Master Index Structure** (1 hour)
+Create `/docs/JENTIC_MASTER.md` with comprehensive table of contents:
+
+```markdown
+# Jentic Integration Guide (Master Documentation)
+
+## Table of Contents
+1. Introduction & Overview
+   - What is Jentic?
+   - Why we use Jentic (dual goals: production + learning)
+   - How Jentic fits into our architecture
+2. Architecture
+   - StandardAgent Structure
+   - Arazzo Engine
+   - Workflow Orchestration
+   - Component Diagram
+3. Core Concepts
+   - Reasoning Patterns (ReWOO)
+   - LLM Integration (LiteLLM)
+   - Tool Management (JustInTimeToolingBase)
+   - Agent Lifecycle (Plan→Execute→Reflect)
+4. Integration with Bassline
+   - BasslinePilatesCoachAgent Implementation
+   - Composition Pattern
+   - Educational Annotations ("JENTIC PATTERN" vs "BASSLINE CUSTOM")
+5. Arazzo Workflows
+   - Workflow DSL Syntax
+   - Creating Workflows
+   - Testing & Debugging
+   - OpenAPI Specification Integration
+6. Practical Examples
+   - Complete Class Generation Workflow
+   - Music Selection Integration
+   - Error Handling Patterns
+7. Best Practices
+   - When to Use Arazzo vs. Custom Code
+   - Scalability Patterns
+   - Testing Strategies
+8. Advanced Topics
+   - Multi-Agent Orchestration
+   - Performance Optimization
+   - Observability & Logging
+9. Troubleshooting
+   - Common Issues
+   - Debugging Workflows
+   - Testing Failed Workflows
+10. Reference
+    - API Documentation
+    - Configuration Options
+    - External Resources (Jentic GitHub repos)
+```
+
+**Step 3: Consolidate Content by Topic** (3 hours)
+- Merge duplicate content into single comprehensive sections
+- Convert Q&A format to statements of fact organized by topic
+  - **Before (Q&A):** "Q: What is ReWOO? A: ReWOO stands for..."
+  - **After (Topic):** Under "Core Concepts > Reasoning Patterns": "ReWOO (Reasoning WithOut Observation) is a reasoning pattern that..."
+- Add cross-references between related topics
+- Preserve all educational annotations and code examples
+- Use actual code from our codebase (not abstract examples)
+
+**Step 4: Archive Old Documentation** (30 minutes)
+- Move old files to `/docs/archive/jentic/`
+- Add README in archive explaining why files were consolidated
+- Keep git history intact
+
+**Step 5: Update References** (1 hour)
+- Update CLAUDE.md to reference new JENTIC_MASTER.md
+- Update any code comments that link to old docs
+- Update orchestrator README if it references old docs
+
+**Expected Structure Example:**
+
+```markdown
+# Jentic Integration Guide (Master Documentation)
+
+## 1. Introduction & Overview
+
+Jentic provides two core components that power our Pilates Class Planner:
+- **StandardAgent**: A battle-tested foundation for agentic reasoning
+- **Arazzo Engine**: A declarative workflow DSL for orchestrating multi-step operations
+
+### Why We Use Jentic
+
+This project serves two strategic goals:
+1. **Production-Ready Platform**: Launch functional MVP to community
+2. **Learn Jentic Architecture**: Deep understanding for client relationship (Jentic is our client)
+
+[More organized content...]
+
+## 2. Architecture
+
+### StandardAgent Structure
+
+StandardAgent provides a composable architecture for AI agents:
+- **Reasoner**: Brain (Plan→Execute→Reflect loop)
+- **Tools**: Hands (domain-specific functions)
+- **LLM**: Language model interface (LiteLLM abstraction)
+- **Memory**: State management
+
+[Diagram showing composition]
+
+### Arazzo Engine
+
+Arazzo is a declarative workflow DSL that:
+- Describes WHAT to do, not HOW
+- Orchestrates multi-step API operations
+- Uses OpenAPI specs for machine-readable contracts
+- Provides built-in retry, error handling, observability
+
+[Examples from our actual workflows...]
+```
+
+**Step 6: Verify Completeness** (30 minutes)
+- Test all internal links work
+- Verify all code examples are accurate
+- Check that every topic from old docs is covered
+- Ensure index is comprehensive
+
+**Deliverables:**
+1. ✅ `/docs/JENTIC_MASTER.md` - Single source of truth
+2. ✅ `/docs/archive/jentic/` - Old docs preserved in archive
+3. ✅ Updated CLAUDE.md references
+4. ✅ Verification checklist completed
+
+**Benefits:**
+1. **Easier Navigation**: Index allows quick jump to any topic
+2. **Less Duplication**: Single source of truth reduces maintenance burden
+3. **Better Learning**: Topic organization (vs Q&A) supports conceptual understanding
+4. **Scalability**: New Jentic features added to existing topic structure
+5. **Client Relationship**: Professional documentation demonstrates deep expertise
+6. **Future Projects**: Reusable patterns documented for easy application
+
+**Success Criteria:**
+- [ ] All 8 old docs consolidated into JENTIC_MASTER.md
+- [ ] No duplicate content across documentation
+- [ ] Comprehensive index with anchor links
+- [ ] All content organized by topic (not Q&A format)
+- [ ] Code examples from actual project (not abstract)
+- [ ] Old files archived with explanation
+- [ ] User can find any Jentic topic in <30 seconds
+
+**Timeline:** 6-8 hours total
+
+---
+
+### Session 13: Advanced Delivery Modes - Phase 3 ⏸️ DEFERRED
 
 **Goal:** Multi-modal delivery (audio narration + visual demonstrations)
 
-**Status:** 📋 Plans committed to documentation, build in future
+**Status:** ⏸️ Plans documented, deferred pending more testing of core features
 
 **Context:**
 Users may want:
@@ -2071,10 +2254,11 @@ ALTER TABLE user_preferences
 
 **Next Sessions Preview:**
 
-- **Session 10:** Jentic Integration - Phase 1 (IN PROGRESS) ← Current Focus
-- **Session 11:** Data Model Expansion - Phase 2 (DOCUMENTED, build later)
-- **Session 12:** Advanced Delivery Modes - Phase 3 (DOCUMENTED, build later)
-- **Session 13:** ### Role
+- **Session 11.75:** Movement Data Population ✅ COMPLETED (SQL executed December 1, 2025)
+- **Session 12:** Jentic Documentation Consolidation 🎯 NEXT SESSION (6-8 hours)
+- **Session 13:** Advanced Delivery Modes ⏸️ DEFERRED (pending more testing)
+- **Session 14:** EU AI Act Compliance Dashboard & Testing
+- **Session 15:** ### Role
 You are a compliance specialist with expertise in EU AI Act requirements.
 
 ### Context
@@ -2299,112 +2483,16 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 ## 📚 FUTURE PLANS
 
-### Jentic Documentation Consolidation & Reorganization
+### Additional Potential Enhancements
 
-**Goal:** Create master Jentic documentation with comprehensive index and organized topic areas
+**Note:** The Jentic Documentation Consolidation has been moved to **Session 12** (next session).
 
-**Current State:**
-- Multiple Jentic documents exist across the project (JENTIC_ARCHITECTURE.md, JENTIC_REAL_CODE_ANALYSIS.md, JENTIC_CONCEPTS_EXPLAINED.md, JENTIC_INTEGRATION_EXAMPLES.md, JENTIC_PATTERNS_LIBRARY.md, etc.)
-- Significant duplication across documents
-- Information organized in Q&A format in some places
-- Difficult to quickly find specific topics (e.g., "How does Arazzo work?", "What is ReWOO?", "Architecture overview")
-
-**Planned Work:**
-
-**1. Consolidation**
-- Review all existing Jentic documentation files
-- Identify duplicate content across documents
-- Merge related content into single comprehensive sections
-- Archive old/outdated documentation to `/docs/archive/`
-
-**2. Index Creation**
-Create master index with quick navigation to key topics:
-- **Architecture**: StandardAgent structure, Arazzo Engine, workflow orchestration
-- **Core Concepts**: ReWOO reasoner, LiteLLM, JustInTimeToolingBase, Plan→Execute→Reflect loop
-- **Integration Patterns**: How we integrate Jentic with Bassline, composition patterns, inheritance vs. delegation
-- **Practical Examples**: Real code samples, before/after comparisons, common use cases
-- **Educational Annotations**: "JENTIC PATTERN" vs "BASSLINE CUSTOM" explanations
-- **Troubleshooting**: Common issues, debugging workflows, testing strategies
-- **Future Enhancements**: Scaling patterns, multi-agent orchestration, workflow optimization
-
-**3. Format Reorganization**
-- Convert Q&A format to statements of fact organized in broader topic areas
-- Example transformation:
-  - **Before (Q&A):** "Q: What is ReWOO? A: ReWOO stands for Reasoning WithOut Observation..."
-  - **After (Topic):** Under "Core Concepts > Reasoning Patterns": "ReWOO (Reasoning WithOut Observation) is a reasoning pattern that..."
-- Organize by topic hierarchy rather than question-answer pairs
-- Add cross-references between related topics
-
-**4. Single Source of Truth**
-Create `/docs/JENTIC_MASTER.md` that:
-- Serves as the primary Jentic documentation
-- Includes comprehensive table of contents with anchor links
-- Organizes all Jentic knowledge in logical topic hierarchy
-- Provides examples from our actual codebase
-- Links to specific files for deep dives when needed
-
-**Expected Structure:**
-
-```markdown
-# Jentic Integration Guide (Master Documentation)
-
-## Table of Contents
-1. Introduction & Overview
-2. Architecture
-   - StandardAgent Structure
-   - Arazzo Engine
-   - Workflow Orchestration
-3. Core Concepts
-   - Reasoning Patterns (ReWOO)
-   - LLM Integration (LiteLLM)
-   - Tool Management (JustInTimeToolingBase)
-   - Agent Lifecycle (Plan→Execute→Reflect)
-4. Integration with Bassline
-   - BasslinePilatesCoachAgent Implementation
-   - Composition Pattern
-   - Educational Annotations
-5. Arazzo Workflows
-   - Workflow DSL Syntax
-   - Creating Workflows
-   - Testing & Debugging
-6. Practical Examples
-   - Complete Class Generation Workflow
-   - Music Selection Integration
-   - Error Handling Patterns
-7. Best Practices
-   - When to Use Arazzo vs. Custom Code
-   - Scalability Patterns
-   - Testing Strategies
-8. Advanced Topics
-   - Multi-Agent Orchestration
-   - Performance Optimization
-   - Observability & Logging
-9. Troubleshooting
-10. Reference
-    - API Documentation
-    - Configuration Options
-    - External Resources
-
-## 1. Introduction & Overview
-[Consolidated content from multiple docs...]
-
-## 2. Architecture
-
-### StandardAgent Structure
-StandardAgent provides a battle-tested foundation for agentic reasoning with Plan→Execute→Reflect loop...
-[Organized facts, not Q&A]
-
-### Arazzo Engine
-Arazzo is a declarative workflow DSL that orchestrates multi-step API operations...
-[Clear statements in topic areas]
-```
-
-**Benefits:**
-1. **Easier Navigation**: Index allows quick jump to any topic
-2. **Less Duplication**: Single source of truth reduces maintenance
-3. **Better Learning**: Topic organization (vs Q&A) supports conceptual understanding
-4. **Scalability**: New Jentic features added to existing topic structure
-5. **Client Relationship**: Clear documentation demonstrates deep Jentic expertise
-6. **Future Projects**: Reusable patterns documented for easy application
-
-**Timeline:** Schedule after core features complete; requires ~6-8 hours
+Other future considerations:
+- Additional music tracks from Internet Archive collections
+- Playlist editing/customization for users
+- Music volume controls in playback UI
+- Music fade in/out between movements
+- Multi-modal delivery (TTS + video demonstrations)
+- MCP Playwright caching and quality scoring
+- Comprehensive E2E testing suite
+- Mobile responsiveness and PWA features
