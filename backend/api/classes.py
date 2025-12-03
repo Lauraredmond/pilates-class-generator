@@ -1009,6 +1009,31 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         now = datetime.now()
         today = now.date().isoformat()
 
+        # ==============================================================================
+        # 0. ENSURE USER EXISTS IN USERS TABLE (fix foreign key constraint)
+        # ==============================================================================
+        # User may exist in Supabase Auth but not in our application's users table
+        # This happens with test accounts or if user_profile wasn't created during registration
+        try:
+            user_check = supabase.table('users').select('id').eq('id', request.user_id).execute()
+
+            if not user_check.data:
+                # Create minimal user record to satisfy foreign key constraint
+                logger.warning("User {} not found in users table, creating minimal record", request.user_id)
+                supabase.table('users').insert({
+                    'id': request.user_id,
+                    'email': 'unknown@placeholder.com',  # Will be updated on next login
+                    'created_at': now.isoformat(),
+                    'updated_at': now.isoformat()
+                }).execute()
+                logger.info("✅ Created minimal user record for {}", request.user_id)
+        except Exception as user_error:
+            logger.error("Failed to ensure user exists: {}", user_error, exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Database error: Could not verify user account. Please try logging out and back in."
+            )
+
         # Extract movement IDs from snapshot (movements only, not transitions)
         movements_only = [
             m for m in request.movements_snapshot
