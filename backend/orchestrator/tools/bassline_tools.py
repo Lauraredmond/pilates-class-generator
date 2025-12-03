@@ -156,23 +156,22 @@ Returns: Complete playlist with track details, URLs, and timing.
                     "description": "Total class duration for music timing",
                     "required": True
                 },
-                "energy_level": {
-                    "type": "number",
-                    "description": "Energy level 0.0-1.0 (0.3=gentle, 0.6=moderate, 0.9=energetic)",
-                    "required": True
+                "energy_curve": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "description": "Optional energy levels throughout class (0.0-1.0 at different points)",
+                    "required": False
                 },
-                "stylistic_period": {
-                    "type": "string",
-                    "enum": [
-                        "Baroque",
-                        "Classical",
-                        "Romantic",
-                        "Impressionist",
-                        "Modern",
-                        "Contemporary",
-                        "Celtic Traditional"
-                    ],
-                    "description": "Preferred musical period",
+                "preferred_genres": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional list of preferred genres (e.g., ['ambient', 'classical'])",
+                    "required": False
+                },
+                "target_bpm_range": {
+                    "type": "array",
+                    "items": {"type": "integer"},
+                    "description": "Optional BPM range as [min, max] (default: [90, 130])",
                     "required": False
                 }
             },
@@ -195,21 +194,26 @@ body scan, and restoration focus.
 Returns: Complete meditation script with timing and cues.
             """.strip(),
             parameters={
-                "class_intensity": {
-                    "type": "string",
-                    "enum": ["gentle", "moderate", "intense"],
-                    "description": "Intensity of preceding class",
-                    "required": True
-                },
                 "duration_minutes": {
                     "type": "integer",
-                    "description": "Meditation duration (3-10 minutes)",
-                    "required": True
+                    "description": "Meditation duration (2-15 minutes)",
+                    "required": False
                 },
-                "theme": {
+                "class_intensity": {
                     "type": "string",
-                    "enum": ["body_scan", "breath_focus", "gratitude", "restoration"],
-                    "description": "Meditation theme/approach",
+                    "enum": ["low", "moderate", "high"],
+                    "description": "Intensity of preceding class",
+                    "required": False
+                },
+                "focus_theme": {
+                    "type": "string",
+                    "enum": ["mindfulness", "body_scan", "gratitude"],
+                    "description": "Optional meditation theme/approach",
+                    "required": False
+                },
+                "include_breathing": {
+                    "type": "boolean",
+                    "description": "Whether to include breathing guidance",
                     "required": False
                 }
             },
@@ -227,28 +231,55 @@ Returns: Complete meditation script with timing and cues.
 Research condition-specific movement modifications from trusted Pilates sources.
 
 Searches reputable Pilates websites for:
-- Pregnancy modifications
-- Injury adaptations
-- Equipment alternatives
-- Teaching cues enhancements
+- Movement cues (research_type='movement_cues')
+- Warmup sequences (research_type='warmup')
+- Pregnancy modifications (research_type='pregnancy')
+- Injury adaptations (research_type='injury')
+- Pilates trends (research_type='trends')
 
 Returns: Curated research results with source attribution.
             """.strip(),
             parameters={
-                "movement_name": {
+                "research_type": {
                     "type": "string",
-                    "description": "Name of Pilates movement to research",
+                    "enum": ["movement_cues", "warmup", "pregnancy", "injury", "trends"],
+                    "description": "Type of research to perform (REQUIRED)",
                     "required": True
                 },
-                "condition": {
+                "movement_name": {
                     "type": "string",
-                    "description": "Specific condition (e.g., 'pregnancy', 'lower back pain')",
+                    "description": "Name of Pilates movement (for movement_cues, pregnancy, injury)",
                     "required": False
                 },
-                "query_type": {
+                "target_muscles": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of target muscles (for warmup research)",
+                    "required": False
+                },
+                "duration_minutes": {
+                    "type": "integer",
+                    "description": "Duration in minutes (for warmup research, default: 5)",
+                    "required": False
+                },
+                "trimester": {
+                    "type": "integer",
+                    "description": "Pregnancy trimester 1-3 (for pregnancy research, default: 2)",
+                    "required": False
+                },
+                "injury_type": {
                     "type": "string",
-                    "enum": ["modifications", "cues", "contraindications", "progressions"],
-                    "description": "Type of information to research",
+                    "description": "Type of injury (for injury research, default: 'strain')",
+                    "required": False
+                },
+                "injury_location": {
+                    "type": "string",
+                    "description": "Location of injury (for injury research, default: 'lower_back')",
+                    "required": False
+                },
+                "trusted_sources_only": {
+                    "type": "boolean",
+                    "description": "Only use trusted Pilates websites (default: true)",
                     "required": False
                 }
             },
