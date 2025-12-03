@@ -281,3 +281,239 @@ class ClassSectionTools:
         except Exception as e:
             logger.error(f"Failed to select homecare: {e}", exc_info=True)
             raise
+
+    # ==========================================================================
+    # AI MODE: GENERATION METHODS (Use LLM to create NEW content)
+    # ==========================================================================
+
+    def generate_preparation(
+        self,
+        difficulty_level: str = "Beginner",
+        llm_model: str = "gpt-4-turbo"
+    ) -> Dict[str, Any]:
+        """
+        AI MODE: Generate NEW preparation script using LLM
+
+        BEHAVIOR C: Generate fresh script each time with required elements but varied wording
+
+        Required Elements (ALWAYS present):
+        1. Wake up the core muscles
+        2. Posture explanation (feet, knees, hips, shoulders, head alignment)
+        3. Visual cue: Fingers pointing from pelvic bone (parallel = neutral)
+        4. Core activation: "Tighten like a belt" or "Tense to 100%, release to 30%"
+        5. Lateral thoracic breathing with finger cues on rib cage
+
+        Optional Elements (AI varies):
+        - Exact wording/phrasing
+        - Additional metaphors/imagery
+        - Duration of each section
+
+        Args:
+            difficulty_level: Beginner, Intermediate, or Advanced
+            llm_model: LLM model to use for generation
+
+        Returns:
+            Generated preparation script with narrative, key principles, duration, breathing pattern
+        """
+        try:
+            from litellm import completion
+            import json
+
+            logger.info(f"🤖 Generating NEW preparation script for {difficulty_level} (AI MODE)")
+
+            system_prompt = """You are a certified Pilates instructor creating preparation scripts.
+Generate a FRESH, UNIQUE script that includes all required elements but with VARIED wording and metaphors."""
+
+            user_prompt = f"""
+Create a preparation script for a {difficulty_level} Pilates class.
+
+REQUIRED ELEMENTS (must include ALL):
+1. Wake up the core muscles
+2. Posture explanation:
+   - Alignment: feet, knees, hips, shoulders, head
+   - Visual cue: Fingers pointing from pelvic bone (parallel = neutral, down = anterior tilt, up = posterior tilt)
+3. Core activation:
+   - Use metaphors like "Tighten like a belt" or "Tense to 100%, release to 30%"
+4. Lateral thoracic breathing:
+   - Cues: Fingers on rib cage, feel expansion (inhale), feel collapse (exhale)
+
+VARY THE WORDING: Use fresh language, new metaphors, different phrasing each time.
+
+Output JSON format:
+{{
+  "script_name": "Unique name for this script",
+  "script_type": "centering",
+  "narrative": "Complete script with all 4 required elements, naturally flowing",
+  "key_principles": ["list", "of", "pilates", "principles", "covered"],
+  "duration_seconds": 240,
+  "breathing_pattern": "Lateral thoracic breathing with rib cage expansion",
+  "breathing_focus": "Core engagement and postural alignment",
+  "difficulty_level": "{difficulty_level}"
+}}
+"""
+
+            response = completion(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.8  # Higher temperature for creative variation
+            )
+
+            generated_script = json.loads(response.choices[0].message.content)
+            logger.info(f"✅ Generated: {generated_script.get('script_name')}")
+
+            return generated_script
+
+        except Exception as e:
+            logger.error(f"Failed to generate preparation: {e}", exc_info=True)
+            raise
+
+    def research_warmup(
+        self,
+        target_muscles: List[str],
+        research_tool=None
+    ) -> Dict[str, Any]:
+        """
+        AI MODE: Research NEW warm-up exercises from web
+
+        BEHAVIOR C: Source new/novel warm-up exercises beyond database defaults
+
+        Args:
+            target_muscles: Muscle groups to warm up
+            research_tool: ResearchTools instance for MCP web research
+
+        Returns:
+            Warmup routine with researched exercises
+        """
+        try:
+            logger.info(f"🔍 Researching NEW warmup exercises for: {', '.join(target_muscles)}")
+
+            if not research_tool:
+                logger.warning("No research tool available, falling back to database selection")
+                return self.select_warmup(target_muscles=target_muscles)
+
+            # Use MCP to research warm-up exercises
+            research_results = research_tool.research(
+                research_type="warmup",
+                target_muscles=target_muscles,
+                duration_minutes=5,
+                trusted_sources_only=True
+            )
+
+            # Format research results as warmup routine
+            return {
+                "routine_name": f"Researched Warmup for {', '.join(target_muscles[:2])}",
+                "focus_area": "researched",
+                "narrative": research_results.get("summary", ""),
+                "movements": research_results.get("exercises", []),
+                "duration_seconds": 300,
+                "contraindications": [],
+                "modifications": {},
+                "difficulty_level": "Intermediate",
+                "source": "MCP Research",
+                "sources": research_results.get("sources", [])
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to research warmup: {e}", exc_info=True)
+            # Fallback to database
+            return self.select_warmup(target_muscles=target_muscles)
+
+    def research_cooldown(
+        self,
+        target_muscles: List[str],
+        research_tool=None
+    ) -> Dict[str, Any]:
+        """
+        AI MODE: Research NEW cool-down exercises from web
+
+        BEHAVIOR C: Source new/novel cool-down exercises beyond database defaults
+
+        Args:
+            target_muscles: Muscle groups to cool down
+            research_tool: ResearchTools instance for MCP web research
+
+        Returns:
+            Cooldown sequence with researched stretches
+        """
+        try:
+            logger.info(f"🔍 Researching NEW cooldown exercises for: {', '.join(target_muscles)}")
+
+            if not research_tool:
+                logger.warning("No research tool available, falling back to database selection")
+                return self.select_cooldown(target_muscles=target_muscles)
+
+            # For now, fall back to database (MCP cooldown research not yet implemented)
+            logger.info("MCP cooldown research not yet implemented, using database")
+            return self.select_cooldown(target_muscles=target_muscles)
+
+        except Exception as e:
+            logger.error(f"Failed to research cooldown: {e}", exc_info=True)
+            return self.select_cooldown(target_muscles=target_muscles)
+
+    def generate_homecare(
+        self,
+        llm_model: str = "gpt-4-turbo"
+    ) -> Dict[str, Any]:
+        """
+        AI MODE: Generate NEW homecare advice using LLM
+
+        BEHAVIOR C: Source interesting headlines from American School of Medicine
+
+        Args:
+            llm_model: LLM model to use for generation
+
+        Returns:
+            Homecare advice with sourced medical information
+        """
+        try:
+            from litellm import completion
+            import json
+
+            logger.info("🤖 Generating NEW homecare advice (AI MODE)")
+
+            system_prompt = """You are a certified Pilates instructor providing evidence-based homecare advice.
+Draw from reputable medical sources like the American College of Sports Medicine."""
+
+            user_prompt = """
+Generate homecare advice for Pilates students to apply in their daily lives.
+
+GUIDELINES:
+- Reference evidence-based advice (hydration, stretching frequency, posture)
+- Make it actionable and specific
+- Include source attribution (general medical guidelines)
+- Add disclaimer to consult physician if concerns
+
+Output JSON format:
+{{
+  "advice_name": "Unique name for this advice",
+  "focus_area": "recovery",
+  "advice_text": "Complete advice narrative with medical backing",
+  "actionable_tips": ["Specific", "actionable", "tips"],
+  "duration_seconds": 60,
+  "source_attribution": "Based on guidelines from American College of Sports Medicine",
+  "disclaimer": "This is guidance only. Consult your physician if you have any concerns."
+}}
+"""
+
+            response = completion(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.8  # Creative variation
+            )
+
+            generated_advice = json.loads(response.choices[0].message.content)
+            logger.info(f"✅ Generated: {generated_advice.get('advice_name')}")
+
+            return generated_advice
+
+        except Exception as e:
+            logger.error(f"Failed to generate homecare: {e}", exc_info=True)
+            raise

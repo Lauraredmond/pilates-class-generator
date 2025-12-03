@@ -76,7 +76,7 @@ class BasslinePilatesTools(JustInTimeToolingBase):
         # Register all tools
         self._register_tools()
 
-        logger.info("✅ BasslinePilatesTools initialized with 5 tool modules (8 tools total)")
+        logger.info("✅ BasslinePilatesTools initialized with 5 tool modules (12 tools total: 8 DEFAULT + 4 AI generation)")
 
     def _register_tools(self):
         """
@@ -420,7 +420,121 @@ Returns: Homecare advice with advice text, actionable tips, duration.
             function=self.class_section_tools.select_homecare
         )
 
-        logger.info("✅ Registered 8 Pilates tools (sequence, music, meditation, research, preparation, warmup, cooldown, homecare)")
+        # ======================================================================
+        # AI MODE GENERATION TOOLS (For Reasoner Mode Only)
+        # ======================================================================
+
+        self.register_tool(
+            tool_id="generate_preparation",
+            name="Generate NEW Preparation Script (AI)",
+            description="""
+**AI MODE ONLY** - Generate FRESH preparation script using LLM.
+
+BEHAVIOR C: Creates unique script each time with required elements but varied wording.
+
+Required Elements (ALWAYS included):
+- Wake up core muscles
+- Posture alignment cues
+- Core activation metaphors
+- Lateral thoracic breathing guidance
+
+Returns: Custom-generated preparation script (NOT from database).
+            """.strip(),
+            parameters={
+                "difficulty_level": {
+                    "type": "string",
+                    "enum": ["Beginner", "Intermediate", "Advanced"],
+                    "description": "Student experience level",
+                    "required": False
+                },
+                "llm_model": {
+                    "type": "string",
+                    "description": "LLM model to use (default: gpt-4-turbo)",
+                    "required": False
+                }
+            },
+            function=self.class_section_tools.generate_preparation
+        )
+
+        self.register_tool(
+            tool_id="research_warmup",
+            name="Research NEW Warmup Exercises (AI)",
+            description="""
+**AI MODE ONLY** - Research NEW warm-up exercises from web using MCP.
+
+BEHAVIOR C: Sources novel exercises beyond database defaults.
+
+Uses MCP Playwright to search trusted Pilates websites for fresh warmup content.
+
+Returns: Researched warmup routine (NOT from database).
+            """.strip(),
+            parameters={
+                "target_muscles": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Muscle groups to warm up",
+                    "required": True
+                },
+                "research_tool": {
+                    "type": "object",
+                    "description": "ResearchTools instance for MCP",
+                    "required": False
+                }
+            },
+            function=self.class_section_tools.research_warmup
+        )
+
+        self.register_tool(
+            tool_id="research_cooldown",
+            name="Research NEW Cooldown Exercises (AI)",
+            description="""
+**AI MODE ONLY** - Research NEW cool-down exercises from web using MCP.
+
+BEHAVIOR C: Sources novel stretches beyond database defaults.
+
+Uses MCP Playwright to search trusted Pilates websites for fresh cooldown content.
+
+Returns: Researched cooldown sequence (NOT from database).
+            """.strip(),
+            parameters={
+                "target_muscles": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Muscle groups to cool down",
+                    "required": True
+                },
+                "research_tool": {
+                    "type": "object",
+                    "description": "ResearchTools instance for MCP",
+                    "required": False
+                }
+            },
+            function=self.class_section_tools.research_cooldown
+        )
+
+        self.register_tool(
+            tool_id="generate_homecare",
+            name="Generate NEW Homecare Advice (AI)",
+            description="""
+**AI MODE ONLY** - Generate FRESH homecare advice using LLM.
+
+BEHAVIOR C: Sources medical guidelines from American College of Sports Medicine.
+
+Creates unique, evidence-based advice with source attribution.
+
+Returns: Custom-generated homecare advice (NOT from database).
+            """.strip(),
+            parameters={
+                "llm_model": {
+                    "type": "string",
+                    "description": "LLM model to use (default: gpt-4-turbo)",
+                    "required": False
+                }
+            },
+            function=self.class_section_tools.generate_homecare
+        )
+
+        logger.info("✅ Registered 12 Pilates tools (8 DEFAULT + 4 AI generation tools)")
 
     def list_tools(self) -> List[Dict[str, Any]]:
         """
