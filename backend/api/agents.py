@@ -577,6 +577,17 @@ async def generate_complete_class(
 
             # RPC functions return a list (SETOF), extract first element
             cooldown = cooldown_response.data[0] if cooldown_response.data and len(cooldown_response.data) > 0 else None
+
+            # FALLBACK: If no specific cooldown found, select Full Body cooldown
+            if not cooldown:
+                logger.info("No specific cooldown found, using Full Body Recovery")
+                fallback_response = supabase.table('cooldown_sequences') \
+                    .select('*') \
+                    .eq('sequence_name', 'Full Body Recovery and Integration') \
+                    .limit(1) \
+                    .execute()
+                cooldown = fallback_response.data[0] if fallback_response.data else None
+
             logger.info(f"Selected cooldown: {cooldown.get('sequence_name') if cooldown else 'None'}")
         except Exception as e:
             logger.error(f"Failed to fetch cooldown sequence: {e}")
