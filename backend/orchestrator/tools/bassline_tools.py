@@ -252,7 +252,7 @@ Returns: Curated research results with source attribution.
                     "required": False
                 }
             },
-            function=self.research_tools.research_movement_info
+            function=self.research_tools.research  # Correct method name
         )
 
         logger.info("✅ Registered 4 Pilates tools (sequence, music, meditation, research)")
