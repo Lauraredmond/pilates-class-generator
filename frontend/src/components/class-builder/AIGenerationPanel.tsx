@@ -66,7 +66,8 @@ export function AIGenerationPanel() {
       // Extract individual results from StandardAgent orchestration
       const sequenceResponse = completeClassResponse.data.data.sequence;
       const musicResponse = completeClassResponse.data.data.music_recommendation;
-      const meditationResponse = completeClassResponse.data.data.meditation_script;
+      // Meditation comes from backend database (NOT from agent tool), so access directly
+      const meditationData = completeClassResponse.data.data.meditation;
 
       console.log('[AIGenerationPanel] StandardAgent orchestration complete:', {
         movementCount: sequenceResponse.data.movement_count,
@@ -80,6 +81,7 @@ export function AIGenerationPanel() {
         hasWarmup: !!framingSections.warmup,
         hasCooldown: !!framingSections.cooldown,
         hasHomecare: !!framingSections.homecare,
+        hasMeditation: !!meditationData,
       });
 
       // COMBINED RESULTS: AI sequence for modal, 6-section structure for playback
@@ -116,10 +118,11 @@ export function AIGenerationPanel() {
           average_bpm: musicResponse.data.average_bpm || 120,
         },
         meditation: {
-          script: meditationResponse.data.script || '',
-          duration_minutes: meditationResponse.data.duration_minutes || 5,
-          theme: meditationResponse.data.theme || formData.meditationTheme,
-          breathing_pattern: meditationResponse.data.breathing_pattern,
+          // Meditation is database object, not tool result - access fields directly
+          script: meditationData?.script_text || '',
+          duration_minutes: meditationData ? Math.floor(meditationData.duration_seconds / 60) : 5,
+          theme: meditationData?.meditation_theme || formData.meditationTheme,
+          breathing_pattern: meditationData?.breathing_guidance || '',
         },
         // SESSION 11: Store complete 6-section class for playback
         completeClass: {
