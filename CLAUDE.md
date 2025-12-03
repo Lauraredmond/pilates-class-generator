@@ -486,45 +486,70 @@ This data is migrated from `Pilates_Summary_Spreadsheet_teachingTracker_v10.xlsm
 
 ## AI Agent Architecture
 
-### Base Agent Compliance
+### ⚠️ MIGRATION COMPLETE (December 3, 2025): Jentic StandardAgent
 
-All agents inherit from `agents/base_agent.py` which implements:
-- EU AI Act transparency logging
-- Bias monitoring and drift detection
-- Input/output validation
-- Rate limiting and resource management
-- Error handling with graceful degradation
+**Old Architecture (Archived):** 4 custom agents in `backend/agents/`
+**New Architecture:** ONE StandardAgent + 4 Tool Modules in `orchestrator/agent/tools/`
 
-### Agent Responsibilities
+All business logic has been **preserved and extracted** to tool modules for maximum scalability.
 
-**Sequence Agent** (`agents/sequence_agent.py`)
+### Current Architecture (Jentic StandardAgent)
+
+```
+Backend API (FastAPI)
+  ↓ HTTP
+Orchestrator Service (FastAPI on Render)
+  ↓
+BasslinePilatesCoachAgent (Jentic StandardAgent)
+  ↓ Plan → Execute → Reflect
+Tool Modules (Pure Business Logic):
+  - SequenceTools (sequencing, muscle balance, safety)
+  - MusicTools (playlist generation, BPM matching)
+  - MeditationTools (meditation scripts, breathing)
+  - ResearchTools (MCP Playwright web research)
+```
+
+**Key Benefits:**
+- ✅ **Single Agent** - Simpler, easier to maintain
+- ✅ **Jentic Patterns** - Industry-standard reasoning (Plan→Execute→Reflect)
+- ✅ **Scalability** - Standardized code = easily scalable
+- ✅ **Separation** - Agent reasoning separate from domain logic
+- ✅ **All Business Logic Preserved** - Nothing lost in migration
+
+### Tool Module Responsibilities
+
+**SequenceTools** (`orchestrator/agent/tools/sequence_tools.py`)
 - Validates movement sequences against safety rules
 - Generates variations on existing sequences
 - Balances muscle groups across class duration
 - Ensures appropriate progression of difficulty
-- Uses small language model (e.g., GPT-3.5-turbo)
+- **Extracted from:** `backend/agents/sequence_agent.py` (963 lines)
 
-**Music Agent** (`agents/music_agent.py`)
+**MusicTools** (`orchestrator/agent/tools/music_tools.py`)
 - Recommends music based on class energy curve
 - Matches BPM to movement rhythm
-- Integrates with SoundCloud API
 - Considers user preferences and history
-- Provides fallback playlists when API unavailable
+- Provides fallback playlists when unavailable
+- **Extracted from:** `backend/agents/music_agent.py` (213 lines)
 
-**Meditation Agent** (`agents/meditation_agent.py`)
+**MeditationTools** (`orchestrator/agent/tools/meditation_tools.py`)
 - Generates cool-down meditation scripts
 - Adapts to class intensity and duration
-- Personalizes to user preferences
 - Includes breathing guidance
-- Provides theme variety (mindfulness, body scan, etc.)
+- Provides theme variety (mindfulness, body scan, gratitude)
+- **Extracted from:** `backend/agents/meditation_agent.py` (217 lines)
 
-**Research Agent** (`agents/research_agent.py`)
+**ResearchTools** (`orchestrator/agent/tools/research_tools.py`)
 - Uses MCP Playwright to search web for Pilates content
 - Enhances movement cues from reputable sources
 - Finds condition-specific modifications
-- Discovers warm-up/cool-down variations
-- Caches results with 24-hour TTL in Redis
 - Attributes sources for transparency
+- **Extracted from:** `backend/agents/research_agent.py` (190 lines)
+
+### Archived Agents
+
+Original backend agents archived in `backend/agents_archive/` (gitignored).
+See `/backend/agents_archive/README.md` for migration details.
 
 ---
 

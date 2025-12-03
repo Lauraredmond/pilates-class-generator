@@ -63,6 +63,14 @@ from agents.tools.base import JustInTimeToolingBase, ToolBase  # ← JENTIC
 from arazzo_runner.runner import ArazzoRunner  # ← JENTIC Arazzo Engine
 
 # ==============================================================================
+# ✅ BASSLINE CUSTOM: Import Tool Modules (Business Logic)
+# ==============================================================================
+# These modules contain all business logic extracted from backend agents.
+# Each tool module is pure domain expertise - no agent orchestration.
+
+from .tools import SequenceTools, MusicTools, MeditationTools, ResearchTools
+
+# ==============================================================================
 # BASSLINE TOOL IMPLEMENTATION (extends Jentic's ToolBase)
 # ==============================================================================
 
@@ -128,16 +136,32 @@ class BasslinePilatesTools(JustInTimeToolingBase):
     - Perform calculations or transformations
     """
 
-    def __init__(self, bassline_api_url: str):
+    def __init__(self, bassline_api_url: str, supabase_client=None, mcp_client=None):
         """
-        Initialize tools with Bassline API URL.
+        Initialize tools with Bassline API URL and optional clients.
 
         Args:
             bassline_api_url: Base URL of existing Bassline backend
                              (e.g., "https://pilates-class-generator-api3.onrender.com")
+            supabase_client: Optional Supabase client for database access
+            mcp_client: Optional MCP Playwright client for web research
         """
         self.bassline_api_url = bassline_api_url.rstrip('/')
         self.http_client = httpx.AsyncClient(timeout=60.0)
+
+        # ======================================================================
+        # ✅ BASSLINE CUSTOM: Initialize Tool Modules (Business Logic)
+        # ======================================================================
+        # Each tool module contains extracted business logic from backend agents.
+        # This is where domain expertise lives - separate from agent reasoning.
+        # ======================================================================
+
+        self.sequence_tools = SequenceTools(supabase_client=supabase_client)
+        self.music_tools = MusicTools(bassline_api_url=bassline_api_url)
+        self.meditation_tools = MeditationTools(bassline_api_url=bassline_api_url)
+        self.research_tools = ResearchTools(mcp_client=mcp_client)
+
+        logger.info("✅ All tool modules initialized (Sequence, Music, Meditation, Research)")
 
         # ======================================================================
         # ✅ JENTIC: Initialize Arazzo Runner (REAL CODE)
@@ -339,6 +363,164 @@ class BasslinePilatesTools(JustInTimeToolingBase):
                     },
                     "required": ["method", "endpoint"]
                 }
+            },
+
+            # ==================================================================
+            # TOOL 4: Generate Pilates Sequence
+            # ==================================================================
+            {
+                "id": "generate_sequence",
+                "name": "Generate Pilates Movement Sequence",
+                "description": """
+                Generate a safe and effective Pilates movement sequence.
+
+                Uses SequenceTools business logic (extracted from SequenceAgent).
+                Enforces safety rules: spinal progression, muscle balance, teaching time.
+
+                Returns: Complete sequence with movements, transitions, muscle balance, validation.
+                """,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "target_duration_minutes": {
+                            "type": "integer",
+                            "minimum": 15,
+                            "maximum": 120,
+                            "description": "Total class duration"
+                        },
+                        "difficulty_level": {
+                            "type": "string",
+                            "enum": ["Beginner", "Intermediate", "Advanced"],
+                            "default": "Beginner"
+                        },
+                        "focus_areas": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "default": []
+                        },
+                        "user_id": {
+                            "type": "string",
+                            "description": "Optional user ID for movement variety tracking"
+                        }
+                    },
+                    "required": ["target_duration_minutes"]
+                }
+            },
+
+            # ==================================================================
+            # TOOL 5: Select Music Playlist
+            # ==================================================================
+            {
+                "id": "select_music",
+                "name": "Select Music Playlist",
+                "description": """
+                Select appropriate music playlist for Pilates class.
+
+                Uses MusicTools business logic (extracted from MusicAgent).
+                Matches BPM to class structure: warmup → workout → cooldown.
+
+                Returns: Playlist with tracks, average BPM, energy curve match.
+                """,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "class_duration_minutes": {
+                            "type": "integer",
+                            "minimum": 15,
+                            "maximum": 120
+                        },
+                        "target_bpm_range": {
+                            "type": "array",
+                            "items": {"type": "integer"},
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "default": [90, 130]
+                        },
+                        "preferred_genres": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "default": []
+                        }
+                    },
+                    "required": ["class_duration_minutes"]
+                }
+            },
+
+            # ==================================================================
+            # TOOL 6: Generate Meditation Script
+            # ==================================================================
+            {
+                "id": "generate_meditation",
+                "name": "Generate Meditation Script",
+                "description": """
+                Generate cool-down meditation script for Pilates class.
+
+                Uses MeditationTools business logic (extracted from MeditationAgent).
+                Adapts theme and breathing to class intensity.
+
+                Returns: Meditation script, theme, breathing pattern, suggested position.
+                """,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "duration_minutes": {
+                            "type": "integer",
+                            "minimum": 2,
+                            "maximum": 15,
+                            "default": 5
+                        },
+                        "class_intensity": {
+                            "type": "string",
+                            "enum": ["low", "moderate", "high"],
+                            "default": "moderate"
+                        },
+                        "focus_theme": {
+                            "type": "string",
+                            "enum": ["mindfulness", "body_scan", "gratitude"],
+                            "description": "Optional theme override"
+                        }
+                    },
+                    "required": []
+                }
+            },
+
+            # ==================================================================
+            # TOOL 7: Perform Web Research
+            # ==================================================================
+            {
+                "id": "research_cues",
+                "name": "Research Pilates Content",
+                "description": """
+                Perform web research using MCP Playwright.
+
+                Uses ResearchTools business logic (extracted from ResearchAgent).
+                Searches trusted Pilates sources for cues, modifications, safety info.
+
+                Returns: Research findings, sources, quality score.
+                """,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "research_type": {
+                            "type": "string",
+                            "enum": ["movement_cues", "warmup", "pregnancy", "injury", "trends"]
+                        },
+                        "movement_name": {
+                            "type": "string",
+                            "description": "Movement name (for movement_cues, pregnancy, injury)"
+                        },
+                        "target_muscles": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Muscles to target (for warmup)"
+                        },
+                        "trusted_sources_only": {
+                            "type": "boolean",
+                            "default": True
+                        }
+                    },
+                    "required": ["research_type"]
+                }
             }
         ]
 
@@ -490,6 +672,21 @@ class BasslinePilatesTools(JustInTimeToolingBase):
 
         elif tool_id == "call_bassline_api":
             return self._call_bassline_api(**parameters)
+
+        # ======================================================================
+        # ✅ BASSLINE CUSTOM: Route to Tool Modules (Business Logic)
+        # ======================================================================
+        elif tool_id == "generate_sequence":
+            return self.sequence_tools.generate_sequence(**parameters)
+
+        elif tool_id == "select_music":
+            return self.music_tools.select_music(**parameters)
+
+        elif tool_id == "generate_meditation":
+            return self.meditation_tools.generate_meditation(**parameters)
+
+        elif tool_id == "research_cues":
+            return self.research_tools.research(**parameters)
 
         else:
             raise ValueError(f"Unknown tool: {tool.id} (normalized: {tool_id})")

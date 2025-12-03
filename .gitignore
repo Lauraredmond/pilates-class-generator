@@ -86,3 +86,4 @@ supabaseDetails
 # Cache
 .cache/
 *.cache
+backend/agents_archive/
