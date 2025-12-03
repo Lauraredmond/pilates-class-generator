@@ -232,10 +232,25 @@ class SequenceTools:
             f"= max {max_movements} movements"
         )
 
-        # Get movement usage weights for variety enforcement (if user_id provided)
+        # SESSION 13: Get movement usage weights for variety enforcement + The Hundred boosting
         usage_weights = {}
+        is_beginner = False
         if user_id and self.supabase:
             usage_weights = self._get_movement_usage_weights(user_id, movements)
+            # Check if user is beginner (classes_completed < 10)
+            is_beginner = self._check_if_beginner(user_id)
+
+        # SESSION 13: RULE - The Hundred Boosting for Beginners
+        # "When student starts, they should do The Hundred quite a bit as it's foundational"
+        if is_beginner:
+            # Find "The Hundred" movement
+            hundred_movement = next((m for m in movements if "hundred" in m.get("name", "").lower()), None)
+            if hundred_movement:
+                # Boost The Hundred weight by 3x for beginners
+                hundred_id = hundred_movement["id"]
+                current_weight = usage_weights.get(hundred_id, 1.0)
+                usage_weights[hundred_id] = current_weight * 3.0
+                logger.info(f"✨ Beginner detected: Boosted 'The Hundred' weight from {current_weight:.0f} to {usage_weights[hundred_id]:.0f}")
 
         # Rule 1: Add required movements if specified
         if required_movements:
@@ -577,3 +592,39 @@ class SequenceTools:
         except Exception as e:
             logger.warning(f"Error getting movement usage weights: {e}")
             return {m['id']: 1.0 for m in movements}
+
+    def _check_if_beginner(self, user_id: str) -> bool:
+        """
+        SESSION 13: Check if user is a beginner (classes_completed < 10)
+
+        Used for "The Hundred" boosting logic.
+        Beginners need to practice The Hundred frequently as it's foundational.
+
+        Returns:
+            True if beginner (classes_completed < 10), False otherwise
+        """
+        if not self.supabase:
+            return False
+
+        try:
+            response = self.supabase.table('user_preferences') \
+                .select('classes_completed, experience_level') \
+                .eq('user_id', user_id) \
+                .single() \
+                .execute()
+
+            if response.data:
+                classes_completed = response.data.get('classes_completed', 0)
+                experience = response.data.get('experience_level', 'beginner')
+
+                # User is beginner if: classes_completed < 10 OR experience_level = 'beginner'
+                is_beginner = classes_completed < 10 or experience == 'beginner'
+
+                logger.info(f"User experience: {experience}, classes: {classes_completed}, is_beginner: {is_beginner}")
+                return is_beginner
+
+            return False
+
+        except Exception as e:
+            logger.warning(f"Error checking beginner status: {e}")
+            return False  # Default to not beginner if check fails
