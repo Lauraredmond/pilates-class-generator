@@ -72,7 +72,15 @@ def get_agent() -> BasslinePilatesCoachAgent:
     global _agent_instance
     if _agent_instance is None:
         _agent_instance = BasslinePilatesCoachAgent(supabase_client=supabase)
-        logger.info("✅ BasslinePilatesCoachAgent initialized")
+        logger.info("=" * 80)
+        logger.info("🤖 AGENT INITIALIZATION")
+        logger.info("=" * 80)
+        logger.info(f"📦 Agent class: {type(_agent_instance).__module__}.{type(_agent_instance).__name__}")
+        logger.info(f"📦 Agent base classes: {[c.__name__ for c in type(_agent_instance).__mro__]}")
+        logger.info(f"🔧 Has reasoner: {hasattr(_agent_instance, 'reasoner')}")
+        if hasattr(_agent_instance, 'reasoner'):
+            logger.info(f"📦 Reasoner class: {type(_agent_instance.reasoner).__module__}.{type(_agent_instance.reasoner).__name__}")
+        logger.info("=" * 80)
     return _agent_instance
 
 
@@ -507,7 +515,13 @@ async def generate_complete_class(
         # AI AGENT MODE: ReWOO Reasoning (Plan→Execute→Reflect)
         # ============================================================================
         if use_ai_agent:
-            logger.info("🧠 Using AI Agent mode (ReWOO reasoning)")
+            logger.info("=" * 80)
+            logger.info("🤖 AI AGENT MODE ACTIVATED - ReWOO Reasoning")
+            logger.info("=" * 80)
+            logger.info("📊 Expected cost: ~$0.12 (OpenAI GPT-4)")
+            logger.info("⏱️  Expected duration: 5-10 seconds")
+            logger.info("🔧 Using: SimplifiedStandardAgent with ReWOO reasoner")
+            logger.info("=" * 80)
 
             # Build comprehensive goal for the agent
             goal = f"""
@@ -552,8 +566,14 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                 total_time_ms = (time.time() - start_time) * 1000
 
                 # Extract the final answer from reasoning result
-                logger.info(f"✅ AI Agent succeeded in {result.iterations} iterations")
-                logger.info(f"AI reasoning time: {total_time_ms:.0f}ms")
+                logger.info("=" * 80)
+                logger.info("✅ AI AGENT EXECUTION COMPLETED")
+                logger.info("=" * 80)
+                logger.info(f"🔄 Iterations: {result.iterations}")
+                logger.info(f"⏱️  Processing time: {total_time_ms:.0f}ms")
+                logger.info(f"📦 Result namespace: {type(result).__module__}.{type(result).__name__}")
+                logger.info(f"🔧 Steps executed: {len(result.steps) if hasattr(result, 'steps') else 0}")
+                logger.info("=" * 80)
 
                 # ============================================================
                 # EXTRACT TOOL RESULTS FROM REWOO STEPS
@@ -583,8 +603,15 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                 homecare = None
                 music_result = None
 
+                logger.info("🔧 TOOL EXECUTION RESULTS:")
                 for i, step in enumerate(steps):
-                    logger.info(f"  Step {i}: tool_id={step.tool_id}, has_result={bool(step.result)}, has_error={bool(step.error)}")
+                    status_icon = "✅" if (step.result and not step.error) else "❌"
+                    logger.info(f"  {status_icon} Step {i+1}: {step.tool_id}")
+                    if step.error:
+                        logger.info(f"      ERROR: {step.error[:100]}")
+                    elif step.result:
+                        result_preview = str(step.result)[:150] if step.result else "None"
+                        logger.info(f"      RESULT: {result_preview}...")
 
                     if step.result and not step.error:
                         tool_id = step.tool_id
@@ -603,6 +630,17 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                             homecare = step.result
                         elif tool_id == "select_music":
                             music_result = {"success": True, "data": step.result}
+
+                # Log final sections assembled
+                logger.info("=" * 80)
+                logger.info("📋 FINAL CLASS ASSEMBLY:")
+                logger.info(f"  Section 1 (Preparation): {'✅' if preparation else '❌'}")
+                logger.info(f"  Section 2 (Warmup): {'✅' if warmup else '❌'}")
+                logger.info(f"  Section 3 (Sequence): {'✅' if sequence_result else '❌'}")
+                logger.info(f"  Section 4 (Cooldown): {'✅' if cooldown else '❌'}")
+                logger.info(f"  Section 5 (Meditation): {'✅' if meditation else '❌'}")
+                logger.info(f"  Section 6 (Homecare): {'✅' if homecare else '❌'}")
+                logger.info("=" * 80)
 
                 # Return in SAME format as DEFAULT mode (so frontend works)
                 return {
@@ -644,7 +682,13 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         # ============================================================================
         # DEFAULT MODE: Direct Database Selection (Phase 1 - CURRENT)
         # ============================================================================
-        logger.info("Using DEFAULT mode (direct database selection)")
+        logger.info("=" * 80)
+        logger.info("🔵 DEFAULT MODE - Direct Database Selection")
+        logger.info("=" * 80)
+        logger.info("📊 Cost: $0.00 (no AI, database only)")
+        logger.info("⏱️  Duration: <1 second")
+        logger.info("🔧 Using: Direct Supabase queries")
+        logger.info("=" * 80)
 
         # Step 1: Generate main sequence (existing behavior)
         sequence_result = call_agent_tool(
