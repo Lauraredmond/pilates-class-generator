@@ -8,6 +8,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Pilates Class Planner v2.0** - An intelligent Pilates class planning application that combines domain expertise, AI agents, and web research capabilities to create safe, effective, and personalized Pilates classes.
 
+---
+
+## 🚨 CRITICAL: KNOWN WORKING COMMIT 🚨
+
+**Last Verified Working Version:** `416a8a6` (December 3, 2025)
+
+**Commit Message:** `feat: Enable StandardAgent orchestration for class generation`
+
+**What This Commit Has:**
+- ✅ Jentic StandardAgent integrated (modern architecture)
+- ✅ Direct tool calling via `call_agent_tool()` (NO ReWOO reasoning overhead)
+- ✅ NO Arazzo execution attempts (avoids self-deadlock issues)
+- ✅ No LLM costs for basic class generation
+- ✅ Proven working - class generator modal displays correctly
+
+**Why This Matters:**
+This commit is confirmed working after multiple debugging sessions. Use this as a fallback if future changes break the application.
+
+**To revert to this working state:**
+```bash
+git reset --hard 416a8a6
+git push origin main --force
+```
+
+**See:** `NEXT_SESSION_NOTES.md` for details on future work (validation reasoning, questionnaires, ReWOO revisited).
+
+---
+
 ## 🎯 DUAL PROJECT GOALS (CRITICAL - READ FIRST)
 
 **This project serves TWO equally important strategic objectives:**
