@@ -97,28 +97,42 @@ try:
         print("📋 Sections Check:")
         for section_name, section_data in sections:
             if section_data:
-                if section_name == "Preparation":
-                    name = section_data.get("script_name", "Unknown")
-                elif section_name == "Warm-up":
-                    name = section_data.get("routine_name", "Unknown")
-                elif section_name == "Sequence":
-                    seq_data = section_data.get("data", {})
-                    movements = seq_data.get("sequence", [])
-                    name = f"{len(movements)} movements"
-                elif section_name == "Cool-down":
-                    name = section_data.get("sequence_name", "Unknown")
-                elif section_name == "Meditation":
-                    name = section_data.get("script_name", "Unknown")
-                elif section_name == "HomeCare":
-                    name = section_data.get("advice_name", "Unknown")
-                elif section_name == "Music":
-                    music_data = section_data.get("data", {})
-                    playlist = music_data.get("playlist", {})
-                    name = playlist.get("name", "Unknown")
-                else:
-                    name = "Present"
+                try:
+                    if section_name == "Preparation":
+                        name = section_data.get("script_name", "Unknown")
+                    elif section_name == "Warm-up":
+                        # Handle both dict and list responses
+                        if isinstance(section_data, list):
+                            name = section_data[0].get("routine_name", "Unknown") if section_data else "Unknown"
+                        else:
+                            name = section_data.get("routine_name", "Unknown")
+                    elif section_name == "Sequence":
+                        seq_data = section_data.get("data", {})
+                        movements = seq_data.get("sequence", [])
+                        # Count only actual movements, not transitions
+                        movement_count = sum(1 for m in movements if m.get("type") == "movement")
+                        transition_count = sum(1 for m in movements if m.get("type") == "transition")
+                        name = f"{movement_count} movements, {transition_count} transitions"
+                    elif section_name == "Cool-down":
+                        # Handle both dict and list responses
+                        if isinstance(section_data, list):
+                            name = section_data[0].get("sequence_name", "Unknown") if section_data else "Unknown"
+                        else:
+                            name = section_data.get("sequence_name", "Unknown")
+                    elif section_name == "Meditation":
+                        name = section_data.get("script_name", "Unknown")
+                    elif section_name == "HomeCare":
+                        name = section_data.get("advice_name", "Unknown")
+                    elif section_name == "Music":
+                        music_data = section_data.get("data", {})
+                        playlist = music_data.get("playlist", {})
+                        name = playlist.get("name", "Unknown")
+                    else:
+                        name = "Present"
 
-                print(f"  ✅ {section_name}: {name}")
+                    print(f"  ✅ {section_name}: {name}")
+                except Exception as e:
+                    print(f"  ⚠️  {section_name}: Present but could not parse ({e})")
             else:
                 print(f"  ❌ {section_name}: Missing")
 

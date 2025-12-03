@@ -558,7 +558,8 @@ async def generate_complete_class(
                 {'target_muscles': target_muscles, 'user_mode': 'default'}
             ).execute()
 
-            warmup = warmup_response.data if warmup_response.data else None
+            # RPC functions return a list (SETOF), extract first element
+            warmup = warmup_response.data[0] if warmup_response.data and len(warmup_response.data) > 0 else None
             logger.info(f"Selected warmup: {warmup.get('routine_name') if warmup else 'None'}")
         except Exception as e:
             logger.error(f"Failed to fetch warmup routine: {e}")
@@ -574,7 +575,8 @@ async def generate_complete_class(
                 {'target_muscles': target_muscles, 'user_mode': 'default'}
             ).execute()
 
-            cooldown = cooldown_response.data if cooldown_response.data else None
+            # RPC functions return a list (SETOF), extract first element
+            cooldown = cooldown_response.data[0] if cooldown_response.data and len(cooldown_response.data) > 0 else None
             logger.info(f"Selected cooldown: {cooldown.get('sequence_name') if cooldown else 'None'}")
         except Exception as e:
             logger.error(f"Failed to fetch cooldown sequence: {e}")
