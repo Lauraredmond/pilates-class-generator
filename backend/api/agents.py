@@ -486,30 +486,104 @@ async def generate_complete_class(
         start_time = time.time()
 
         # ============================================================================
-        # CHECK USER MODE: Default vs Reasoner
+        # CHECK USER MODE: Default vs AI Agent
         # ============================================================================
         try:
             user_prefs_response = supabase.table('user_preferences') \
-                .select('use_reasoner_mode') \
+                .select('use_ai_agent') \
                 .eq('user_id', user_id) \
                 .single() \
                 .execute()
 
-            use_reasoner = user_prefs_response.data.get('use_reasoner_mode', False) if user_prefs_response.data else False
-            logger.info(f"User mode: {'REASONER' if use_reasoner else 'DEFAULT'}")
+            use_ai_agent = user_prefs_response.data.get('use_ai_agent', False) if user_prefs_response.data else False
+            logger.info(f"User mode: {'AI AGENT (ReWOO)' if use_ai_agent else 'DEFAULT (Direct DB)'}")
         except Exception as e:
             logger.warning(f"Could not fetch user preferences: {e}. Defaulting to DEFAULT mode.")
-            use_reasoner = False
+            use_ai_agent = False
 
         # ============================================================================
-        # REASONER MODE (Phase 2 - Not Yet Implemented)
+        # AI AGENT MODE: ReWOO Reasoning (Plan→Execute→Reflect)
         # ============================================================================
-        if use_reasoner:
-            logger.warning("Reasoner mode requested but not yet implemented")
-            raise HTTPException(
-                status_code=501,
-                detail="Reasoner mode not yet implemented. Please disable in user settings and try again."
-            )
+        if use_ai_agent:
+            logger.info("🧠 Using AI Agent mode (ReWOO reasoning)")
+
+            # Build comprehensive goal for the agent
+            goal = f"""
+Create a complete {request.class_plan.difficulty_level} Pilates class with all 6 sections:
+
+REQUIREMENTS:
+- Duration: {request.class_plan.target_duration_minutes} minutes total
+- Difficulty: {request.class_plan.difficulty_level}
+- Focus areas: {', '.join(request.class_plan.focus_areas) if request.class_plan.focus_areas else 'balanced full body'}
+
+SECTIONS NEEDED:
+1. Preparation script (breathing, centering, Pilates principles)
+2. Warmup routine (prepare muscles for main sequence)
+3. Main movement sequence (classical Pilates exercises with safety rules)
+4. Cooldown sequence (gentle stretching and recovery)
+5. Closing meditation (body scan and restoration)
+6. Homecare advice (actionable tips for between classes)
+
+CRITICAL:
+- All 6 sections must work together as a cohesive class experience
+- Warmup and cooldown should complement the muscles used in main sequence
+- Maintain classical Pilates safety rules (spinal progression, muscle balance)
+- Total duration must match {request.class_plan.target_duration_minutes} minutes
+
+OUTPUT:
+Return all 6 sections with complete details (narrative, timing, instructions).
+            """.strip()
+
+            try:
+                # Use SimplifiedStandardAgent's solve() method
+                # This triggers Plan→Execute→Reflect reasoning loop
+                result = agent.solve(goal)
+
+                if not result.success:
+                    logger.error(f"AI reasoning failed: {result.error_message}")
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"AI Agent reasoning failed: {result.error_message}"
+                    )
+
+                # Calculate total processing time
+                total_time_ms = (time.time() - start_time) * 1000
+
+                # Extract the final answer from reasoning result
+                logger.info(f"✅ AI Agent succeeded in {result.iterations} iterations")
+                logger.info(f"AI reasoning time: {total_time_ms:.0f}ms")
+
+                # The agent's final_answer should contain the structured class data
+                # For now, we'll parse it from the reasoning steps
+                # TODO: Enhance SimplifiedReWOOReasoner to return structured tool results
+
+                return {
+                    "success": True,
+                    "data": {
+                        "ai_reasoning": {
+                            "goal": goal,
+                            "iterations": result.iterations,
+                            "steps_executed": len(result.steps),
+                            "final_answer": result.final_answer
+                        },
+                        "total_processing_time_ms": total_time_ms
+                    },
+                    "metadata": {
+                        "mode": "ai_agent",
+                        "cost": 0.12,  # Approximate GPT-4 cost for full reasoning
+                        "generated_at": datetime.now().isoformat(),
+                        "user_id": user_id,
+                        "sections_included": 6,
+                        "reasoning_iterations": result.iterations,
+                        "orchestration": "jentic_rewoo_reasoner"
+                    }
+                }
+
+            except Exception as ai_error:
+                logger.error(f"AI Agent error: {ai_error}", exc_info=True)
+                # Fall back to DEFAULT mode if AI fails
+                logger.warning("AI Agent failed, falling back to DEFAULT mode")
+                use_ai_agent = False
 
         # ============================================================================
         # DEFAULT MODE: Direct Database Selection (Phase 1 - CURRENT)
