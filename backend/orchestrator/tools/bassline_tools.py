@@ -130,6 +130,17 @@ Returns: Complete sequence with movements, transitions, muscle balance, and vali
                     "type": "string",
                     "description": "User ID for movement variety tracking",
                     "required": False
+                },
+                "strictness_level": {
+                    "type": "string",
+                    "enum": ["strict", "guided", "autonomous"],
+                    "description": "AI guidance level (default: guided)",
+                    "required": False
+                },
+                "include_mcp_research": {
+                    "type": "boolean",
+                    "description": "Whether to enhance with web research (default: false)",
+                    "required": False
                 }
             },
             function=self.sequence_tools.generate_sequence

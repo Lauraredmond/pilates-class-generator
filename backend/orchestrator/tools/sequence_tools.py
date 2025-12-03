@@ -76,7 +76,9 @@ class SequenceTools:
         focus_areas: List[str] = None,
         required_movements: List[str] = None,
         excluded_movements: List[str] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        strictness_level: str = "guided",  # strict, guided, or autonomous
+        include_mcp_research: bool = False  # Whether to enhance with web research
     ) -> Dict[str, Any]:
         """
         Generate a complete Pilates movement sequence
