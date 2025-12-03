@@ -176,7 +176,7 @@ Returns: Complete playlist with track details, URLs, and timing.
                     "required": False
                 }
             },
-            function=self.music_tools.select_music_playlist
+            function=self.music_tools.select_music  # Correct method name
         )
 
         # ======================================================================
@@ -213,7 +213,7 @@ Returns: Complete meditation script with timing and cues.
                     "required": False
                 }
             },
-            function=self.meditation_tools.generate_meditation_script
+            function=self.meditation_tools.generate_meditation  # Correct method name
         )
 
         # ======================================================================
