@@ -141,26 +141,17 @@ class BasslinePilatesCoachAgent(StandardAgent):
             model="gpt-4-turbo",  # Use gpt-4-turbo (supports JSON mode) instead of base gpt-4
             # Alternative models: "gpt-4o", "gpt-3.5-turbo", "claude-3-sonnet"
             temperature=0.7,  # Balance creativity and consistency
-            max_tokens=4000,
+            max_tokens=4000
+        )
 
-            # ============================================================
-            # ✅ BASSLINE CUSTOM: System Prompt (Domain Expertise)
-            # ============================================================
-            # This is where you define the agent's "personality" and domain knowledge.
-            # This prompt guides high-level decision-making during Plan→Execute→Reflect.
-            #
-            # MODIFICATION GUIDE:
-            # - Add Pilates-specific knowledge here
-            # - Include critical safety rules
-            # - Define teaching style and approach
-            # - Specify decision-making priorities
-            #
-            # For other domains (yoga, nutrition, etc.):
-            # - Copy this structure
-            # - Replace Pilates knowledge with domain expertise
-            # - Keep same prompt structure (expertise → approach → rules)
-            # ============================================================
-            system_prompt="""
+        # ======================================================================
+        # ✅ BASSLINE CUSTOM: System Prompt (Domain Expertise)
+        # ======================================================================
+        # NOTE: LiteLLM doesn't store system_prompt in __init__
+        # Instead, we store it as an instance variable and ReWOOReasoner will
+        # use it when constructing messages for LLM calls
+        # ======================================================================
+        self.system_prompt = """
 You are a certified Pilates instructor with 20 years of experience in Joseph Pilates' classical method.
 
 Your expertise includes:
@@ -207,7 +198,6 @@ When in doubt:
 - Include more detailed cueing
 - Offer modifications proactively
 """
-        )
         logger.info(f"✅ JENTIC LLM initialized: {self.llm.model}")
 
         # ======================================================================
