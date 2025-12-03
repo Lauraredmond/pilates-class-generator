@@ -496,9 +496,11 @@ async def generate_complete_class(
                 .execute()
 
             use_ai_agent = user_prefs_response.data.get('use_ai_agent', False) if user_prefs_response.data else False
-            logger.info(f"User mode: {'AI AGENT (ReWOO)' if use_ai_agent else 'DEFAULT (Direct DB)'}")
+            logger.info(f"🔍 User ID: {user_id}")
+            logger.info(f"🔍 use_ai_agent preference: {use_ai_agent}")
+            logger.info(f"🎯 Selected mode: {'AI AGENT (ReWOO)' if use_ai_agent else 'DEFAULT (Direct DB)'}")
         except Exception as e:
-            logger.warning(f"Could not fetch user preferences: {e}. Defaulting to DEFAULT mode.")
+            logger.warning(f"❌ Could not fetch user preferences: {e}. Defaulting to DEFAULT mode.")
             use_ai_agent = False
 
         # ============================================================================
@@ -553,20 +555,58 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                 logger.info(f"✅ AI Agent succeeded in {result.iterations} iterations")
                 logger.info(f"AI reasoning time: {total_time_ms:.0f}ms")
 
-                # The agent's final_answer should contain the structured class data
-                # For now, we'll parse it from the reasoning steps
-                # TODO: Enhance SimplifiedReWOOReasoner to return structured tool results
+                # ============================================================
+                # EXTRACT TOOL RESULTS FROM REWOO STEPS
+                # ============================================================
+                # The AI reasoning produced steps with tool results.
+                # Extract them to match the DEFAULT mode response structure.
 
+                preparation = None
+                warmup = None
+                sequence_result = None
+                cooldown = None
+                meditation = None
+                homecare = None
+                music_result = None
+
+                for step in result.steps:
+                    if step.result and not step.error:
+                        tool_id = step.tool_id
+
+                        if tool_id == "select_preparation":
+                            preparation = step.result
+                        elif tool_id == "select_warmup":
+                            warmup = step.result
+                        elif tool_id == "generate_sequence":
+                            sequence_result = {"success": True, "data": step.result}
+                        elif tool_id == "select_cooldown":
+                            cooldown = step.result
+                        elif tool_id == "generate_meditation":
+                            meditation = step.result
+                        elif tool_id == "select_homecare":
+                            homecare = step.result
+                        elif tool_id == "select_music":
+                            music_result = {"success": True, "data": step.result}
+
+                # Return in SAME format as DEFAULT mode (so frontend works)
                 return {
                     "success": True,
                     "data": {
+                        "preparation": preparation,
+                        "warmup": warmup,
+                        "sequence": sequence_result,
+                        "cooldown": cooldown,
+                        "meditation": meditation,
+                        "homecare": homecare,
+                        "music_recommendation": music_result,
+                        "research_enhancements": None,  # Not used in AI mode yet
+                        "total_processing_time_ms": total_time_ms,
+                        # Include AI reasoning details for debugging/transparency
                         "ai_reasoning": {
-                            "goal": goal,
                             "iterations": result.iterations,
                             "steps_executed": len(result.steps),
-                            "final_answer": result.final_answer
-                        },
-                        "total_processing_time_ms": total_time_ms
+                            "final_answer": result.final_answer[:500]  # Truncate for brevity
+                        }
                     },
                     "metadata": {
                         "mode": "ai_agent",
