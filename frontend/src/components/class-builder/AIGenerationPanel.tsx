@@ -37,49 +37,42 @@ export function AIGenerationPanel() {
       }
       console.log('[AIGenerationPanel] Using authenticated user ID:', user.id);
 
-      // SESSION 11: Generate both AI sequence AND 6-section structure in parallel
-      const [sequenceResponse, musicResponse, meditationResponse, framingSections] = await Promise.all([
-        // BASELINE: AI-powered intelligent movement selection + transitions (9 movements + 8 transitions)
-        agentsApi.generateSequence({
-          target_duration_minutes: formData.duration,
-          difficulty_level: formData.difficulty,
-          strictness_level: 'guided',
-          include_mcp_research: formData.enableMcpResearch,
-          focus_areas: formData.focusAreas,
-        }),
-        // Select music
-        agentsApi.selectMusic({
-          class_duration_minutes: formData.duration,
-          target_bpm_range: [formData.musicBpmMin, formData.musicBpmMax],
-          exclude_explicit: true,
-          energy_level: formData.energyLevel,
-        }),
-        // Create meditation
-        agentsApi.createMeditation({
-          duration_minutes: 5,
-          class_intensity: formData.energyLevel > 0.7 ? 'high' : formData.energyLevel > 0.4 ? 'moderate' : 'low',
-          focus_theme: formData.meditationTheme.toLowerCase(),
-          include_breathing: true,
+      // SESSION 11.5: Use StandardAgent orchestration for sequence + music + meditation
+      // Parallel execution: StandardAgent workflow + framing sections
+      const [completeClassResponse, framingSections] = await Promise.all([
+        // JENTIC STANDARDAGENT: Single orchestrated call for sequence + music + meditation
+        // This uses BasslinePilatesCoachAgent (extends StandardAgent) to coordinate all tools
+        agentsApi.generateCompleteClass({
+          class_plan: {
+            target_duration_minutes: formData.duration,
+            difficulty_level: formData.difficulty,
+            strictness_level: 'guided',
+            include_mcp_research: formData.enableMcpResearch,
+            focus_areas: formData.focusAreas,
+          },
+          include_music: true,
+          include_meditation: true,
+          include_research: formData.enableMcpResearch,
         }),
         // SESSION 11: Fetch framing sections (preparation, warmup, cooldown, homecare)
         assembleCompleteClass(formData.difficulty, formData.duration, user.id),
       ]);
 
-      // Validate AI responses
-      if (!sequenceResponse.data.success) {
-        throw new Error(sequenceResponse.data.error || 'Failed to generate sequence');
-      }
-      if (!musicResponse.data.success) {
-        throw new Error(musicResponse.data.error || 'Failed to select music');
-      }
-      if (!meditationResponse.data.success) {
-        throw new Error(meditationResponse.data.error || 'Failed to create meditation');
+      // Validate StandardAgent response
+      if (!completeClassResponse.data.success) {
+        throw new Error(completeClassResponse.data.error || 'Failed to generate complete class');
       }
 
-      console.log('[AIGenerationPanel] AI sequence generated:', {
-        movementCount: sequenceResponse.data.data.movement_count,
-        transitionCount: sequenceResponse.data.data.transition_count,
-        totalItems: sequenceResponse.data.data.sequence.length,
+      // Extract individual results from StandardAgent orchestration
+      const sequenceResponse = completeClassResponse.data.data.sequence;
+      const musicResponse = completeClassResponse.data.data.music_recommendation;
+      const meditationResponse = completeClassResponse.data.data.meditation_script;
+
+      console.log('[AIGenerationPanel] StandardAgent orchestration complete:', {
+        movementCount: sequenceResponse.data.movement_count,
+        transitionCount: sequenceResponse.data.transition_count,
+        totalItems: sequenceResponse.data.sequence.length,
+        orchestrationTimeMs: completeClassResponse.data.data.total_processing_time_ms,
       });
 
       console.log('[AIGenerationPanel] Framing sections fetched:', {
@@ -93,7 +86,7 @@ export function AIGenerationPanel() {
       const completeResults: GeneratedClassResults = {
         sequence: {
           // Use AI-generated movements + transitions for modal display
-          movements: sequenceResponse.data.data.sequence.map((m: any) => ({
+          movements: sequenceResponse.data.sequence.map((m: any) => ({
             id: m.id,
             name: m.name,
             duration_seconds: m.duration_seconds || 60,
@@ -104,42 +97,42 @@ export function AIGenerationPanel() {
             to_position: m.to_position,
             narrative: m.narrative,
           })),
-          movement_count: sequenceResponse.data.data.movement_count || 0,
-          transition_count: sequenceResponse.data.data.transition_count || 0,
-          total_duration: sequenceResponse.data.data.total_duration_minutes
-            ? sequenceResponse.data.data.total_duration_minutes * 60
+          movement_count: sequenceResponse.data.movement_count || 0,
+          transition_count: sequenceResponse.data.transition_count || 0,
+          total_duration: sequenceResponse.data.total_duration_minutes
+            ? sequenceResponse.data.total_duration_minutes * 60
             : formData.duration * 60,
-          muscle_balance: sequenceResponse.data.data.muscle_balance || {},
+          muscle_balance: sequenceResponse.data.muscle_balance || {},
         },
         music: {
-          playlist: musicResponse.data.data.playlist.map((track: any) => ({
+          playlist: musicResponse.data.playlist.map((track: any) => ({
             title: track.title || 'Unknown Track',
             artist: track.artist || 'Unknown Artist',
             bpm: track.bpm || 120,
             duration_seconds: track.duration_seconds || 180,
             url: track.url,
           })),
-          total_duration: musicResponse.data.data.total_duration || formData.duration * 60,
-          average_bpm: musicResponse.data.data.average_bpm || 120,
+          total_duration: musicResponse.data.total_duration || formData.duration * 60,
+          average_bpm: musicResponse.data.average_bpm || 120,
         },
         meditation: {
-          script: meditationResponse.data.data.script || '',
-          duration_minutes: meditationResponse.data.data.duration_minutes || 5,
-          theme: meditationResponse.data.data.theme || formData.meditationTheme,
-          breathing_pattern: meditationResponse.data.data.breathing_pattern,
+          script: meditationResponse.data.script || '',
+          duration_minutes: meditationResponse.data.duration_minutes || 5,
+          theme: meditationResponse.data.theme || formData.meditationTheme,
+          breathing_pattern: meditationResponse.data.breathing_pattern,
         },
         // SESSION 11: Store complete 6-section class for playback
         completeClass: {
           preparation: framingSections.preparation,
           warmup: framingSections.warmup,
-          movements: sequenceResponse.data.data.sequence.filter((item: any) => item.type === 'movement'),
-          transitions: sequenceResponse.data.data.sequence.filter((item: any) => item.type === 'transition'),
+          movements: sequenceResponse.data.sequence.filter((item: any) => item.type === 'movement'),
+          transitions: sequenceResponse.data.sequence.filter((item: any) => item.type === 'transition'),
           cooldown: framingSections.cooldown,
           meditation: framingSections.meditation,
           homecare: framingSections.homecare,
           difficulty: formData.difficulty,
           total_duration_minutes: formData.duration,
-          music_playlist: musicResponse.data.data,
+          music_playlist: musicResponse.data,
         },
       };
 
