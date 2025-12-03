@@ -472,8 +472,8 @@ Returns: Researched warmup routine (NOT from database).
                 "target_muscles": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Muscle groups to warm up",
-                    "required": True
+                    "description": "Muscle groups to warm up (defaults to core, hips, shoulders, back)",
+                    "required": False
                 },
                 "research_tool": {
                     "type": "object",
@@ -500,8 +500,8 @@ Returns: Researched cooldown sequence (NOT from database).
                 "target_muscles": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Muscle groups to cool down",
-                    "required": True
+                    "description": "Muscle groups to cool down (defaults to core, hips, shoulders, back)",
+                    "required": False
                 },
                 "research_tool": {
                     "type": "object",
