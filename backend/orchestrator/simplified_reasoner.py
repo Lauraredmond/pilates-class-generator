@@ -172,22 +172,38 @@ USER GOAL: {goal}
 
 Generate a step-by-step plan to achieve this goal using the available tools.
 
-🤖 AI MODE GUIDANCE - Use GENERATION/RESEARCH tools (NOT selection tools):
-- Section 1 (Preparation): Use "generate_preparation" (creates NEW script with LLM)
-- Section 2 (Warmup): Use "research_warmup" (finds NEW exercises via MCP)
-- Section 3 (Sequence): Use "generate_sequence" (already generates with rules)
-- Section 4 (Cooldown): Use "research_cooldown" (finds NEW stretches via MCP)
-- Section 5 (Meditation): Use "generate_meditation" (already generates NEW scripts)
-- Section 6 (Homecare): Use "generate_homecare" (creates NEW advice with LLM)
+🤖 AI MODE GUIDANCE - Use GENERATION/RESEARCH tools with these EXACT parameters:
 
-⚠️ DO NOT USE: select_preparation, select_warmup, select_cooldown, select_homecare
-Those are for DEFAULT mode only (database lookups, not AI generation).
+Extract these from USER GOAL above:
+- difficulty_level: Look for "Beginner", "Intermediate", or "Advanced"
+- target_duration_minutes: Look for duration in minutes (e.g., "30 minutes")
+- focus_areas: Look for muscle groups mentioned
 
-IMPORTANT:
-- Each step should call exactly one tool
-- Parameters must match the tool's schema
-- Use ALL 6 sections for complete class
-- Call generation tools, not selection tools
+Then create this 6-step plan:
+
+Step 1: generate_preparation
+  parameters: {{"difficulty_level": "<extracted_difficulty>"}}
+
+Step 2: research_warmup
+  parameters: {{}} (optional - defaults will be used)
+
+Step 3: generate_sequence
+  parameters: {{
+    "target_duration_minutes": <extracted_duration>,
+    "difficulty_level": "<extracted_difficulty>",
+    "focus_areas": [<extracted_focus_areas_if_any>]
+  }}
+
+Step 4: research_cooldown
+  parameters: {{}} (optional - defaults will be used)
+
+Step 5: generate_meditation
+  parameters: {{}} (optional - defaults will be used)
+
+Step 6: generate_homecare
+  parameters: {{}} (optional - defaults will be used)
+
+⚠️ CRITICAL: Use exact parameter names shown above. Extract values from USER GOAL.
 
 Output JSON format:
 {{
