@@ -64,4 +64,11 @@ websockets==15.0.1
 uvloop==0.22.1
 httptools==0.7.1
 
+# Jentic AI Agent Framework (installed from GitHub)
+# Must be installed AFTER other dependencies
+git+https://github.com/jentic/standard-agent.git@main
+git+https://github.com/jentic/arazzo-engine.git@main#subdirectory=runner
+litellm>=1.0.0
+
 # Note: All versions explicitly pinned to prevent pip dependency resolver issues
+# Exception: Jentic libraries installed from GitHub (latest main branch)
