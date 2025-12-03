@@ -64,14 +64,12 @@ class BasslinePilatesTools(JustInTimeToolingBase):
         """
         super().__init__()
 
-        # Initialize domain-specific tool modules
+        # Initialize domain-specific tool modules with correct parameters
+        # Each tool class has different __init__ signatures:
         self.sequence_tools = SequenceTools(supabase_client=supabase_client)
-        self.music_tools = MusicTools(supabase_client=supabase_client)
-        self.meditation_tools = MeditationTools(supabase_client=supabase_client)
-        self.research_tools = ResearchTools(
-            bassline_api_url=bassline_api_url,
-            supabase_client=supabase_client
-        )
+        self.music_tools = MusicTools(bassline_api_url=bassline_api_url)
+        self.meditation_tools = MeditationTools(bassline_api_url=bassline_api_url)
+        self.research_tools = ResearchTools(mcp_client=None)  # MCP client not yet configured
 
         # Register all tools
         self._register_tools()
