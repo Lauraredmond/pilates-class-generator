@@ -124,9 +124,18 @@ try:
                     elif section_name == "HomeCare":
                         name = section_data.get("advice_name", "Unknown")
                     elif section_name == "Music":
-                        music_data = section_data.get("data", {})
-                        playlist = music_data.get("playlist", {})
-                        name = playlist.get("name", "Unknown")
+                        # Handle different music response structures
+                        if isinstance(section_data, list):
+                            name = f"{len(section_data)} tracks"
+                        elif isinstance(section_data, dict):
+                            music_data = section_data.get("data", {})
+                            if isinstance(music_data, dict):
+                                playlist = music_data.get("playlist", {})
+                                name = playlist.get("name", "Music playlist")
+                            else:
+                                name = "Music present"
+                        else:
+                            name = "Music present"
                     else:
                         name = "Present"
 
