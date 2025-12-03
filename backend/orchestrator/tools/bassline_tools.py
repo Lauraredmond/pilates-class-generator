@@ -293,6 +293,24 @@ Returns: Curated research results with source attribution.
 
         return matching_tools
 
+    def load(self, tool: Any) -> Any:
+        """
+        Load the full specification for a single tool
+
+        JENTIC PATTERN: Tool loading interface (required abstract method)
+
+        In our implementation, tools are already fully loaded during registration
+        (see _register_tools() above), so this is a pass-through operation.
+
+        Args:
+            tool: Tool to load (can be dict with tool metadata or ToolBase object)
+
+        Returns:
+            The same tool object (already fully specified)
+        """
+        # Tools are already fully specified in our registry, so just return as-is
+        return tool
+
     def execute(self, tool_id: str, parameters: Dict[str, Any]) -> Any:
         """
         Execute a tool by ID with given parameters
