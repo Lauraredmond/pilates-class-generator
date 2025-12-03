@@ -57,7 +57,8 @@ class MusicTools:
         class_duration_minutes: int,
         energy_curve: List[float] = None,
         preferred_genres: List[str] = None,
-        target_bpm_range: tuple = (90, 130)
+        target_bpm_range: tuple = (90, 130),
+        exclude_explicit: bool = True  # Filter explicit content (default: exclude)
     ) -> Dict[str, Any]:
         """
         Select music playlist for Pilates class

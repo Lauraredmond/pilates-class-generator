@@ -173,6 +173,11 @@ Returns: Complete playlist with track details, URLs, and timing.
                     "items": {"type": "integer"},
                     "description": "Optional BPM range as [min, max] (default: [90, 130])",
                     "required": False
+                },
+                "exclude_explicit": {
+                    "type": "boolean",
+                    "description": "Filter explicit content (default: true)",
+                    "required": False
                 }
             },
             function=self.music_tools.select_music  # Correct method name
