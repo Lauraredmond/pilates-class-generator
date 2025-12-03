@@ -107,7 +107,7 @@ class BasslinePilatesCoachAgent(StandardAgent):
     ```
     """
 
-    def __init__(self):
+    def __init__(self, supabase_client=None):
         """
         Initialize the Bassline Pilates Coach Agent.
 
@@ -119,6 +119,9 @@ class BasslinePilatesCoachAgent(StandardAgent):
         2. Tools - BasslinePilatesTools (our API wrappers)
         3. Reasoner - ReWOOReasoner (Plan→Execute→Reflect)
         4. Memory - Simple dict (can upgrade to Redis)
+
+        Args:
+            supabase_client: Optional Supabase client for database access
         """
 
         # ======================================================================
@@ -215,7 +218,8 @@ When in doubt:
         # ======================================================================
 
         self.tools = BasslinePilatesTools(
-            bassline_api_url=os.getenv("BASSLINE_API_URL", "http://localhost:8000")
+            bassline_api_url=os.getenv("BASSLINE_API_URL", "http://localhost:8000"),
+            supabase_client=supabase_client
         )
         logger.info("✅ BASSLINE tools initialized")
 

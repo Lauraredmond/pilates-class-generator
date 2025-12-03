@@ -58,6 +58,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from loguru import logger
+from supabase import create_client, Client
 
 # JENTIC IMPORTS - These come from the standard-agent library
 # NOTE: Commented out until we actually install the Jentic libraries
@@ -69,6 +70,17 @@ from loguru import logger
 from agent.bassline_agent import BasslinePilatesCoachAgent
 
 load_dotenv()
+
+# Initialize Supabase client (tools need database access)
+supabase_url = os.getenv('SUPABASE_URL')
+supabase_key = os.getenv('SUPABASE_KEY')
+supabase: Optional[Client] = None
+
+if supabase_url and supabase_key:
+    supabase = create_client(supabase_url, supabase_key)
+    logger.info("✅ Supabase client initialized")
+else:
+    logger.warning("⚠️ SUPABASE_URL or SUPABASE_KEY not set - tools will use fallback data")
 
 # ==============================================================================
 # FASTAPI APPLICATION
@@ -122,6 +134,18 @@ class ClassGenerationResponse(BaseModel):
     metadata: dict
     error: Optional[str] = None
 
+class ToolExecutionRequest(BaseModel):
+    """Request to execute a specific tool"""
+    tool_id: str = Field(..., description="Tool identifier (generate_sequence, select_music, etc.)")
+    parameters: dict = Field(..., description="Tool input parameters")
+    user_id: str = Field(..., description="Authenticated user ID")
+
+class ToolExecutionResponse(BaseModel):
+    """Tool execution result"""
+    success: bool
+    data: dict
+    error: Optional[str] = None
+
 # ==============================================================================
 # DEPENDENCY: Initialize BasslinePilatesCoachAgent
 # ==============================================================================
@@ -132,12 +156,11 @@ def get_agent() -> BasslinePilatesCoachAgent:
 
     Create and configure the agent with:
     - OpenAI LLM
-    - Pilates-specific tools
+    - Pilates-specific tools (with Supabase client)
     - ReWOO reasoner
     - Arazzo workflow runner
     """
-    # This will be implemented in agent/bassline_agent.py
-    return BasslinePilatesCoachAgent()
+    return BasslinePilatesCoachAgent(supabase_client=supabase)
 
 # ==============================================================================
 # API ENDPOINTS
@@ -163,6 +186,82 @@ async def root():
         "docs": "/docs",
         "health": "/health"
     }
+
+@app.get("/tools/list")
+async def list_tools(agent: BasslinePilatesCoachAgent = Depends(get_agent)):
+    """
+    List all available tools (for /api/agents/agent-info endpoint)
+    """
+    try:
+        tools_list = agent.tools.list_tools()
+        return {
+            "tools": tools_list,
+            "count": len(tools_list)
+        }
+    except Exception as e:
+        logger.error(f"Error listing tools: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/tools/execute", response_model=ToolExecutionResponse)
+async def execute_tool(
+    request: ToolExecutionRequest,
+    agent: BasslinePilatesCoachAgent = Depends(get_agent)
+):
+    """
+    Execute a specific tool with parameters
+
+    This endpoint is called by the backend API router (backend/api/agents.py)
+    to execute individual tools like:
+    - generate_sequence (Pilates movement sequencing)
+    - select_music (Music playlist selection)
+    - generate_meditation (Meditation script generation)
+    - research_cues (MCP web research)
+
+    The tools are provided by BasslinePilatesTools and contain all the
+    business logic extracted from the original backend agents.
+    """
+    try:
+        logger.info(f"Executing tool: {request.tool_id} for user {request.user_id}")
+        logger.info(f"Parameters: {request.parameters}")
+
+        # Find the tool by ID
+        from agent.tools import BasslineTool
+        all_tools = agent.tools.list_tools()
+        tool_dict = next((t for t in all_tools if t["id"] == request.tool_id), None)
+
+        if not tool_dict:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Tool not found: {request.tool_id}"
+            )
+
+        # Create tool instance
+        tool = BasslineTool(
+            id=tool_dict["id"],
+            name=tool_dict["name"],
+            description=tool_dict["description"],
+            schema=tool_dict["schema"]
+        )
+
+        # Execute the tool
+        result = agent.tools.execute(tool, request.parameters)
+
+        # Return standardized response
+        return ToolExecutionResponse(
+            success=True,
+            data=result,
+            error=None
+        )
+
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
+    except Exception as e:
+        logger.error(f"Tool execution error: {e}", exc_info=True)
+        return ToolExecutionResponse(
+            success=False,
+            data={},
+            error=str(e)
+        )
 
 @app.post("/generate-class", response_model=ClassGenerationResponse)
 async def generate_class(

@@ -47,6 +47,12 @@ pydantic>=2.5.0
 pydantic-settings>=2.1.0
 
 # ----------------------------------------
+# DATABASE
+# ----------------------------------------
+# Supabase client for database access (tools need this)
+supabase>=2.0.0
+
+# ----------------------------------------
 # YAML PARSING
 # ----------------------------------------
 # Required by Arazzo Engine for .arazzo.yaml files
