@@ -573,7 +573,7 @@ async def generate_complete_class(
         try:
             cooldown_response = supabase.rpc(
                 'select_cooldown_by_muscle_groups',
-                {'target_muscles': target_muscles, 'user_mode': 'default'}
+                {'p_target_muscles': target_muscles, 'user_mode': 'default'}
             ).execute()
 
             # RPC functions return a list (SETOF), extract first element
