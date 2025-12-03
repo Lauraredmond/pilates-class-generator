@@ -83,6 +83,15 @@ export const classPlansApi = {
     difficulty: string;
     use_agent?: boolean;  // Optional - if not provided, uses user preference from database
   }) => api.post('/api/classes/generate', data),
+  // Session 13: Movement Variety - Save completed class for analytics
+  saveCompleted: (data: {
+    user_id: string;
+    difficulty: string;
+    duration_minutes: number;
+    movements_snapshot: any[];
+    muscle_balance: any;
+    class_name?: string;
+  }) => api.post('/api/classes/save-completed', data),
 };
 
 export const analyticsApi = {

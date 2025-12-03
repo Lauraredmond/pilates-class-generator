@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../context/AuthContext';
-import { agentsApi } from '../../services/api';
+import { agentsApi, classPlansApi } from '../../services/api';
 import { assembleCompleteClass } from '../../services/classAssembly';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
@@ -160,28 +160,49 @@ export function AIGenerationPanel() {
     setIsRegenerating(false);
   };
 
-  const handleAcceptResults = () => {
-    if (!results || !lastFormData) return;
+  const handleAcceptResults = async () => {
+    if (!results || !lastFormData || !user) return;
 
-    // Add generated sequence to current class
-    setCurrentClass({
-      name: 'AI Generated Class',
-      description: `${lastFormData.difficulty} level - ${lastFormData.duration} minutes`,
-      target_duration_minutes: lastFormData.duration,
-      difficulty_level: lastFormData.difficulty,
-      movements: results.sequence.movements.map((movement, index) => ({
-        ...movement,
-        id: movement.id || `movement-${index}`,
-        movement_number: index + 1,
-        code: movement.id || `code-${index}`,
-        category: 'AI Generated',
-        sequenceIndex: index,
-        difficulty_level: movement.difficulty_level || 'Intermediate',
-      })),
-    });
+    try {
+      // SESSION 13: Save completed class to database for analytics tracking
+      const saveResponse = await classPlansApi.saveCompleted({
+        user_id: user.id,
+        difficulty: lastFormData.difficulty,
+        duration_minutes: lastFormData.duration,
+        movements_snapshot: results.sequence.movements,  // Full sequence (movements + transitions)
+        muscle_balance: results.sequence.muscle_balance,
+        class_name: 'AI Generated Class',
+      });
 
-    showToast('Class added successfully!', 'success');
-    setShowResultsModal(false); // Close the modal but keep results for Play Class button
+      console.log('[AIGenerationPanel] Class saved to database:', saveResponse.data);
+
+      // Add generated sequence to current class (frontend state)
+      setCurrentClass({
+        name: 'AI Generated Class',
+        description: `${lastFormData.difficulty} level - ${lastFormData.duration} minutes`,
+        target_duration_minutes: lastFormData.duration,
+        difficulty_level: lastFormData.difficulty,
+        movements: results.sequence.movements.map((movement, index) => ({
+          ...movement,
+          id: movement.id || `movement-${index}`,
+          movement_number: index + 1,
+          code: movement.id || `code-${index}`,
+          category: 'AI Generated',
+          sequenceIndex: index,
+          difficulty_level: movement.difficulty_level || 'Intermediate',
+        })),
+      });
+
+      // Show success message with updated class count
+      const message = saveResponse.data.message || 'Class added successfully!';
+      showToast(message, 'success');
+      setShowResultsModal(false); // Close the modal but keep results for Play Class button
+    } catch (error: any) {
+      console.error('[AIGenerationPanel] Failed to save class:', error);
+      const errorMessage =
+        error.response?.data?.detail || error.message || 'Failed to save class to database';
+      showToast(errorMessage, 'error');
+    }
   };
 
   const handleCancel = () => {

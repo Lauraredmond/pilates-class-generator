@@ -968,3 +968,188 @@ async def generate_class(request: ClassGenerationRequest):
             status_code=500,
             detail=f"Class generation failed: {str(e)}"
         )
+
+
+# ==============================================================================
+# SAVE COMPLETED CLASS - Session 13: Movement Variety
+# ==============================================================================
+
+class SaveCompletedClassRequest(BaseModel):
+    """Request to save a completed class to database"""
+    user_id: str
+    difficulty: str
+    duration_minutes: int
+    movements_snapshot: List[dict]  # Full sequence with movements + transitions
+    muscle_balance: dict
+    class_name: Optional[str] = "AI Generated Class"
+
+
+class SaveCompletedClassResponse(BaseModel):
+    """Response after saving completed class"""
+    class_history_id: str
+    classes_completed: int
+    experience_level: str
+    message: str
+
+
+@router.post("/save-completed", response_model=SaveCompletedClassResponse)
+async def save_completed_class(request: SaveCompletedClassRequest):
+    """
+    Save a completed class to database (called when user clicks "Accept")
+
+    This endpoint:
+    1. Saves to class_history table with movements_snapshot
+    2. Increments classes_completed in user_preferences
+    3. Updates movement_usage for each movement
+    4. Returns updated user stats
+
+    Session 13: This enables analytics tracking and movement variety features
+    """
+    try:
+        now = datetime.now()
+        today = now.date().isoformat()
+
+        # Extract movement IDs from snapshot (movements only, not transitions)
+        movements_only = [
+            m for m in request.movements_snapshot
+            if m.get('type') == 'movement'
+        ]
+
+        # Extract all muscle groups targeted
+        all_muscle_groups = []
+        for movement in movements_only:
+            muscle_groups = movement.get('muscle_groups', [])
+            if isinstance(muscle_groups, list):
+                all_muscle_groups.extend(muscle_groups)
+        unique_muscle_groups = list(set(all_muscle_groups))
+
+        # ==============================================================================
+        # 1. SAVE TO CLASS_HISTORY TABLE (for analytics)
+        # ==============================================================================
+        class_history_entry = {
+            'class_plan_id': None,  # Not associated with a saved plan
+            'user_id': request.user_id,
+            'taught_date': today,
+            'actual_duration_minutes': request.duration_minutes,
+            'attendance_count': 1,  # Self-practice
+            'movements_snapshot': request.movements_snapshot,  # JSONB with full class
+            'instructor_notes': f"{request.difficulty} level - {request.duration_minutes} minutes - {len(movements_only)} movements",
+            'difficulty_rating': None,
+            'muscle_groups_targeted': unique_muscle_groups,
+            'total_movements_taught': len(movements_only),
+            'created_at': now.isoformat()
+        }
+
+        history_response = supabase.table('class_history').insert(class_history_entry).execute()
+
+        if not history_response.data:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to save class to class_history"
+            )
+
+        class_history_id = history_response.data[0]['id']
+        logger.info(f"✅ Saved class to class_history (ID: {class_history_id}) for user {request.user_id}")
+
+        # ==============================================================================
+        # 2. UPDATE USER_PREFERENCES (increment classes_completed)
+        # ==============================================================================
+        # Fetch current preferences
+        prefs_response = supabase.table('user_preferences') \
+            .select('classes_completed, experience_level, first_class_date') \
+            .eq('user_id', request.user_id) \
+            .execute()
+
+        if prefs_response.data:
+            current_prefs = prefs_response.data[0]
+            current_classes = current_prefs.get('classes_completed', 0)
+            new_classes_completed = current_classes + 1
+
+            # Update experience level based on classes completed
+            if new_classes_completed < 10:
+                experience_level = 'beginner'
+            elif new_classes_completed < 50:
+                experience_level = 'intermediate'
+            else:
+                experience_level = 'advanced'
+
+            # Set first_class_date if this is the first class
+            first_class_date = current_prefs.get('first_class_date')
+            if not first_class_date:
+                first_class_date = today
+
+            # Update preferences
+            supabase.table('user_preferences').update({
+                'classes_completed': new_classes_completed,
+                'experience_level': experience_level,
+                'first_class_date': first_class_date
+            }).eq('user_id', request.user_id).execute()
+
+            logger.info(f"✅ Updated user preferences: classes_completed={new_classes_completed}, experience_level={experience_level}")
+        else:
+            # Create preferences if they don't exist
+            new_classes_completed = 1
+            experience_level = 'beginner'
+
+            supabase.table('user_preferences').insert({
+                'user_id': request.user_id,
+                'classes_completed': 1,
+                'experience_level': 'beginner',
+                'first_class_date': today
+            }).execute()
+
+            logger.info(f"✅ Created user preferences: classes_completed=1, experience_level=beginner")
+
+        # ==============================================================================
+        # 3. UPDATE MOVEMENT_USAGE TABLE (for favorite movement tracking)
+        # ==============================================================================
+        for movement in movements_only:
+            movement_id = movement.get('id')
+            if not movement_id:
+                continue
+
+            # Check if usage record exists
+            usage_response = supabase.table('movement_usage') \
+                .select('*') \
+                .eq('user_id', request.user_id) \
+                .eq('movement_id', movement_id) \
+                .execute()
+
+            if usage_response.data:
+                # Update existing record
+                current_usage = usage_response.data[0]
+                new_usage_count = current_usage.get('usage_count', 0) + 1
+
+                supabase.table('movement_usage').update({
+                    'usage_count': new_usage_count,
+                    'last_used_date': today,
+                    'updated_at': now.isoformat()
+                }).eq('user_id', request.user_id).eq('movement_id', movement_id).execute()
+            else:
+                # Create new record
+                supabase.table('movement_usage').insert({
+                    'user_id': request.user_id,
+                    'movement_id': movement_id,
+                    'usage_count': 1,
+                    'last_used_date': today,
+                    'created_at': now.isoformat(),
+                    'updated_at': now.isoformat()
+                }).execute()
+
+        logger.info(f"✅ Updated movement_usage for {len(movements_only)} movements")
+
+        return SaveCompletedClassResponse(
+            class_history_id=class_history_id,
+            classes_completed=new_classes_completed,
+            experience_level=experience_level,
+            message=f"Class saved successfully! Total classes: {new_classes_completed}"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error saving completed class: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save completed class: {str(e)}"
+        )
