@@ -24,8 +24,8 @@ This allows StandardAgent's ReWOOReasoner to:
 from typing import Dict, Any, List
 from loguru import logger
 
-# JENTIC import
-from agents.tools.base import JustInTimeToolingBase
+# SIMPLIFIED JENTIC PATTERN - Using local implementation (no external deps)
+from orchestrator.tool_base import JustInTimeToolingBase
 
 # BASSLINE custom tools
 from .sequence_tools import SequenceTools

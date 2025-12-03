@@ -54,13 +54,13 @@ import httpx
 from loguru import logger
 
 # ==============================================================================
-# ✅ JENTIC IMPORTS - REAL CODE FROM GITHUB
+# ✅ JENTIC PATTERN - SIMPLIFIED IMPLEMENTATION (No external deps)
 # ==============================================================================
-# Installed via: git+https://github.com/jentic/standard-agent.git@main
-#                git+https://github.com/jentic/arazzo-engine.git@main#subdirectory=runner
+# Using local implementation to avoid Jentic GitHub dependency issues
+# Maintains same interface and patterns
 
-from agents.tools.base import JustInTimeToolingBase, ToolBase  # ← JENTIC
-from arazzo_runner.runner import ArazzoRunner  # ← JENTIC Arazzo Engine
+from orchestrator.tool_base import JustInTimeToolingBase, ToolBase  # ← SIMPLIFIED JENTIC PATTERN
+# from arazzo_runner.runner import ArazzoRunner  # ← JENTIC Arazzo Engine (TODO: Add when needed)
 
 # ==============================================================================
 # ✅ BASSLINE CUSTOM: Import Tool Modules (Business Logic)
@@ -164,29 +164,14 @@ class BasslinePilatesTools(JustInTimeToolingBase):
         logger.info("✅ All tool modules initialized (Sequence, Music, Meditation, Research)")
 
         # ======================================================================
-        # ✅ JENTIC: Initialize Arazzo Runner (REAL CODE)
+        # ✅ JENTIC PATTERN: Arazzo Runner (Deferred for Phase 3)
         # ======================================================================
-        # Using Jentic's ArazzoRunner from:
-        # /tmp/arazzo-engine/runner/arazzo_runner/runner.py
-        #
-        # This provides:
-        # - Workflow execution from .arazzo.yaml files
-        # - OpenAPI operation execution
-        # - Expression evaluation ($inputs, $steps, etc.)
-        # - Authentication handling
+        # Arazzo workflow execution will be added in Phase 3
+        # For now, tools execute directly without workflow orchestration
         # ======================================================================
 
-        workflow_path = "../arazzo/workflows/assemble_pilates_class_v1.yaml"
-        openapi_path = "../openapi/bassline_openapi.yaml"
-
-        try:
-            self.arazzo_runner = ArazzoRunner.from_arazzo_path(
-                arazzo_path=workflow_path
-            )
-            logger.info(f"✅ JENTIC Arazzo Runner initialized from {workflow_path}")
-        except Exception as e:
-            logger.warning(f"⚠️ Arazzo Runner initialization failed: {e}. Will use direct API calls.")
-            self.arazzo_runner = None
+        self.arazzo_runner = None  # TODO: Add Arazzo Engine in Phase 3
+        logger.info("⚠️ Arazzo Runner not yet implemented (Phase 3 feature)")
 
         logger.info(f"✅ Tools initialized with API: {self.bassline_api_url}")
 
