@@ -26,8 +26,8 @@ from dotenv import load_dotenv
 from datetime import datetime
 from supabase import create_client, Client
 
-# Import Jentic agent directly (no HTTP calls needed)
-from orchestrator.bassline_agent import BasslinePilatesCoachAgent
+# Import SimplifiedStandardAgent with ReWOO reasoner (Phase 2)
+from orchestrator.simplified_agent import BasslinePilatesCoachAgent
 
 from models import (
     SequenceGenerationRequest,
