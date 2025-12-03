@@ -19,7 +19,15 @@ BACKEND_URL = "https://pilates-class-generator-api3.onrender.com"  # Production 
 
 # You'll need a valid JWT token from a logged-in user
 # Get this from your browser's localStorage after logging in
-JWT_TOKEN = input("Enter your JWT token (from localStorage after login): ").strip()
+# In browser console: localStorage.getItem('access_token')
+print("To get your JWT token:")
+print("1. Log in to https://basslinemvp.netlify.app")
+print("2. Open browser DevTools (F12 or Cmd+Option+I)")
+print("3. Go to Console tab")
+print("4. Type: localStorage.getItem('access_token')")
+print("5. Copy the token (long string starting with 'eyJ...')")
+print()
+JWT_TOKEN = input("Enter your JWT token: ").strip()
 
 print("\n" + "="*60)
 print("TESTING DEFAULT MODE - Complete Class Generation")
