@@ -1148,7 +1148,7 @@ async def save_completed_class(request: SaveCompletedClassRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error saving completed class: {e}", exc_info=True)
+        logger.error("Error saving completed class: {}", e, exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Failed to save completed class: {str(e)}"
