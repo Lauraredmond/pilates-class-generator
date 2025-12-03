@@ -469,12 +469,15 @@ async def generate_complete_class(
     agent: BasslinePilatesCoachAgent = Depends(get_agent)
 ):
     """
-    Generate a complete class with sequence, music, and meditation
+    Generate a complete class with all 6 sections (Default vs Reasoner Mode)
 
     JENTIC PATTERN: Orchestrates all tools via StandardAgent to create full class plan
 
-    This endpoint could eventually be replaced by a full Arazzo workflow execution,
-    but for now it orchestrates tool calls sequentially through the agent.
+    DUAL MODE ARCHITECTURE:
+    - Default Mode: Fast, free, database-driven ($0.00/class)
+    - Reasoner Mode: AI-powered, personalized ($0.03-0.05/class) [Phase 2]
+
+    This endpoint checks user_preferences.use_reasoner_mode to determine which mode to use.
     """
     try:
         logger.info(f"Generating complete class for user {user_id} via agent")
@@ -482,7 +485,38 @@ async def generate_complete_class(
         import time
         start_time = time.time()
 
-        # Step 1: Generate sequence
+        # ============================================================================
+        # CHECK USER MODE: Default vs Reasoner
+        # ============================================================================
+        try:
+            user_prefs_response = supabase.table('user_preferences') \
+                .select('use_reasoner_mode') \
+                .eq('user_id', user_id) \
+                .single() \
+                .execute()
+
+            use_reasoner = user_prefs_response.data.get('use_reasoner_mode', False) if user_prefs_response.data else False
+            logger.info(f"User mode: {'REASONER' if use_reasoner else 'DEFAULT'}")
+        except Exception as e:
+            logger.warning(f"Could not fetch user preferences: {e}. Defaulting to DEFAULT mode.")
+            use_reasoner = False
+
+        # ============================================================================
+        # REASONER MODE (Phase 2 - Not Yet Implemented)
+        # ============================================================================
+        if use_reasoner:
+            logger.warning("Reasoner mode requested but not yet implemented")
+            raise HTTPException(
+                status_code=501,
+                detail="Reasoner mode not yet implemented. Please disable in user settings and try again."
+            )
+
+        # ============================================================================
+        # DEFAULT MODE: Direct Database Selection (Phase 1 - CURRENT)
+        # ============================================================================
+        logger.info("Using DEFAULT mode (direct database selection)")
+
+        # Step 1: Generate main sequence (existing behavior)
         sequence_result = call_agent_tool(
             tool_id="generate_sequence",
             parameters=request.class_plan.dict(),
@@ -496,7 +530,84 @@ async def generate_complete_class(
                 detail="Sequence generation failed"
             )
 
-        # Step 2: Select music (if requested)
+        # Extract muscle groups from generated sequence
+        sequence_data = sequence_result.get("data", {})
+        muscle_balance = sequence_data.get("muscle_balance", {})
+        target_muscles = list(muscle_balance.keys()) if muscle_balance else []
+
+        logger.info(f"Target muscles from sequence: {target_muscles}")
+
+        # Step 2: Select preparation script (Section 1)
+        try:
+            prep_response = supabase.table('preparation_scripts') \
+                .select('*') \
+                .eq('difficulty_level', request.class_plan.difficulty_level) \
+                .limit(1) \
+                .execute()
+
+            preparation = prep_response.data[0] if prep_response.data else None
+            logger.info(f"Selected preparation: {preparation.get('script_name') if preparation else 'None'}")
+        except Exception as e:
+            logger.error(f"Failed to fetch preparation script: {e}")
+            preparation = None
+
+        # Step 3: Select warm-up routine (Section 2)
+        try:
+            warmup_response = supabase.rpc(
+                'select_warmup_by_muscle_groups',
+                {'target_muscles': target_muscles, 'user_mode': 'default'}
+            ).execute()
+
+            warmup = warmup_response.data if warmup_response.data else None
+            logger.info(f"Selected warmup: {warmup.get('routine_name') if warmup else 'None'}")
+        except Exception as e:
+            logger.error(f"Failed to fetch warmup routine: {e}")
+            warmup = None
+
+        # Step 4: Main movements (Section 3) - Already generated above
+        # The sequence_result contains the main movements
+
+        # Step 5: Select cool-down sequence (Section 4)
+        try:
+            cooldown_response = supabase.rpc(
+                'select_cooldown_by_muscle_groups',
+                {'target_muscles': target_muscles, 'user_mode': 'default'}
+            ).execute()
+
+            cooldown = cooldown_response.data if cooldown_response.data else None
+            logger.info(f"Selected cooldown: {cooldown.get('sequence_name') if cooldown else 'None'}")
+        except Exception as e:
+            logger.error(f"Failed to fetch cooldown sequence: {e}")
+            cooldown = None
+
+        # Step 6: Select meditation (Section 5)
+        try:
+            meditation_response = supabase.table('closing_meditation_scripts') \
+                .select('*') \
+                .eq('post_intensity', 'moderate') \
+                .limit(1) \
+                .execute()
+
+            meditation = meditation_response.data[0] if meditation_response.data else None
+            logger.info(f"Selected meditation: {meditation.get('script_name') if meditation else 'None'}")
+        except Exception as e:
+            logger.error(f"Failed to fetch meditation script: {e}")
+            meditation = None
+
+        # Step 7: Select homecare advice (Section 6)
+        try:
+            homecare_response = supabase.table('closing_homecare_advice') \
+                .select('*') \
+                .limit(1) \
+                .execute()
+
+            homecare = homecare_response.data[0] if homecare_response.data else None
+            logger.info(f"Selected homecare: {homecare.get('advice_name') if homecare else 'None'}")
+        except Exception as e:
+            logger.error(f"Failed to fetch homecare advice: {e}")
+            homecare = None
+
+        # Step 8: Select music (if requested)
         music_result = None
         if request.include_music:
             music_input = {
@@ -510,25 +621,10 @@ async def generate_complete_class(
                 agent=agent
             )
 
-        # Step 3: Generate meditation (if requested)
-        meditation_result = None
-        if request.include_meditation:
-            meditation_input = {
-                "duration_minutes": 5,
-                "class_intensity": "moderate"
-            }
-            meditation_result = call_agent_tool(
-                tool_id="generate_meditation",
-                parameters=meditation_input,
-                user_id=user_id,
-                agent=agent
-            )
-
-        # Step 4: Perform research enhancements (if requested)
+        # Step 9: Perform research enhancements (if requested)
         research_results = []
         if request.include_research:
             # Research first few movements
-            sequence_data = sequence_result["data"]
             movements = sequence_data.get("sequence", [])[:3]
 
             for movement in movements:
@@ -549,18 +645,26 @@ async def generate_complete_class(
         # Calculate total processing time
         total_time_ms = (time.time() - start_time) * 1000
 
+        # Assemble complete class response with all 6 sections
         return {
             "success": True,
             "data": {
+                "preparation": preparation,
+                "warmup": warmup,
                 "sequence": sequence_result,
+                "cooldown": cooldown,
+                "meditation": meditation,
+                "homecare": homecare,
                 "music_recommendation": music_result,
-                "meditation_script": meditation_result,
                 "research_enhancements": research_results if research_results else None,
                 "total_processing_time_ms": total_time_ms
             },
             "metadata": {
+                "mode": "default",
+                "cost": 0.00,
                 "generated_at": datetime.now().isoformat(),
                 "user_id": user_id,
+                "sections_included": 6,
                 "agents_used": ["sequence", "music", "meditation", "research"] if request.include_research else ["sequence", "music", "meditation"],
                 "orchestration": "jentic_standard_agent"
             }
