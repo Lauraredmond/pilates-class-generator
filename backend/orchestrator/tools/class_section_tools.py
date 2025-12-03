@@ -373,8 +373,9 @@ Output JSON format:
 
     def research_warmup(
         self,
-        target_muscles: List[str],
-        research_tool=None
+        target_muscles: List[str] = None,
+        research_tool=None,
+        **kwargs  # Accept any extra parameters LLM might pass
     ) -> Dict[str, Any]:
         """
         AI MODE: Research NEW warm-up exercises from web
@@ -389,6 +390,10 @@ Output JSON format:
             Warmup routine with researched exercises
         """
         try:
+            # Default to common muscle groups if not specified
+            if not target_muscles:
+                target_muscles = ["core", "hips", "shoulders", "back"]
+
             logger.info(f"🔍 Researching NEW warmup exercises for: {', '.join(target_muscles)}")
 
             if not research_tool:
@@ -424,8 +429,9 @@ Output JSON format:
 
     def research_cooldown(
         self,
-        target_muscles: List[str],
-        research_tool=None
+        target_muscles: List[str] = None,
+        research_tool=None,
+        **kwargs  # Accept any extra parameters LLM might pass
     ) -> Dict[str, Any]:
         """
         AI MODE: Research NEW cool-down exercises from web
@@ -440,6 +446,10 @@ Output JSON format:
             Cooldown sequence with researched stretches
         """
         try:
+            # Default to common muscle groups if not specified
+            if not target_muscles:
+                target_muscles = ["core", "hips", "shoulders", "back"]
+
             logger.info(f"🔍 Researching NEW cooldown exercises for: {', '.join(target_muscles)}")
 
             if not research_tool:
