@@ -172,11 +172,22 @@ USER GOAL: {goal}
 
 Generate a step-by-step plan to achieve this goal using the available tools.
 
+🤖 AI MODE GUIDANCE - Use GENERATION/RESEARCH tools (NOT selection tools):
+- Section 1 (Preparation): Use "generate_preparation" (creates NEW script with LLM)
+- Section 2 (Warmup): Use "research_warmup" (finds NEW exercises via MCP)
+- Section 3 (Sequence): Use "generate_sequence" (already generates with rules)
+- Section 4 (Cooldown): Use "research_cooldown" (finds NEW stretches via MCP)
+- Section 5 (Meditation): Use "generate_meditation" (already generates NEW scripts)
+- Section 6 (Homecare): Use "generate_homecare" (creates NEW advice with LLM)
+
+⚠️ DO NOT USE: select_preparation, select_warmup, select_cooldown, select_homecare
+Those are for DEFAULT mode only (database lookups, not AI generation).
+
 IMPORTANT:
-- Use "generate_sequence" tool for movement sequencing
 - Each step should call exactly one tool
 - Parameters must match the tool's schema
-- Keep it simple - prefer 1-3 steps
+- Use ALL 6 sections for complete class
+- Call generation tools, not selection tools
 
 Output JSON format:
 {{
