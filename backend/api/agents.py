@@ -28,7 +28,6 @@ from supabase import create_client, Client
 
 # Import Jentic agent directly (no HTTP calls needed)
 from orchestrator.bassline_agent import BasslinePilatesCoachAgent
-from orchestrator.tools import BasslineTool
 
 from models import (
     SequenceGenerationRequest,
@@ -107,32 +106,22 @@ def call_agent_tool(
     try:
         logger.info(f"Executing tool {tool_id} for user {user_id}")
 
-        # Find the tool by ID
-        all_tools = agent.tools.list_tools()
-        tool_dict = next((t for t in all_tools if t["id"] == tool_id), None)
-
-        if not tool_dict:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Tool not found: {tool_id}"
-            )
-
-        # Create tool instance
-        tool = BasslineTool(
-            id=tool_dict["id"],
-            name=tool_dict["name"],
-            description=tool_dict["description"],
-            schema=tool_dict["schema"]
-        )
-
-        # Execute the tool
-        result = agent.tools.execute(tool, parameters)
+        # Execute tool directly via BasslinePilatesTools.execute()
+        # No need to create tool object - execute() takes tool_id string
+        result = agent.tools.execute(tool_id, parameters)
 
         return {
             "success": True,
             "data": result
         }
 
+    except ValueError as e:
+        # Tool not found or invalid parameters
+        logger.error(f"Tool execution validation error: {e}")
+        raise HTTPException(
+            status_code=404 if "not found" in str(e).lower() else 400,
+            detail=str(e)
+        )
     except HTTPException:
         raise  # Re-raise HTTP exceptions
     except Exception as e:
