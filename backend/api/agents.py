@@ -561,6 +561,20 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                 # The AI reasoning produced steps with tool results.
                 # Extract them to match the DEFAULT mode response structure.
 
+                logger.info(f"🔍 Result type: {type(result)}")
+                logger.info(f"🔍 Result attributes: {dir(result)}")
+                logger.info(f"🔍 Result success: {result.success}")
+                logger.info(f"🔍 Result iterations: {result.iterations}")
+
+                # Check if steps attribute exists
+                if not hasattr(result, 'steps'):
+                    logger.error("❌ ReasoningResult missing 'steps' attribute")
+                    raise ValueError("AI reasoning result is malformed - missing steps data")
+
+                steps = result.steps
+                logger.info(f"🔍 Steps type: {type(steps)}")
+                logger.info(f"🔍 Steps count: {len(steps) if steps else 0}")
+
                 preparation = None
                 warmup = None
                 sequence_result = None
@@ -569,7 +583,9 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                 homecare = None
                 music_result = None
 
-                for step in result.steps:
+                for i, step in enumerate(steps):
+                    logger.info(f"  Step {i}: tool_id={step.tool_id}, has_result={bool(step.result)}, has_error={bool(step.error)}")
+
                     if step.result and not step.error:
                         tool_id = step.tool_id
 
