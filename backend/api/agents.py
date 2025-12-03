@@ -1,13 +1,17 @@
 """
-AI Agents API Router - Orchestrator Proxy
+AI Agents API Router - Direct Agent Integration
 
-SESSION 13.5 MIGRATION:
-This file now routes all agent requests to the orchestrator service, which uses:
-- Jentic StandardAgent (Plan→Execute→Reflect reasoning)
-- Tool modules (SequenceTools, MusicTools, MeditationTools, ResearchTools)
+SESSION 13.5 MIGRATION (Option A - Merged):
+This file uses BasslinePilatesCoachAgent directly (no HTTP proxy to separate service).
+The agent and tools are imported as Python modules.
 
 JENTIC PATTERN:
-Backend API (FastAPI) → Orchestrator Service → StandardAgent → Tools → Business Logic
+Backend API (FastAPI) → StandardAgent → Tools → Business Logic
+
+ARCHITECTURE:
+- BasslinePilatesCoachAgent: Jentic StandardAgent with Pilates domain knowledge
+- SequenceTools, MusicTools, MeditationTools, ResearchTools: Pure business logic modules
+- All integrated into single backend service (simpler deployment)
 
 BACKWARD COMPATIBILITY:
 All endpoints preserve the same request/response interface as before.
@@ -17,11 +21,14 @@ Frontend code requires no changes.
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 from loguru import logger
-import httpx
 import os
 from dotenv import load_dotenv
 from datetime import datetime
 from supabase import create_client, Client
+
+# Import Jentic agent directly (no HTTP calls needed)
+from orchestrator.bassline_agent import BasslinePilatesCoachAgent
+from orchestrator.tools import BasslineTool
 
 from models import (
     SequenceGenerationRequest,
@@ -53,22 +60,33 @@ supabase: Client = create_client(supabase_url, supabase_key)
 
 router = APIRouter()
 
-# JENTIC INTEGRATION: Orchestrator service URL
-ORCHESTRATOR_URL = os.getenv('ORCHESTRATOR_URL', 'http://localhost:8001')
+# JENTIC INTEGRATION: Agent instance (created once at startup)
+_agent_instance = None
 
-# Timeout for orchestrator calls (longer because it executes workflows)
-ORCHESTRATOR_TIMEOUT = 60.0
+def get_agent() -> BasslinePilatesCoachAgent:
+    """
+    JENTIC PATTERN: Dependency injection for agent
+
+    Returns singleton instance of BasslinePilatesCoachAgent.
+    The agent is initialized once with Supabase client and reused.
+    """
+    global _agent_instance
+    if _agent_instance is None:
+        _agent_instance = BasslinePilatesCoachAgent(supabase_client=supabase)
+        logger.info("✅ BasslinePilatesCoachAgent initialized")
+    return _agent_instance
 
 
-async def call_orchestrator_tool(
+def call_agent_tool(
     tool_id: str,
     parameters: dict,
-    user_id: str
+    user_id: str,
+    agent: BasslinePilatesCoachAgent
 ) -> dict:
     """
-    JENTIC PATTERN: Call StandardAgent tool via orchestrator service
+    JENTIC PATTERN: Call StandardAgent tool directly (no HTTP, just Python import)
 
-    The orchestrator service provides a unified interface to all tools:
+    The agent provides access to all tools:
     - SequenceTools (sequencing business logic)
     - MusicTools (music selection logic)
     - MeditationTools (meditation generation logic)
@@ -78,43 +96,50 @@ async def call_orchestrator_tool(
         tool_id: Tool identifier ('generate_sequence', 'select_music', etc.)
         parameters: Tool input parameters
         user_id: Authenticated user ID
+        agent: BasslinePilatesCoachAgent instance (injected)
 
     Returns:
         Tool execution result
 
     Raises:
-        HTTPException: If orchestrator call fails
+        HTTPException: If tool execution fails
     """
     try:
-        async with httpx.AsyncClient(timeout=ORCHESTRATOR_TIMEOUT) as client:
-            response = await client.post(
-                f"{ORCHESTRATOR_URL}/tools/execute",
-                json={
-                    "tool_id": tool_id,
-                    "parameters": parameters,
-                    "user_id": user_id
-                }
-            )
-            response.raise_for_status()
-            return response.json()
+        logger.info(f"Executing tool {tool_id} for user {user_id}")
 
-    except httpx.TimeoutException:
-        logger.error(f"Orchestrator timeout for tool {tool_id}")
-        raise HTTPException(
-            status_code=504,
-            detail=f"Orchestrator service timeout (tool: {tool_id})"
+        # Find the tool by ID
+        all_tools = agent.tools.list_tools()
+        tool_dict = next((t for t in all_tools if t["id"] == tool_id), None)
+
+        if not tool_dict:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Tool not found: {tool_id}"
+            )
+
+        # Create tool instance
+        tool = BasslineTool(
+            id=tool_dict["id"],
+            name=tool_dict["name"],
+            description=tool_dict["description"],
+            schema=tool_dict["schema"]
         )
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Orchestrator HTTP error {e.response.status_code} for tool {tool_id}: {e.response.text}")
+
+        # Execute the tool
+        result = agent.tools.execute(tool, parameters)
+
+        return {
+            "success": True,
+            "data": result
+        }
+
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
+    except Exception as e:
+        logger.error(f"Tool execution error: {e}", exc_info=True)
         raise HTTPException(
-            status_code=e.response.status_code,
-            detail=f"Orchestrator service error: {e.response.text}"
-        )
-    except httpx.RequestError as e:
-        logger.error(f"Orchestrator request error for tool {tool_id}: {e}")
-        raise HTTPException(
-            status_code=503,
-            detail=f"Orchestrator service unavailable: {str(e)}"
+            status_code=500,
+            detail=f"Tool execution failed: {str(e)}"
         )
 
 
@@ -152,12 +177,13 @@ def get_movement_muscle_groups(movement_id: str) -> list[str]:
 @router.post("/generate-sequence", response_model=dict)
 async def generate_sequence(
     request: SequenceGenerationRequest,
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
+    agent: BasslinePilatesCoachAgent = Depends(get_agent)
 ):
     """
-    Generate a Pilates movement sequence using SequenceTools via orchestrator
+    Generate a Pilates movement sequence using SequenceTools via agent
 
-    JENTIC PATTERN: Backend API → Orchestrator → StandardAgent → SequenceTools
+    JENTIC PATTERN: Backend API → StandardAgent → SequenceTools
 
     - **target_duration_minutes**: Total class duration (15-120 minutes)
     - **difficulty_level**: Beginner, Intermediate, or Advanced
@@ -166,18 +192,19 @@ async def generate_sequence(
     - **include_mcp_research**: Whether to enhance with web research
     """
     try:
-        logger.info(f"Generating sequence for user {user_id} via orchestrator")
+        logger.info(f"Generating sequence for user {user_id} via agent")
         logger.info(f"Request data: {request.dict()}")
 
         # PHASE 2: Add user_id to inputs for movement usage tracking
         inputs_with_user = request.dict()
         inputs_with_user['user_id'] = user_id
 
-        # JENTIC INTEGRATION: Call orchestrator's SequenceTools
-        result = await call_orchestrator_tool(
+        # JENTIC INTEGRATION: Call agent's SequenceTools directly
+        result = call_agent_tool(
             tool_id="generate_sequence",
             parameters=inputs_with_user,
-            user_id=user_id
+            user_id=user_id,
+            agent=agent
         )
 
         logger.info(f"Orchestrator result success: {result.get('success')}")
@@ -316,12 +343,13 @@ async def generate_sequence(
 @router.post("/select-music", response_model=dict)
 async def select_music(
     request: MusicSelectionRequest,
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
+    agent: BasslinePilatesCoachAgent = Depends(get_agent)
 ):
     """
-    Select music playlist for a Pilates class using MusicTools via orchestrator
+    Select music playlist for a Pilates class using MusicTools via agent
 
-    JENTIC PATTERN: Backend API → Orchestrator → StandardAgent → MusicTools
+    JENTIC PATTERN: Backend API → StandardAgent → MusicTools
 
     - **class_duration_minutes**: Duration of the class
     - **energy_curve**: Optional energy levels throughout class (0.0-1.0)
@@ -329,13 +357,14 @@ async def select_music(
     - **target_bpm_range**: Target BPM range (default: 90-130)
     """
     try:
-        logger.info(f"Selecting music for user {user_id} via orchestrator")
+        logger.info(f"Selecting music for user {user_id} via agent")
 
-        # JENTIC INTEGRATION: Call orchestrator's MusicTools
-        result = await call_orchestrator_tool(
+        # JENTIC INTEGRATION: Call agent's MusicTools directly
+        result = call_agent_tool(
             tool_id="select_music",
             parameters=request.dict(),
-            user_id=user_id
+            user_id=user_id,
+            agent=agent
         )
 
         if not result["success"]:
@@ -358,12 +387,13 @@ async def select_music(
 @router.post("/create-meditation", response_model=dict)
 async def create_meditation(
     request: MeditationRequest,
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
+    agent: BasslinePilatesCoachAgent = Depends(get_agent)
 ):
     """
-    Generate a meditation/cool-down script using MeditationTools via orchestrator
+    Generate a meditation/cool-down script using MeditationTools via agent
 
-    JENTIC PATTERN: Backend API → Orchestrator → StandardAgent → MeditationTools
+    JENTIC PATTERN: Backend API → StandardAgent → MeditationTools
 
     - **duration_minutes**: Duration of meditation (2-15 minutes)
     - **class_intensity**: low, moderate, or high
@@ -371,13 +401,14 @@ async def create_meditation(
     - **include_breathing**: Whether to include breathing guidance
     """
     try:
-        logger.info(f"Creating meditation for user {user_id} via orchestrator")
+        logger.info(f"Creating meditation for user {user_id} via agent")
 
-        # JENTIC INTEGRATION: Call orchestrator's MeditationTools
-        result = await call_orchestrator_tool(
+        # JENTIC INTEGRATION: Call agent's MeditationTools directly
+        result = call_agent_tool(
             tool_id="generate_meditation",
             parameters=request.dict(),
-            user_id=user_id
+            user_id=user_id,
+            agent=agent
         )
 
         if not result["success"]:
@@ -400,12 +431,13 @@ async def create_meditation(
 @router.post("/research-cues", response_model=dict)
 async def research_cues(
     request: ResearchRequest,
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
+    agent: BasslinePilatesCoachAgent = Depends(get_agent)
 ):
     """
-    Perform web research using ResearchTools via orchestrator and MCP Playwright
+    Perform web research using ResearchTools via agent and MCP Playwright
 
-    JENTIC PATTERN: Backend API → Orchestrator → StandardAgent → ResearchTools → MCP
+    JENTIC PATTERN: Backend API → StandardAgent → ResearchTools → MCP
 
     - **research_type**: movement_cues, warmup, pregnancy, injury, or trends
     - **movement_name**: Name of movement (for movement_cues, pregnancy, injury)
@@ -414,13 +446,14 @@ async def research_cues(
     - **trusted_sources_only**: Only use trusted Pilates websites
     """
     try:
-        logger.info(f"Performing research for user {user_id} via orchestrator: {request.research_type}")
+        logger.info(f"Performing research for user {user_id} via agent: {request.research_type}")
 
-        # JENTIC INTEGRATION: Call orchestrator's ResearchTools
-        result = await call_orchestrator_tool(
+        # JENTIC INTEGRATION: Call agent's ResearchTools directly
+        result = call_agent_tool(
             tool_id="research_cues",
             parameters=request.dict(),
-            user_id=user_id
+            user_id=user_id,
+            agent=agent
         )
 
         if not result["success"]:
@@ -443,7 +476,8 @@ async def research_cues(
 @router.post("/generate-complete-class", response_model=dict)
 async def generate_complete_class(
     request: CompleteClassRequest,
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
+    agent: BasslinePilatesCoachAgent = Depends(get_agent)
 ):
     """
     Generate a complete class with sequence, music, and meditation
@@ -451,19 +485,20 @@ async def generate_complete_class(
     JENTIC PATTERN: Orchestrates all tools via StandardAgent to create full class plan
 
     This endpoint could eventually be replaced by a full Arazzo workflow execution,
-    but for now it orchestrates tool calls sequentially through the orchestrator service.
+    but for now it orchestrates tool calls sequentially through the agent.
     """
     try:
-        logger.info(f"Generating complete class for user {user_id} via orchestrator")
+        logger.info(f"Generating complete class for user {user_id} via agent")
 
         import time
         start_time = time.time()
 
         # Step 1: Generate sequence
-        sequence_result = await call_orchestrator_tool(
+        sequence_result = call_agent_tool(
             tool_id="generate_sequence",
             parameters=request.class_plan.dict(),
-            user_id=user_id
+            user_id=user_id,
+            agent=agent
         )
 
         if not sequence_result["success"]:
@@ -479,10 +514,11 @@ async def generate_complete_class(
                 "class_duration_minutes": request.class_plan.target_duration_minutes,
                 "target_bpm_range": (90, 130)
             }
-            music_result = await call_orchestrator_tool(
+            music_result = call_agent_tool(
                 tool_id="select_music",
                 parameters=music_input,
-                user_id=user_id
+                user_id=user_id,
+                agent=agent
             )
 
         # Step 3: Generate meditation (if requested)
@@ -492,10 +528,11 @@ async def generate_complete_class(
                 "duration_minutes": 5,
                 "class_intensity": "moderate"
             }
-            meditation_result = await call_orchestrator_tool(
+            meditation_result = call_agent_tool(
                 tool_id="generate_meditation",
                 parameters=meditation_input,
-                user_id=user_id
+                user_id=user_id,
+                agent=agent
             )
 
         # Step 4: Perform research enhancements (if requested)
@@ -511,10 +548,11 @@ async def generate_complete_class(
                     "movement_name": movement.get("name"),
                     "trusted_sources_only": True
                 }
-                research_result = await call_orchestrator_tool(
+                research_result = call_agent_tool(
                     tool_id="research_cues",
                     parameters=research_input,
-                    user_id=user_id
+                    user_id=user_id,
+                    agent=agent
                 )
                 if research_result["success"]:
                     research_results.append(research_result)
@@ -547,52 +585,50 @@ async def generate_complete_class(
 
 
 @router.get("/agent-info")
-async def get_agent_info():
+async def get_agent_info(agent: BasslinePilatesCoachAgent = Depends(get_agent)):
     """
-    Get information about all available tools via orchestrator
+    Get information about all available tools via agent
 
     JENTIC PATTERN: Reports on StandardAgent's available tools
     """
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{ORCHESTRATOR_URL}/tools/list")
-            response.raise_for_status()
-            tools_info = response.json()
+        tools_list = agent.tools.list_tools()
 
-            # Convert tools info to agent-like structure for backward compatibility
-            return {
-                "agents": {
-                    "sequence": {
-                        "name": "SequenceTools",
-                        "description": "Pilates movement sequencing with safety rules",
-                        "available": any(t["id"] == "generate_sequence" for t in tools_info.get("tools", []))
-                    },
-                    "music": {
-                        "name": "MusicTools",
-                        "description": "Music selection and playlist building",
-                        "available": any(t["id"] == "select_music" for t in tools_info.get("tools", []))
-                    },
-                    "meditation": {
-                        "name": "MeditationTools",
-                        "description": "Meditation script generation",
-                        "available": any(t["id"] == "generate_meditation" for t in tools_info.get("tools", []))
-                    },
-                    "research": {
-                        "name": "ResearchTools",
-                        "description": "Web research via MCP Playwright",
-                        "available": any(t["id"] == "research_cues" for t in tools_info.get("tools", []))
-                    }
+        # Convert tools info to agent-like structure for backward compatibility
+        return {
+            "agents": {
+                "sequence": {
+                    "name": "SequenceTools",
+                    "description": "Pilates movement sequencing with safety rules",
+                    "available": any(t["id"] == "generate_sequence" for t in tools_list)
                 },
-                "orchestrator": {
-                    "url": ORCHESTRATOR_URL,
-                    "architecture": "jentic_standard_agent",
-                    "tools_count": len(tools_info.get("tools", []))
+                "music": {
+                    "name": "MusicTools",
+                    "description": "Music selection and playlist building",
+                    "available": any(t["id"] == "select_music" for t in tools_list)
+                },
+                "meditation": {
+                    "name": "MeditationTools",
+                    "description": "Meditation script generation",
+                    "available": any(t["id"] == "generate_meditation" for t in tools_list)
+                },
+                "research": {
+                    "name": "ResearchTools",
+                    "description": "Web research via MCP Playwright",
+                    "available": any(t["id"] == "research_cues" for t in tools_list)
                 }
+            },
+            "agent": {
+                "type": "BasslinePilatesCoachAgent",
+                "architecture": "jentic_standard_agent",
+                "tools_count": len(tools_list),
+                "deployment": "integrated (Option A)"
             }
+        }
 
     except Exception as e:
-        logger.error(f"Failed to get agent info from orchestrator: {e}")
-        # Return fallback info if orchestrator unavailable
+        logger.error(f"Failed to get agent info: {e}")
+        # Return fallback info
         return {
             "agents": {
                 "sequence": {"name": "SequenceTools", "available": False},
@@ -600,8 +636,8 @@ async def get_agent_info():
                 "meditation": {"name": "MeditationTools", "available": False},
                 "research": {"name": "ResearchTools", "available": False}
             },
-            "orchestrator": {
-                "url": ORCHESTRATOR_URL,
+            "agent": {
+                "type": "BasslinePilatesCoachAgent",
                 "status": "unavailable",
                 "error": str(e)
             }
