@@ -569,6 +569,7 @@ async def generate_complete_class(
         # The sequence_result contains the main movements
 
         # Step 5: Select cool-down sequence (Section 4)
+        cooldown = None
         try:
             cooldown_response = supabase.rpc(
                 'select_cooldown_by_muscle_groups',
@@ -577,21 +578,25 @@ async def generate_complete_class(
 
             # RPC functions return a list (SETOF), extract first element
             cooldown = cooldown_response.data[0] if cooldown_response.data and len(cooldown_response.data) > 0 else None
+            logger.info(f"RPC returned cooldown: {cooldown.get('sequence_name') if cooldown else 'None (empty result)'}")
+        except Exception as e:
+            logger.error(f"Failed to call cooldown RPC: {e}")
+            cooldown = None
 
-            # FALLBACK: If no specific cooldown found, select Full Body cooldown
-            if not cooldown:
-                logger.info("No specific cooldown found, using Full Body Recovery")
+        # FALLBACK: If no cooldown (either error or no match), select Full Body cooldown
+        if not cooldown:
+            try:
+                logger.info("No specific cooldown found, using Full Body Recovery fallback")
                 fallback_response = supabase.table('cooldown_sequences') \
                     .select('*') \
                     .eq('sequence_name', 'Full Body Recovery and Integration') \
                     .limit(1) \
                     .execute()
                 cooldown = fallback_response.data[0] if fallback_response.data else None
-
-            logger.info(f"Selected cooldown: {cooldown.get('sequence_name') if cooldown else 'None'}")
-        except Exception as e:
-            logger.error(f"Failed to fetch cooldown sequence: {e}")
-            cooldown = None
+                logger.info(f"Fallback cooldown: {cooldown.get('sequence_name') if cooldown else 'None (not found in DB!)'}")
+            except Exception as fallback_error:
+                logger.error(f"Fallback cooldown selection also failed: {fallback_error}")
+                cooldown = None
 
         # Step 6: Select meditation (Section 5)
         try:
