@@ -27,10 +27,12 @@ from .sequence_tools import SequenceTools
 from .music_tools import MusicTools
 from .meditation_tools import MeditationTools
 from .research_tools import ResearchTools
+from .bassline_tools import BasslinePilatesTools
 
 __all__ = [
     'SequenceTools',
     'MusicTools',
     'MeditationTools',
-    'ResearchTools'
+    'ResearchTools',
+    'BasslinePilatesTools'  # ← Unified tools interface for Jentic StandardAgent
 ]
