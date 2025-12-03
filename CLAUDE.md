@@ -546,6 +546,33 @@ Tool Modules (Pure Business Logic):
 - Attributes sources for transparency
 - **Extracted from:** `backend/agents/research_agent.py` (190 lines)
 
+### Backend API Routing (Session 13.5)
+
+**`backend/api/agents.py` - Orchestrator Proxy** (Updated December 3, 2025)
+
+The backend `/api/agents/*` endpoints now route all calls to the orchestrator service instead of using archived agents:
+
+```python
+# JENTIC INTEGRATION: Routes to orchestrator
+async def call_orchestrator_tool(tool_id, parameters, user_id):
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{ORCHESTRATOR_URL}/tools/execute",
+            json={"tool_id": tool_id, "parameters": parameters, "user_id": user_id}
+        )
+        return response.json()
+```
+
+**Backward Compatibility**: All endpoints preserve the same request/response interface. Frontend requires no changes.
+
+**Endpoints Preserved**:
+- `POST /api/agents/generate-sequence` → Routes to SequenceTools
+- `POST /api/agents/select-music` → Routes to MusicTools
+- `POST /api/agents/create-meditation` → Routes to MeditationTools
+- `POST /api/agents/research-cues` → Routes to ResearchTools
+- `POST /api/agents/generate-complete-class` → Orchestrates all tools
+- `GET /api/agents/agent-info` → Reports on available tools
+
 ### Archived Agents
 
 Original backend agents archived in `backend/agents_archive/` (gitignored).
