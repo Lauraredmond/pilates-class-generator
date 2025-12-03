@@ -3,14 +3,13 @@ services:
   - type: web
     name: pilates-class-generator-api
     env: python
+    pythonVersion: 3.11.0
     region: oregon
     plan: free
     branch: main
     buildCommand: "cd backend && pip install -r requirements-production.txt"
     startCommand: "cd backend && uvicorn api.main:app --host 0.0.0.0 --port $PORT"
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
