@@ -32,6 +32,7 @@ from .sequence_tools import SequenceTools
 from .music_tools import MusicTools
 from .meditation_tools import MeditationTools
 from .research_tools import ResearchTools
+from .class_section_tools import ClassSectionTools
 
 
 class BasslinePilatesTools(JustInTimeToolingBase):
@@ -70,11 +71,12 @@ class BasslinePilatesTools(JustInTimeToolingBase):
         self.music_tools = MusicTools(bassline_api_url=bassline_api_url)
         self.meditation_tools = MeditationTools(bassline_api_url=bassline_api_url)
         self.research_tools = ResearchTools(mcp_client=None)  # MCP client not yet configured
+        self.class_section_tools = ClassSectionTools(supabase_client=supabase_client)
 
         # Register all tools
         self._register_tools()
 
-        logger.info("✅ BasslinePilatesTools initialized with 4 tool modules")
+        logger.info("✅ BasslinePilatesTools initialized with 5 tool modules (8 tools total)")
 
     def _register_tools(self):
         """
@@ -302,7 +304,123 @@ Returns: Curated research results with source attribution.
             function=self.research_tools.research  # Correct method name
         )
 
-        logger.info("✅ Registered 4 Pilates tools (sequence, music, meditation, research)")
+        # ======================================================================
+        # CLASS SECTION TOOLS (Sections 1, 2, 4, 6)
+        # ======================================================================
+
+        self.register_tool(
+            tool_id="select_preparation",
+            name="Select Preparation Script",
+            description="""
+Select preparation script for class opening (Section 1).
+
+Covers breathing exercises, centering, and introduction to Pilates principles.
+Adapts to student difficulty level and class focus.
+
+Returns: Preparation script with narrative, key principles, duration, breathing pattern.
+            """.strip(),
+            parameters={
+                "difficulty_level": {
+                    "type": "string",
+                    "enum": ["Beginner", "Intermediate", "Advanced"],
+                    "description": "Student experience level",
+                    "required": False
+                },
+                "script_type": {
+                    "type": "string",
+                    "enum": ["centering", "breathing", "principles"],
+                    "description": "Type of preparation focus",
+                    "required": False
+                }
+            },
+            function=self.class_section_tools.select_preparation
+        )
+
+        self.register_tool(
+            tool_id="select_warmup",
+            name="Select Warmup Routine",
+            description="""
+Select warmup routine for class preparation (Section 2).
+
+Prepares specific muscle groups and movement patterns for the main sequence.
+Intelligently matches to target muscles if provided.
+
+Returns: Warmup routine with narrative, movements, duration, contraindications.
+            """.strip(),
+            parameters={
+                "target_muscles": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Muscle groups to warm up (for intelligent matching)",
+                    "required": False
+                },
+                "difficulty_level": {
+                    "type": "string",
+                    "enum": ["Beginner", "Intermediate", "Advanced"],
+                    "description": "Student experience level",
+                    "required": False
+                },
+                "focus_area": {
+                    "type": "string",
+                    "enum": ["spine", "hips", "shoulders", "full_body"],
+                    "description": "Anatomical focus area",
+                    "required": False
+                }
+            },
+            function=self.class_section_tools.select_warmup
+        )
+
+        self.register_tool(
+            tool_id="select_cooldown",
+            name="Select Cooldown Sequence",
+            description="""
+Select cooldown sequence for class recovery (Section 4).
+
+Gently stretches worked muscle groups and promotes recovery.
+Intelligently matches to muscles used in main sequence if provided.
+
+Returns: Cooldown sequence with narrative, stretches, duration, recovery focus.
+            """.strip(),
+            parameters={
+                "target_muscles": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Muscle groups to cool down (for intelligent matching)",
+                    "required": False
+                },
+                "intensity_level": {
+                    "type": "string",
+                    "enum": ["gentle", "moderate", "deep"],
+                    "description": "Stretch intensity level",
+                    "required": False
+                }
+            },
+            function=self.class_section_tools.select_cooldown
+        )
+
+        self.register_tool(
+            tool_id="select_homecare",
+            name="Select Homecare Advice",
+            description="""
+Select homecare advice for class closing (Section 6).
+
+Provides actionable tips for spine care, injury prevention, or recovery.
+Helps students maintain progress between classes.
+
+Returns: Homecare advice with advice text, actionable tips, duration.
+            """.strip(),
+            parameters={
+                "focus_area": {
+                    "type": "string",
+                    "enum": ["spine_care", "injury_prevention", "recovery"],
+                    "description": "Homecare focus area",
+                    "required": False
+                }
+            },
+            function=self.class_section_tools.select_homecare
+        )
+
+        logger.info("✅ Registered 8 Pilates tools (sequence, music, meditation, research, preparation, warmup, cooldown, homecare)")
 
     def list_tools(self) -> List[Dict[str, Any]]:
         """
