@@ -247,34 +247,16 @@ Output JSON format:
             logger.info(f"  Executing Step {step.step_number}: {step.description}")
 
             try:
-                # Find the tool
-                all_tools = self.tools.list_tools()
-                tool_dict = next((t for t in all_tools if t["id"] == step.tool_id), None)
-
-                if not tool_dict:
-                    step.error = f"Tool not found: {step.tool_id}"
-                    logger.error(f"    ❌ {step.error}")
-                    all_succeeded = False
-                    continue
-
-                # Create tool wrapper (needed for execute method signature)
-                from orchestrator.tools import BasslineTool
-                tool = BasslineTool(
-                    id=tool_dict["id"],
-                    name=tool_dict["name"],
-                    description=tool_dict["description"],
-                    schema=tool_dict["schema"]
-                )
-
-                # Execute the tool
-                result = self.tools.execute(tool, step.parameters)
+                # Execute tool directly using tool_id
+                # Our BasslinePilatesTools.execute() takes (tool_id, parameters)
+                result = self.tools.execute(step.tool_id, step.parameters)
                 step.result = result
 
                 logger.info(f"    ✅ Step {step.step_number} completed")
 
             except Exception as e:
                 step.error = str(e)
-                logger.error(f"    ❌ Step {step.step_number} failed: {e}")
+                logger.error(f"    ❌ Step {step.step_number} failed: {e}", exc_info=True)
                 all_succeeded = False
 
         return all_succeeded
