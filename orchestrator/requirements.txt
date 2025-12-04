@@ -64,6 +64,12 @@ pyyaml>=6.0.1
 python-dotenv>=1.0.0
 
 # ----------------------------------------
+# CACHING (Performance Optimization)
+# ----------------------------------------
+# Redis for AI response caching (Phase 1 optimization - December 4, 2025)
+redis>=5.0.0
+
+# ----------------------------------------
 # LOGGING & MONITORING
 # ----------------------------------------
 loguru>=0.7.2

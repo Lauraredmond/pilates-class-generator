@@ -2733,7 +2733,25 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 **Priority Order (User-Specified):**
 
-#### **1. Add Jazz Music Style** (High Priority)
+#### **1. Fix Playback Crash & Verify AI Mode** (CRITICAL - Session 13 Follow-Up)
+- **Issue:** Playback crashes with `TypeError: undefined is not an object (evaluating 'e.script_name.toUpperCase')`
+- **Status:** Fixes deployed (commits 30443f5, 4f30dc1, 1ec68d9) but needs verification
+- **What Was Fixed:**
+  - Added null safety to MovementDisplay.tsx (optional chaining on 5 fields)
+  - Fixed meditation tool return format (script_name, script_text, breathing_guidance)
+  - Added LLM generation to warmup and cooldown tools
+  - Fixed NameError in meditation tool (intensity → class_intensity)
+- **Verification Tasks:**
+  1. Test AI mode class generation end-to-end
+  2. Confirm all 6 sections AI-generated (not database fallback)
+  3. Verify playback renders without crash
+  4. Check Render logs show no errors
+  5. Confirm processing time ~60-90 seconds (not 120+)
+  6. Validate no "undefined" displayed in any section
+- **Expected Outcome:** AI mode generates unique content for all 6 sections, playback works flawlessly
+- Estimated Time: 1-2 hours (testing & any final fixes)
+
+#### **2. Add Jazz Music Style** (High Priority)
 - Add "Jazz" to musical stylistic periods
 - Source: Internet Archive Jazz collection
 - Example URL: [Provide specific Internet Archive Jazz collection URL]
@@ -2741,7 +2759,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - Frontend: Add "Jazz" option to music style dropdown
 - Estimated Time: 2-3 hours
 
-#### **2. Restrict AI Mode Toggle to Admins + Cost Reduction** (High Priority)
+#### **3. Restrict AI Mode Toggle to Admins + Cost Reduction** (High Priority)
 - **Admin-Only AI Toggle:**
   - Move AI toggle from public UI to admin-only settings
   - Prevent non-admin users from triggering expensive AI operations
@@ -2757,13 +2775,13 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 - Estimated Time: 4-5 hours
 
-#### **3. Update Class Builder Page Appearance** (Medium Priority)
+#### **4. Update Class Builder Page Appearance** (Medium Priority)
 - Remove "Manual Build" option from UI
 - Add Cian's logos to class builder header
 - Update branding/styling per design specs
 - Estimated Time: 2-3 hours
 
-#### **4. Add Nutrition Tracker** (Medium Priority - Requires More Info)
+#### **5. Add Nutrition Tracker** (Medium Priority - Requires More Info)
 - **Status:** Pending detailed requirements from user
 - **Questions to Answer:**
   - What nutrition data to track? (calories, macros, meals, etc.)
@@ -2773,7 +2791,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **Next Step:** User to provide comprehensive nutrition tracker requirements
 - Estimated Time: TBD (requires requirements doc)
 
-#### **5. Add "Create My Baseline Wellness Routine" Button** (Medium Priority)
+#### **6. Add "Create My Baseline Wellness Routine" Button** (Medium Priority)
 - Add button to home page/dashboard
 - Button leads to placeholder page initially
 - **Placeholder Content:**
@@ -2787,7 +2805,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Stress management guidance
 - Estimated Time: 1-2 hours (placeholder), 40+ hours (full implementation)
 
-#### **6. Replace "Generate" Nav Icon with "Founder Story"** (Low Priority - UX Change)
+#### **7. Replace "Generate" Nav Icon with "Founder Story"** (Low Priority - UX Change)
 - Current: "Generate" icon in main navigation
 - New: "Founder Story" icon (move to extreme right of nav bar)
 - Add founder story page with:
@@ -2797,7 +2815,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Photos/testimonials
 - Estimated Time: 2-3 hours
 
-#### **7. Replace "Classes" Nav Icon with "Wellness Space"** (Low Priority - UX Change)
+#### **8. Replace "Classes" Nav Icon with "Wellness Space"** (Low Priority - UX Change)
 - Current: "Classes" icon in main navigation
 - New: "Wellness Space" icon
 - Reframe "Classes" as holistic "Wellness Space" including:
@@ -2808,7 +2826,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Meditation library
 - Estimated Time: 2 hours (icon/name change), ongoing (feature additions)
 
-#### **8. Retry Supabase User Confirmation** (Low Priority - May Already Be Fixed)
+#### **9. Retry Supabase User Confirmation** (Low Priority - May Already Be Fixed)
 - **Context:** Previous issues with Supabase email confirmation may have been temporary
 - **Action:** Test current email confirmation flow
 - **If Still Broken:**
@@ -2819,7 +2837,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **If Working:** Mark as resolved and document
 - Estimated Time: 1 hour (testing), 2-3 hours (fixes if needed)
 
-#### **9. Advanced Delivery Modes** (Low Priority - Phase 3)
+#### **10. Advanced Delivery Modes** (Low Priority - Phase 3)
 - **Audio Narration:**
   - TTS integration (ElevenLabs, OpenAI TTS, Google Cloud TTS)
   - Pre-generate and cache common narratives
@@ -2837,7 +2855,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 - Estimated Time: 20-30 hours (audio), 60+ hours (video)
 
-#### **10. EU AI Act Compliance Dashboard & Testing** (Low Priority - Future Session)
+#### **11. EU AI Act Compliance Dashboard & Testing** (Low Priority - Future Session)
 - **Decision Transparency View:** Display all AI agent decisions for user
 - **Bias Monitoring Dashboard:** Track model drift, fairness metrics, alerts
 - **Audit Trail Interface:** Complete decision history with export (CSV, JSON)
@@ -2846,7 +2864,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **GDPR Data Export Fix:** Resolve HTTP 500 error on `/api/compliance/my-data`
 - Estimated Time: 12-15 hours
 
-#### **11. Security Testing** (Low Priority - Ongoing)
+#### **12. Security Testing** (Low Priority - Ongoing)
 - **Penetration Testing:**
   - API endpoint security testing
   - Authentication/authorization bypass attempts
@@ -2883,3 +2901,4 @@ Future enhancements (lower priority):
 - MCP Playwright caching and quality scoring (partially covered in #2)
 - Comprehensive E2E testing suite
 - Mobile responsiveness and PWA features
+- 3.# Just add the playback crash as number 1 priority for our next session, ahead of Jazz music style addition in your list above. I need to finish now

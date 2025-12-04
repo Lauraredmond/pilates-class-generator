@@ -9,6 +9,9 @@ Pure business logic - no agent orchestration, just domain expertise.
 
 JENTIC PATTERN: Tools = Domain Expertise
 StandardAgent will call these methods via the tools registry.
+
+NOTE: This tool uses template-based generation (not LLM), so no caching needed.
+Already fast (<0.1s) and free ($0.00 cost).
 ==============================================================================
 """
 
