@@ -60,7 +60,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-burgundy-dark/95 backdrop-blur-sm border-t border-cream/20 z-50">
         <div className="flex items-center justify-around py-1.5 px-1">
-          {navItems.map(({ path, icon: Icon, label, shortLabel }) => {
+          {navItems.map(({ path, icon: Icon, shortLabel }) => {
             const isActive = location.pathname === path;
             return (
               <Link
