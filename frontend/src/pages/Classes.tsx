@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '../components/ui/Button';
 import { Card, CardBody, CardTitle } from '../components/ui/Card';
 
 type ViewType = 'main' | 'trainer' | 'training' | 'nutrition';
