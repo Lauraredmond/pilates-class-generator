@@ -43,9 +43,9 @@ def get_movement_muscle_groups(movement_id: str) -> List[str]:
     Returns list of muscle group names (e.g., ["Core Strength", "Hip Mobility"])
     """
     try:
-        # Step 1: Get muscle_group_ids from movement_muscles
+        # Production schema: movement_muscles.muscle_group_name (text) stores name directly
         mm_response = supabase.table('movement_muscles') \
-            .select('muscle_group_id') \
+            .select('muscle_group_name') \
             .eq('movement_id', movement_id) \
             .eq('is_primary', True) \
             .execute()
@@ -53,22 +53,8 @@ def get_movement_muscle_groups(movement_id: str) -> List[str]:
         if not mm_response.data:
             return []
 
-        muscle_group_ids = [item['muscle_group_id'] for item in mm_response.data]
-
-        if not muscle_group_ids:
-            return []
-
-        # Step 2: Get muscle group names from muscle_groups
-        mg_response = supabase.table('muscle_groups') \
-            .select('id, name') \
-            .in_('id', muscle_group_ids) \
-            .execute()
-
-        if not mg_response.data:
-            return []
-
-        # Extract muscle group names
-        muscle_groups = [item['name'] for item in mg_response.data]
+        # Extract muscle group names directly (no need for second query)
+        muscle_groups = [item['muscle_group_name'] for item in mm_response.data if item.get('muscle_group_name')]
         return muscle_groups
 
     except Exception as e:
