@@ -697,17 +697,36 @@ async def generate_class(request: ClassGenerationRequest):
                         # ANALYTICS FIX: Also save to class_history table for analytics tracking
                         # ==============================================================================
                         try:
+                            # Enrich agent movements with muscle_groups from database
+                            agent_movements = class_plan.get('agent_result', {}).get('movements', [])
+                            enriched_movements = []
+
+                            for movement in agent_movements:
+                                enriched_movement = movement.copy()
+
+                                # If movement has an ID, fetch muscle_groups from database
+                                movement_id = movement.get('id')
+                                if movement_id:
+                                    muscle_groups = get_movement_muscle_groups(movement_id)
+                                    enriched_movement['muscle_groups'] = muscle_groups
+
+                                # Ensure type field is set
+                                if 'type' not in enriched_movement:
+                                    enriched_movement['type'] = 'movement'
+
+                                enriched_movements.append(enriched_movement)
+
                             class_history_entry = {
                                 'class_plan_id': db_response.data[0]['id'],
                                 'user_id': request.user_id,
                                 'taught_date': datetime.now().date().isoformat(),
                                 'actual_duration_minutes': request.duration_minutes,
                                 'attendance_count': 1,  # Generated = 1 attendance (self)
-                                'movements_snapshot': class_plan.get('agent_result', {}).get('movements', []),
+                                'movements_snapshot': enriched_movements,  # FIXED: Use enriched movements with muscle_groups!
                                 'instructor_notes': f"AI-generated {request.difficulty} class using GPT-4. Iterations: {result.iterations}",
                                 'difficulty_rating': None,
                                 'muscle_groups_targeted': [],  # Agent should provide this
-                                'total_movements_taught': len(class_plan.get('agent_result', {}).get('movements', [])),
+                                'total_movements_taught': len(enriched_movements),
                                 'created_at': now
                             }
 
