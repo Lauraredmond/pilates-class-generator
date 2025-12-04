@@ -901,7 +901,7 @@ def get_movement_muscle_groups_by_name(movement_name: str) -> List[str]:
     Fetch muscle groups for a movement by NAME (not ID)
     Used for backfilling class_history records
 
-    Uses two separate queries to avoid relying on foreign key relationship
+    Production schema: movement_muscles.muscle_group_name (text) stores name directly
     """
     try:
         # Step 1: Find movement ID by name
@@ -912,9 +912,9 @@ def get_movement_muscle_groups_by_name(movement_name: str) -> List[str]:
 
         movement_id = movement_response.data[0]['id']
 
-        # Step 2: Get muscle_group_ids from movement_muscles
+        # Step 2: Get muscle_group_name directly from movement_muscles (it's a text column, not FK)
         mm_response = supabase.table('movement_muscles') \
-            .select('muscle_group_id') \
+            .select('muscle_group_name') \
             .eq('movement_id', movement_id) \
             .eq('is_primary', True) \
             .execute()
@@ -922,22 +922,8 @@ def get_movement_muscle_groups_by_name(movement_name: str) -> List[str]:
         if not mm_response.data:
             return []
 
-        muscle_group_ids = [item['muscle_group_id'] for item in mm_response.data]
-
-        if not muscle_group_ids:
-            return []
-
-        # Step 3: Get muscle group names from muscle_groups
-        mg_response = supabase.table('muscle_groups') \
-            .select('id, name') \
-            .in_('id', muscle_group_ids) \
-            .execute()
-
-        if not mg_response.data:
-            return []
-
-        # Extract muscle group names
-        muscle_groups = [item['name'] for item in mg_response.data]
+        # Extract muscle group names directly (no need for second query)
+        muscle_groups = [item['muscle_group_name'] for item in mm_response.data if item.get('muscle_group_name')]
         return muscle_groups
 
     except Exception as e:
