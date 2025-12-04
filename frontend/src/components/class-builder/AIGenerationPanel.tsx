@@ -109,15 +109,16 @@ export function AIGenerationPanel() {
           muscle_balance: sequenceResponse.data.muscle_balance || {},
         },
         music: {
-          playlist: musicResponse.data.playlist.map((track: any) => ({
+          // Handle case where music selection wasn't included in AI plan
+          playlist: musicResponse?.data?.playlist?.map((track: any) => ({
             title: track.title || 'Unknown Track',
             artist: track.artist || 'Unknown Artist',
             bpm: track.bpm || 120,
             duration_seconds: track.duration_seconds || 180,
             url: track.url,
-          })),
-          total_duration: musicResponse.data.total_duration || formData.duration * 60,
-          average_bpm: musicResponse.data.average_bpm || 120,
+          })) || [],
+          total_duration: musicResponse?.data?.total_duration || formData.duration * 60,
+          average_bpm: musicResponse?.data?.average_bpm || 120,
         },
         meditation: {
           // Meditation is database object, not tool result - access fields directly
@@ -138,7 +139,7 @@ export function AIGenerationPanel() {
           homecare: homecareData,        // AI-generated "Hydration" advice OR database default
           difficulty: formData.difficulty,
           total_duration_minutes: formData.duration,
-          music_playlist: musicResponse.data,
+          music_playlist: musicResponse?.data || null,
         },
       };
 
