@@ -348,7 +348,6 @@ async def get_muscle_group_history(
                 mm_response = supabase.table('movement_muscles') \
                     .select('movement_id, muscle_group_name') \
                     .in_('movement_id', list(movement_name_to_id.values())) \
-                    .eq('is_primary', True) \
                     .execute()
 
                 # Build reverse lookup: movement_id → [muscle_group_names]
@@ -588,7 +587,6 @@ async def get_muscle_distribution(
                 mm_response = supabase.table('movement_muscles') \
                     .select('movement_id, muscle_group_name') \
                     .in_('movement_id', list(movement_name_to_id.values())) \
-                    .eq('is_primary', True) \
                     .execute()
 
                 # Build reverse lookup: movement_id → [muscle_group_names]
@@ -1011,7 +1009,6 @@ def get_movement_muscle_groups_by_name(movement_name: str) -> List[str]:
         mm_response = supabase.table('movement_muscles') \
             .select('muscle_group_name') \
             .eq('movement_id', movement_id) \
-            .eq('is_primary', True) \
             .execute()
 
         if not mm_response.data:
