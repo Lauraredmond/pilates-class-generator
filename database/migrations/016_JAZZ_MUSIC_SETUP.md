@@ -1,6 +1,6 @@
 # Jazz Music Setup Guide
 
-**Migration:** `016_add_jazz_music_style.sql`
+**Migrations:** `016a_add_jazz_enum.sql` + `016b_add_jazz_data.sql` (TWO-STEP PROCESS)
 **Date:** December 4, 2025
 **Status:** Ready to run
 
@@ -14,20 +14,45 @@ Users can now select Jazz from the music dropdown in the class builder, which wi
 
 ---
 
+## ⚠️ IMPORTANT: Two-Step Migration Process
+
+**Why Two Steps?**
+PostgreSQL requires that enum values added with `ALTER TYPE ... ADD VALUE` must be **committed** before they can be used in INSERT statements. Running everything in a single migration causes an error:
+
+```
+ERROR: 55P04: unsafe use of new value "JAZZ" of enum type stylistic_period
+HINT: New enum values must be committed before they can be used.
+```
+
+To avoid this, we split the migration into two files that you run separately.
+
+---
+
 ## What You Need to Do
 
-### 1. Run the SQL Migration in Supabase
+### Step 1: Add JAZZ Enum Value (Run First)
 
 1. Go to your Supabase project dashboard
 2. Navigate to: **SQL Editor**
-3. Copy the contents of `016_add_jazz_music_style.sql`
-4. Paste into SQL Editor
+3. Open `database/migrations/016a_add_jazz_enum.sql`
+4. Copy the contents and paste into SQL Editor
 5. Click **Run** button
+6. ✅ **Verify it succeeded** - Run this query:
+   ```sql
+   SELECT enumlabel FROM pg_enum WHERE enumtypid = 'stylistic_period'::regtype ORDER BY enumsortorder;
+   ```
+   You should see `JAZZ` in the list.
 
-**OR** if you have SQL file access:
-```sql
-\i database/migrations/016_add_jazz_music_style.sql
-```
+### Step 2: Insert Jazz Data (Run Second, After Step 1 Succeeds)
+
+1. In Supabase SQL Editor, open a **new query**
+2. Open `database/migrations/016b_add_jazz_data.sql`
+3. Copy the contents and paste into SQL Editor
+4. Click **Run** button
+5. ✅ **Verify it succeeded** - The verification queries at the end should show:
+   - 1 Jazz track inserted
+   - 3 Jazz playlists created
+   - 3 playlist-track linkages
 
 ### 2. Verify Jazz Was Added Successfully
 
