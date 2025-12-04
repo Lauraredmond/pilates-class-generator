@@ -375,93 +375,157 @@ Output JSON format:
         self,
         target_muscles: List[str] = None,
         research_tool=None,
+        llm_model: str = "gpt-4-turbo",
         **kwargs  # Accept any extra parameters LLM might pass
     ) -> Dict[str, Any]:
         """
-        AI MODE: Research NEW warm-up exercises from web
+        AI MODE: Generate NEW warm-up routine using LLM
 
-        BEHAVIOR C: Source new/novel warm-up exercises beyond database defaults
+        BEHAVIOR C: Generate unique warmup narrative with AI (MCP web research not yet implemented)
 
         Args:
             target_muscles: Muscle groups to warm up
-            research_tool: ResearchTools instance for MCP web research
+            research_tool: ResearchTools instance for MCP web research (future)
+            llm_model: LLM model to use for generation
 
         Returns:
-            Warmup routine with researched exercises
+            Warmup routine with AI-generated narrative
         """
         try:
             # Default to common muscle groups if not specified
             if not target_muscles:
                 target_muscles = ["core", "hips", "shoulders", "back"]
 
-            logger.info(f"🔍 Researching NEW warmup exercises for: {', '.join(target_muscles)}")
+            logger.info(f"🤖 Generating NEW warmup narrative for: {', '.join(target_muscles)} (AI MODE)")
 
-            if not research_tool:
-                logger.warning("No research tool available, falling back to database selection")
-                return self.select_warmup(target_muscles=target_muscles)
+            from litellm import completion
+            import json
 
-            # Use MCP to research warm-up exercises
-            research_results = research_tool.research(
-                research_type="warmup",
-                target_muscles=target_muscles,
-                duration_minutes=5,
-                trusted_sources_only=True
+            system_prompt = """You are a certified Pilates instructor creating warmup routines.
+Generate a UNIQUE warmup narrative with varied phrasing each time."""
+
+            user_prompt = f"""
+Create a warmup routine narrative for Pilates focusing on: {', '.join(target_muscles)}.
+
+REQUIREMENTS:
+- Gentle mobilization exercises for target muscles
+- Flowing narrative (not bullet points)
+- Duration: ~3-5 minutes
+- Prepare body for main Pilates sequence
+- Include breath cues
+
+VARY THE WORDING each time while keeping exercises effective.
+
+Output JSON format:
+{{
+  "routine_name": "Unique name for this warmup",
+  "focus_area": "full_body",
+  "narrative": "Complete flowing narrative with warmup sequence",
+  "movements": [],
+  "duration_seconds": 180,
+  "contraindications": [],
+  "modifications": {{}},
+  "difficulty_level": "Intermediate"
+}}
+"""
+
+            response = completion(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.8  # Creative variation
             )
 
-            # Format research results as warmup routine
-            return {
-                "routine_name": f"Researched Warmup for {', '.join(target_muscles[:2])}",
-                "focus_area": "researched",
-                "narrative": research_results.get("summary", ""),
-                "movements": research_results.get("exercises", []),
-                "duration_seconds": 300,
-                "contraindications": [],
-                "modifications": {},
-                "difficulty_level": "Intermediate",
-                "source": "MCP Research",
-                "sources": research_results.get("sources", [])
-            }
+            generated_warmup = json.loads(response.choices[0].message.content)
+            logger.info(f"✅ Generated: {generated_warmup.get('routine_name')}")
+
+            return generated_warmup
 
         except Exception as e:
-            logger.error(f"Failed to research warmup: {e}", exc_info=True)
+            logger.error(f"Failed to generate warmup: {e}", exc_info=True)
             # Fallback to database
+            logger.warning("LLM warmup generation failed, falling back to database")
             return self.select_warmup(target_muscles=target_muscles)
 
     def research_cooldown(
         self,
         target_muscles: List[str] = None,
         research_tool=None,
+        llm_model: str = "gpt-4-turbo",
         **kwargs  # Accept any extra parameters LLM might pass
     ) -> Dict[str, Any]:
         """
-        AI MODE: Research NEW cool-down exercises from web
+        AI MODE: Generate NEW cool-down sequence using LLM
 
-        BEHAVIOR C: Source new/novel cool-down exercises beyond database defaults
+        BEHAVIOR C: Generate unique cooldown narrative with AI (MCP web research not yet implemented)
 
         Args:
             target_muscles: Muscle groups to cool down
-            research_tool: ResearchTools instance for MCP web research
+            research_tool: ResearchTools instance for MCP web research (future)
+            llm_model: LLM model to use for generation
 
         Returns:
-            Cooldown sequence with researched stretches
+            Cooldown sequence with AI-generated narrative
         """
         try:
             # Default to common muscle groups if not specified
             if not target_muscles:
                 target_muscles = ["core", "hips", "shoulders", "back"]
 
-            logger.info(f"🔍 Researching NEW cooldown exercises for: {', '.join(target_muscles)}")
+            logger.info(f"🤖 Generating NEW cooldown narrative for: {', '.join(target_muscles)} (AI MODE)")
 
-            if not research_tool:
-                logger.warning("No research tool available, falling back to database selection")
-                return self.select_cooldown(target_muscles=target_muscles)
+            from litellm import completion
+            import json
 
-            # For now, fall back to database (MCP cooldown research not yet implemented)
-            logger.info("MCP cooldown research not yet implemented, using database")
-            return self.select_cooldown(target_muscles=target_muscles)
+            system_prompt = """You are a certified Pilates instructor creating cooldown routines.
+Generate a UNIQUE cooldown narrative with varied phrasing each time."""
+
+            user_prompt = f"""
+Create a cooldown sequence narrative for Pilates focusing on: {', '.join(target_muscles)}.
+
+REQUIREMENTS:
+- Gentle stretching for target muscles
+- Flowing narrative (not bullet points)
+- Duration: ~3-5 minutes
+- Restore body after Pilates sequence
+- Include breath cues and relaxation
+
+VARY THE WORDING each time while keeping stretches effective.
+
+Output JSON format:
+{{
+  "sequence_name": "Unique name for this cooldown",
+  "intensity_level": "moderate",
+  "narrative": "Complete flowing narrative with cooldown stretches",
+  "stretches": [],
+  "duration_seconds": 180,
+  "target_muscles": {json.dumps(target_muscles)},
+  "recovery_focus": "full body restoration"
+}}
+"""
+
+            response = completion(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.8  # Creative variation
+            )
+
+            generated_cooldown = json.loads(response.choices[0].message.content)
+            logger.info(f"✅ Generated: {generated_cooldown.get('sequence_name')}")
+
+            return generated_cooldown
 
         except Exception as e:
-            logger.error(f"Failed to research cooldown: {e}", exc_info=True)
+            logger.error(f"Failed to generate cooldown: {e}", exc_info=True)
+            # Fallback to database
+            logger.warning("LLM cooldown generation failed, falling back to database")
             return self.select_cooldown(target_muscles=target_muscles)
 
     def generate_homecare(
