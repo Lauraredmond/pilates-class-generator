@@ -13,10 +13,10 @@ export function Layout({ children }: LayoutProps) {
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/classes', icon: BookOpen, label: 'Classes' },
-    { path: '/generate', icon: Sparkles, label: 'Generate' },
     { path: '/analytics', icon: BarChart3, label: 'Analytics' },
     { path: '/profile', icon: User, label: 'Profile' },
     { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/generate', icon: Sparkles, label: 'Founder Story' }, // Moved to rightmost, renamed
   ];
 
   return (
