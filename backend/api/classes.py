@@ -1012,28 +1012,45 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         # ==============================================================================
         # 0. ENSURE USER EXISTS IN USERS TABLE (fix foreign key constraint)
         # ==============================================================================
-        # User may exist in Supabase Auth but not in our application's users table
-        # This happens with test accounts or if user_profile wasn't created during registration
+        # CONTEXT: There are TWO user tables in the database:
+        #   1. user_profiles - Created during registration (email, name, prefs)
+        #   2. users - Role/auth table with PII tokenization - NOT created during registration!
+        #
+        # class_history has FK to users.id, but registration only creates user_profiles
+        # This is a schema design issue - we work around it by creating users record on-demand
         try:
             user_check = supabase.table('users').select('id').eq('id', request.user_id).execute()
 
             if not user_check.data:
-                # Create minimal user record to satisfy foreign key constraint
-                logger.warning("User {} not found in users table, creating minimal record", request.user_id)
+                # User exists in Auth + user_profiles, but not in users table
+                # Fetch email from user_profiles for proper tokenization
+                profile_response = supabase.table('user_profiles').select('email').eq('id', request.user_id).execute()
 
-                # Insert with required fields based on schema constraints
-                # email_token is NOT NULL, so provide a placeholder that can be updated on next login
+                if not profile_response.data:
+                    # Edge case: User has no profile either - direct them to re-register
+                    raise HTTPException(
+                        status_code=400,
+                        detail="User profile not found. Please log out and register again."
+                    )
+
+                email = profile_response.data[0]['email']
+
+                # Create minimal users record with proper email tokenization
+                logger.warning("User {} not found in users table, creating record", request.user_id)
                 supabase.table('users').insert({
                     'id': request.user_id,
-                    'email_token': f'placeholder_{request.user_id[:8]}',  # Temporary token
-                    'role': 'instructor'  # Default role
+                    'email_token': email,  # Store actual email (will be tokenized if PII system active)
+                    'role': 'instructor'  # Default role from beta_errors.py pattern
                 }).execute()
-                logger.info("✅ Created minimal user record for {}", request.user_id)
+                logger.info("✅ Created users table record for {}", request.user_id)
+
+        except HTTPException:
+            raise
         except Exception as user_error:
-            logger.error("Failed to ensure user exists: {}", user_error, exc_info=True)
+            logger.error("Failed to ensure user exists in users table: {}", user_error, exc_info=True)
             raise HTTPException(
                 status_code=500,
-                detail=f"Database error: Could not verify user account. Please try logging out and back in."
+                detail=f"Database error: Could not create user record. Please contact support."
             )
 
         # Extract movement IDs from snapshot (movements only, not transitions)
