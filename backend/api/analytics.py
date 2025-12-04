@@ -938,6 +938,43 @@ class BackfillResultsResponse(BaseModel):
     message: str
 
 
+@router.get("/admin/find-user-id")
+async def find_user_id_by_email(
+    email: str = Query(..., description="Email address to look up")
+):
+    """
+    Find user ID by email address (no auth required for simplicity)
+
+    Helper endpoint to find your user ID for admin operations
+    """
+    try:
+        response = supabase.table('user_profiles').select('id, email, full_name, is_admin').eq('email', email).execute()
+
+        if not response.data:
+            raise HTTPException(
+                status_code=404,
+                detail=f"User with email {email} not found"
+            )
+
+        user = response.data[0]
+        return {
+            "user_id": user['id'],
+            "email": user['email'],
+            "full_name": user.get('full_name'),
+            "is_admin": user.get('is_admin', False),
+            "message": f"Use this user_id in the backfill endpoint: {user['id']}"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error finding user: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to find user: {str(e)}"
+        )
+
+
 @router.post("/admin/backfill-muscle-groups", response_model=BackfillResultsResponse)
 async def backfill_muscle_groups_in_class_history(
     admin_user_id: str = Query(..., description="Admin user ID for authorization")
@@ -954,8 +991,12 @@ async def backfill_muscle_groups_in_class_history(
 
     **Usage:** Call this once to fix existing data. New classes already include muscle_groups.
     """
-    # Verify admin access
-    await verify_admin(admin_user_id)
+    try:
+        # Verify admin access
+        await verify_admin(admin_user_id)
+    except HTTPException as e:
+        logger.error(f"Admin verification failed: {e.detail}")
+        raise
 
     try:
         logger.info(f"🔧 Starting backfill_muscle_groups for admin {admin_user_id}")
