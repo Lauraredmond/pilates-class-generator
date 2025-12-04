@@ -13,15 +13,11 @@ export function Generate() {
         <h1 className="text-5xl font-bold text-cream mb-4 tracking-tight">
           The Founder's Story
         </h1>
-        <div className="w-24 h-1 bg-gradient-to-r from-transparent via-cream to-transparent mx-auto mb-6"></div>
-        <p className="text-xl text-cream/80 italic max-w-3xl mx-auto leading-relaxed">
-          "My Story"
-        </p>
-      </div>
+
 
       {/* Story Content */}
       <div className="space-y-12">
-        {/* Section 1: The Beginning */}
+        {/* Section 1: The Idea */}
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
           <h2 className="text-3xl font-semibold text-cream mb-6 flex items-center gap-3">
             <span className="text-4xl">🌅</span>
@@ -41,7 +37,7 @@ export function Generate() {
           </div>
         </section>
 
-        {/* Section 2: The Vision */}
+        {/* Section 2: My Story */}
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
           <h2 className="text-3xl font-semibold text-cream mb-6 flex items-center gap-3">
             <span className="text-4xl">✨</span>
@@ -49,13 +45,16 @@ export function Generate() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-              What if technology could honor tradition while making it accessible? What if AI could understand
-              the nuances of Joseph Pilates' 34 classical movements, the importance of spinal progression, and
-              the delicate balance of muscle engagement—all while adapting to each individual's unique needs?
+            When I was in school, I used to feel incredibly nervous on physical education (PE) days. Everyone in my class was really sporty — but I just wasn't. It wasn't something I could laugh off either. It was excruciatingly embarrassing for me, and I dreaded those days. Because sports were the only fitness channel offered in school, I gave up on all forms of exercise as soon as I left at 18.
             </p>
             <p>
-              Bassline emerged from this question. Not as a replacement for human expertise, but as an intelligent
-              companion that amplifies it. A tool that handles the complexity while preserving the artistry.
+            Cut to age 19, when I had a rude awakening — I realised my fitness was starting to dwindle. I decided to do the unthinkable and join an institution I felt I had no business being in: I signed up for the college gym and tried a cardio class.
+            </p>
+            <p>
+            Over the weeks that followed, I fell in love with the fitness formats the gym had to offer. That brave step I took at 19 changed my life and laid the path for a lifelong love affair with exercise. I only wish I had discovered alternative methods earlier.
+            </p>
+            <p>
+            It's for that reason I want to help others experience the transformative effects of exercise and movement — and discover that there's more than one way to fall in love with fitness.
             </p>
           </div>
         </section>
@@ -64,59 +63,23 @@ export function Generate() {
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
           <h2 className="text-3xl font-semibold text-cream mb-6 flex items-center gap-3">
             <span className="text-4xl">🤖</span>
-            Intelligence Meets Intention
+            Automation meets Pilates structure
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-              We built Bassline on cutting-edge AI reasoning patterns—Jentic's StandardAgent framework with
-              advanced ReWOO reasoning. But the technology is never the story. The story is what it enables:
+              I built Bassline on the basis that Joseph Pilates' classical Pilates methods were highly rules based and, though detailed, lent themselves extremely well to automation. 
+              When I was challenged on what real problem this platform could solve, I started thinking more broadly.
+              What if, instead of just a Pilates class generator, we created a shared platform where people could document and track the fitness routines that work uniquely for them?
+              The idea itself wasn't new: give people access to a network of instructors who share their expertise, mindset, and approach - so anyone can shape a routine that 
+              suits their goals and preferences.
+              But when I spoke with the fitness instructors and coaches I've admired throughout my time, a theme kept coming up: the psychology of fitness is 
+              treated with very different levels of care and quality.
+              That insight, coupled with my own experience, pushed me toward what Bassline could really offer - a network of shared philosophies and mantras 
+              that help people stay consistent, confident, and connected not to where or when they exercise, buy why.
             </p>
-            <ul className="space-y-3 ml-6">
-              <li className="flex items-start gap-3">
-                <span className="text-cream text-xl mt-1">•</span>
-                <span>
-                  <strong className="text-cream">Personalized Classes in Minutes:</strong> What once took hours
-                  of planning now takes seconds, without sacrificing quality or safety.
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-cream text-xl mt-1">•</span>
-                <span>
-                  <strong className="text-cream">Honoring Classical Principles:</strong> Every sequence respects
-                  spinal progression, muscle balance, and the wisdom of Joseph Pilates' original method.
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-cream text-xl mt-1">•</span>
-                <span>
-                  <strong className="text-cream">Continuous Learning:</strong> The more you use Bassline, the
-                  better it understands your preferences, limitations, and goals.
-                </span>
-              </li>
-            </ul>
-          </div>
-        </section>
+            
 
-        {/* Section 4: The Community */}
-        <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
-          <h2 className="text-3xl font-semibold text-cream mb-6 flex items-center gap-3">
-            <span className="text-4xl">🌍</span>
-            Building Together
-          </h2>
-          <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
-            <p>
-              Bassline isn't just a platform—it's a movement. A community of instructors, practitioners, and
-              wellness enthusiasts who believe in the power of mindful movement. Every class generated, every
-              preference shared, every piece of feedback contributes to making the platform better for everyone.
-            </p>
-            <p>
-              We're committed to transparency (EU AI Act compliant), privacy (GDPR compliant), and putting our
-              users first. Your data is yours. Your practice is yours. We're just here to support it.
-            </p>
-          </div>
-        </section>
-
-        {/* Section 5: The Future */}
+        {/* Section 4: The Future */}
         <section className="bg-gradient-to-br from-burgundy/60 to-burgundy-dark/60 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/20 shadow-xl">
           <h2 className="text-3xl font-semibold text-cream mb-6 flex items-center gap-3">
             <span className="text-4xl">🚀</span>
