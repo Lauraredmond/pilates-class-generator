@@ -31,9 +31,25 @@ export function Home() {
         <div className="absolute inset-0 bg-hero-gradient opacity-20"></div>
       </div>
 
-      {/* Main Action Button */}
-      <div className="mb-8">
-        <Button className="w-full" size="lg" onClick={() => navigate('/class-builder')}>
+      {/* Main Action Buttons */}
+      <div className="space-y-4 mb-8">
+        {/* New Primary Button */}
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={() => navigate('/classes')}
+          variant="primary"
+        >
+          Create my baseline wellness routine
+        </Button>
+
+        {/* Existing Pilates Class Button */}
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={() => navigate('/class-builder')}
+          variant="secondary"
+        >
           Generate my Pilates class
         </Button>
       </div>
