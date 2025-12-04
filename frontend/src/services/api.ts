@@ -15,7 +15,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 // Create axios instance with default config
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000, // 60 seconds - AI mode can take 38+ seconds with LLM calls
+  timeout: 90000, // 90 seconds - First AI request with cache MISS can take 60-70s (Phase 1 optimization)
   headers: {
     'Content-Type': 'application/json',
   },
