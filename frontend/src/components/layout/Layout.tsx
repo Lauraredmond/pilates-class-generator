@@ -1,9 +1,21 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BookOpen, Sparkles, BarChart3, User, Settings } from 'lucide-react';
+import { Home, BookOpen, BarChart3, User, Settings } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
+}
+
+// Custom logo icon component for Founder Story navigation
+function LogoIcon({ size }: { size?: number }) {
+  return (
+    <img
+      src="/assets/bassline-logo-transparent.png"
+      alt="Founder Story"
+      style={{ width: size || 18, height: size || 18 }}
+      className="object-contain"
+    />
+  );
 }
 
 export function Layout({ children }: LayoutProps) {
@@ -16,7 +28,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/analytics', icon: BarChart3, label: 'Analytics' },
     { path: '/profile', icon: User, label: 'Profile' },
     { path: '/settings', icon: Settings, label: 'Settings' },
-    { path: '/generate', icon: Sparkles, label: 'Founder Story' }, // Moved to rightmost, renamed
+    { path: '/generate', icon: LogoIcon, label: 'Founder Story' }, // Moved to rightmost, renamed, custom logo icon
   ];
 
   return (

@@ -19,8 +19,7 @@ export function Generate() {
       <div className="space-y-12">
         {/* Section 1: The Idea */}
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
-          <h2 className="text-3xl font-semibold text-cream mb-6 flex items-center gap-3">
-            <span className="text-4xl">🌅</span>
+          <h2 className="text-3xl font-semibold text-cream mb-6">
             The Beginning
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
@@ -39,8 +38,7 @@ export function Generate() {
 
         {/* Section 2: My Story */}
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
-          <h2 className="text-3xl font-semibold text-cream mb-6 flex items-center gap-3">
-            <span className="text-4xl">✨</span>
+          <h2 className="text-3xl font-semibold text-cream mb-6">
             The Vision
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
@@ -61,28 +59,27 @@ export function Generate() {
 
         {/* Section 3: The Technology */}
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
-          <h2 className="text-3xl font-semibold text-cream mb-6 flex items-center gap-3">
-            <span className="text-4xl">🤖</span>
+          <h2 className="text-3xl font-semibold text-cream mb-6">
             Automation meets Pilates structure
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-              I built Bassline on the basis that Joseph Pilates' classical Pilates methods were highly rules based and, though detailed, lent themselves extremely well to automation. 
+              I built Bassline on the basis that Joseph Pilates' classical Pilates methods were highly rules based and, though detailed, lent themselves extremely well to automation.
               When I was challenged on what real problem this platform could solve, I started thinking more broadly.
               What if, instead of just a Pilates class generator, we created a shared platform where people could document and track the fitness routines that work uniquely for them?
-              The idea itself wasn't new: give people access to a network of instructors who share their expertise, mindset, and approach - so anyone can shape a routine that 
+              The idea itself wasn't new: give people access to a network of instructors who share their expertise, mindset, and approach - so anyone can shape a routine that
               suits their goals and preferences.
-              But when I spoke with the fitness instructors and coaches I've admired throughout my time, a theme kept coming up: the psychology of fitness is 
+              But when I spoke with the fitness instructors and coaches I've admired throughout my time, a theme kept coming up: the psychology of fitness is
               treated with very different levels of care and quality.
-              That insight, coupled with my own experience, pushed me toward what Bassline could really offer - a network of shared philosophies and mantras 
+              That insight, coupled with my own experience, pushed me toward what Bassline could really offer - a network of shared philosophies and mantras
               that help people stay consistent, confident, and connected not to where or when they exercise, buy why.
             </p>
-            
+          </div>
+        </section>
 
         {/* Section 4: The Future */}
         <section className="bg-gradient-to-br from-burgundy/60 to-burgundy-dark/60 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/20 shadow-xl">
-          <h2 className="text-3xl font-semibold text-cream mb-6 flex items-center gap-3">
-            <span className="text-4xl">🚀</span>
+          <h2 className="text-3xl font-semibold text-cream mb-6">
             What's Next
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
