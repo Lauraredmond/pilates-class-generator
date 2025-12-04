@@ -59,16 +59,11 @@ export function ClassBuilder() {
 
   return (
     <div className="h-full flex flex-col relative">
-      {/* Version Indicator - for testing/debugging */}
-      <div className="absolute top-2 right-2 z-50 text-xs text-cream/40 bg-burgundy-dark/80 px-2 py-1 rounded border border-cream/20">
-        v: 5ad601d | Music Test #4 (API track)
-      </div>
-
       {/* Page Header with Logo */}
       <div className="mb-6">
         <div className="flex items-center gap-4 mb-4">
           <img
-            src="/assets/bassline-logo-2-yellow.png"
+            src="/assets/bassline-logo-transparent.png"
             alt="Bassline Logo"
             className="h-16 w-auto"
           />
