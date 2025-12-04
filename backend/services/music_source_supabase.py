@@ -212,7 +212,7 @@ class SupabaseMusicSource(MusicSource):
                         artist_performer=row.get('track_performer'),
                         duration_seconds=row['track_duration_seconds'],
                         audio_url=row['track_audio_url'],
-                        stylistic_period=StylisticPeriod.BAROQUE,  # TODO: Add to query
+                        stylistic_period=StylisticPeriod(row['track_stylistic_period']),
                         bpm=row.get('track_bpm'),
                         mood_tags=[],
                         license_info={}
