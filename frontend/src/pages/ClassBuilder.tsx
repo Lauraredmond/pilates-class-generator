@@ -1,19 +1,15 @@
 /**
- * ClassBuilder - Parent Component with Mode Switching
- * Two modes: Manual creation and AI-powered generation
+ * ClassBuilder - AI-Powered Class Generation
+ * Automatically generates Pilates classes using AI
  */
 
-import { useState, useEffect } from 'react';
-import { ManualClassBuilder } from '../components/class-builder/ManualClassBuilder';
+import { useEffect } from 'react';
 import { AutoClassBuilder } from '../components/class-builder/AutoClassBuilder';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
 import { Loading } from '../components/ui/Loading';
 
-type BuilderMode = 'manual' | 'auto';
-
 export function ClassBuilder() {
-  const [mode, setMode] = useState<BuilderMode>('auto'); // Default to auto mode
   const setMovements = useStore((state) => state.setMovements);
   const setIsLoading = useStore((state) => state.setIsLoading);
   const setError = useStore((state) => state.setError);
@@ -85,9 +81,9 @@ export function ClassBuilder() {
         </div>
       </div>
 
-      {/* Mode Content */}
+      {/* AI Class Generation */}
       <div className="flex-1 overflow-hidden">
-        {mode === 'manual' ? <ManualClassBuilder /> : <AutoClassBuilder />}
+        <AutoClassBuilder />
       </div>
     </div>
   );
