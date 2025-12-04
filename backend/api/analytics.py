@@ -890,3 +890,152 @@ async def get_single_llm_log(
             status_code=500,
             detail=f"Failed to fetch LLM log: {str(e)}"
         )
+
+
+# ==============================================================================
+# ADMIN BACKFILL - Fix Blank Muscle Chart
+# ==============================================================================
+
+def get_movement_muscle_groups_by_name(movement_name: str) -> List[str]:
+    """
+    Fetch muscle groups for a movement by NAME (not ID)
+    Used for backfilling class_history records
+    """
+    try:
+        # First, find movement ID by name
+        movement_response = supabase.table('movements').select('id').eq('name', movement_name).execute()
+
+        if not movement_response.data or len(movement_response.data) == 0:
+            return []
+
+        movement_id = movement_response.data[0]['id']
+
+        # Now fetch muscle groups using the working backend approach
+        response = supabase.table('movement_muscles') \
+            .select('muscle_group_id, muscle_groups(name)') \
+            .eq('movement_id', movement_id) \
+            .eq('is_primary', True) \
+            .execute()
+
+        if not response.data:
+            return []
+
+        # Extract muscle group names
+        muscle_groups = [item['muscle_groups']['name'] for item in response.data if item.get('muscle_groups')]
+        return muscle_groups
+
+    except Exception as e:
+        logger.warning(f"Error fetching muscle groups for {movement_name}: {e}")
+        return []
+
+
+class BackfillResultsResponse(BaseModel):
+    """Response from backfill operation"""
+    success: bool
+    records_processed: int
+    records_updated: int
+    movements_enriched: int
+    message: str
+
+
+@router.post("/admin/backfill-muscle-groups", response_model=BackfillResultsResponse)
+async def backfill_muscle_groups_in_class_history(
+    admin_user_id: str = Query(..., description="Admin user ID for authorization")
+):
+    """
+    Backfill muscle_groups into class_history movements_snapshot (admin only)
+
+    This endpoint fixes the blank muscle distribution chart by:
+    1. Fetching all class_history records
+    2. For each movement in movements_snapshot, fetching muscle_groups from database
+    3. Updating the record with enriched data
+
+    **Admin Authorization Required**
+
+    **Usage:** Call this once to fix existing data. New classes already include muscle_groups.
+    """
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    try:
+        logger.info(f"🔧 Starting backfill_muscle_groups for admin {admin_user_id}")
+
+        # Fetch all class_history records
+        response = supabase.table('class_history').select('*').execute()
+
+        if not response.data:
+            return BackfillResultsResponse(
+                success=True,
+                records_processed=0,
+                records_updated=0,
+                movements_enriched=0,
+                message="No class_history records found to backfill"
+            )
+
+        total_records = len(response.data)
+        updated_count = 0
+        movement_count = 0
+
+        logger.info(f"📊 Found {total_records} class_history records to process")
+
+        for record in response.data:
+            record_id = record['id']
+            movements_snapshot = record.get('movements_snapshot', [])
+
+            if not movements_snapshot:
+                continue
+
+            # Update each movement in the snapshot
+            enriched_movements = []
+            needs_update = False
+
+            for movement in movements_snapshot:
+                enriched_movement = movement.copy()
+
+                # Only update movements (not transitions)
+                if movement.get('type') == 'movement':
+                    movement_name = movement.get('name')
+
+                    if movement_name:
+                        # Check if already has muscle_groups
+                        existing_muscle_groups = movement.get('muscle_groups')
+
+                        if not existing_muscle_groups or len(existing_muscle_groups) == 0:
+                            # Fetch muscle groups from database
+                            muscle_groups = get_movement_muscle_groups_by_name(movement_name)
+
+                            if muscle_groups:
+                                enriched_movement['muscle_groups'] = muscle_groups
+                                needs_update = True
+                                movement_count += 1
+                                logger.info(f"   ✅ {movement_name} → {muscle_groups}")
+
+                enriched_movements.append(enriched_movement)
+
+            # Update record if needed
+            if needs_update:
+                supabase.table('class_history').update({
+                    'movements_snapshot': enriched_movements
+                }).eq('id', record_id).execute()
+
+                updated_count += 1
+                logger.info(f"✅ Updated record {record_id}")
+
+        logger.info(f"🎯 Backfill complete: {updated_count}/{total_records} records updated, {movement_count} movements enriched")
+
+        return BackfillResultsResponse(
+            success=True,
+            records_processed=total_records,
+            records_updated=updated_count,
+            movements_enriched=movement_count,
+            message=f"Successfully updated {updated_count} records with {movement_count} enriched movements. Refresh Analytics page to see muscle distribution chart!"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error during backfill: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Backfill failed: {str(e)}"
+        )
