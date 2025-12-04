@@ -15,7 +15,7 @@ export function Generate() {
         </h1>
         <div className="w-24 h-1 bg-gradient-to-r from-transparent via-cream to-transparent mx-auto mb-6"></div>
         <p className="text-xl text-cream/80 italic max-w-3xl mx-auto leading-relaxed">
-          "From a personal journey of healing to empowering a global community"
+          "My Story"
         </p>
       </div>
 
@@ -29,14 +29,14 @@ export function Generate() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-              Bassline was born from a deeply personal journey. As a Pilates instructor and wellness advocate,
-              I witnessed firsthand how transformative the classical Pilates method could be—not just for physical
-              strength, but for mental clarity, emotional balance, and overall wellbeing.
+            I created this two step fitness app to help people discover the reward and accessibility in fitness. 
+            By combining human support, dynamic exercise planning, and music as an enhancer, the platform is built to make fitness more enjoyable 
+            — and ultimately, more sustainable.
             </p>
             <p>
-              But I also saw the challenges: instructors spending countless hours planning classes, students
-              struggling to find personalized guidance, and the classical method's rich heritage being diluted
-              by modern shortcuts. There had to be a better way.
+            I have known too many who've discovered powerfully rewarding exercise regimes which they could have known earlier. 
+            Similarly, I've encountered really keen exercisers who dropped off through life's invariably competing demands. 
+            I'm passionate about creating tools to fix these problems. Here is my story…
             </p>
           </div>
         </section>
