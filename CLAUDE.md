@@ -2165,7 +2165,227 @@ Created `/docs/JENTIC_MASTER.md` with comprehensive table of contents:
 
 ---
 
-### Session 13: Advanced Delivery Modes - Phase 3 ⏸️ DEFERRED
+### Session 13: AI Mode End-to-End Integration ✅ COMPLETED (with known playback bug)
+
+**Date:** December 3-4, 2025
+**Status:** ✅ Generation Working | ⚠️ Playback Bug Discovered
+**Git Tag:** `v1.0-ai-mode-working` (commit 3c0b4f1)
+
+**Goal:** Complete end-to-end AI-powered class generation with ReWOO reasoning
+
+**Summary:** Successfully implemented AI-powered class generation using SimplifiedReWOOReasoner. Classes generate successfully with unique AI-generated content (preparation scripts, homecare advice), save to database, and music plays. However, a playback crash was discovered when trying to render the generated class.
+
+**The 4-Commit Debugging Journey:**
+
+This session involved 4 critical fixes over multiple debugging iterations:
+
+#### **Fix 1: Backend Extraction Bug** (Commit bc9988e)
+**Problem:** AI tools executed successfully but results weren't extracted
+- SimplifiedReWOOReasoner called: `generate_preparation`, `research_warmup`, `generate_homecare`
+- Backend extraction looked for: `select_preparation`, `select_warmup`, `select_homecare`
+- Result: Tool results existed in `ReasoningResult.steps` but weren't extracted
+
+**Fix:**
+```python
+# backend/api/agents.py lines 619-633
+# Changed from hardcoded select_* to pattern matching:
+if tool_id in ("select_preparation", "generate_preparation"):
+    preparation = step.result
+elif tool_id in ("select_warmup", "research_warmup"):
+    warmup = step.result
+elif tool_id in ("select_homecare", "generate_homecare"):
+    homecare = step.result
+```
+
+**Why It Happened:** DEFAULT mode uses `select_*` tools, AI mode uses `generate_*/research_*` tools. Backend only matched DEFAULT pattern.
+
+---
+
+#### **Fix 2: Frontend Rendering Bug** (Commit 4b5e287)
+**Problem:** Frontend discarded AI-generated content and used database instead
+- Backend sent AI-generated "Core Harmony" preparation script
+- Frontend received it in `completeClassResponse.data.data.preparation`
+- Frontend IGNORED it and called `assembleCompleteClass()` for database lookup
+- Result: Expensive AI work ($0.20-0.30) thrown away, database used for playback
+
+**Fix:**
+```typescript
+// frontend/src/components/class-builder/AIGenerationPanel.tsx
+// BEFORE (BROKEN):
+const [completeClassResponse, framingSections] = await Promise.all([
+    agentsApi.generateCompleteClass({...}),
+    assembleCompleteClass(...)  // ← OVERRIDE with database!
+]);
+completeClass: {
+    preparation: framingSections.preparation,  // ← Database (wrong!)
+
+// AFTER (FIXED):
+const completeClassResponse = await agentsApi.generateCompleteClass({...});
+const backendData = completeClassResponse.data.data;
+
+completeClass: {
+    preparation: backendData.preparation,  // ← AI-generated OR database (correct!)
+```
+
+**Why It Happened:** Copy-paste error from earlier session where both AI and database were fetched in parallel. AI response was being overwritten.
+
+---
+
+#### **Fix 3: Frontend Timeout** (Commit 1370661)
+**Problem:** Frontend timeout (30s) shorter than AI processing time (38s)
+- Backend completed successfully with HTTP 200 OK in 38.3s
+- Frontend threw timeout error before receiving response
+- AI mode makes multiple LLM calls: Plan (LLM) → Execute (tools) → Reflect (LLM)
+
+**Fix:**
+```typescript
+// frontend/src/services/api.ts line 18
+// BEFORE:
+timeout: 30000,  // 30 seconds
+
+// AFTER:
+timeout: 60000,  // 60 seconds - AI mode can take 38+ seconds with LLM calls
+```
+
+**Why It Happened:** Timeout was set for DEFAULT mode (<1s database queries), not AI mode (38s LLM orchestration).
+
+---
+
+#### **Fix 4: Null Music Response** (Commit 3c0b4f1)
+**Problem:** AI planning didn't include music selection step
+- SimplifiedReWOOReasoner generated only 6 steps (preparation, warmup, sequence, cooldown, meditation, homecare)
+- Music selection was NOT included in AI plan
+- Backend returned `music_recommendation: null`
+- Frontend crashed: `TypeError: null is not an object (evaluating 'z.data')`
+
+**Fix:**
+```typescript
+// frontend/src/components/class-builder/AIGenerationPanel.tsx lines 112-121
+// BEFORE (assumed music always exists):
+playlist: musicResponse.data.playlist.map(...)
+
+// AFTER (null-safe):
+playlist: musicResponse?.data?.playlist?.map(...) || [],
+total_duration: musicResponse?.data?.total_duration || formData.duration * 60,
+music_playlist: musicResponse?.data || null,
+```
+
+**Why It Happened:** Music selection is optional in AI planning. LLM chose not to include it in 6-step plan. Frontend assumed it always existed.
+
+---
+
+**AI Mode vs DEFAULT Mode Comparison:**
+
+| Aspect | DEFAULT Mode | AI Mode |
+|--------|--------------|---------|
+| **Cost** | $0.00 (database only) | ~$0.20-0.30 (LLM calls) |
+| **Processing Time** | <1 second | ~38 seconds |
+| **Preparation Script** | Database (same each time) | AI-generated (unique each time) |
+| **Warmup** | Database | Web-researched OR database |
+| **Sequence** | Database | AI-generated (9 movements + 8 transitions) |
+| **Cooldown** | Database | Web-researched OR database |
+| **Meditation** | Database | Database (same for both modes) |
+| **HomeCare Advice** | Database | AI-generated (unique each time) |
+| **Music Selection** | Database | Optional (may be skipped by AI) |
+
+**Trade-off Justification:**
+- AI mode 38x slower but generates unique, personalized content
+- Unique preparation scripts explain Pilates principles in varied ways
+- Unique homecare advice tailored to class focus
+- Cost ($0.20-0.30) justified by personalization value
+
+---
+
+**Technical Architecture:**
+
+```
+User clicks "Generate Class" (AI toggle ON)
+    ↓
+Frontend: AIGenerationPanel.tsx calls agentsApi.generateCompleteClass()
+    ↓
+Backend: /api/agents/generate-complete-class endpoint
+    ↓
+SimplifiedReWOOReasoner executes ReWOO loop:
+    1. PLAN: LLM generates 6-step plan (JSON)
+    2. EXECUTE: Run tools (generate_preparation, research_warmup, etc.)
+    3. REFLECT: LLM validates results, returns final answer
+    ↓
+Backend extracts tool results from ReasoningResult.steps
+    ↓
+Backend returns complete 6-section class to frontend
+    ↓
+Frontend renders AI-generated content in GeneratedResults modal
+    ↓
+User clicks "Accept & Add to Library"
+    ↓
+Frontend saves class to database (class_plans table)
+    ↓
+🎧 Music plays successfully
+    ↓
+❌ CRASH: TypeError when trying to render playback
+```
+
+---
+
+**🚨 KNOWN BUG: Playback Crash** (Discovered December 4, 01:02)
+
+**Status:** AI generation completes successfully, saves to database, music plays, but **playback crashes**
+
+**Error:** `TypeError: undefined is not an object (evaluating 'e.script_name.toUpperCase')`
+
+**Where It Happens:** `frontend/src/components/class-playback/MovementDisplay.tsx` (or ClassPlayback.tsx)
+
+**Symptoms:**
+- Console shows: "AI AGENT (ReWOO)" mode complete in 56 seconds ✓
+- Console shows: "Class saved successfully! Total classes: 3" ✓
+- Console shows: Music loaded and playing ✓
+- Then: TypeError crash when trying to render section
+
+**Root Cause (Hypothesis):**
+One of the 6 sections (preparation/warmup/cooldown/meditation/homecare) is returning `undefined` from backend, and the playback component tries to call `.toUpperCase()` on its `script_name` property without null safety.
+
+**Likely Culprits:**
+1. `preparation.script_name.toUpperCase()` - AI-generated preparation may be missing script_name
+2. `meditation.script_name.toUpperCase()` - Database meditation may have null script_name
+3. `homecare.advice_name.toUpperCase()` - AI-generated homecare may be missing advice_name
+
+**Next Steps to Fix:**
+1. Check backend logs to see if any section is null in the response
+2. Add null safety to MovementDisplay component:
+   ```typescript
+   // BEFORE (crashes if script_name is undefined):
+   const displayName = section.script_name.toUpperCase();
+
+   // AFTER (null-safe):
+   const displayName = section?.script_name?.toUpperCase() || 'Unknown Section';
+   ```
+3. Ensure all 6 sections in backend response have required fields
+4. Test AI mode end-to-end including playback
+
+---
+
+**Commits:**
+- `bc9988e`: Backend extraction fix (handle both DEFAULT and AI tool name patterns)
+- `4b5e287`: Frontend rendering fix (use backend response, don't override with database)
+- `1370661`: Frontend timeout fix (30s → 60s for AI processing)
+- `3c0b4f1`: Frontend null safety fix (handle missing music recommendation)
+
+**Git Tag Created:** `v1.0-ai-mode-working` (annotated tag pushed to GitHub)
+
+**Production Status:**
+- ✅ AI mode generates unique content
+- ✅ Backend extraction handles both tool patterns
+- ✅ Frontend timeout sufficient for AI processing
+- ✅ Null safety for optional sections
+- ✅ Class saves to database successfully
+- ✅ Music playback works
+- ⚠️ Playback rendering crashes (needs null safety fix)
+
+**Next Session:** Fix playback crash before marking AI mode as fully complete.
+
+---
+
+### Session 13.5: Advanced Delivery Modes - Phase 3 ⏸️ DEFERRED
 
 **Goal:** Multi-modal delivery (audio narration + visual demonstrations)
 
@@ -2509,16 +2729,157 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 ## 📚 FUTURE PLANS
 
-### Additional Potential Enhancements
+### Prioritized Enhancement Roadmap (December 4, 2025)
+
+**Priority Order (User-Specified):**
+
+#### **1. Add Jazz Music Style** (High Priority)
+- Add "Jazz" to musical stylistic periods
+- Source: Internet Archive Jazz collection
+- Example URL: [Provide specific Internet Archive Jazz collection URL]
+- Database: Add Jazz tracks to `music_tracks` table
+- Frontend: Add "Jazz" option to music style dropdown
+- Estimated Time: 2-3 hours
+
+#### **2. Restrict AI Mode Toggle to Admins + Cost Reduction** (High Priority)
+- **Admin-Only AI Toggle:**
+  - Move AI toggle from public UI to admin-only settings
+  - Prevent non-admin users from triggering expensive AI operations
+  - Database: Add `is_admin` field to `user_profiles` table
+  - Frontend: Hide AI toggle if `user.is_admin !== true`
+
+- **Cost Reduction Strategies:**
+  - Implement Redis caching for AI responses (24-hour TTL)
+  - Cache preparation scripts by difficulty level
+  - Cache homecare advice by focus area
+  - Cache web research results (MCP Playwright)
+  - Estimated savings: 70-80% reduction in duplicate AI calls
+
+- Estimated Time: 4-5 hours
+
+#### **3. Update Class Builder Page Appearance** (Medium Priority)
+- Remove "Manual Build" option from UI
+- Add Cian's logos to class builder header
+- Update branding/styling per design specs
+- Estimated Time: 2-3 hours
+
+#### **4. Add Nutrition Tracker** (Medium Priority - Requires More Info)
+- **Status:** Pending detailed requirements from user
+- **Questions to Answer:**
+  - What nutrition data to track? (calories, macros, meals, etc.)
+  - Integration with Pilates classes? (post-workout nutrition, etc.)
+  - Third-party API or custom database?
+  - User input method? (manual entry, photo recognition, API integration)
+- **Next Step:** User to provide comprehensive nutrition tracker requirements
+- Estimated Time: TBD (requires requirements doc)
+
+#### **5. Add "Create My Baseline Wellness Routine" Button** (Medium Priority)
+- Add button to home page/dashboard
+- Button leads to placeholder page initially
+- **Placeholder Content:**
+  - "Coming Soon: Personalized Wellness Routine Builder"
+  - Brief description of planned feature
+  - Email signup for early access notifications
+- **Future Implementation:** Full wellness routine builder with:
+  - Pilates class frequency recommendations
+  - Nutrition planning (see #4)
+  - Sleep tracking integration
+  - Stress management guidance
+- Estimated Time: 1-2 hours (placeholder), 40+ hours (full implementation)
+
+#### **6. Replace "Generate" Nav Icon with "Founder Story"** (Low Priority - UX Change)
+- Current: "Generate" icon in main navigation
+- New: "Founder Story" icon (move to extreme right of nav bar)
+- Add founder story page with:
+  - Laura's Pilates journey
+  - Mission and vision for Bassline
+  - Philosophy behind the platform
+  - Photos/testimonials
+- Estimated Time: 2-3 hours
+
+#### **7. Replace "Classes" Nav Icon with "Wellness Space"** (Low Priority - UX Change)
+- Current: "Classes" icon in main navigation
+- New: "Wellness Space" icon
+- Reframe "Classes" as holistic "Wellness Space" including:
+  - Pilates classes (current)
+  - Nutrition tracker (future - see #4)
+  - Wellness routines (future - see #5)
+  - Progress analytics
+  - Meditation library
+- Estimated Time: 2 hours (icon/name change), ongoing (feature additions)
+
+#### **8. Retry Supabase User Confirmation** (Low Priority - May Already Be Fixed)
+- **Context:** Previous issues with Supabase email confirmation may have been temporary
+- **Action:** Test current email confirmation flow
+- **If Still Broken:**
+  - Check Supabase email template settings
+  - Verify SMTP configuration
+  - Test with multiple email providers (Gmail, Outlook, custom domain)
+  - Review Supabase logs for email delivery failures
+- **If Working:** Mark as resolved and document
+- Estimated Time: 1 hour (testing), 2-3 hours (fixes if needed)
+
+#### **9. Advanced Delivery Modes** (Low Priority - Phase 3)
+- **Audio Narration:**
+  - TTS integration (ElevenLabs, OpenAI TTS, Google Cloud TTS)
+  - Pre-generate and cache common narratives
+  - HTML5 audio playback synchronization
+
+- **Visual Demonstrations (Maybe):**
+  - Video clips for each movement
+  - Still images for key positions
+  - Animations for movement loops
+  - Adaptive bitrate streaming (HLS/DASH)
+
+- **Cost Considerations:**
+  - TTS: ~$15/1M characters (OpenAI pricing)
+  - Video hosting: ~$0.01/GB delivery (Cloudflare Stream)
+
+- Estimated Time: 20-30 hours (audio), 60+ hours (video)
+
+#### **10. EU AI Act Compliance Dashboard & Testing** (Low Priority - Future Session)
+- **Decision Transparency View:** Display all AI agent decisions for user
+- **Bias Monitoring Dashboard:** Track model drift, fairness metrics, alerts
+- **Audit Trail Interface:** Complete decision history with export (CSV, JSON)
+- **Research Source Tracking:** MCP research source attribution
+- **AI Compliance System Testing:** End-to-end testing with real AI operations
+- **GDPR Data Export Fix:** Resolve HTTP 500 error on `/api/compliance/my-data`
+- Estimated Time: 12-15 hours
+
+#### **11. Security Testing** (Low Priority - Ongoing)
+- **Penetration Testing:**
+  - API endpoint security testing
+  - Authentication/authorization bypass attempts
+  - SQL injection, XSS, CSRF testing
+
+- **Dependency Audits:**
+  - `npm audit` for frontend dependencies
+  - `pip-audit` for backend dependencies
+  - Review Supabase RLS policies
+
+- **PII Tokenization Audit:**
+  - Verify all PII is tokenized before storage
+  - Test detokenization access controls
+  - Review encryption key management
+
+- **Compliance Verification:**
+  - EU AI Act transparency requirements
+  - GDPR data export/deletion
+  - User consent tracking
+
+- Estimated Time: 8-10 hours initial audit, ongoing monitoring
+
+---
+
+### Additional Considerations (Previously Documented)
 
 **Note:** Session 12 (Jentic Documentation Consolidation) has been **completed** (December 2, 2025).
 
-Future considerations:
-- Additional music tracks from Internet Archive collections
+Future enhancements (lower priority):
+- Additional music tracks from Internet Archive collections (beyond Jazz)
 - Playlist editing/customization for users
 - Music volume controls in playback UI
 - Music fade in/out between movements
-- Multi-modal delivery (TTS + video demonstrations)
-- MCP Playwright caching and quality scoring
+- MCP Playwright caching and quality scoring (partially covered in #2)
 - Comprehensive E2E testing suite
 - Mobile responsiveness and PWA features
