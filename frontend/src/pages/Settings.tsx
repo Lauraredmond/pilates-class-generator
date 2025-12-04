@@ -712,45 +712,58 @@ export function Settings() {
           <p className="text-cream/50">Loading preferences...</p>
         ) : (
           <div className="space-y-4">
-            {/* AI Agent Toggle - Session 10: Jentic Integration */}
-            <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors border-2 border-burgundy/30">
-              <div>
-                <div className="font-medium text-cream flex items-center gap-2">
-                  Use AI Agent for Class Generation
-                  <span className="text-xs bg-burgundy px-2 py-0.5 rounded text-cream/90">Jentic StandardAgent</span>
-                </div>
-                <div className="text-sm text-cream/60 mt-1">
-                  Enable intelligent AI reasoning for class creation with GPT-4.
-                </div>
-                <div className="text-xs text-cream/50 mt-2 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Enabled:</span>
-                    <span>LLM-powered planning, ~15-20s, costs $0.12-0.15 per class</span>
+            {/* AI Agent Toggle - Admin Only (Cost Control) */}
+            {user?.is_admin ? (
+              <>
+                <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors border-2 border-burgundy/30">
+                  <div>
+                    <div className="font-medium text-cream flex items-center gap-2">
+                      Use AI Agent for Class Generation
+                      <span className="text-xs bg-burgundy px-2 py-0.5 rounded text-cream/90">Admin Only</span>
+                      <span className="text-xs bg-green-900/50 px-2 py-0.5 rounded text-green-400">Jentic StandardAgent</span>
+                    </div>
+                    <div className="text-sm text-cream/60 mt-1">
+                      Enable intelligent AI reasoning for class creation with GPT-4.
+                    </div>
+                    <div className="text-xs text-cream/50 mt-2 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">Enabled:</span>
+                        <span>LLM-powered planning, ~60-70s first request (cache miss), {'<'}5s cached, costs $0.25-0.30 per class</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">Disabled:</span>
+                        <span>Database selection, {'<'}1s, free</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Disabled:</span>
-                    <span>Direct API, {'<'}1s, free (basic sequencing)</span>
-                  </div>
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={preferences.use_ai_agent || false}
-                onChange={(e) => updatePreference('use_ai_agent', e.target.checked)}
-                disabled={preferencesSaving}
-                className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
-              />
-            </label>
+                  <input
+                    type="checkbox"
+                    checked={preferences.use_ai_agent || false}
+                    onChange={(e) => updatePreference('use_ai_agent', e.target.checked)}
+                    disabled={preferencesSaving}
+                    className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+                  />
+                </label>
 
-            {preferences.use_ai_agent && (
-              <div className="bg-blue-900/20 border border-blue-500/30 rounded p-4">
-                <p className="text-blue-400 font-semibold mb-2">AI Agent Enabled</p>
-                <p className="text-cream/70 text-sm mb-2">
-                  Your classes will be generated using advanced AI reasoning with GPT-4 via Jentic's StandardAgent framework.
-                  This provides more intelligent and adaptive class planning, but incurs OpenAI API costs.
-                </p>
-                <p className="text-cream/50 text-xs">
-                  Estimated cost: $0.12-0.15 per class generated (varies with class complexity)
+                {preferences.use_ai_agent && (
+                  <div className="bg-blue-900/20 border border-blue-500/30 rounded p-4">
+                    <p className="text-blue-400 font-semibold mb-2">AI Agent Enabled</p>
+                    <p className="text-cream/70 text-sm mb-2">
+                      Your classes will be generated using advanced AI reasoning with GPT-4 via Jentic's StandardAgent framework.
+                      This provides more intelligent and adaptive class planning, but incurs OpenAI API costs.
+                    </p>
+                    <p className="text-cream/50 text-xs">
+                      Estimated cost: $0.25-0.30 per class (first request), $0.05-0.10 (cached requests) | Phase 1 optimization with Redis caching + GPT-3.5-turbo
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="bg-cream/10 border border-cream/20 rounded p-4">
+                <p className="text-cream font-medium mb-2">AI Class Generation (Admin Only)</p>
+                <p className="text-cream/60 text-sm">
+                  AI-powered class generation with GPT-4 is restricted to administrators to control OpenAI API costs.
+                  Standard class generation is available to all users and uses pre-validated database content.
                 </p>
               </div>
             )}

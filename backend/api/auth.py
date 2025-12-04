@@ -749,7 +749,18 @@ async def update_preferences(
             update_data["enable_mcp_research"] = preferences_data.enable_mcp_research
 
         if preferences_data.use_ai_agent is not None:
-            update_data["use_ai_agent"] = preferences_data.use_ai_agent  # Session 10: AI Agent toggle
+            # ADMIN-ONLY: AI Agent toggle restricted to admins for cost control
+            # Check if user is admin before allowing AI toggle
+            user_result = supabase.table("user_profiles").select("is_admin").eq("id", user_id).execute()
+            is_admin = user_result.data[0].get("is_admin", False) if user_result.data else False
+
+            if not is_admin:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="AI Agent toggle is restricted to administrators. Contact support to upgrade your account."
+                )
+
+            update_data["use_ai_agent"] = preferences_data.use_ai_agent  # Session 13: Admin-only AI Agent toggle
 
         if preferences_data.preferred_movement_level is not None:
             if preferences_data.preferred_movement_level not in ["beginner", "intermediate", "advanced"]:
