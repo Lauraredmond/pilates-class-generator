@@ -644,6 +644,95 @@ Tool Modules (Pure Business Logic):
 - Attributes sources for transparency
 - **Extracted from:** `backend/agents/research_agent.py` (190 lines)
 
+### 6-Section Class Generation: Prompt Locations & LLM Usage
+
+Every Pilates class consists of 6 distinct sections. This documents exactly where each section's AI generation logic lives and which LLMs are used for cost optimization.
+
+#### **Section 1: Preparation Script**
+- **Location:** `backend/orchestrator/tools/class_section_tools.py` lines 299-398
+- **Method:** `generate_preparation()`
+- **LLM:** GPT-4-turbo (temperature=0.8)
+- **Why GPT-4:** Quality-critical - requires deep understanding of Pilates principles
+- **Prompt Elements:** 5 required components
+  1. Core wake-up narrative
+  2. Posture alignment cues
+  3. Pelvic tilt visual cues
+  4. Core activation metaphors
+  5. Lateral thoracic breathing guidance
+- **Caching:** Redis (24-hour TTL)
+
+#### **Section 2: Warmup Routine**
+- **Location:** `backend/orchestrator/tools/class_section_tools.py` lines 400-496
+- **Method:** `research_warmup()`
+- **LLM:** GPT-3.5-turbo (Phase 1 cost optimization)
+- **Purpose:** Generates muscle-specific warmup routines
+- **Caching:** Redis (24-hour TTL)
+- **Cost Optimization:** Cheaper model sufficient for warmup generation
+
+#### **Section 3: Main Movements**
+- **Location:** `backend/orchestrator/tools/sequence_tools.py` lines 72+
+- **Method:** `generate_sequence()`
+- **LLM:** **NONE** - Database-driven algorithm
+- **Why No LLM:** Pilates safety rules require deterministic logic, not probabilistic generation
+- **Logic:**
+  - Enforces spinal progression (flexion → extension)
+  - Balances muscle groups
+  - Validates difficulty progression
+  - Applies sequencing rules from database
+- **Cost:** $0.00 (fastest and safest approach)
+
+#### **Section 4: Cooldown Sequence**
+- **Location:** `backend/orchestrator/tools/class_section_tools.py` lines 498-593
+- **Method:** `research_cooldown()`
+- **LLM:** GPT-3.5-turbo (Phase 1 cost optimization)
+- **Purpose:** Generates muscle-specific cooldown stretches
+- **Caching:** Redis (24-hour TTL)
+- **Cost Optimization:** Cheaper model sufficient for cooldown generation
+
+#### **Section 5: Closing Meditation**
+- **Location:** `backend/orchestrator/tools/meditation_tools.py` lines 79-135
+- **Method:** `generate_meditation()`
+- **LLM:** **NONE** - Template-based generation
+- **Why No LLM:** Uses `MEDITATION_TEMPLATES` dictionary
+- **Themes Available:**
+  - Mindfulness meditation
+  - Body scan meditation
+  - Gratitude meditation
+- **Cost:** $0.00 (instant, no API calls)
+
+#### **Section 6: HomeCare Advice**
+- **Location:** `backend/orchestrator/tools/class_section_tools.py` lines 595-673
+- **Method:** `generate_homecare()`
+- **LLM:** GPT-4-turbo
+- **Why GPT-4:** Medical knowledge required - references ACSM guidelines
+- **Purpose:** Generates evidence-based home care recommendations
+- **Caching:** Redis (24-hour TTL)
+- **Safety:** Must cite authoritative sources (ACSM, NIH, Mayo Clinic)
+
+#### **Cost Optimization Strategy**
+
+| Section | LLM Used | Rationale | Cost Impact |
+|---------|----------|-----------|-------------|
+| 1. Preparation | GPT-4-turbo | Quality-critical: Pilates principles | Higher cost justified |
+| 2. Warmup | GPT-3.5-turbo | Cost optimization: simpler content | Lower cost |
+| 3. Main Movements | None | Safety-critical: deterministic logic | $0.00 |
+| 4. Cooldown | GPT-3.5-turbo | Cost optimization: simpler content | Lower cost |
+| 5. Meditation | None | Templates sufficient | $0.00 |
+| 6. HomeCare | GPT-4-turbo | Medical knowledge required | Higher cost justified |
+
+**Key Decisions:**
+- **GPT-4-turbo** for Sections 1 & 6: Quality-critical content requiring domain expertise
+- **GPT-3.5-turbo** for Sections 2 & 4: Cost optimization for simpler generative tasks
+- **No LLM** for Sections 3 & 5: Database + templates = fast, free, and deterministic
+
+**Total AI Generation Cost per Class:**
+- Sections 1 & 6: ~$0.15-0.20 (GPT-4-turbo)
+- Sections 2 & 4: ~$0.05-0.08 (GPT-3.5-turbo)
+- Sections 3 & 5: $0.00 (no LLM)
+- **Total:** ~$0.20-0.28 per AI-generated class
+
+**All prompt text is embedded in the method implementations at the line numbers specified above.**
+
 ### Backend API Routing (Session 13.5)
 
 **`backend/api/agents.py` - Orchestrator Proxy** (Updated December 3, 2025)
