@@ -120,11 +120,14 @@ class MeditationTools:
         # Determine position
         position = "supine" if class_intensity == "high" else "seated"
 
+        # Return in format expected by frontend (PlaybackMeditation interface)
         return {
-            "script": script,
-            "duration_minutes": duration_minutes,
-            "theme": theme,
-            "breathing_pattern": breathing,
+            "script_name": f"{theme.replace('_', ' ').title()} Meditation",
+            "meditation_theme": theme,
+            "script_text": script,
+            "breathing_guidance": breathing,
+            "duration_seconds": duration_minutes * 60,
+            "post_intensity": intensity,
             "suggested_position": position
         }
 
