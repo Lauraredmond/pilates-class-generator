@@ -43,12 +43,12 @@ export function Home() {
           Create my baseline wellness routine
         </Button>
 
-        {/* Existing Pilates Class Button */}
+        {/* Existing Pilates Class Button - Same styling as above */}
         <Button
           className="w-full"
           size="lg"
           onClick={() => navigate('/class-builder')}
-          variant="secondary"
+          variant="primary"
         >
           Generate my Pilates class
         </Button>
