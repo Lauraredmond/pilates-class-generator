@@ -294,8 +294,7 @@ async def get_muscle_group_history(
     Get muscle group usage history with ALL 23 muscle groups
     Returns 0 counts for unused muscle groups
 
-    Queries muscle groups dynamically from database via:
-    movements_snapshot → movements table → movement_muscles table
+    OPTIMIZED: Batches all muscle group queries into 2 database calls
     """
     try:
         user_uuid = _convert_to_uuid(user_id)
@@ -323,7 +322,48 @@ async def get_muscle_group_history(
 
         classes = classes_response.data or []
 
-        # Aggregate counts
+        # Collect all unique movement names
+        unique_movement_names = set()
+        for class_item in classes:
+            movements_snapshot = class_item.get('movements_snapshot', [])
+            for movement in movements_snapshot:
+                if movement.get('type') == 'movement':
+                    movement_name = movement.get('name')
+                    if movement_name:
+                        unique_movement_names.add(movement_name)
+
+        # BATCH QUERY: Get ALL muscle groups for ALL movements in ONE query
+        muscle_groups_cache = {}
+        if unique_movement_names:
+            # Step 1: Get movement IDs for all movement names in one query
+            movements_response = supabase.table('movements') \
+                .select('id, name') \
+                .in_('name', list(unique_movement_names)) \
+                .execute()
+
+            movement_name_to_id = {m['name']: m['id'] for m in movements_response.data}
+
+            # Step 2: Get ALL muscle groups for ALL movement IDs in one query
+            if movement_name_to_id:
+                mm_response = supabase.table('movement_muscles') \
+                    .select('movement_id, muscle_group_name') \
+                    .in_('movement_id', list(movement_name_to_id.values())) \
+                    .eq('is_primary', True) \
+                    .execute()
+
+                # Build reverse lookup: movement_id → [muscle_group_names]
+                movement_id_to_muscles = defaultdict(list)
+                for item in mm_response.data:
+                    movement_id = item['movement_id']
+                    muscle_name = item.get('muscle_group_name')
+                    if muscle_name:
+                        movement_id_to_muscles[movement_id].append(muscle_name)
+
+                # Build final cache: movement_name → [muscle_group_names]
+                for name, mov_id in movement_name_to_id.items():
+                    muscle_groups_cache[name] = movement_id_to_muscles.get(mov_id, [])
+
+        # Aggregate counts using cached data
         for class_item in classes:
             taught_date_str = class_item.get('taught_date')
             if not taught_date_str:
@@ -344,8 +384,8 @@ async def get_muscle_group_history(
                         if movement.get('type') == 'movement':
                             movement_name = movement.get('name')
                             if movement_name:
-                                # Query muscle groups from database dynamically
-                                muscle_groups = get_movement_muscle_groups_by_name(movement_name)
+                                # Lookup from cache (no database query!)
+                                muscle_groups = muscle_groups_cache.get(movement_name, [])
                                 for muscle_group in muscle_groups:
                                     if muscle_group in muscle_counts:
                                         muscle_counts[muscle_group][period_idx] += 1
@@ -503,8 +543,8 @@ async def get_muscle_distribution(
     """
     Get muscle distribution data for doughnut chart
 
-    Queries muscle groups dynamically from database via:
-    movements_snapshot → movements table → movement_muscles table
+    OPTIMIZED: Batches all muscle group queries into 2 database calls
+    (was 432 queries, now 2 queries for 24 classes)
     """
     try:
         user_uuid = _convert_to_uuid(user_id)
@@ -522,7 +562,48 @@ async def get_muscle_distribution(
 
         classes = classes_response.data or []
 
-        # Count muscle group usage
+        # Collect all unique movement names
+        unique_movement_names = set()
+        for class_item in classes:
+            movements_snapshot = class_item.get('movements_snapshot', [])
+            for movement in movements_snapshot:
+                if movement.get('type') == 'movement':
+                    movement_name = movement.get('name')
+                    if movement_name:
+                        unique_movement_names.add(movement_name)
+
+        # BATCH QUERY: Get ALL muscle groups for ALL movements in ONE query
+        muscle_groups_cache = {}
+        if unique_movement_names:
+            # Step 1: Get movement IDs for all movement names in one query
+            movements_response = supabase.table('movements') \
+                .select('id, name') \
+                .in_('name', list(unique_movement_names)) \
+                .execute()
+
+            movement_name_to_id = {m['name']: m['id'] for m in movements_response.data}
+
+            # Step 2: Get ALL muscle groups for ALL movement IDs in one query
+            if movement_name_to_id:
+                mm_response = supabase.table('movement_muscles') \
+                    .select('movement_id, muscle_group_name') \
+                    .in_('movement_id', list(movement_name_to_id.values())) \
+                    .eq('is_primary', True) \
+                    .execute()
+
+                # Build reverse lookup: movement_id → [muscle_group_names]
+                movement_id_to_muscles = defaultdict(list)
+                for item in mm_response.data:
+                    movement_id = item['movement_id']
+                    muscle_name = item.get('muscle_group_name')
+                    if muscle_name:
+                        movement_id_to_muscles[movement_id].append(muscle_name)
+
+                # Build final cache: movement_name → [muscle_group_names]
+                for name, mov_id in movement_name_to_id.items():
+                    muscle_groups_cache[name] = movement_id_to_muscles.get(mov_id, [])
+
+        # Count muscle group usage using cached data
         muscle_totals = defaultdict(int)
 
         for class_item in classes:
@@ -531,8 +612,8 @@ async def get_muscle_distribution(
                 if movement.get('type') == 'movement':
                     movement_name = movement.get('name')
                     if movement_name:
-                        # Query muscle groups from database dynamically
-                        muscle_groups = get_movement_muscle_groups_by_name(movement_name)
+                        # Lookup from cache (no database query!)
+                        muscle_groups = muscle_groups_cache.get(movement_name, [])
                         for muscle_group in muscle_groups:
                             muscle_totals[muscle_group] += 1
 
