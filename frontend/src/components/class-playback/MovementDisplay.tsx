@@ -72,7 +72,7 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
   if (item.type === 'preparation') {
     const buildPreparationNarrative = () => {
       const parts: string[] = [];
-      parts.push(`PREPARATION: ${item.script_name.toUpperCase()}\n\n`);
+      parts.push(`PREPARATION: ${item.script_name?.toUpperCase() || 'PREPARATION SCRIPT'}\n\n`);
       if (item.narrative) parts.push(`${item.narrative}\n\n`);
       if (item.breathing_focus) parts.push(`Breathing Focus: ${item.breathing_focus}\n\n`);
       if (item.breathing_pattern) parts.push(`Pattern: ${item.breathing_pattern}\n\n`);
@@ -90,7 +90,7 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
   if (item.type === 'warmup') {
     const buildWarmupNarrative = () => {
       const parts: string[] = [];
-      parts.push(`WARM-UP: ${item.routine_name.toUpperCase()}\n\n`);
+      parts.push(`WARM-UP: ${item.routine_name?.toUpperCase() || 'WARM-UP ROUTINE'}\n\n`);
       if (item.narrative) parts.push(`${item.narrative}\n\n`);
       parts.push(`Focus Area: ${item.focus_area}\n\n`);
       if (item.movements && Array.isArray(item.movements)) {
@@ -107,7 +107,7 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
   if (item.type === 'cooldown') {
     const buildCooldownNarrative = () => {
       const parts: string[] = [];
-      parts.push(`COOL-DOWN: ${item.sequence_name.toUpperCase()}\n\n`);
+      parts.push(`COOL-DOWN: ${item.sequence_name?.toUpperCase() || 'COOL-DOWN SEQUENCE'}\n\n`);
       if (item.narrative) parts.push(`${item.narrative}\n\n`);
       parts.push(`Recovery Focus: ${item.recovery_focus}\n\n`);
       if (item.target_muscles && item.target_muscles.length > 0) {
@@ -127,7 +127,7 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
   if (item.type === 'meditation') {
     const buildMeditationNarrative = () => {
       const parts: string[] = [];
-      parts.push(`CLOSING MEDITATION: ${item.script_name.toUpperCase()}\n\n`);
+      parts.push(`CLOSING MEDITATION: ${item.script_name?.toUpperCase() || 'MEDITATION SCRIPT'}\n\n`);
       parts.push(`Theme: ${item.meditation_theme}\n\n`);
       if (item.breathing_guidance) parts.push(`${item.breathing_guidance}\n\n`);
       if (item.script_text) parts.push(`${item.script_text}\n\n`);
@@ -139,7 +139,7 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
   if (item.type === 'homecare') {
     const buildHomecareNarrative = () => {
       const parts: string[] = [];
-      parts.push(`HOME CARE ADVICE: ${item.advice_name.toUpperCase()}\n\n`);
+      parts.push(`HOME CARE ADVICE: ${item.advice_name?.toUpperCase() || 'HOME CARE ADVICE'}\n\n`);
       parts.push(`Focus: ${item.focus_area}\n\n`);
       if (item.advice_text) parts.push(`${item.advice_text}\n\n`);
       if (item.actionable_tips && item.actionable_tips.length > 0) {

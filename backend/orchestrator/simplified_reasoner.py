@@ -179,31 +179,32 @@ Extract these from USER GOAL above:
 - target_duration_minutes: Look for duration in minutes (e.g., "30 minutes")
 - focus_areas: Look for muscle groups mentioned
 
-Then create this 6-step plan:
+⚠️ CRITICAL: You MUST create ALL 6 steps below. Do NOT skip any step.
+If a step doesn't need parameters, use empty object {{}}, but the step MUST be included.
 
-Step 1: generate_preparation
+Step 1: generate_preparation (REQUIRED)
   parameters: {{"difficulty_level": "<extracted_difficulty>"}}
 
-Step 2: research_warmup
-  parameters: {{}} (optional - defaults will be used)
+Step 2: research_warmup (REQUIRED)
+  parameters: {{}}
 
-Step 3: generate_sequence
+Step 3: generate_sequence (REQUIRED)
   parameters: {{
     "target_duration_minutes": <extracted_duration>,
     "difficulty_level": "<extracted_difficulty>",
     "focus_areas": [<extracted_focus_areas_if_any>]
   }}
 
-Step 4: research_cooldown
-  parameters: {{}} (optional - defaults will be used)
+Step 4: research_cooldown (REQUIRED)
+  parameters: {{}}
 
-Step 5: generate_meditation
-  parameters: {{}} (optional - defaults will be used)
+Step 5: generate_meditation (REQUIRED)
+  parameters: {{}}
 
-Step 6: generate_homecare
-  parameters: {{}} (optional - defaults will be used)
+Step 6: generate_homecare (REQUIRED)
+  parameters: {{}}
 
-⚠️ CRITICAL: Use exact parameter names shown above. Extract values from USER GOAL.
+⚠️ CRITICAL: ALL 6 STEPS ARE MANDATORY. Use exact parameter names shown above. Extract values from USER GOAL.
 
 Output JSON format:
 {{
