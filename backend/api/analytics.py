@@ -293,6 +293,9 @@ async def get_muscle_group_history(
     """
     Get muscle group usage history with ALL 23 muscle groups
     Returns 0 counts for unused muscle groups
+
+    Queries muscle groups dynamically from database via:
+    movements_snapshot → movements table → movement_muscles table
     """
     try:
         user_uuid = _convert_to_uuid(user_id)
@@ -339,10 +342,13 @@ async def get_muscle_group_history(
                 if start_date <= class_date <= end_date:
                     for movement in movements_snapshot:
                         if movement.get('type') == 'movement':
-                            muscle_groups = movement.get('muscle_groups', [])
-                            for muscle_group in muscle_groups:
-                                if muscle_group in muscle_counts:
-                                    muscle_counts[muscle_group][period_idx] += 1
+                            movement_name = movement.get('name')
+                            if movement_name:
+                                # Query muscle groups from database dynamically
+                                muscle_groups = get_movement_muscle_groups_by_name(movement_name)
+                                for muscle_group in muscle_groups:
+                                    if muscle_group in muscle_counts:
+                                        muscle_counts[muscle_group][period_idx] += 1
                     break
 
         # Convert to response format
@@ -494,7 +500,12 @@ async def get_muscle_distribution(
     user_id: str,
     period: TimePeriod = Query(default=TimePeriod.TOTAL)
 ):
-    """Get muscle distribution data for doughnut chart"""
+    """
+    Get muscle distribution data for doughnut chart
+
+    Queries muscle groups dynamically from database via:
+    movements_snapshot → movements table → movement_muscles table
+    """
     try:
         user_uuid = _convert_to_uuid(user_id)
 
@@ -518,9 +529,12 @@ async def get_muscle_distribution(
             movements_snapshot = class_item.get('movements_snapshot', [])
             for movement in movements_snapshot:
                 if movement.get('type') == 'movement':
-                    muscle_groups = movement.get('muscle_groups', [])
-                    for muscle_group in muscle_groups:
-                        muscle_totals[muscle_group] += 1
+                    movement_name = movement.get('name')
+                    if movement_name:
+                        # Query muscle groups from database dynamically
+                        muscle_groups = get_movement_muscle_groups_by_name(movement_name)
+                        for muscle_group in muscle_groups:
+                            muscle_totals[muscle_group] += 1
 
         # Calculate percentages
         total_count = sum(muscle_totals.values())
