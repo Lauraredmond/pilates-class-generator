@@ -378,6 +378,76 @@ docker-compose down
 docker-compose up -d --build
 ```
 
+### Redis (AI Response Caching - Phase 1 Optimization)
+
+**Local Development:**
+
+```bash
+# Install Redis (macOS)
+brew install redis
+
+# Start Redis server
+redis-server
+
+# Verify Redis is running
+redis-cli ping
+# Should return: PONG
+
+# Monitor cache activity (optional)
+redis-cli monitor
+```
+
+**Production Deployment (Render):**
+
+1. **Option A: Upstash Redis (Recommended - Free tier available)**
+   ```bash
+   # Sign up at https://upstash.com/
+   # Create new Redis database
+   # Copy connection URL
+   # Add to Render environment variables:
+   # REDIS_URL=redis://default:PASSWORD@HOST:PORT
+   ```
+
+2. **Option B: Render Redis Addon (Paid)**
+   ```bash
+   # In Render dashboard:
+   # 1. Go to orchestrator service
+   # 2. Click "Add-ons" tab
+   # 3. Add "Redis" addon
+   # 4. REDIS_URL will be auto-configured
+   ```
+
+**Environment Variables:**
+
+```bash
+# Add to orchestrator service on Render:
+REDIS_URL=redis://default:PASSWORD@HOST:PORT  # From Upstash or Render addon
+```
+
+**Cache Monitoring:**
+
+```bash
+# Check cache stats (local development)
+redis-cli INFO stats
+
+# Check cache keys
+redis-cli KEYS "*"
+
+# View cached content
+redis-cli GET "prep:Beginner"
+
+# Clear cache (force fresh AI generation)
+redis-cli FLUSHDB
+```
+
+**Graceful Degradation:**
+
+If Redis is unavailable:
+- System automatically falls back to direct LLM calls
+- No errors or crashes
+- Logs warning: "Redis caching DISABLED - falling back to direct LLM calls"
+- Performance impact: slower response times + higher costs
+
 ---
 
 ## Architecture Overview
