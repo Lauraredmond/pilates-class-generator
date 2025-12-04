@@ -1,22 +1,12 @@
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-DrTUFrEs.js, line 282)
+[Log] [ClassBuilder] Force fetching movements from API... (index-DrTUFrEs.js, line 282)
+[Log] [ClassBuilder] API response: – 34 – "movements received" (index-DrTUFrEs.js, line 282)
+[Log] [ClassBuilder] Sample movement: – Object (index-DrTUFrEs.js, line 282)
+Object
+[Log] [AIGenerationPanel] Using authenticated user ID: – "50b40bda-45ce-4c03-8e51-35d76341c192" (index-DrTUFrEs.js, line 282)
 [Error] Failed to load resource: A server with the specified hostname could not be found. (api.js-4950e94a9243.map, line 0)
-[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-c5h6ZhY2.js, line 287)
-[Log] [ClassBuilder] Force fetching movements from API... (index-c5h6ZhY2.js, line 287)
-[Log] [ClassBuilder] API response: – 34 – "movements received" (index-c5h6ZhY2.js, line 287)
-[Log] [ClassBuilder] Sample movement: – {id: "9ab2b968-2894-4637-bab9-80a20a74642f", movement_number: 4, code: "one_leg_circle", …} (index-c5h6ZhY2.js, line 287)
-{id: "9ab2b968-2894-4637-bab9-80a20a74642f", movement_number: 4, code: "one_leg_circle", name: "One leg circle", category: "Mat-based", …}Object
-[Log] [AIGenerationPanel] Using authenticated user ID: – "50b40bda-45ce-4c03-8e51-35d76341c192" (index-c5h6ZhY2.js, line 287)
-[Log] [AIGenerationPanel] StandardAgent orchestration complete: – {movementCount: 10, transitionCount: 9, totalItems: 19, …} (index-c5h6ZhY2.js, line 287)
-{movementCount: 10, transitionCount: 9, totalItems: 19, orchestrationTimeMs: 588.2582664489746}Object
-[Log] [AIGenerationPanel] Framing sections fetched: – {hasPreparation: true, hasWarmup: true, hasCooldown: true, …} (index-c5h6ZhY2.js, line 287)
-{hasPreparation: true, hasWarmup: true, hasCooldown: true, hasHomecare: true}Object
-[Error] Failed to generate complete class: – TypeError: undefined is not an object (evaluating 'W.data') — index-c5h6ZhY2.js:287:11892
-TypeError: undefined is not an object (evaluating 'W.data') — index-c5h6ZhY2.js:287:11892
-	(anonymous function) (index-c5h6ZhY2.js:287:12453)
-[Log] [AIGenerationPanel] Using authenticated user ID: – "50b40bda-45ce-4c03-8e51-35d76341c192" (index-c5h6ZhY2.js, line 287)
-[Log] [AIGenerationPanel] StandardAgent orchestration complete: – {movementCount: 10, transitionCount: 9, totalItems: 19, …} (index-c5h6ZhY2.js, line 287)
-{movementCount: 10, transitionCount: 9, totalItems: 19, orchestrationTimeMs: 627.2397041320801}Object
-[Log] [AIGenerationPanel] Framing sections fetched: – {hasPreparation: true, hasWarmup: true, hasCooldown: true, …} (index-c5h6ZhY2.js, line 287)
-{hasPreparation: true, hasWarmup: true, hasCooldown: true, hasHomecare: true}Object
-[Error] Failed to generate complete class: – TypeError: undefined is not an object (evaluating 'W.data') — index-c5h6ZhY2.js:287:11892
-TypeError: undefined is not an object (evaluating 'W.data') — index-c5h6ZhY2.js:287:11892
-	(anonymous function) (index-c5h6ZhY2.js:287:12453)
+[Error] Network Error: – "timeout of 60000ms exceeded"
+	(anonymous function) (index-DrTUFrEs.js:222:22176)
+[Error] Failed to generate complete class: – G {stack: "@https://basslinemvp.netlify.app/assets/index-DrTU…mvp.netlify.app/assets/index-DrTUFrEs.js:201:2102", message: "timeout of 60000ms exceeded", name: "AxiosError", …}
+G {stack: "@https://basslinemvp.netlify.app/assets/index-DrTU…mvp.netlify.app/assets/index-DrTUFrEs.js:201:2102", message: "timeout of 60000ms exceeded", name: "AxiosError", code: "ECONNABORTED", config: Object, …}G
+	(anonymous function) (index-DrTUFrEs.js:282:12771)
