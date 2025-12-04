@@ -9,7 +9,6 @@ import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../context/AuthContext';
 import { agentsApi, classPlansApi } from '../../services/api';
-import { assembleCompleteClass } from '../../services/classAssembly';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
 import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
@@ -37,51 +36,54 @@ export function AIGenerationPanel() {
       }
       console.log('[AIGenerationPanel] Using authenticated user ID:', user.id);
 
-      // SESSION 11.5: Use StandardAgent orchestration for sequence + music + meditation
-      // Parallel execution: StandardAgent workflow + framing sections
-      const [completeClassResponse, framingSections] = await Promise.all([
-        // JENTIC STANDARDAGENT: Single orchestrated call for sequence + music + meditation
-        // This uses BasslinePilatesCoachAgent (extends StandardAgent) to coordinate all tools
-        agentsApi.generateCompleteClass({
-          class_plan: {
-            target_duration_minutes: formData.duration,
-            difficulty_level: formData.difficulty,
-            strictness_level: 'guided',
-            include_mcp_research: formData.enableMcpResearch,
-            focus_areas: formData.focusAreas,
-          },
-          include_music: true,
-          include_meditation: true,
-          include_research: formData.enableMcpResearch,
-        }),
-        // SESSION 11: Fetch framing sections (preparation, warmup, cooldown, homecare)
-        assembleCompleteClass(formData.difficulty, formData.duration, user.id),
-      ]);
+      // SESSION 11.5: Use StandardAgent orchestration for ALL 6 sections
+      // JENTIC STANDARDAGENT: Single orchestrated call for complete class
+      const completeClassResponse = await agentsApi.generateCompleteClass({
+        class_plan: {
+          target_duration_minutes: formData.duration,
+          difficulty_level: formData.difficulty,
+          strictness_level: 'guided',
+          include_mcp_research: formData.enableMcpResearch,
+          focus_areas: formData.focusAreas,
+        },
+        include_music: true,
+        include_meditation: true,
+        include_research: formData.enableMcpResearch,
+      });
 
       // Validate StandardAgent response
       if (!completeClassResponse.data.success) {
         throw new Error(completeClassResponse.data.error || 'Failed to generate complete class');
       }
 
-      // Extract individual results from StandardAgent orchestration
-      const sequenceResponse = completeClassResponse.data.data.sequence;
-      const musicResponse = completeClassResponse.data.data.music_recommendation;
-      // Meditation comes from backend database (NOT from agent tool), so access directly
-      const meditationData = completeClassResponse.data.data.meditation;
+      // Extract ALL sections from backend response (AI-generated OR database)
+      const backendData = completeClassResponse.data.data;
+      const sequenceResponse = backendData.sequence;
+      const musicResponse = backendData.music_recommendation;
+
+      // These sections may be AI-generated (if use_ai_agent=true) or from database (if false)
+      const preparationData = backendData.preparation;
+      const warmupData = backendData.warmup;
+      const cooldownData = backendData.cooldown;
+      const meditationData = backendData.meditation;
+      const homecareData = backendData.homecare;
 
       console.log('[AIGenerationPanel] StandardAgent orchestration complete:', {
+        mode: backendData.ai_reasoning ? 'AI AGENT (ReWOO)' : 'DEFAULT (Database)',
         movementCount: sequenceResponse.data.movement_count,
         transitionCount: sequenceResponse.data.transition_count,
         totalItems: sequenceResponse.data.sequence.length,
-        orchestrationTimeMs: completeClassResponse.data.data.total_processing_time_ms,
+        orchestrationTimeMs: backendData.total_processing_time_ms,
       });
 
-      console.log('[AIGenerationPanel] Framing sections fetched:', {
-        hasPreparation: !!framingSections.preparation,
-        hasWarmup: !!framingSections.warmup,
-        hasCooldown: !!framingSections.cooldown,
-        hasHomecare: !!framingSections.homecare,
+      console.log('[AIGenerationPanel] All 6 sections received from backend:', {
+        hasPreparation: !!preparationData,
+        hasWarmup: !!warmupData,
+        hasCooldown: !!cooldownData,
+        hasHomecare: !!homecareData,
         hasMeditation: !!meditationData,
+        preparationSource: preparationData?.script_name || 'MISSING',
+        homecareSource: homecareData?.advice_name || 'MISSING',
       });
 
       // COMBINED RESULTS: AI sequence for modal, 6-section structure for playback
@@ -125,14 +127,15 @@ export function AIGenerationPanel() {
           breathing_pattern: meditationData?.breathing_guidance || '',
         },
         // SESSION 11: Store complete 6-section class for playback
+        // FIX: Use backend sections (AI-generated when toggle ON, database when OFF)
         completeClass: {
-          preparation: framingSections.preparation,
-          warmup: framingSections.warmup,
+          preparation: preparationData,  // AI-generated "Core Harmony" OR database default
+          warmup: warmupData,            // Web-researched OR database default
           movements: sequenceResponse.data.sequence.filter((item: any) => item.type === 'movement'),
           transitions: sequenceResponse.data.sequence.filter((item: any) => item.type === 'transition'),
-          cooldown: framingSections.cooldown,
-          meditation: framingSections.meditation,
-          homecare: framingSections.homecare,
+          cooldown: cooldownData,        // Web-researched OR database default
+          meditation: meditationData,    // Database selection (same for both modes)
+          homecare: homecareData,        // AI-generated "Hydration" advice OR database default
           difficulty: formData.difficulty,
           total_duration_minutes: formData.duration,
           music_playlist: musicResponse.data,
