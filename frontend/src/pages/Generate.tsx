@@ -13,7 +13,7 @@ export function Generate() {
         <h1 className="text-5xl font-bold text-cream mb-4 tracking-tight">
           The Founder's Story
         </h1>
-
+      </div>
 
       {/* Story Content */}
       <div className="space-y-12">
