@@ -2949,15 +2949,56 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - Update branding/styling per design specs
 - Estimated Time: 2-3 hours
 
-#### **5. Add Nutrition Tracker** (Medium Priority - Requires More Info)
-- **Status:** Pending detailed requirements from user
+#### **2.5 AWS Migration Assessment** (High Priority - Cost Analysis)
+- **Context:** $1,000 AWS credits received from Amazon
 - **Questions to Answer:**
-  - What nutrition data to track? (calories, macros, meals, etc.)
-  - Integration with Pilates classes? (post-workout nutrition, etc.)
-  - Third-party API or custom database?
-  - User input method? (manual entry, photo recognition, API integration)
-- **Next Step:** User to provide comprehensive nutrition tracker requirements
-- Estimated Time: TBD (requires requirements doc)
+  1. How easy is it to migrate/copy MVP2 to AWS environment?
+  2. Would AWS be a cost saving compared to current stack (Render + Netlify + Supabase)?
+  3. Could AWS solve Supabase user authentication issues?
+  4. Migration strategy: Full migration vs hybrid approach?
+  5. Which AWS services to use?
+     - AWS Amplify (frontend hosting)
+     - AWS Lambda + API Gateway (backend API)
+     - Amazon RDS PostgreSQL or DynamoDB (database)
+     - Amazon Cognito (user authentication)
+- **Analysis Required:**
+  - Current monthly costs: Render + Netlify + Supabase
+  - Projected AWS costs with $1K credits
+  - Migration complexity and time estimate
+  - Feature parity comparison
+  - Authentication improvement potential
+- **Deliverable:** Cost analysis report with migration recommendation
+- Estimated Time: 4-6 hours (analysis), 20-40 hours (migration if approved)
+
+#### **5. Add Nutrition Tracker** (High Priority)
+- **Data Source:** `/Users/lauraredmond/Documents/Bassline/Admin/7. Product/Nutrition/Nutrition Information-Table-LRAdjusted.xlsx`
+- **Implementation Steps:**
+  1. **Create Food Database Table:**
+     - Import Excel data (food items with macros, calories, etc.)
+     - Ask CC to create normalized database schema for food/metrics
+     - Store in Supabase `nutrition_foods` table
+  2. **Rest Day Plan:**
+     - Formula stored in Numbers sheet (nutrition folder/training-1 folder)
+     - Screenshot Numbers sheet formulae for CC reference
+     - Implement calculation logic in backend
+  3. **Training Day Plan:**
+     - Formula stored in Numbers sheet (nutrition folder/training-1 folder)
+     - Screenshot Numbers sheet formulae for CC reference
+     - Different macro targets for training vs rest days
+  4. **User-Friendly Interface:**
+     - Simple meal logging (breakfast, lunch, dinner, snacks)
+     - Auto-calculate macros from food database
+     - Show rest day vs training day targets
+     - Visual progress bars for protein/carbs/fats
+     - Calendar view of nutrition compliance
+- **Design Considerations:**
+  - Mobile-first design (quick logging on phone)
+  - Barcode scanner integration (future)
+  - Meal template saving (frequent meals)
+  - Integration with Pilates class schedule (training day detection)
+- **Note:** Numbers file has disaggregated data in training-1 folder
+- **Next Step:** Screenshot Numbers formulae for CC, review data structure
+- Estimated Time: 15-20 hours
 
 #### **6. Add "Create My Baseline Wellness Routine" Button** (Medium Priority)
 - Add button to home page/dashboard
@@ -2994,7 +3035,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Meditation library
 - Estimated Time: 2 hours (icon/name change), ongoing (feature additions)
 
-#### **9. Retry Supabase User Confirmation** (Low Priority - May Already Be Fixed)
+#### **8. Retry Supabase User Confirmation** (Medium Priority)
 - **Context:** Previous issues with Supabase email confirmation may have been temporary
 - **Action:** Test current email confirmation flow
 - **If Still Broken:**
@@ -3003,27 +3044,67 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Test with multiple email providers (Gmail, Outlook, custom domain)
   - Review Supabase logs for email delivery failures
 - **If Working:** Mark as resolved and document
+- **Note:** May be resolved by AWS migration (Task 2.5) using Amazon Cognito
 - Estimated Time: 1 hour (testing), 2-3 hours (fixes if needed)
 
-#### **10. Advanced Delivery Modes** (Low Priority - Phase 3)
-- **Audio Narration:**
-  - TTS integration (ElevenLabs, OpenAI TTS, Google Cloud TTS)
-  - Pre-generate and cache common narratives
-  - HTML5 audio playback synchronization
+#### **9. Advanced Delivery Modes - Audio & Visual** (Medium Priority)
+- **9.1 Audio Narration (Priority):**
+  - TTS integration (ElevenLabs, OpenAI TTS, or Google Cloud TTS)
+  - Pre-generate and cache common narratives (Redis 24-hour TTL)
+  - HTML5 audio playback synchronization with class timer
+  - Generate audio for all 6 class sections:
+    1. Preparation script narration
+    2. Warmup cue narration
+    3. Movement instruction narration
+    4. Cooldown cue narration
+    5. Meditation script narration
+    6. HomeCare advice narration
+  - Voice selection: Calm female instructor voice
+  - Speed: 0.9x (slightly slower for instruction clarity)
+  - Cost: ~$15/1M characters (OpenAI TTS pricing)
 
-- **Visual Demonstrations (Maybe):**
+- **9.2 Visual Demonstrations (Maybe - Lower Priority):**
   - Video clips for each movement
   - Still images for key positions
   - Animations for movement loops
   - Adaptive bitrate streaming (HLS/DASH)
+  - Cost: ~$0.01/GB delivery (Cloudflare Stream)
 
-- **Cost Considerations:**
-  - TTS: ~$15/1M characters (OpenAI pricing)
-  - Video hosting: ~$0.01/GB delivery (Cloudflare Stream)
+- **User Preference Toggle:**
+  - Text only (current - default)
+  - Text + Audio
+  - Text + Visual
+  - All three (full multi-modal)
 
-- Estimated Time: 20-30 hours (audio), 60+ hours (video)
+- Estimated Time: 20-30 hours (audio), 60+ hours (video if pursued)
 
-#### **11. EU AI Act Compliance Dashboard & Testing** (Low Priority - Future Session)
+#### **9.5 Rigorous Review of Supabase Pilates Content** (Medium Priority)
+- **Goal:** Cross-compare database content with source Excel files
+- **Tasks:**
+  1. Export all movements from Supabase `movements` table
+  2. Compare with `/Users/lauraredmond/Documents/Bassline/Admin/7. Product/Design Documentation/Pilates_Summary_Spreadsheet_teachingTracker_v10.xlsm`
+  3. Verify all 34 classical movements present and accurate:
+     - Names match exactly
+     - Difficulty levels correct
+     - Duration estimates accurate
+     - Primary muscles correctly mapped
+     - Movement patterns accurate
+  4. Check `movement_muscles` junction table:
+     - All movements have muscle group mappings
+     - Verify `is_primary` flag usage (currently all False - is this correct?)
+     - Cross-reference with Excel muscle group columns
+  5. Review class section content:
+     - Preparation scripts (4 types)
+     - Warmup routines (full_body, spine, hips, shoulders)
+     - Cooldown sequences (gentle, moderate, deep)
+     - Meditation scripts (mindfulness, body_scan, gratitude)
+     - HomeCare advice (spine_care, injury_prevention, recovery)
+  6. Identify gaps or inconsistencies
+  7. Create migration script to fix discrepancies
+- **Deliverable:** Content audit report + SQL fix scripts
+- Estimated Time: 6-8 hours
+
+#### **10. EU AI Act Compliance Dashboard & Testing** (Low Priority - Future Session)
 - **Decision Transparency View:** Display all AI agent decisions for user
 - **Bias Monitoring Dashboard:** Track model drift, fairness metrics, alerts
 - **Audit Trail Interface:** Complete decision history with export (CSV, JSON)
@@ -3032,28 +3113,82 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **GDPR Data Export Fix:** Resolve HTTP 500 error on `/api/compliance/my-data`
 - Estimated Time: 12-15 hours
 
-#### **12. Security Testing** (Low Priority - Ongoing)
+#### **11. Security Testing** (Medium Priority - Pre-Production)
 - **Penetration Testing:**
   - API endpoint security testing
   - Authentication/authorization bypass attempts
   - SQL injection, XSS, CSRF testing
+  - Rate limiting validation
+  - Session management security
 
 - **Dependency Audits:**
   - `npm audit` for frontend dependencies
   - `pip-audit` for backend dependencies
   - Review Supabase RLS policies
+  - Check for known CVEs in all packages
 
 - **PII Tokenization Audit:**
   - Verify all PII is tokenized before storage
   - Test detokenization access controls
   - Review encryption key management
+  - Ensure no PII in logs or error messages
 
 - **Compliance Verification:**
   - EU AI Act transparency requirements
   - GDPR data export/deletion
   - User consent tracking
+  - Cookie policy compliance
+  - Data retention policies
+
+- **API Security:**
+  - JWT token validation
+  - CORS policy review
+  - API key rotation procedures
+  - Webhook signature verification
 
 - Estimated Time: 8-10 hours initial audit, ongoing monitoring
+
+#### **12. Privacy Policy & Legal Documentation** (Medium Priority - Pre-Production)
+- **Privacy Policy Page:**
+  - GDPR-compliant privacy policy
+  - Clear data collection disclosure
+  - User rights explanation (access, deletion, portability)
+  - Cookie usage policy
+  - Third-party service disclosure (OpenAI, Supabase, etc.)
+  - Data retention periods
+  - Contact information for data protection officer
+
+- **Terms of Service:**
+  - User agreement for platform usage
+  - AI-generated content disclaimer
+  - Liability limitations
+  - Intellectual property rights
+  - Dispute resolution process
+
+- **Cookie Consent Banner:**
+  - EU Cookie Law compliance
+  - Granular consent options (necessary, analytics, marketing)
+  - Easy opt-out mechanism
+  - Cookie policy link
+
+- **Age Verification:**
+  - Ensure COPPA compliance (13+ requirement)
+  - Age gate on signup
+
+- **AI Transparency Statement:**
+  - Disclose use of AI for class generation
+  - Explain limitations and potential biases
+  - Human oversight disclosure
+  - EU AI Act compliance notice
+
+- **Deliverables:**
+  - Privacy policy page (frontend)
+  - Terms of service page (frontend)
+  - Cookie consent implementation
+  - Legal review checklist
+
+- **Legal Review:** Consider consulting with legal counsel for final review
+- Estimated Time: 12-15 hours (drafting), additional for legal review
 
 ---
 
