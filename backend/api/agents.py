@@ -616,17 +616,18 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                     if step.result and not step.error:
                         tool_id = step.tool_id
 
-                        if tool_id == "select_preparation":
+                        # Match both SELECT (DEFAULT) and GENERATE/RESEARCH (AI) tool variants
+                        if tool_id in ("select_preparation", "generate_preparation"):
                             preparation = step.result
-                        elif tool_id == "select_warmup":
+                        elif tool_id in ("select_warmup", "research_warmup"):
                             warmup = step.result
                         elif tool_id == "generate_sequence":
                             sequence_result = {"success": True, "data": step.result}
-                        elif tool_id == "select_cooldown":
+                        elif tool_id in ("select_cooldown", "research_cooldown"):
                             cooldown = step.result
                         elif tool_id == "generate_meditation":
                             meditation = step.result
-                        elif tool_id == "select_homecare":
+                        elif tool_id in ("select_homecare", "generate_homecare"):
                             homecare = step.result
                         elif tool_id == "select_music":
                             music_result = {"success": True, "data": step.result}
