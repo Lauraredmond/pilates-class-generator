@@ -20,7 +20,7 @@ export function Generate() {
         {/* Section 1: The Idea */}
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
           <h2 className="text-3xl font-semibold text-cream mb-6">
-            The Beginning
+            The Idea
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
@@ -39,7 +39,7 @@ export function Generate() {
         {/* Section 2: My Story */}
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
           <h2 className="text-3xl font-semibold text-cream mb-6">
-            The Vision
+            My Story
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
