@@ -23,12 +23,12 @@ export function Layout({ children }: LayoutProps) {
   const isHomePage = location.pathname === '/';
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Home' },
-    { path: '/classes', icon: BookOpen, label: 'Training & Nutrition Hub' },
-    { path: '/analytics', icon: BarChart3, label: 'Analytics' },
-    { path: '/profile', icon: User, label: 'Profile' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
-    { path: '/generate', icon: LogoIcon, label: 'Founder Story' }, // Moved to rightmost, renamed, custom logo icon
+    { path: '/', icon: Home, label: 'Home', shortLabel: 'Home' },
+    { path: '/classes', icon: BookOpen, label: 'Training & Nutrition Hub', shortLabel: 'Hub' },
+    { path: '/analytics', icon: BarChart3, label: 'Analytics', shortLabel: 'Stats' },
+    { path: '/profile', icon: User, label: 'Profile', shortLabel: 'Profile' },
+    { path: '/settings', icon: Settings, label: 'Settings', shortLabel: 'Settings' },
+    { path: '/generate', icon: LogoIcon, label: 'Founder Story', shortLabel: 'Story' },
   ];
 
   return (
@@ -59,19 +59,19 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-burgundy-dark/95 backdrop-blur-sm border-t border-cream/20 z-50">
-        <div className="flex items-center justify-around py-2">
-          {navItems.slice(0, 5).map(({ path, icon: Icon, label }) => {
+        <div className="flex items-center justify-around py-1.5 px-1">
+          {navItems.map(({ path, icon: Icon, label, shortLabel }) => {
             const isActive = location.pathname === path;
             return (
               <Link
                 key={path}
                 to={path}
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${
+                className={`flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-lg min-w-0 ${
                   isActive ? 'text-cream' : 'text-cream/50'
                 }`}
               >
-                <Icon size={20} />
-                <span className="text-xs">{label}</span>
+                <Icon size={18} />
+                <span className="text-[10px] leading-tight text-center">{shortLabel}</span>
               </Link>
             );
           })}
