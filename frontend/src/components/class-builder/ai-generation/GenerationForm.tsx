@@ -52,6 +52,7 @@ const ALL_MUSIC_STYLES = [
   { value: 'IMPRESSIONIST', label: 'Impressionist (Debussy, Ravel)' },
   { value: 'MODERN', label: 'Modern (Satie, Copland)' },
   { value: 'CONTEMPORARY', label: 'Contemporary (Ambient, Meditation)' },
+  { value: 'JAZZ', label: 'Jazz (Relaxing Coffee Shop)' },
   { value: 'CELTIC_TRADITIONAL', label: 'Celtic Traditional (Irish Flute)' },
 ];
 

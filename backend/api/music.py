@@ -130,6 +130,14 @@ STYLISTIC_PERIODS_INFO = {
         composers=["Philip Glass", "Arvo Pärt", "Max Richter", "Ludovico Einaudi"],
         traits=["Piano minimalism", "Gentle ambient textures", "Neo-classical fusion"]
     ),
+    "JAZZ": StylisticPeriodInfo(
+        value="JAZZ",
+        name="Jazz",
+        description="Smooth, relaxing jazz for a warm, sophisticated atmosphere",
+        era="20th century–present",
+        composers=["Miles Davis", "John Coltrane", "Bill Evans", "Various Modern Jazz Artists"],
+        traits=["Smooth melodies", "Coffee shop ambiance", "Gentle improvisation", "Warm tones"]
+    ),
     "CELTIC_TRADITIONAL": StylisticPeriodInfo(
         value="CELTIC_TRADITIONAL",
         name="Celtic Traditional",
