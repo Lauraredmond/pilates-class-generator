@@ -28,11 +28,8 @@ PERFORMANCE OPTIMIZATION (Phase 1 - December 4, 2025):
 from typing import Dict, Any, List, Optional
 from loguru import logger
 
-# Phase 1 optimization: Redis caching
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-from utils.redis_cache import get_cache, make_cache_key
+# Phase 1 optimization: Redis caching (relative import from sibling utils folder)
+from ..utils.redis_cache import get_cache, make_cache_key
 
 
 class ClassSectionTools:
