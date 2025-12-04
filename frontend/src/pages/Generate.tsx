@@ -5,7 +5,7 @@ export function Generate() {
       <div className="text-center mb-12">
         <div className="flex justify-center mb-6">
           <img
-            src="/assets/bassline-logo-2-yellow.png"
+            src="/assets/bassline-logo-transparent.png"
             alt="Bassline Logo"
             className="h-24 w-auto"
           />
