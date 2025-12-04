@@ -66,11 +66,16 @@ export function Generate() {
             <p>
               I built Bassline on the basis that Joseph Pilates' classical Pilates methods were highly rules based and, though detailed, lent themselves extremely well to automation.
               When I was challenged on what real problem this platform could solve, I started thinking more broadly.
+             
               What if, instead of just a Pilates class generator, we created a shared platform where people could document and track the fitness routines that work uniquely for them?
+              </p>
+              <p>
               The idea itself wasn't new: give people access to a network of instructors who share their expertise, mindset, and approach - so anyone can shape a routine that
               suits their goals and preferences.
               But when I spoke with the fitness instructors and coaches I've admired throughout my time, a theme kept coming up: the psychology of fitness is
               treated with very different levels of care and quality.
+              </p>
+              <p>
               That insight, coupled with my own experience, pushed me toward what Bassline could really offer - a network of shared philosophies and mantras
               that help people stay consistent, confident, and connected not to where or when they exercise, buy why.
             </p>
@@ -88,10 +93,7 @@ export function Generate() {
               classes, and so much more. But we'll never lose sight of what matters: empowering you to move
               with intention, strength, and grace.
             </p>
-            <p className="text-xl font-medium text-cream pt-4 border-t border-cream/20">
-              Thank you for being part of this journey. Together, we're redefining what's possible in
-              movement and wellness.
-            </p>
+  
           </div>
           <div className="mt-8 text-center">
             <p className="text-cream/60 italic">
@@ -111,7 +113,7 @@ export function Generate() {
       <div className="mt-16 text-center pb-12">
         <div className="inline-block bg-energy-gradient rounded-2xl p-8 shadow-2xl">
           <h3 className="text-2xl font-bold text-cream mb-4">
-            Ready to Experience Bassline?
+            Ready to Experience Bassline Pilates?
           </h3>
           <p className="text-cream/90 mb-6 max-w-xl">
             Join thousands of practitioners transforming their Pilates practice with intelligent,
