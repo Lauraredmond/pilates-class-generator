@@ -47,7 +47,6 @@ def get_movement_muscle_groups(movement_id: str) -> List[str]:
         mm_response = supabase.table('movement_muscles') \
             .select('muscle_group_name') \
             .eq('movement_id', movement_id) \
-            .eq('is_primary', True) \
             .execute()
 
         if not mm_response.data:
