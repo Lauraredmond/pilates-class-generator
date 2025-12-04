@@ -127,7 +127,7 @@ class MeditationTools:
             "script_text": script,
             "breathing_guidance": breathing,
             "duration_seconds": duration_minutes * 60,
-            "post_intensity": intensity,
+            "post_intensity": class_intensity,
             "suggested_position": position
         }
 
