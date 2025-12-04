@@ -1020,11 +1020,10 @@ async def save_completed_class(request: SaveCompletedClassRequest):
             if not user_check.data:
                 # Create minimal user record to satisfy foreign key constraint
                 logger.warning("User {} not found in users table, creating minimal record", request.user_id)
+
+                # Insert with only the id field (Supabase will auto-populate created_at if it has defaults)
                 supabase.table('users').insert({
-                    'id': request.user_id,
-                    'email': 'unknown@placeholder.com',  # Will be updated on next login
-                    'created_at': now.isoformat(),
-                    'updated_at': now.isoformat()
+                    'id': request.user_id
                 }).execute()
                 logger.info("✅ Created minimal user record for {}", request.user_id)
         except Exception as user_error:
