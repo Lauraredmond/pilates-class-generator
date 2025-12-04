@@ -13,7 +13,7 @@ import { Loading } from '../components/ui/Loading';
 type BuilderMode = 'manual' | 'auto';
 
 export function ClassBuilder() {
-  const [mode, setMode] = useState<BuilderMode>('manual');
+  const [mode, setMode] = useState<BuilderMode>('auto'); // Default to auto mode
   const setMovements = useStore((state) => state.setMovements);
   const setIsLoading = useStore((state) => state.setIsLoading);
   const setError = useStore((state) => state.setError);
@@ -68,59 +68,20 @@ export function ClassBuilder() {
         v: 5ad601d | Music Test #4 (API track)
       </div>
 
-      {/* Page Header */}
+      {/* Page Header with Logo */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-cream mb-2">Class Builder</h1>
-        <p className="text-cream/70">
-          {mode === 'manual'
-            ? 'Drag and drop movements to build your perfect sequence'
-            : 'Let AI create a personalized class based on your preferences'}
-        </p>
-      </div>
-
-      {/* Mode Toggle */}
-      <div className="mb-6">
-        <div className="inline-flex rounded-lg border border-cream/30 bg-burgundy-dark p-1">
-          <button
-            onClick={() => setMode('manual')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              mode === 'manual'
-                ? 'bg-burgundy text-cream shadow-lg'
-                : 'text-cream/60 hover:text-cream'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
-              <span>Manually Create My Class</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setMode('auto')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              mode === 'auto'
-                ? 'bg-burgundy text-cream shadow-lg'
-                : 'text-cream/60 hover:text-cream'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                />
-              </svg>
-              <span>Automatically Generate My Class</span>
-            </div>
-          </button>
+        <div className="flex items-center gap-4 mb-4">
+          <img
+            src="/assets/bassline-logo-2-yellow.png"
+            alt="Bassline Logo"
+            className="h-16 w-auto"
+          />
+          <div>
+            <h1 className="text-3xl font-bold text-cream">Automatically Generate My Class</h1>
+            <p className="text-cream/70 mt-1">
+              Let AI create a personalized class based on your preferences
+            </p>
+          </div>
         </div>
       </div>
 
