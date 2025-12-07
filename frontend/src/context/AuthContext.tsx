@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Register
   const register = async (data: RegistrationData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
+      await axios.post(`${API_BASE_URL}/api/auth/register`, {
         email: data.email,
         password: data.password,
         full_name: data.fullName,
@@ -154,11 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         goals: data.goals || []
       });
 
-      const { access_token, refresh_token } = response.data;
-      setTokens(access_token, refresh_token);
-
-      // Fetch user data
-      await fetchCurrentUser();
+      // Registration successful - user must now confirm email
+      // No JWT tokens returned - email confirmation required before login
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Registration failed');
     }

@@ -1,30 +1,39 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 
 export function EmailConfirm() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Confirming your email...');
 
   useEffect(() => {
     const confirmEmail = async () => {
-      const token = searchParams.get('token');
-      const type = searchParams.get('type');
+      // Parse token from URL hash fragment (Supabase uses #access_token=...)
+      const hash = window.location.hash.substring(1); // Remove '#'
+      const params = new URLSearchParams(hash);
+      const token = params.get('access_token');
+      const type = params.get('type');
 
-      // If no token or type, show error
-      if (!token || type !== 'signup') {
+      // If no token or wrong type, show error
+      if (!token) {
         setStatus('error');
         setMessage('Invalid confirmation link. Please try registering again.');
         return;
       }
 
+      // Check if this is a signup confirmation (not password recovery)
+      if (type && type !== 'signup') {
+        setStatus('error');
+        setMessage('This link is not for email confirmation. Please check your email for the correct link.');
+        return;
+      }
+
       try {
-        // The token is automatically handled by Supabase
-        // We just need to acknowledge the confirmation
+        // Supabase automatically handles the confirmation when the link is clicked
+        // The token in the URL confirms the email address
         setStatus('success');
-        setMessage('Email confirmed successfully! Redirecting to login...');
+        setMessage('Email confirmed successfully! You can now log in to your account.');
 
         // Redirect to login after 3 seconds
         setTimeout(() => {
@@ -37,7 +46,7 @@ export function EmailConfirm() {
     };
 
     confirmEmail();
-  }, [searchParams, navigate]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-burgundy flex items-center justify-center p-4">

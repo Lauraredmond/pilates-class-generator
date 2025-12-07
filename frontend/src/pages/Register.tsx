@@ -14,6 +14,7 @@ export function Register() {
   const [goals, setGoals] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -57,13 +58,51 @@ export function Register() {
       };
 
       await register(registrationData);
-      navigate('/');
+
+      // Show success message (email confirmation required)
+      setSuccess(true);
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
   };
+
+  // Success state - show email confirmation message
+  if (success) {
+    return (
+      <div className="min-h-screen bg-burgundy flex items-center justify-center p-4">
+        <div className="bg-cream rounded-lg shadow-xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+
+          <h1 className="text-2xl font-bold text-burgundy mb-4">Check Your Email!</h1>
+          <p className="text-charcoal mb-6">
+            We've sent a confirmation email to <strong>{email}</strong>. Please click the link in the email to verify your account before logging in.
+          </p>
+
+          <div className="bg-burgundy/10 border border-burgundy/20 rounded-lg p-4 mb-6 text-left">
+            <p className="text-sm text-charcoal mb-2 font-semibold">Next steps:</p>
+            <ol className="text-sm text-charcoal space-y-1 list-decimal list-inside">
+              <li>Check your inbox (and spam folder)</li>
+              <li>Click the confirmation link in the email</li>
+              <li>Return here to log in</li>
+            </ol>
+          </div>
+
+          <Link
+            to="/login"
+            className="inline-block bg-burgundy text-cream px-6 py-2 rounded hover:bg-burgundy/90 font-semibold"
+          >
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-burgundy flex items-center justify-center p-4">
