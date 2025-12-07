@@ -110,8 +110,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
         }
       } else {
-        // Only log unexpected errors
-        console.error('Failed to fetch user:', error);
+        // Suppress errors during initial auth check (expected when not logged in)
+        // Only log if it's a true server error (5xx)
+        if (error.response?.status >= 500) {
+          console.error('Server error fetching user:', error);
+        }
         setLoading(false);
       }
     }
@@ -190,7 +193,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshToken = async () => {
     const refresh = getRefreshToken();
     if (!refresh) {
-      throw new Error('No refresh token available');
+      // Silently fail if no refresh token (expected when not logged in)
+      clearTokens();
+      setUser(null);
+      return;
     }
 
     try {
@@ -204,9 +210,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Fetch user data with new token
       await fetchCurrentUser();
     } catch (error: any) {
+      // Silently clear auth when refresh fails (expected when token expired)
       clearTokens();
       setUser(null);
-      throw new Error(error.response?.data?.detail || 'Token refresh failed');
     }
   };
 
