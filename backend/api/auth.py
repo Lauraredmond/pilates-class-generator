@@ -202,8 +202,15 @@ async def register(user_data: UserCreate, request: Request):
 
         # Create user record in users table (for class_history foreign key)
         # This table is separate from user_profiles and used for GDPR/PII tokenization
+        # NOTE: Using simple tokenization for now (prefix with 'token_')
+        # TODO: Implement proper PII tokenization with encryption
         user_record = {
             "id": user_id,
+            "email_token": f"token_{user_data.email}",  # Simple tokenization
+            "full_name_token": f"token_{user_data.full_name}" if user_data.full_name else None,
+            "role": "instructor",  # Default role
+            "preferences": {},
+            "is_active": True,
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat()
         }
