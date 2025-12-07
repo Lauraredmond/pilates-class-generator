@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth, type RegistrationData } from '../context/AuthContext';
 
 export function Register() {
@@ -17,7 +17,6 @@ export function Register() {
   const [success, setSuccess] = useState(false);
 
   const { register } = useAuth();
-  const navigate = useNavigate();
 
   const handleGoalToggle = (goal: string) => {
     setGoals(prev =>
