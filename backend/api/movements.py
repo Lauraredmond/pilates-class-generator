@@ -44,6 +44,11 @@ class Movement(BaseModel):
     contraindications: Optional[List[str]] = None
     modifications: Optional[dict] = None
 
+    # Voiceover audio (Session 13.5+) - MUST match database columns
+    voiceover_url: Optional[str] = None
+    voiceover_duration_seconds: Optional[int] = None
+    voiceover_enabled: Optional[bool] = None
+
     class Config:
         from_attributes = True
 
