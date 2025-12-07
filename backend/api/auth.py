@@ -200,6 +200,15 @@ async def register(user_data: UserCreate, request: Request):
 
         supabase.table("user_profiles").insert(profile_data).execute()
 
+        # Create user record in users table (for class_history foreign key)
+        # This table is separate from user_profiles and used for GDPR/PII tokenization
+        user_record = {
+            "id": user_id,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        supabase.table("users").insert(user_record).execute()
+
         # Create default preferences
         preferences_data = {
             "user_id": user_id,
