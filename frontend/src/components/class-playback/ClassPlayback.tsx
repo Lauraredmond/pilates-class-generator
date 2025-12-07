@@ -409,7 +409,7 @@ export function ClassPlayback({
             {/* Prominent Enable Music Button - Always show when not playing */}
             {audioState.isReady && !audioState.isPlaying && (
               <button
-                onClick={() => audioState.setMusicVolume(1.0)}
+                onClick={() => audioState.play()}
                 className="px-4 py-2 bg-cream text-burgundy rounded-lg hover:bg-cream/90 transition-smooth flex items-center gap-2 shadow-lg font-medium"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
