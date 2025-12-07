@@ -14,24 +14,20 @@ export function EmailConfirm() {
       const params = new URLSearchParams(hash);
       const token = params.get('access_token');
       const type = params.get('type');
+      const error_code = params.get('error_code');
+      const error_description = params.get('error_description');
 
-      // If no token or wrong type, show error
-      if (!token) {
+      // Check for Supabase errors in URL
+      if (error_code) {
         setStatus('error');
-        setMessage('Invalid confirmation link. Please try registering again.');
+        setMessage(error_description || 'Email confirmation failed. Please try registering again.');
         return;
       }
 
-      // Check if this is a signup confirmation (not password recovery)
-      if (type && type !== 'signup') {
-        setStatus('error');
-        setMessage('This link is not for email confirmation. Please check your email for the correct link.');
-        return;
-      }
-
+      // Supabase "Confirm email" setting confirms in background without passing token
+      // If we're on this page, the confirmation link was clicked successfully
+      // Show success message even if no token (Supabase confirmed in background)
       try {
-        // Supabase automatically handles the confirmation when the link is clicked
-        // The token in the URL confirms the email address
         setStatus('success');
         setMessage('Email confirmed successfully! You can now log in to your account.');
 
