@@ -282,10 +282,58 @@ export function useAudioDucking({
   }, [isPaused]);
 
   /**
+   * Manual play trigger (for user gesture to bypass autoplay blocking)
+   */
+  const manualPlay = () => {
+    const musicAudio = musicElementRef.current;
+    const voiceoverAudio = voiceoverElementRef.current;
+
+    if (!musicAudio) {
+      console.error('No music audio element available');
+      return;
+    }
+
+    console.log('🎵 Manual play triggered by user gesture');
+
+    // Resume AudioContext if suspended
+    if (audioContextRef.current?.state === 'suspended') {
+      audioContextRef.current.resume().then(() => {
+        console.log('🎛️ AudioContext resumed from user gesture');
+      });
+    }
+
+    // Play music (user gesture bypasses autoplay blocking)
+    const playPromise = musicAudio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log('✅ Music started playing from user gesture');
+          setState(prev => ({ ...prev, isPlaying: true, error: null }));
+        })
+        .catch(err => {
+          console.error('❌ Failed to play music:', err);
+          setState(prev => ({
+            ...prev,
+            error: `Failed to play music: ${err.message}`
+          }));
+        });
+    }
+
+    // Play voiceover if available
+    if (voiceoverAudio) {
+      voiceoverAudio.play().catch(err => {
+        console.error('Voiceover play error from user gesture:', err);
+      });
+    }
+  };
+
+  /**
    * Public API
    */
   return {
     ...state,
+    // Manual play trigger for user gesture (bypasses autoplay blocking)
+    play: manualPlay,
     // Allow manual volume control
     setMusicVolume: (volume: number) => duckMusic(volume),
     // Check if both audio streams are ready
