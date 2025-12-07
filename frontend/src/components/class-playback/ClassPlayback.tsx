@@ -4,11 +4,12 @@
  * Integrated with music database (Internet Archive streaming)
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { MovementDisplay } from './MovementDisplay';
 import { PlaybackControls } from './PlaybackControls';
 import { TimerDisplay } from './TimerDisplay';
+import { useAudioDucking } from '../../hooks/useAudioDucking';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://pilates-class-generator-api3.onrender.com';
 
@@ -158,16 +159,31 @@ export function ClassPlayback({
   const [isPaused, setIsPaused] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(items[0]?.duration_seconds || 0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [isMusicReady, setIsMusicReady] = useState(false);
   const [currentPlaylist, setCurrentPlaylist] = useState<MusicPlaylist | null>(null);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [currentTrackIndex] = useState(0); // TODO: Add track advancement when useAudioDucking supports onMusicEnded callback
   const [musicError, setMusicError] = useState<string | null>(null);
-  const [audioBlocked, setAudioBlocked] = useState(false);
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
   const currentItem = items[currentIndex];
   const totalItems = items.length;
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Get current movement's voiceover URL (if it's a movement with voiceover enabled)
+  const currentMovementVoiceover =
+    currentItem?.type === 'movement' && currentItem.voiceover_enabled
+      ? currentItem.voiceover_url
+      : undefined;
+
+  // Get current track URL from playlist
+  const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
+
+  // Use dual audio hook for music + voiceover with automatic ducking
+  const audioState = useAudioDucking({
+    musicUrl: currentMusicUrl,
+    voiceoverUrl: currentMovementVoiceover,
+    isPaused: isPaused,
+    musicVolume: 1.0,      // 100% when no voiceover
+    duckedVolume: 0.35,    // 35% during voiceover
+    fadeTime: 0.5          // 0.5s smooth fade
+  });
 
   // Fetch music playlist from database
   useEffect(() => {
@@ -198,11 +214,6 @@ export function ClassPlayback({
 
           const playlist = fullPlaylistResponse.data;
           setCurrentPlaylist(playlist);
-
-          // If tracks available, load first track
-          if (playlist.tracks && playlist.tracks.length > 0) {
-            loadTrack(playlist.tracks[0]);
-          }
         } else {
           // Fallback: get any featured playlist
           const fallbackResponse = await axios.get(`${API_BASE_URL}/api/music/playlists`, {
@@ -216,10 +227,6 @@ export function ClassPlayback({
             );
             const playlist = fullPlaylistResponse.data;
             setCurrentPlaylist(playlist);
-
-            if (playlist.tracks && playlist.tracks.length > 0) {
-              loadTrack(playlist.tracks[0]);
-            }
           } else {
             setMusicError('No music playlists available.');
           }
@@ -232,148 +239,6 @@ export function ClassPlayback({
 
     fetchPlaylist();
   }, [movementMusicStyle]);
-
-  // Load a specific track (uses direct audio_url from database)
-  const loadTrack = (track: MusicTrack) => {
-    try {
-      if (audioRef.current && track.audio_url) {
-        audioRef.current.src = track.audio_url;
-        audioRef.current.volume = 0.6; // 60% volume (audible but not overwhelming)
-        setIsMusicReady(true);
-        console.log('🎵 Music track loaded:', track.title, 'by', track.composer);
-        console.log('🔗 Audio URL:', track.audio_url);
-
-        // Reset playing state when new track loads
-        setIsAudioPlaying(false);
-        setAudioBlocked(false);
-      }
-    } catch (error) {
-      console.error('Error loading track:', error);
-      setMusicError('Failed to load music track. Continuing without audio.');
-    }
-  };
-
-  // Initialize HTML5 audio element ONCE on mount
-  useEffect(() => {
-    console.log('🎧 Initializing audio element');
-    const audio = new Audio();
-    audioRef.current = audio;
-
-    // 'playing' fires when audio ACTUALLY starts playing (not just when play() is called)
-    const handlePlaying = () => {
-      console.log('✅ Audio ACTUALLY playing event fired');
-      setIsAudioPlaying(true);
-      setAudioBlocked(false);
-    };
-
-    // Track when audio is paused or stops
-    const handlePause = () => {
-      console.log('⏸️ Audio paused event fired');
-      setIsAudioPlaying(false);
-    };
-
-    // Track when playback is blocked or interrupted
-    const handleStalled = () => {
-      console.log('⚠️ Audio stalled - may be blocked');
-      setIsAudioPlaying(false);
-    };
-
-    // Handle track ending - load next track
-    const handleEnded = () => {
-      console.log('⏭️ Track ended, loading next track');
-      setIsAudioPlaying(false);
-      if (currentPlaylist && currentPlaylist.tracks) {
-        const nextIndex = (currentTrackIndex + 1) % currentPlaylist.tracks.length;
-        setCurrentTrackIndex(nextIndex);
-      }
-    };
-
-    // Use 'playing' not 'play' - playing fires when audio ACTUALLY plays
-    audio.addEventListener('playing', handlePlaying);
-    audio.addEventListener('pause', handlePause);
-    audio.addEventListener('stalled', handleStalled);
-    audio.addEventListener('ended', handleEnded);
-
-    // Cleanup on component unmount
-    return () => {
-      console.log('🧹 Cleaning up audio element');
-      audio.removeEventListener('playing', handlePlaying);
-      audio.removeEventListener('pause', handlePause);
-      audio.removeEventListener('stalled', handleStalled);
-      audio.removeEventListener('ended', handleEnded);
-      audio.pause();
-      audio.src = '';
-    };
-  }, []); // Empty deps - only run once on mount!
-
-  // Load next track when track index changes
-  useEffect(() => {
-    if (currentPlaylist && currentPlaylist.tracks && currentPlaylist.tracks[currentTrackIndex]) {
-      loadTrack(currentPlaylist.tracks[currentTrackIndex]);
-    }
-  }, [currentTrackIndex, currentPlaylist]);
-
-  // Sync music pause/resume with class timer
-  useEffect(() => {
-    if (!audioRef.current || !isMusicReady) return;
-
-    try {
-      if (isPaused) {
-        audioRef.current.pause();
-      } else {
-        // Trigger play - happens after user clicked "Play Class"
-        const playPromise = audioRef.current.play();
-
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('Music play triggered successfully');
-              setAudioBlocked(false);
-            })
-            .catch(error => {
-              console.error('Audio play failed:', error);
-              // Browser blocked autoplay - user needs to click to enable audio
-              setAudioBlocked(true);
-            });
-        }
-      }
-    } catch (error) {
-      console.error('Error controlling music playback:', error);
-    }
-  }, [isPaused, isMusicReady]);
-
-  // Handler for manual audio enable - works even when class is paused
-  const handleEnableAudio = useCallback(() => {
-    if (!audioRef.current) {
-      console.error('No audio element available');
-      return;
-    }
-
-    console.log('User clicked Enable Audio button');
-    console.log('Audio src:', audioRef.current.src);
-    console.log('Audio readyState:', audioRef.current.readyState);
-    console.log('Audio volume:', audioRef.current.volume);
-
-    // Ensure volume is audible
-    audioRef.current.volume = 0.6;
-
-    // Try to play (this is a direct user gesture, should work)
-    const playPromise = audioRef.current.play();
-
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          console.log('✅ Audio manually enabled and playing!');
-          setAudioBlocked(false);
-          setIsAudioPlaying(true);
-        })
-        .catch(error => {
-          console.error('❌ Failed to enable audio:', error);
-          setAudioBlocked(true);
-          setMusicError(`Audio blocked: ${error.message}. Try clicking the button again.`);
-        });
-    }
-  }, []);
 
   // Timer countdown logic
   useEffect(() => {
@@ -534,32 +399,46 @@ export function ClassPlayback({
 
       {/* Music control - Always visible */}
       <div className="absolute bottom-20 left-4 space-y-2">
-        {musicError ? (
+        {musicError || audioState.error ? (
           <p className="flex items-center gap-2 text-yellow-400 text-xs">
             <span className="inline-block w-2 h-2 rounded-full bg-yellow-500" />
-            {musicError}
+            {musicError || audioState.error}
           </p>
         ) : (
           <>
             {/* Prominent Enable Music Button - Always show when not playing */}
-            {isMusicReady && !isAudioPlaying && (
+            {audioState.isReady && !audioState.isPlaying && (
               <button
-                onClick={handleEnableAudio}
+                onClick={() => audioState.setMusicVolume(1.0)}
                 className="px-4 py-2 bg-cream text-burgundy rounded-lg hover:bg-cream/90 transition-smooth flex items-center gap-2 shadow-lg font-medium"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H9a2 2 0 002-2V7a2 2 0 00-2-2H5.586l-3.293 3.293a1 1 0 000 1.414L5.586 15z" />
                 </svg>
-                {audioBlocked ? 'Click to Enable Music' : 'Click to Play Music'}
+                Click to Enable Audio
               </button>
             )}
 
-            {/* Music info - smaller text below button */}
+            {/* Audio status indicator */}
             <div className="text-xs text-cream/40 space-y-1">
               <p className="flex items-center gap-2">
-                <span className={`inline-block w-2 h-2 rounded-full ${isAudioPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
-                {isAudioPlaying ? 'Music Playing' : isMusicReady ? 'Music Ready' : 'Music Loading...'}
+                <span className={`inline-block w-2 h-2 rounded-full ${audioState.isPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
+                {audioState.isPlaying ? 'Audio Playing' : audioState.isReady ? 'Audio Ready' : 'Audio Loading...'}
               </p>
+
+              {/* Show current volume during ducking */}
+              <p className="flex items-center gap-2">
+                Music: {Math.round(audioState.currentVolume * 100)}%
+                {audioState.currentVolume < 1.0 && ' (ducked for voiceover)'}
+              </p>
+
+              {/* Show if voiceover is active for this movement */}
+              {currentMovementVoiceover && (
+                <p className="text-green-400">
+                  🎙️ Voiceover enabled for this movement
+                </p>
+              )}
+
               {currentPlaylist && (
                 <>
                   <p>Playlist: {currentPlaylist.name}</p>
