@@ -116,12 +116,12 @@ class UserResponse(BaseModel):
     is_admin: Optional[bool] = None
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate, request: Request):
     """
     Register a new user with email and password
 
-    Returns JWT tokens for immediate login
+    Sends confirmation email - user must verify email before logging in
     """
     try:
         # Check if user already exists
@@ -224,10 +224,12 @@ async def register(user_data: UserCreate, request: Request):
         # Log PII transaction for GDPR compliance
         await PIILogger.log_registration(user_id, request, profile_data)
 
-        # Generate JWT tokens
-        tokens = create_token_pair(user_id)
-
-        return TokenResponse(**tokens)
+        # Return success message - user must confirm email before logging in
+        return {
+            "message": "Registration successful! Please check your email to confirm your account before logging in.",
+            "email": user_data.email,
+            "requires_confirmation": True
+        }
 
     except HTTPException:
         raise
@@ -243,7 +245,7 @@ async def login(credentials: UserLogin):
     """
     Authenticate user with email and password
 
-    Returns JWT tokens
+    Returns JWT tokens if email is confirmed
     """
     try:
         # Get user from database
@@ -263,6 +265,22 @@ async def login(credentials: UserLogin):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password"
             )
+
+        # Check email confirmation status via Supabase Auth
+        try:
+            auth_user = supabase.auth.admin.get_user_by_id(user["id"])
+
+            if not auth_user.user.email_confirmed_at:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Please confirm your email address before logging in. Check your inbox for the confirmation link."
+                )
+        except HTTPException:
+            # Re-raise our custom HTTP exception
+            raise
+        except Exception as auth_error:
+            # If we can't check confirmation status, allow login (graceful degradation)
+            print(f"Warning: Could not check email confirmation status: {str(auth_error)}")
 
         # Update last login
         supabase.table("user_profiles").update({
