@@ -24,6 +24,11 @@ interface Movement {
   level_2_description?: string; // 'Y' or 'N'
   level_3_description?: string; // 'Y' or 'N'
   full_version_description?: string; // 'Y' or 'N'
+
+  // Voiceover audio (Session 13.5+)
+  voiceover_url?: string; // Supabase Storage URL for pre-recorded voiceover
+  voiceover_duration_seconds?: number; // Duration in seconds (for music ducking timing)
+  voiceover_enabled?: boolean; // Whether to play voiceover during this movement
 }
 
 interface SequenceMovement extends Movement {
