@@ -12,8 +12,6 @@ export function EmailConfirm() {
       // Parse token from URL hash fragment (Supabase uses #access_token=...)
       const hash = window.location.hash.substring(1); // Remove '#'
       const params = new URLSearchParams(hash);
-      const token = params.get('access_token');
-      const type = params.get('type');
       const error_code = params.get('error_code');
       const error_description = params.get('error_description');
 
