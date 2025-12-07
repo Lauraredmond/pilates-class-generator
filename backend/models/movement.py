@@ -38,6 +38,11 @@ class Movement(MovementBase):
     level_3_description: Optional[str] = Field(None, description="Y if Level 3 exists, N otherwise")
     full_version_description: Optional[str] = Field(None, description="Y if Full Version exists, N otherwise")
 
+    # Voiceover audio (Session 13.5+)
+    voiceover_url: Optional[str] = Field(None, description="Supabase Storage URL for pre-recorded voiceover audio")
+    voiceover_duration_seconds: Optional[int] = Field(None, description="Duration of voiceover audio in seconds")
+    voiceover_enabled: Optional[bool] = Field(False, description="Whether to play voiceover audio during this movement")
+
     class Config:
         from_attributes = True
 
