@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface PasswordRequirement {
@@ -15,8 +15,14 @@ const passwordRequirements: PasswordRequirement[] = [
 ];
 
 export function ResetPasswordConfirm() {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') || searchParams.get('access_token');
+  // Parse token from URL hash fragment (Supabase uses #access_token=...)
+  const getTokenFromHash = () => {
+    const hash = window.location.hash.substring(1); // Remove '#'
+    const params = new URLSearchParams(hash);
+    return params.get('access_token') || params.get('token') || null;
+  };
+
+  const [token, setToken] = useState<string | null>(getTokenFromHash());
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -27,6 +33,20 @@ export function ResetPasswordConfirm() {
 
   const { confirmPasswordReset } = useAuth();
   const navigate = useNavigate();
+
+  // Monitor hash changes (in case token arrives after mount)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const newToken = getTokenFromHash();
+      if (newToken && newToken !== token) {
+        setToken(newToken);
+        setError(''); // Clear any previous error
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [token]);
 
   // Check for token on mount
   useEffect(() => {

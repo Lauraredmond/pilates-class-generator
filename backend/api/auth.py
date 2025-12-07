@@ -372,8 +372,15 @@ async def confirm_password_reset(reset_data: PasswordResetConfirm):
     Updates user's password
     """
     try:
-        # Verify and update password via Supabase Auth
-        response = supabase.auth.update_user({
+        # Create a new Supabase client authenticated with the reset token
+        # This allows us to update the user's password
+        temp_supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+        # Set the session using the access token from the reset link
+        temp_supabase.auth.set_session(reset_data.token, reset_data.token)
+
+        # Now update the user's password (authenticated as the user via reset token)
+        response = temp_supabase.auth.update_user({
             "password": reset_data.new_password
         })
 
@@ -396,6 +403,15 @@ async def confirm_password_reset(reset_data: PasswordResetConfirm):
     except HTTPException:
         raise
     except Exception as e:
+        error_message = str(e).lower()
+
+        # Handle specific Supabase errors
+        if "invalid" in error_message or "expired" in error_message or "token" in error_message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired reset token. Please request a new password reset link."
+            )
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Password reset failed: {str(e)}"
