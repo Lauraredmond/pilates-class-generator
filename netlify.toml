@@ -20,17 +20,38 @@
   to = "/index.html"
   status = 200
 
-# Headers for security and caching
+# Headers for security and caching (Updated December 8, 2025 - OWASP ZAP security fixes)
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "upgrade-insecure-requests"
+    # Content Security Policy (CSP) - Comprehensive policy to prevent XSS, clickjacking, and other attacks
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org; media-src 'self' https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org https://lixvcebtwusmaipodcpc.supabase.co blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 
-# Cache static assets
+    # Clickjacking protection
+    X-Frame-Options = "DENY"
+
+    # XSS protection
+    X-XSS-Protection = "1; mode=block"
+
+    # MIME type sniffing protection
+    X-Content-Type-Options = "nosniff"
+
+    # Referrer policy
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # Permissions Policy (disable unnecessary browser features)
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
+
+    # Strict Transport Security (HSTS)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+# Cache control for HTML (always revalidate to get latest app version)
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Cache static assets (immutable, 1 year)
 [[headers]]
   for = "/assets/*"
   [headers.values]
