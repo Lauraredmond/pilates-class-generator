@@ -100,6 +100,10 @@ export function AIGenerationPanel() {
             from_position: m.from_position,
             to_position: m.to_position,
             narrative: m.narrative,
+            // Voiceover audio fields (Session 13.5) - PRESERVE from backend!
+            voiceover_url: m.voiceover_url,
+            voiceover_duration_seconds: m.voiceover_duration_seconds,
+            voiceover_enabled: m.voiceover_enabled,
           })),
           movement_count: sequenceResponse.data.movement_count || 0,
           transition_count: sequenceResponse.data.transition_count || 0,
