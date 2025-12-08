@@ -238,7 +238,11 @@ async def generate_sequence(
                             "name": movement.get('name', ''),
                             "muscle_groups": muscle_groups,
                             "duration_seconds": movement.get('duration_seconds', 60),
-                            "order_index": idx
+                            "order_index": idx,
+                            # Voiceover audio fields (Session 13.5)
+                            "voiceover_url": movement.get('voiceover_url'),
+                            "voiceover_duration_seconds": movement.get('voiceover_duration_seconds'),
+                            "voiceover_enabled": movement.get('voiceover_enabled', False)
                         })
 
                 # Save to class_plans table
