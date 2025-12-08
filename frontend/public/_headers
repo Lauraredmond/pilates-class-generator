@@ -1,0 +1,82 @@
+# Netlify Custom Headers Configuration
+# This file sets HTTP security headers for all routes
+# Documentation: https://docs.netlify.com/routing/headers/
+
+# Apply headers to all routes
+/*
+  # Content Security Policy (CSP)
+  # Protects against XSS, clickjacking, and other injection attacks
+  # Solution to OWASP ZAP findings: CSP failures (Medium Risk)
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://w.soundcloud.com https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org; media-src 'self' https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org https://lixvcebtwusmaipodcpc.supabase.co blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+
+  # Clickjacking Protection
+  # Prevents site from being embedded in iframes on other domains
+  X-Frame-Options: DENY
+
+  # MIME Type Sniffing Protection
+  # Prevents browsers from MIME-sniffing responses away from declared content-type
+  X-Content-Type-Options: nosniff
+
+  # XSS Filter (Legacy Browsers)
+  # Enables browser's built-in XSS filter
+  X-XSS-Protection: 1; mode=block
+
+  # Referrer Policy
+  # Controls how much referrer information is sent with requests
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # Permissions Policy (Feature Policy)
+  # Disables unnecessary browser features to reduce attack surface
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()
+
+  # Strict Transport Security (HSTS)
+  # Forces HTTPS connections for 1 year, including subdomains
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+  # Cache Control for HTML
+  # HTML files should always revalidate to get latest app version
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Cache Control for Static Assets
+# Vite generates content-hashed filenames (e.g., index-yNCvl90i.js)
+# These files never change, so cache aggressively
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache Control for Images
+/assets/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache Control for Fonts
+/assets/*.woff
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.ttf
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache Control for Manifest
+/manifest.json
+  Cache-Control: public, max-age=86400
+
+# Cache Control for Sitemap
+/sitemap.xml
+  Cache-Control: public, max-age=86400
+
+# Cache Control for Robots.txt
+/robots.txt
+  Cache-Control: public, max-age=86400
