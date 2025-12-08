@@ -11,7 +11,7 @@
 
 **Total Alerts:** 10
 **Critical Issues:** 4 (Medium Risk - High Confidence)
-**Requires Action:** 4 issues
+**Requires Action:** 0 issues (all resolved)
 **False Positives:** 1 issue
 **Informational:** 5 issues
 
@@ -176,37 +176,37 @@ This is correct SPA behavior. No hidden files are exposed.
 
 ### 6. Cross-Domain JavaScript Source File Inclusion
 
-**Risk Level:** Low
+**Risk Level:** Low → **RESOLVED**
 **Confidence:** Medium
 
-**External Scripts Loaded:**
+**Original External Scripts:**
 ```html
+<!-- REMOVED December 8, 2025 -->
 <script src="https://w.soundcloud.com/player/api.js"></script>
 ```
 
-**Issue:**
-Third-party JavaScript from SoundCloud is loaded, which introduces supply chain risk.
+**Issue (Original):**
+Third-party JavaScript from SoundCloud was loaded, which introduced supply chain risk.
 
-**Impact:**
-- If SoundCloud's CDN is compromised, malicious JS could execute
-- Trust boundary extends to SoundCloud infrastructure
+**Impact (Original):**
+- If SoundCloud's CDN was compromised, malicious JS could execute
+- Trust boundary extended to SoundCloud infrastructure
 
-**Mitigation Applied:**
-1. CSP `script-src` directive restricts scripts to:
-   - Self (our own domain)
-   - SoundCloud CDN only (whitelisted)
-   - No other third-party scripts allowed
-2. Script loaded via HTTPS (encrypted, integrity checked by browser)
-3. SoundCloud is a reputable provider with strong security practices
+**Resolution Taken:**
+**Date:** December 8, 2025
 
-**Business Justification:**
-SoundCloud widget API was planned for music integration (Session 9 discussions). Currently commented out but kept in HTML.
+1. **Removed SoundCloud script tag** from `frontend/index.html`
+2. **Removed SoundCloud component** (`AdminSoundCloud.tsx`) and route from `App.tsx`
+3. **Updated CSP** to remove `https://w.soundcloud.com` from `script-src` directive
+4. **Business Decision:** User confirmed SoundCloud integration will not be pursued; Internet Archive already provides sufficient music streaming
 
-**Recommendation:**
-- ✅ **Short-term:** Accept risk (CSP mitigates worst-case scenarios)
-- ⏸️ **Long-term:** Remove SoundCloud script (not currently used, already using Internet Archive)
+**Current External Scripts:**
+```html
+<!-- No third-party JavaScript loaded -->
+<!-- Archive.org allowed in CSP for music metadata only, no scripts loaded -->
+```
 
-**Status:** ✅ ACCEPTED RISK (CSP MITIGATES)
+**Status:** ✅ **RESOLVED** (SoundCloud completely removed)
 
 ---
 
@@ -284,19 +284,21 @@ Positive - CDN caching improves performance and reduces server load.
 **File:** `frontend/public/_headers`
 **Purpose:** Netlify serves custom headers for all requests
 
-**CSP Implementation:**
+**CSP Implementation (Updated December 8, 2025):**
 
 ```
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://w.soundcloud.com https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org; media-src 'self' https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org https://lixvcebtwusmaipodcpc.supabase.co blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org; media-src 'self' https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org https://lixvcebtwusmaipodcpc.supabase.co blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
 ```
+
+**Change from Original:** Removed `https://w.soundcloud.com` from `script-src` directive (December 8, 2025)
 
 **CSP Directives Explained:**
 
 | Directive | Value | Rationale |
 |-----------|-------|-----------|
 | `default-src` | `'self'` | Default policy: only load resources from same origin |
-| `script-src` | `'self' https://w.soundcloud.com https://archive.org` | Allow scripts from our domain, SoundCloud (for future widget), Archive.org (for music metadata) |
+| `script-src` | `'self' https://archive.org` | Allow scripts from our domain and Archive.org (for music metadata) |
 | `style-src` | `'self' 'unsafe-inline'` | Allow our stylesheets + inline styles (required for React/Tailwind) |
 | `img-src` | `'self' data: https: blob:` | Allow images from our domain, data URIs, HTTPS sources, blob URLs (for generated images) |
 | `font-src` | `'self' data:` | Allow fonts from our domain and data URIs (for custom fonts) |
@@ -318,7 +320,6 @@ Positive - CDN caching improves performance and reduces server load.
 | `archive.org` | Music streaming | Public domain classical music |
 | `ia802809.us.archive.org` | Archive CDN | Music CDN (Internet Archive) |
 | `ia800107.us.archive.org` | Archive CDN | Music CDN (Internet Archive) |
-| `w.soundcloud.com` | SoundCloud widget | Future music feature (planned but not yet used) |
 
 **Security Improvements:**
 - ✅ Blocks unauthorized iframes (`frame-ancestors 'none'`)
@@ -331,7 +332,6 @@ Positive - CDN caching improves performance and reduces server load.
 **Trade-offs:**
 - ⚠️ `style-src 'unsafe-inline'` required for React/Tailwind (inline styles common)
 - ⚠️ `img-src https:` allows images from any HTTPS source (necessary for user-uploaded content in future)
-- ⚠️ SoundCloud script allowed but not yet used (preemptive for Session 10 music integration)
 
 ---
 
@@ -374,17 +374,17 @@ Positive - CDN caching improves performance and reduces server load.
 | Informational | 4 | Comments, cache, modern app |
 | **Total** | **10** | |
 
-### After (Expected - Post-Fix)
+### After (Updated - December 8, 2025)
 
 | Risk Level | Count | Issues |
 |------------|-------|--------|
 | High | 0 | - |
 | Medium | 0 | All CSP issues resolved |
-| Low | 1 | Cross-domain JS (accepted risk) |
+| Low | 0 | Cross-domain JS removed (SoundCloud cleanup) |
 | Informational | 4 | No action needed |
 | **False Positives** | 1 | Hidden file (SPA behavior) |
 
-**Risk Reduction:** 100% of high-priority issues resolved (4 → 0)
+**Risk Reduction:** 100% of all actionable issues resolved (Medium: 4 → 0, Low: 1 → 0)
 
 ---
 
@@ -441,13 +441,8 @@ https://csp-evaluator.withgoogle.com/
 - ✅ Additional security headers
 
 ### Phase 2: Short-Term (Next 2-4 Weeks)
-- [ ] Add Subresource Integrity (SRI) hashes for external scripts
-  ```html
-  <script src="https://w.soundcloud.com/player/api.js"
-          integrity="sha384-HASH_HERE"
-          crossorigin="anonymous"></script>
-  ```
-- [ ] Remove SoundCloud script if not using (replace with Internet Archive)
+- ✅ ~~Remove SoundCloud script if not using~~ **COMPLETED December 8, 2025**
+- [ ] Add Subresource Integrity (SRI) hashes for any external scripts (if added in future)
 - [ ] Implement nonce-based CSP for inline scripts (advanced Vite config)
 
 ### Phase 3: Medium-Term (Next 2-3 Months)
@@ -502,24 +497,7 @@ https://csp-evaluator.withgoogle.com/
 
 ---
 
-### 3. SoundCloud Script Inclusion
-
-**Risk:** Third-party JavaScript introduces supply chain risk
-
-**Justification:**
-- Planned for Session 10 music integration (widget API)
-- Currently not used but prepared for future
-
-**Mitigation:**
-- CSP restricts to SoundCloud CDN only
-- HTTPS ensures integrity
-- Will add SRI hash when script is actually used
-
-**Accepted:** ✅ Yes (but will remove if not used by Session 15)
-
----
-
-### 4. Hidden File False Positive
+### 3. Hidden File False Positive
 
 **Risk:** ZAP flags `.hg` as exposed hidden file
 
@@ -570,10 +548,17 @@ https://cwe.mitre.org/data/definitions/693.html
 - ✅ All high-priority CSP issues resolved
 - ✅ Comprehensive security headers implemented
 - ✅ False positives documented and accepted
-- ✅ Low-risk issues accepted with justifications
+- ✅ Low-risk SoundCloud issue resolved (December 8, 2025)
+- ✅ **Zero actionable security issues remaining**
 - ✅ Deployment ready pending user approval
 
 **Deployment Status:** Ready to deploy to production (Netlify)
+
+**Recent Updates (December 8, 2025):**
+- SoundCloud script removed from `index.html`
+- AdminSoundCloud component and route removed
+- CSP updated to remove `w.soundcloud.com` from `script-src`
+- Cross-domain JavaScript risk eliminated
 
 ---
 
