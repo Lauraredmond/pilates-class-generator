@@ -192,7 +192,7 @@ export function ClassPlayback({
     voiceoverUrl: currentMovementVoiceover,
     isPaused: isPaused,
     musicVolume: 1.0,      // 100% when no voiceover
-    duckedVolume: 0.35,    // 35% during voiceover
+    duckedVolume: 0.20,    // 20% during voiceover (80% reduction for clearer voiceover)
     fadeTime: 0.5          // 0.5s smooth fade
   });
 

@@ -1,6 +1,6 @@
 /**
- * ClassBuilder - AI-Powered Class Generation
- * Automatically generates Pilates classes using AI
+ * ClassBuilder - Automated Class Generation
+ * Automatically generates Pilates classes using Pilates theory-driven rulesets and student's class history
  */
 
 import { useEffect } from 'react';
@@ -70,7 +70,7 @@ export function ClassBuilder() {
           <div>
             <h1 className="text-3xl font-bold text-cream">Automatically Generate My Class</h1>
             <p className="text-cream/70 mt-1">
-              Let AI create a personalized class based on your preferences
+            Creates a class shaped by your level, history, and classical Pilates principles
             </p>
           </div>
         </div>
