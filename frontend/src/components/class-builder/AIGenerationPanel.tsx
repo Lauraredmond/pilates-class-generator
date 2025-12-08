@@ -276,6 +276,10 @@ export function AIGenerationPanel() {
             muscle_groups: (m as any).muscle_groups || [],
             difficulty_level: m.difficulty_level,
             primary_muscles: m.primary_muscles,
+            // Voiceover audio fields (Session 13.5)
+            voiceover_url: (m as any).voiceover_url,
+            voiceover_duration_seconds: (m as any).voiceover_duration_seconds,
+            voiceover_enabled: (m as any).voiceover_enabled || false,
           };
         }),
         // Section 4: Cool-down
