@@ -56,6 +56,10 @@ export function useAudioDucking({
   const musicElementRef = useRef<HTMLAudioElement | null>(null);
   const voiceoverElementRef = useRef<HTMLAudioElement | null>(null);
 
+  // Track pause state in ref for event listeners (avoid stale closure)
+  const isPausedRef = useRef(isPaused);
+  isPausedRef.current = isPaused;
+
   /**
    * Initialize Web Audio API context and gain nodes
    */
@@ -173,6 +177,14 @@ export function useAudioDucking({
       audio.addEventListener('canplaythrough', () => {
         console.log('🎙️ Voiceover ready:', voiceoverUrl);
         setState(prev => ({ ...prev, voiceoverReady: true }));
+
+        // AUTO-PLAY: Start voiceover immediately if not paused
+        if (!isPausedRef.current && audioContextRef.current?.state !== 'suspended') {
+          console.log('🎙️ Auto-playing voiceover (not paused)');
+          audio.play().catch(err => {
+            console.error('Voiceover auto-play error:', err);
+          });
+        }
       });
 
       audio.addEventListener('error', (e) => {
