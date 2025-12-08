@@ -181,6 +181,16 @@ class SequenceTools:
 
             movements = response.data
 
+            # DEBUG: Log voiceover fields from first 3 movements
+            logger.info("=" * 80)
+            logger.info("🔍 DEBUG: Movements from database (first 3):")
+            for i, m in enumerate(movements[:3]):
+                logger.info(f"  Movement {i+1}: {m.get('name')}")
+                logger.info(f"    voiceover_enabled: {m.get('voiceover_enabled')}")
+                logger.info(f"    voiceover_url: {m.get('voiceover_url', 'NOT PRESENT')[:80] if m.get('voiceover_url') else 'NONE'}")
+                logger.info(f"    voiceover_duration_seconds: {m.get('voiceover_duration_seconds')}")
+            logger.info("=" * 80)
+
             # Filter out excluded movements
             if excluded_ids:
                 movements = [m for m in movements if m['id'] not in excluded_ids]
@@ -291,6 +301,17 @@ class SequenceTools:
             cooldown_copy["duration_seconds"] = teaching_time_seconds
             cooldown_copy["type"] = "movement"
             sequence.append(cooldown_copy)
+
+        # DEBUG: Log voiceover fields in final sequence
+        logger.info("=" * 80)
+        logger.info("🔍 DEBUG: Final sequence (first 3 movements):")
+        for i, m in enumerate(sequence[:3]):
+            logger.info(f"  Movement {i+1}: {m.get('name')}")
+            logger.info(f"    type: {m.get('type')}")
+            logger.info(f"    voiceover_enabled: {m.get('voiceover_enabled')}")
+            logger.info(f"    voiceover_url: {m.get('voiceover_url', 'NOT PRESENT')[:80] if m.get('voiceover_url') else 'NONE'}")
+            logger.info(f"    voiceover_duration_seconds: {m.get('voiceover_duration_seconds')}")
+        logger.info("=" * 80)
 
         logger.info(f"Generated sequence with {len(sequence)} movements (max was {max_movements})")
 
