@@ -1,0 +1,43 @@
+#Yes, Git Production: main@3c0b4f1 is finally working for AI-powered mode. Can we make a note of this in Git comments, claude.md, as a milestone Git repo version? Further, can we add each of the below into future plans, they are ordered by priority
+
+
+
+
+
+
+
+
+
+#Can we note the below as to be picked up in our next session as well.
+4. Add nutrion tracker - I need to provide substantial information here. Ask CC to create a table of food and corresponding metrics. Data is here: /Users/lauraredmond/Documents/Bassline/Admin/7. Product/Nutrition/Nutrition Information-Table-LRAdjusted.xlsx. Then have a rest day plan and a training day plan. For some reason, the numbers file seems to have disaggregated these and they're stored in the training-1 folder in the nutrition folder. Open numberes sheet to observe the formulae in the rest day and training day plans. Simple enough. Might need to screenshot them for CC. Have a think on how to make this really user friendly to use
+
+8. Try Supabase user confirmation again, as prior issues may have been down to temporary issue on supabase side
+
+9. Advanced Delivery Modes - Seek to incorporate at least audio, maybe visual
+9.5 - Rigorous review of Supabase Pilates content. Cross-compare with folder.
+
+10. EU AI Act Compliance Dashboard & Testing
+2.5 Can you tell me how easily it would be to migrate or even copy MVP2 and Supabase contents to AWS environment, given the 1,000 USD credits that I've just received from Amazon. Detail in email content below. Can you tell me would it be a cost saving for me to do this and also solve my user authentication problem with Supabase
+
+11. Security testing
+
+12. Privacy policy
+
+
+****DONE****
+
+1. Can you add one more music style of "Jazz" for playing during sections 1 to 4 of the class. It should be selected via the "Movement music" option which appears on the class builder page. Have that genre point to this music to be played upon selection of Jazz: https://archive.org/details/1-hour-relaxing-jazz-coffee-shop-music-the-best-melodies-that-will-warm-your-heart?
+music_tracks Supabase table needs to be updated, among other things
+
+1.5 ask where the individual prompts for each of the sections appears in the code
+
+2. Ensure only admins can toggle in the settings page to turn on AI-mode so taht you can control cost. Also look at using Redis or ask Claude code for other methods to reduce AI cost
+
+3. Change the appearance of the class builder page. See latest screenshot on desktop. 
+1. Hide manual build tab for now, showing only "Automatically generate my class". For point 1 and 2, only modify https://basslinemvp.netlify.app/class-builder, leave everything else untouched.
+2. Replace current logo next to "Automatically generate my class" with the logo from here: /Users/lauraredmond/Documents/Bassline/Admin/7. Product/Logo/Bassline Logo 2 Yellow.png. Adapt sizing appropriately. For point 1 and 2, only modify https://basslinemvp.netlify.app/class-builder, leave everything else untouched.
+3. Move the generate page at the bottom to the rightmost position in the navigate buttons. Fetch founder story from https://trybassline.netlify.app/founder-story. Override current component content (https://basslinemvp.netlify.app/generate). Apply improved visual layout: cleaner spacing, more inspiring aesthetic, modern typography, aligned with Bassline theme.” For point 3, only modify https://basslinemvp.netlify.app/generate, leave everything else untouched.
+
+5. Add additional button to home page (https://basslinemvp.netlify.app), being "Create my baseline wellness routine" above the "Generate my Pilates class" button . Link the button to the classes page for the moment. Then rename the classes page to "Training & Nutrition Hub". This "Training & Nutrition hub" should then be a placeholder for three more buttons of "1. Connect with a trainer", "2. Log my Training plan", "3. Log my Nutrition plan". These buttons should load placeholders for the moment. 7. Replace the "Classes" navigation icon at teh bottom with "Wellness space" and have the button added in step 5 above navigate to this page
+
+Jane Doe: tikcep-qixdE3-hajhoq

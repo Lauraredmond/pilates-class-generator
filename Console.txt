@@ -1,12 +1,116 @@
-[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-DrTUFrEs.js, line 282)
-[Log] [ClassBuilder] Force fetching movements from API... (index-DrTUFrEs.js, line 282)
-[Log] [ClassBuilder] API response: – 34 – "movements received" (index-DrTUFrEs.js, line 282)
-[Log] [ClassBuilder] Sample movement: – Object (index-DrTUFrEs.js, line 282)
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-B51MBC-B.js, line 279)
+[Log] [ClassBuilder] Force fetching movements from API... (index-B51MBC-B.js, line 279)
+[Log] [ClassBuilder] API response: – 34 – "movements received" (index-B51MBC-B.js, line 279)
+[Log] [ClassBuilder] Sample movement: – Object (index-B51MBC-B.js, line 279)
 Object
-[Log] [AIGenerationPanel] Using authenticated user ID: – "50b40bda-45ce-4c03-8e51-35d76341c192" (index-DrTUFrEs.js, line 282)
+[Log] [AIGenerationPanel] Using authenticated user ID: – "35baa9ad-98a7-4d26-bc74-b6cae1e0d1b2" (index-B51MBC-B.js, line 279)
+[Log] [AIGenerationPanel] StandardAgent orchestration complete: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] [AIGenerationPanel] All 6 sections received from backend: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] [AIGenerationPanel] Class saved to database: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] [AIGenerationPanel] Class saved to database: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🎛️ Web Audio API initialized (index-B51MBC-B.js, line 279)
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🎵 Music ready: – "https://archive.org/download/classical_music_202209/Debussy%20-%20Arabesque.mp3" (index-B51MBC-B.js, line 279)
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🎵 Manual play triggered by user gesture (index-B51MBC-B.js, line 279)
+[Log] ✅ Music started playing from user gesture (index-B51MBC-B.js, line 279)
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🎙️ Voiceover ready: – "https://lixvcebtwusmaipodcpc.supabase.co/storage/v1/object/public/movement-voiceovers/hundred-test-audio.mp4" (index-B51MBC-B.js, line 279)
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
+[Log] 🔍 VOICEOVER DEBUG: – Object (index-B51MBC-B.js, line 279)
+Object
 [Error] Failed to load resource: A server with the specified hostname could not be found. (api.js-4950e94a9243.map, line 0)
-[Error] Network Error: – "timeout of 60000ms exceeded"
-	(anonymous function) (index-DrTUFrEs.js:222:22176)
-[Error] Failed to generate complete class: – G {stack: "@https://basslinemvp.netlify.app/assets/index-DrTU…mvp.netlify.app/assets/index-DrTUFrEs.js:201:2102", message: "timeout of 60000ms exceeded", name: "AxiosError", …}
-G {stack: "@https://basslinemvp.netlify.app/assets/index-DrTU…mvp.netlify.app/assets/index-DrTUFrEs.js:201:2102", message: "timeout of 60000ms exceeded", name: "AxiosError", code: "ECONNABORTED", config: Object, …}G
-	(anonymous function) (index-DrTUFrEs.js:282:12771)
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
+[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, …} (index-B51MBC-B.js, line 279)
+{currentItemType: "movement", currentItemName: "Spine stretch", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…public/movement-voiceovers/hundred-test-audio.mp4", voiceoverDuration: 120, …}Object
