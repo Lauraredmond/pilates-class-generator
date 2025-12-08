@@ -25,7 +25,7 @@
   for = "/*"
   [headers.values]
     # Content Security Policy (CSP) - Comprehensive policy to prevent XSS, clickjacking, and other attacks
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org; media-src 'self' https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org https://lixvcebtwusmaipodcpc.supabase.co blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self' blob:; manifest-src 'self'; child-src 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lixvcebtwusmaipodcpc.supabase.co; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org; media-src 'self' https://archive.org https://ia802809.us.archive.org https://ia800107.us.archive.org https://lixvcebtwusmaipodcpc.supabase.co blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self' blob:; manifest-src 'self'; child-src 'none'; upgrade-insecure-requests"
 
     # Clickjacking protection
     X-Frame-Options = "DENY"
