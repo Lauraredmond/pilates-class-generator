@@ -3104,6 +3104,54 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **Deliverable:** Content audit report + SQL fix scripts
 - Estimated Time: 6-8 hours
 
+#### **9.75 Infrastructure Roadmap: Audio/Video Scaling Strategy** (High Priority - Strategic Planning)
+- **Context:** $1,000 AWS Activate credits + mobile users need audio/video
+- **User Question:** "Will my web app work for mobile end users or will they struggle?"
+- **4-Phase Implementation Plan:**
+  - **Phase 1:** Audio on Supabase (NOW) - 40 files × 2MB = $0.15/month
+    - Record 6 class sections + 34 movements
+    - Use 64 kbps mono MP3 (75% size reduction vs stereo)
+    - Set 1-year cache headers for instant playback
+  - **Phase 2:** Video on AWS with credits (2-3 months) - ~11.7 months free
+    - H.264 encoding at 480p/720p/1080p (adaptive bitrate)
+    - CloudFront CDN for global delivery
+    - Set billing alarms ($50, $100, $200)
+  - **Phase 3:** Migrate to Cloudflare R2 before credits expire (~10 months)
+    - Free egress bandwidth (vs AWS $0.085/GB)
+    - S3-compatible API (easy migration)
+    - Cost reduction: $8.60/month → $1.50/month (82% savings)
+  - **Phase 4:** Scale on R2 with free bandwidth (long-term)
+    - Cost stays flat as user base grows
+    - Video at 10K users/month: $0.15/month (vs $935/month on AWS)
+- **CDN Optimization Strategy:**
+  - Netlify CDN (frontend) - already optimized ✓
+  - Supabase Storage CDN (audio) - update cache headers (1 year TTL)
+  - Internet Archive CDN (music) - already optimized ✓
+  - Cloudflare R2 (future video) - free bandwidth at scale
+  - **Quick Win:** Update Supabase audio cache headers (1-hour → 1-year) for instant playback
+- **Mobile Web App Viability:**
+  - ✅ **Verdict: Web app will work well for mobile users** (native apps not needed until post-PMF)
+  - ✅ Responsive design implemented (Tailwind breakpoints, mobile navigation)
+  - ✅ Audio playback works on iOS Safari + Android Chrome
+  - ✅ Fullscreen class mode optimized for mobile
+  - ✅ Touch-optimized controls (56px buttons exceed WCAG guidelines)
+  - ⚠️ Minor improvements recommended: swipe gestures, landscape mode, PWA features
+  - ⏸️ Native apps wait until post-PMF (when offline classes, Apple Watch, push notifications needed)
+- **Documentation Created:**
+  - `INFRASTRUCTURE_ROADMAP.md` - Complete 4-phase plan with cost projections, timelines, checklists
+  - `CDN_OPTIMIZATION_GUIDE.md` - Performance optimization strategies, cache configurations, monitoring
+  - `MOBILE_WEB_APP_ASSESSMENT.md` - Mobile viability analysis, responsive design audit, UX recommendations
+- **Key Financial Insights:**
+  - AWS credits cover ~11.7 months of video hosting (555 months worth of $1.80/month usage)
+  - Cloudflare R2 free bandwidth saves $921/month at 10K users vs AWS CloudFront
+  - Hybrid strategy (audio on Supabase, video on R2) = $13.66/month at scale vs $935/month all-AWS
+- **Success Metrics:**
+  - Phase 1: All 40 audio files recorded, <$0.20/month cost
+  - Phase 2: 34 videos encoded, AWS billing <$10/month (well within credits)
+  - Phase 3: R2 migration complete, cost reduced to $1.50/month
+  - Phase 4: Infrastructure cost <2% of monthly revenue at scale
+- Estimated Time: Documentation complete (now), implementation 40+ hours over 12 months
+
 #### **10. EU AI Act Compliance Dashboard & Testing** (Low Priority - Future Session)
 - **Decision Transparency View:** Display all AI agent decisions for user
 - **Bias Monitoring Dashboard:** Track model drift, fairness metrics, alerts
