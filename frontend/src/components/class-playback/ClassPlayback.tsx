@@ -172,6 +172,17 @@ export function ClassPlayback({
       ? currentItem.voiceover_url
       : undefined;
 
+  // DEBUG: Log voiceover detection for troubleshooting
+  console.log('🔍 VOICEOVER DEBUG:', {
+    currentItemType: currentItem?.type,
+    currentItemName: currentItem?.type === 'movement' ? (currentItem as any).name : 'N/A',
+    voiceoverEnabled: currentItem?.type === 'movement' ? (currentItem as PlaybackMovement).voiceover_enabled : undefined,
+    voiceoverUrl: currentItem?.type === 'movement' ? (currentItem as PlaybackMovement).voiceover_url : undefined,
+    voiceoverDuration: currentItem?.type === 'movement' ? (currentItem as PlaybackMovement).voiceover_duration_seconds : undefined,
+    detectedVoiceover: currentMovementVoiceover,
+    fullMovementObject: currentItem?.type === 'movement' ? currentItem : 'Not a movement'
+  });
+
   // Get current track URL from playlist
   const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
 
