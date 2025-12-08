@@ -34,9 +34,9 @@ class PreparationScript(BaseModel):
     narrative: str
     key_principles: List[str]
     duration_seconds: int
-    breathing_pattern: Optional[str] = None
-    breathing_focus: Optional[str] = None
-    difficulty_level: str
+    voiceover_url: Optional[str] = None
+    voiceover_duration: Optional[int] = None
+    voiceover_enabled: Optional[bool] = False
     created_at: datetime
     updated_at: datetime
 
@@ -51,6 +51,9 @@ class WarmupRoutine(BaseModel):
     contraindications: List[str]
     modifications: Optional[Any] = None  # JSONB - can be array or object
     difficulty_level: str
+    voiceover_url: Optional[str] = None
+    voiceover_duration: Optional[int] = None
+    voiceover_enabled: Optional[bool] = False
     created_at: datetime
     updated_at: datetime
 
@@ -64,6 +67,9 @@ class CooldownSequence(BaseModel):
     duration_seconds: int
     target_muscles: List[str]
     recovery_focus: str
+    voiceover_url: Optional[str] = None
+    voiceover_duration: Optional[int] = None
+    voiceover_enabled: Optional[bool] = False
     created_at: datetime
     updated_at: datetime
 
@@ -76,6 +82,9 @@ class ClosingMeditationScript(BaseModel):
     breathing_guidance: Optional[str] = None
     duration_seconds: int
     post_intensity: str  # 'high', 'moderate', 'low'
+    voiceover_url: Optional[str] = None
+    voiceover_duration: Optional[int] = None
+    voiceover_enabled: Optional[bool] = False
     created_at: datetime
     updated_at: datetime
 
@@ -88,6 +97,9 @@ class ClosingHomecareAdvice(BaseModel):
     actionable_tips: List[str]
     duration_seconds: int
     related_to_class_focus: bool
+    voiceover_url: Optional[str] = None
+    voiceover_duration: Optional[int] = None
+    voiceover_enabled: Optional[bool] = False
     created_at: datetime
     updated_at: datetime
 
@@ -98,7 +110,6 @@ class ClosingHomecareAdvice(BaseModel):
 
 @router.get("/preparation", response_model=List[PreparationScript])
 async def get_preparation_scripts(
-    difficulty: Optional[str] = None,
     script_type: Optional[str] = None,
     user_id: str = Depends(get_current_user_id)
 ):
@@ -106,14 +117,11 @@ async def get_preparation_scripts(
     Get all preparation scripts
 
     Optional filters:
-    - difficulty: Beginner, Intermediate, Advanced
     - script_type: centering, breathing, principles
     """
     try:
         query = supabase.table("preparation_scripts").select("*")
 
-        if difficulty:
-            query = query.eq("difficulty_level", difficulty)
         if script_type:
             query = query.eq("script_type", script_type)
 

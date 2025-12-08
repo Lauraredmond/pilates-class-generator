@@ -47,6 +47,10 @@ export interface PlaybackPreparation {
   duration_seconds: number;
   breathing_pattern?: string;
   breathing_focus?: string;
+  // Voiceover audio
+  voiceover_url?: string;
+  voiceover_duration?: number;
+  voiceover_enabled?: boolean;
 }
 
 export interface PlaybackWarmup {
@@ -56,6 +60,10 @@ export interface PlaybackWarmup {
   movements: any; // JSONB - simple movements like neck rolls
   duration_seconds: number;
   focus_area: string;
+  // Voiceover audio
+  voiceover_url?: string;
+  voiceover_duration?: number;
+  voiceover_enabled?: boolean;
 }
 
 export interface PlaybackMovement {
@@ -111,6 +119,10 @@ export interface PlaybackCooldown {
   duration_seconds: number;
   target_muscles: string[];
   recovery_focus: string;
+  // Voiceover audio
+  voiceover_url?: string;
+  voiceover_duration?: number;
+  voiceover_enabled?: boolean;
 }
 
 export interface PlaybackMeditation {
@@ -120,6 +132,10 @@ export interface PlaybackMeditation {
   duration_seconds: number;
   breathing_guidance?: string;
   meditation_theme: string;
+  // Voiceover audio
+  voiceover_url?: string;
+  voiceover_duration?: number;
+  voiceover_enabled?: boolean;
 }
 
 export interface PlaybackHomeCare {
@@ -129,6 +145,10 @@ export interface PlaybackHomeCare {
   actionable_tips: string[];
   duration_seconds: number;
   focus_area: string;
+  // Voiceover audio
+  voiceover_url?: string;
+  voiceover_duration?: number;
+  voiceover_enabled?: boolean;
 }
 
 export type PlaybackItem =
@@ -166,21 +186,25 @@ export function ClassPlayback({
   const currentItem = items[currentIndex];
   const totalItems = items.length;
 
-  // Get current movement's voiceover URL (if it's a movement with voiceover enabled)
-  const currentMovementVoiceover =
-    currentItem?.type === 'movement' && currentItem.voiceover_enabled
+  // Get current item's voiceover URL (works for all section types with voiceover_enabled)
+  const currentVoiceover =
+    currentItem && 'voiceover_enabled' in currentItem && currentItem.voiceover_enabled
       ? currentItem.voiceover_url
       : undefined;
 
   // DEBUG: Log voiceover detection for troubleshooting
   console.log('🔍 VOICEOVER DEBUG:', {
     currentItemType: currentItem?.type,
-    currentItemName: currentItem?.type === 'movement' ? (currentItem as any).name : 'N/A',
-    voiceoverEnabled: currentItem?.type === 'movement' ? (currentItem as PlaybackMovement).voiceover_enabled : undefined,
-    voiceoverUrl: currentItem?.type === 'movement' ? (currentItem as PlaybackMovement).voiceover_url : undefined,
-    voiceoverDuration: currentItem?.type === 'movement' ? (currentItem as PlaybackMovement).voiceover_duration_seconds : undefined,
-    detectedVoiceover: currentMovementVoiceover,
-    fullMovementObject: currentItem?.type === 'movement' ? currentItem : 'Not a movement'
+    currentItemName: currentItem && 'name' in currentItem ? (currentItem as any).name :
+                     currentItem && 'script_name' in currentItem ? (currentItem as any).script_name :
+                     currentItem && 'routine_name' in currentItem ? (currentItem as any).routine_name :
+                     currentItem && 'sequence_name' in currentItem ? (currentItem as any).sequence_name :
+                     currentItem && 'advice_name' in currentItem ? (currentItem as any).advice_name : 'N/A',
+    voiceoverEnabled: 'voiceover_enabled' in currentItem ? currentItem.voiceover_enabled : undefined,
+    voiceoverUrl: 'voiceover_url' in currentItem ? currentItem.voiceover_url : undefined,
+    voiceoverDuration: 'voiceover_duration' in currentItem ? (currentItem as any).voiceover_duration : undefined,
+    detectedVoiceover: currentVoiceover,
+    fullItemObject: currentItem
   });
 
   // Get current track URL from playlist
@@ -189,7 +213,7 @@ export function ClassPlayback({
   // Use dual audio hook for music + voiceover with automatic ducking
   const audioState = useAudioDucking({
     musicUrl: currentMusicUrl,
-    voiceoverUrl: currentMovementVoiceover,
+    voiceoverUrl: currentVoiceover,
     isPaused: isPaused,
     musicVolume: 1.0,      // 100% when no voiceover
     duckedVolume: 0.20,    // 20% during voiceover (80% reduction for clearer voiceover)
@@ -443,10 +467,10 @@ export function ClassPlayback({
                 {audioState.currentVolume < 1.0 && ' (ducked for voiceover)'}
               </p>
 
-              {/* Show if voiceover is active for this movement */}
-              {currentMovementVoiceover && (
+              {/* Show if voiceover is active for this section */}
+              {currentVoiceover && (
                 <p className="text-green-400">
-                  🎙️ Voiceover enabled for this movement
+                  🎙️ Voiceover enabled for this section
                 </p>
               )}
 
