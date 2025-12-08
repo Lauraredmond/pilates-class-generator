@@ -720,7 +720,6 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         try:
             prep_response = supabase.table('preparation_scripts') \
                 .select('*') \
-                .eq('difficulty_level', request.class_plan.difficulty_level) \
                 .limit(1) \
                 .execute()
 
