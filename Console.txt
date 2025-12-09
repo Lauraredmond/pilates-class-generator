@@ -1,59 +1,24 @@
-[Log] [AIGenerationPanel] Using authenticated user ID: – "35baa9ad-98a7-4d26-bc74-b6cae1e0d1b2" (index-BGvwr0OM.js, line 279)
-[Log] [AIGenerationPanel] StandardAgent orchestration complete: – {mode: "DEFAULT (Database)", movementCount: 10, transitionCount: 9, …} (index-BGvwr0OM.js, line 279)
-{mode: "DEFAULT (Database)", movementCount: 10, transitionCount: 9, totalItems: 19, orchestrationTimeMs: 996.0711002349854}Object
-[Log] [AIGenerationPanel] All 6 sections received from backend: – {hasPreparation: true, hasWarmup: true, hasCooldown: true, …} (index-BGvwr0OM.js, line 279)
-{hasPreparation: true, hasWarmup: true, hasCooldown: true, hasHomecare: true, hasMeditation: true, …}Object
-[Log] [AIGenerationPanel] Class saved to database: – {class_history_id: "3abf38ec-064d-4c62-882c-5e0dd6fe2029", classes_completed: 24, experience_level: "intermediate", …} (index-BGvwr0OM.js, line 279)
-{class_history_id: "3abf38ec-064d-4c62-882c-5e0dd6fe2029", classes_completed: 24, experience_level: "intermediate", message: "Class saved successfully! Total classes: 24"}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🎛️ Web Audio API initialized (index-BGvwr0OM.js, line 279)
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🎵 Music ready: – "https://archive.org/download/classical_music_202209/Debussy%20-%20Arabesque.mp3" (index-BGvwr0OM.js, line 279)
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🎵 Manual play triggered by user gesture (index-BGvwr0OM.js, line 279)
-[Log] ✅ Music started playing from user gesture (index-BGvwr0OM.js, line 279)
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, …} (index-BGvwr0OM.js, line 279)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: undefined, voiceoverUrl: undefined, voiceoverDuration: undefined, …}Object
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-CYoN25a0.js, line 289)
+[Log] [ClassBuilder] Force fetching movements from API... (index-CYoN25a0.js, line 289)
+[Log] [ClassBuilder] API response: – 34 – "movements received" (index-CYoN25a0.js, line 289)
+[Log] [ClassBuilder] Sample movement: – Object (index-CYoN25a0.js, line 289)
+Object
+[Log] [AIGenerationPanel] Using authenticated user ID: – "c9d2e79e-9b6a-4d90-9295-e3e53338c4ec" (index-CYoN25a0.js, line 289)
+[Log] [AIGenerationPanel] StandardAgent orchestration complete: – Object (index-CYoN25a0.js, line 289)
+Object
+[Log] [AIGenerationPanel] All 6 sections received from backend: – Object (index-CYoN25a0.js, line 289)
+Object
+[Error] Failed to load resource: the server responded with a status of 500 () (save-completed, line 0)
+[Error] API Error: – Object
+Object
+	(anonymous function) (index-CYoN25a0.js:229:4030)
+[Error] [AIGenerationPanel] Failed to save class: – G
+G
+	(anonymous function) (index-CYoN25a0.js:289:16850)
+[Error] Failed to load resource: the server responded with a status of 500 () (save-completed, line 0)
+[Error] API Error: – {detail: "Failed to save completed class: {'message': \"Could…code': 'PGRST204', 'hint': None, 'details': None}"}
+{detail: "Failed to save completed class: {'message': \"Could…code': 'PGRST204', 'hint': None, 'details': None}"}Object
+	(anonymous function) (index-CYoN25a0.js:229:4030)
+[Error] [AIGenerationPanel] Failed to save class: – G {stack: "ux@https://basslinemvp.netlify.app/assets/index-CY…mvp.netlify.app/assets/index-CYoN25a0.js:211:2102", message: "Request failed with status code 500", name: "AxiosError", …}
+G {stack: "ux@https://basslinemvp.netlify.app/assets/index-CY…mvp.netlify.app/assets/index-CYoN25a0.js:211:2102", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}G
+	(anonymous function) (index-CYoN25a0.js:289:16850)
