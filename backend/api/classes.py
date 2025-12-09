@@ -1049,21 +1049,20 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         # ==============================================================================
         # 1. SAVE TO CLASS_PLANS TABLE (for "Saved Classes" in GDPR export)
         # ==============================================================================
+        # NOTE: class_plans table has these JSONB fields for movements:
+        # - warm_up_movements, main_sequence, cool_down_movements (from schema)
+        # But we'll use the simplified 'movements' field that other code uses
         class_plan_entry = {
             'title': request.class_name or f"{request.difficulty} Class - {today}",
             'user_id': request.user_id,
             'duration_minutes': request.duration_minutes,
             'difficulty_level': request.difficulty,
             'notes': f"Accepted & saved from AI generation - {len(movements_only)} movements",
-            'movements': request.movements_snapshot,  # JSONB with full sequence
-            'muscle_balance': request.muscle_balance,
-            'validation_status': {
-                'valid': True,
-                'safety_score': 1.0,
-                'warnings': []
-            },
-            'created_at': now.isoformat(),
-            'updated_at': now.isoformat()
+            'total_movements': len(movements_only),
+            'main_sequence': request.movements_snapshot,  # Use main_sequence instead of movements
+            'generated_by_ai': True,
+            'sequence_validation_passed': True,
+            'status': 'ready'  # Class is complete and ready
         }
 
         plan_response = supabase.table('class_plans').insert(class_plan_entry).execute()
