@@ -89,8 +89,9 @@ export function FounderStory() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-              This is just the beginning. I'm working on nutrition recording and tracking as well as exercise tracking to help you integrate achievable goals into
-              your routine. 
+              This is the Minimum Viable Product to prove product market fit. I'm working on enhancing existing features as well as building new ones such as 
+              a centralised network of instructors, a tracker to help better manage nutrition and 
+              exercise planning and monitoring to help you integrate achievable goals into your routine. 
             </p>
   
           </div>
