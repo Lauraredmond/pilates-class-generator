@@ -1013,15 +1013,20 @@ class SaveCompletedClassResponse(BaseModel):
 @router.post("/save-completed", response_model=SaveCompletedClassResponse)
 async def save_completed_class(request: SaveCompletedClassRequest):
     """
-    Save a completed class to database (called when user clicks "Accept")
+    Save a completed class to database (called when user clicks "Accept & Add to Class")
 
     This endpoint:
-    1. Saves to class_history table with movements_snapshot
-    2. Increments classes_completed in user_preferences
-    3. Updates movement_usage for each movement
-    4. Returns updated user stats
+    1. Saves to class_plans table (appears in "Saved Classes" in GDPR export)
+    2. Saves to class_history table linked to class_plan (appears in "Class History")
+    3. Increments classes_completed in user_preferences
+    4. Updates movement_usage for each movement
+    5. Returns updated user stats
 
-    Session 13: This enables analytics tracking and movement variety features
+    GDPR Compliance: Classes saved via this endpoint will appear in both
+    "Saved Classes" and "Class History" sections of the Article 15 data export.
+
+    Session 13: Movement variety tracking
+    Session 14: GDPR data export fix (save to both tables)
     """
     try:
         now = datetime.now()
@@ -1042,10 +1047,41 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         unique_muscle_groups = list(set(all_muscle_groups))
 
         # ==============================================================================
-        # 1. SAVE TO CLASS_HISTORY TABLE (for analytics)
+        # 1. SAVE TO CLASS_PLANS TABLE (for "Saved Classes" in GDPR export)
+        # ==============================================================================
+        class_plan_entry = {
+            'title': request.class_name or f"{request.difficulty} Class - {today}",
+            'user_id': request.user_id,
+            'duration_minutes': request.duration_minutes,
+            'difficulty_level': request.difficulty,
+            'notes': f"Accepted & saved from AI generation - {len(movements_only)} movements",
+            'movements': request.movements_snapshot,  # JSONB with full sequence
+            'muscle_balance': request.muscle_balance,
+            'validation_status': {
+                'valid': True,
+                'safety_score': 1.0,
+                'warnings': []
+            },
+            'created_at': now.isoformat(),
+            'updated_at': now.isoformat()
+        }
+
+        plan_response = supabase.table('class_plans').insert(class_plan_entry).execute()
+
+        if not plan_response.data:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to save class to class_plans"
+            )
+
+        class_plan_id = plan_response.data[0]['id']
+        logger.info(f"✅ Saved class to class_plans (ID: {class_plan_id}) for user {request.user_id}")
+
+        # ==============================================================================
+        # 2. SAVE TO CLASS_HISTORY TABLE (for analytics, linked to class_plan)
         # ==============================================================================
         class_history_entry = {
-            'class_plan_id': None,  # Not associated with a saved plan
+            'class_plan_id': class_plan_id,  # Link to the saved plan
             'user_id': request.user_id,
             'taught_date': today,
             'actual_duration_minutes': request.duration_minutes,
@@ -1067,10 +1103,10 @@ async def save_completed_class(request: SaveCompletedClassRequest):
             )
 
         class_history_id = history_response.data[0]['id']
-        logger.info(f"✅ Saved class to class_history (ID: {class_history_id}) for user {request.user_id}")
+        logger.info(f"✅ Saved class to class_history (ID: {class_history_id}) linked to class_plan {class_plan_id}")
 
         # ==============================================================================
-        # 2. UPDATE USER_PREFERENCES (increment classes_completed)
+        # 3. UPDATE USER_PREFERENCES (increment classes_completed)
         # ==============================================================================
         # Fetch current preferences
         prefs_response = supabase.table('user_preferences') \
@@ -1119,7 +1155,7 @@ async def save_completed_class(request: SaveCompletedClassRequest):
             logger.info(f"✅ Created user preferences: classes_completed=1, experience_level=beginner")
 
         # ==============================================================================
-        # 3. UPDATE MOVEMENT_USAGE TABLE (for favorite movement tracking)
+        # 4. UPDATE MOVEMENT_USAGE TABLE (for favorite movement tracking)
         # ==============================================================================
         for movement in movements_only:
             movement_id = movement.get('id')
