@@ -24,7 +24,7 @@ export function Generate() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-            I created this two step fitness app to help people discover the reward and accessibility in fitness. 
+            I created this two step fitness app to help people discover the reward and accessibility of fitness. 
             By combining human support, dynamic exercise planning, and music as an enhancer, the platform is built to make fitness more enjoyable 
             — and ultimately, more sustainable.
             </p>
@@ -49,7 +49,7 @@ export function Generate() {
             Cut to age 19, when I had a rude awakening — I realised my fitness was starting to dwindle. I decided to do the unthinkable and join an institution I felt I had no business being in: I signed up for the college gym and tried a cardio class.
             </p>
             <p>
-            Over the weeks that followed, I fell in love with the fitness formats the gym had to offer. That brave step I took at 19 changed my life and laid the path for a lifelong love affair with exercise. I only wish I had discovered alternative methods earlier.
+            Over the weeks that followed, I fell in love with the fitness formats the gym had to offer. That step I took at 19 changed my life and laid the path for a lifelong love affair with exercise. I only wish I had discovered alternative methods earlier.
             </p>
             <p>
             It's for that reason I want to help others experience the transformative effects of exercise and movement — and discover that there's more than one way to fall in love with fitness.
@@ -89,9 +89,8 @@ export function Generate() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-              This is just the beginning. We're working on nutrition tracking, wellness routines, audio-guided
-              classes, and so much more. But we'll never lose sight of what matters: empowering you to move
-              with intention, strength, and grace.
+              This is just the beginning. I'm working on nutrition recording and tracking as well as exercise tracking to help you integrate achievable goals into
+              your routine. 
             </p>
   
           </div>
