@@ -2888,36 +2888,71 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 ## 📚 FUTURE PLANS
 
-### Prioritized Enhancement Roadmap (December 4, 2025)
+### Prioritized Enhancement Roadmap (December 8, 2025)
 
 **Priority Order (User-Specified):**
 
-#### **1. Fix Playback Crash & Verify AI Mode** (CRITICAL - Session 13 Follow-Up)
-- **Issue:** Playback crashes with `TypeError: undefined is not an object (evaluating 'e.script_name.toUpperCase')`
-- **Status:** Fixes deployed (commits 30443f5, 4f30dc1, 1ec68d9) but needs verification
-- **What Was Fixed:**
-  - Added null safety to MovementDisplay.tsx (optional chaining on 5 fields)
-  - Fixed meditation tool return format (script_name, script_text, breathing_guidance)
-  - Added LLM generation to warmup and cooldown tools
-  - Fixed NameError in meditation tool (intensity → class_intensity)
-- **Verification Tasks:**
-  1. Test AI mode class generation end-to-end
-  2. Confirm all 6 sections AI-generated (not database fallback)
-  3. Verify playback renders without crash
-  4. Check Render logs show no errors
-  5. Confirm processing time ~60-90 seconds (not 120+)
-  6. Validate no "undefined" displayed in any section
-- **Expected Outcome:** AI mode generates unique content for all 6 sections, playback works flawlessly
-- **Phase 1 Optimization (COMPLETED December 4, 2025):**
-  - ✅ Redis caching implemented (24-hour TTL, graceful degradation)
-  - ✅ GPT-3.5-turbo for warmup/cooldown (85% cheaper, 2x faster)
-  - ✅ GPT-4-turbo maintained for preparation/homecare (quality-critical)
-  - ✅ Frontend timeout increased to 90s (handles cache MISS scenarios)
-  - ✅ Upstash Redis integrated (free tier, TLS-enabled)
-  - **Performance:** 67s first request → <5s cached requests (93% faster!)
-  - **Cost Reduction:** ~50-60% on first request, ~80-90% on cached requests
-  - Commits: 7e20ccc, e292791, fa72990, [current]
-- Estimated Time: 1-2 hours (testing & any final fixes)
+#### **0. NEXT SESSION START: Voiceover Implementation & Mobile Fixes** (CRITICAL - December 9, 2025)
+
+**START NEXT SESSION BY REVIEWING:**
+- 📋 **`docs/VOICEOVER_IMPLEMENTATION_CHECKLIST.md`** - Complete implementation guide for remaining voiceover sections
+
+**Session Tasks:**
+
+1. **Complete Voiceover Implementation for Remaining 4 Sections:**
+   - Warmup routines (migration 019 ready to run)
+   - Cooldown sequences
+   - Closing meditation scripts
+   - Closing homecare advice
+   - Follow checklist for each section to avoid data transformation bugs
+   - All backend/frontend code already updated - just need audio uploads
+
+2. **Fix Mobile Device Issues:**
+   - **Issue:** DPIA and ROPA compliance reports not viewable on mobile devices
+   - **Location:** Settings page → Compliance dashboard
+   - **Symptoms:** Reports likely not responsive or have layout issues on mobile
+   - **Fix Required:**
+     - Check responsive CSS for compliance dashboard
+     - Test report viewing on mobile viewport
+     - Ensure tables/charts are mobile-friendly
+     - Add horizontal scroll if needed for wide tables
+   - **Files to Check:**
+     - `frontend/src/pages/Settings.tsx` (compliance dashboard UI)
+     - `frontend/src/components/compliance/*` (if separate components exist)
+
+3. **Continue with Existing Roadmap:**
+   - Then proceed with tasks #1-12 below
+
+**Estimated Time:** 3-4 hours
+
+---
+
+#### **1. Voiceover Support for Class Sections** (✅ COMPLETED - December 8, 2025)
+- **Goal:** Enable voiceover playback for all 6 class section types (preparation, warmup, cooldown, meditation, homecare)
+- **Status:** Infrastructure complete, preparation voiceover tested and working
+- **What Was Completed:**
+  - ✅ Database schema: Added voiceover columns to 5 tables (migration 016)
+  - ✅ Backend models: Updated all 5 Pydantic models with voiceover fields
+  - ✅ Frontend interfaces: Updated all 5 TypeScript interfaces in ClassPlayback.tsx
+  - ✅ Generic detection: Voiceover detection works for all section types
+  - ✅ Data transformation: Fixed AIGenerationPanel.tsx to map voiceover fields (commit 0e2b76f)
+  - ✅ Preparation tested: Voiceover plays, music ducks to 20%, returns to 100% after
+  - ✅ Documentation: Created VOICEOVER_IMPLEMENTATION_CHECKLIST.md for remaining sections
+  - ✅ Audio settings: MP3, 22050 Hz, 145 kbps, Mono
+- **Bug Fixed:**
+  - Root cause: AIGenerationPanel.tsx wasn't mapping voiceover fields from backend to playback items
+  - Same issue as movements had earlier - data transformation layer missing
+  - Fix: Added voiceover field mapping for all 5 sections (lines 248-335)
+- **Commits:**
+  - 62581da: Database migration + models + interfaces
+  - 39897aa: Fixed difficulty_level filter bug
+  - 0e2b76f: Fixed voiceover field mapping (critical bug)
+  - 8162789: Added implementation checklist
+- **Remaining Work:**
+  - Record 4 more voiceovers (warmup, cooldown, meditation, homecare)
+  - Upload to Supabase Storage
+  - Update database with URLs/durations
+  - Migration 019 ready for warmup narrative update
 
 #### **2. Add Jazz Music Style** (High Priority)
 - Add "Jazz" to musical stylistic periods
