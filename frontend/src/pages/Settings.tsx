@@ -62,6 +62,11 @@ export function Settings() {
   const [complianceError, setComplianceError] = useState('');
   const [complianceSuccess, setComplianceSuccess] = useState('');
 
+  // Report modal state (for mobile-friendly viewing)
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportContent, setReportContent] = useState('');
+  const [reportType, setReportType] = useState<'dpia' | 'ropa' | 'ai'>('dpia');
+
   const handleGoalToggle = (goal: string) => {
     setEditedProfile(prev => ({
       ...prev,
@@ -260,25 +265,12 @@ export function Settings() {
         }
       });
 
-      // Open the HTML report in a new tab
-      const reportWindow = window.open('', '_blank');
-      if (reportWindow) {
-        reportWindow.document.write(response.data);
-        reportWindow.document.close(); // Finish loading the document
-      } else {
-        // Fallback: If popup was blocked, download as HTML file
-        const dataBlob = new Blob([response.data], { type: 'text/html' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `bassline-my-data-${new Date().toISOString().split('T')[0]}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
+      // Show report in modal (mobile-friendly)
+      setReportContent(response.data);
+      setReportType('dpia');
+      setShowReportModal(true);
 
-      setComplianceSuccess('Your data report has been opened in a new tab');
+      setComplianceSuccess('Your data report is ready to view');
       setTimeout(() => setComplianceSuccess(''), 5000);
     } catch (error: any) {
       setComplianceError(error.response?.data?.detail || 'Failed to download data');
@@ -301,25 +293,12 @@ export function Settings() {
         }
       });
 
-      // Open the HTML report in a new tab
-      const reportWindow = window.open('', '_blank');
-      if (reportWindow) {
-        reportWindow.document.write(response.data);
-        reportWindow.document.close(); // Finish loading the document
-      } else {
-        // Fallback: If popup was blocked, download as HTML file
-        const dataBlob = new Blob([response.data], { type: 'text/html' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `bassline-processing-activities-${new Date().toISOString().split('T')[0]}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
+      // Show report in modal (mobile-friendly)
+      setReportContent(response.data);
+      setReportType('ropa');
+      setShowReportModal(true);
 
-      setComplianceSuccess('Processing activities report opened in new tab');
+      setComplianceSuccess('Processing activities report is ready to view');
       setTimeout(() => setComplianceSuccess(''), 5000);
     } catch (error: any) {
       setComplianceError(error.response?.data?.detail || 'Failed to load ROPA report');
@@ -342,25 +321,12 @@ export function Settings() {
         }
       });
 
-      // Open the HTML report in a new tab
-      const reportWindow = window.open('', '_blank');
-      if (reportWindow) {
-        reportWindow.document.write(response.data);
-        reportWindow.document.close(); // Finish loading the document
-      } else {
-        // Fallback: If popup was blocked, download as HTML file
-        const dataBlob = new Blob([response.data], { type: 'text/html' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `bassline-ai-decisions-${new Date().toISOString().split('T')[0]}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
+      // Show report in modal (mobile-friendly)
+      setReportContent(response.data);
+      setReportType('ai');
+      setShowReportModal(true);
 
-      setComplianceSuccess('AI decisions report opened in new tab');
+      setComplianceSuccess('AI decisions report is ready to view');
       setTimeout(() => setComplianceSuccess(''), 5000);
     } catch (error: any) {
       setComplianceError(error.response?.data?.detail || 'Failed to load AI decisions');
@@ -1060,6 +1026,80 @@ export function Settings() {
                 className="flex-1 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-2 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isChangingPassword ? 'Changing...' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compliance Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-0 md:p-4 z-50 overflow-hidden">
+          <div className="bg-charcoal rounded-none md:rounded-lg shadow-2xl w-full h-full md:max-w-6xl md:max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-cream/20 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <Shield className="w-6 h-6 text-burgundy" />
+                <h2 className="text-xl md:text-2xl font-bold text-cream">
+                  {reportType === 'dpia' && 'My Data Report (GDPR Article 15)'}
+                  {reportType === 'ropa' && 'Processing Activities (GDPR Article 30)'}
+                  {reportType === 'ai' && 'AI Decisions (EU AI Act)'}
+                </h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportContent('');
+                }}
+                className="text-cream/60 hover:text-cream transition-colors p-2"
+                aria-label="Close report"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Content - Scrollable Report */}
+            <div className="flex-1 overflow-auto p-4 md:p-6 bg-white">
+              <div
+                className="prose prose-sm md:prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: reportContent }}
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '1.6',
+                  overflowX: 'auto'
+                }}
+              />
+            </div>
+
+            {/* Modal Footer - Download Option */}
+            <div className="flex items-center justify-between p-4 md:p-6 border-t border-cream/20 bg-charcoal/95 flex-shrink-0">
+              <p className="text-cream/60 text-sm">
+                {reportType === 'dpia' && 'Your personal data export (GDPR compliant)'}
+                {reportType === 'ropa' && 'Record of processing activities'}
+                {reportType === 'ai' && 'Transparency report for AI decisions'}
+              </p>
+              <button
+                onClick={() => {
+                  // Download HTML file as fallback option
+                  const dataBlob = new Blob([reportContent], { type: 'text/html' });
+                  const url = URL.createObjectURL(dataBlob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  const filename = reportType === 'dpia'
+                    ? `bassline-my-data-${new Date().toISOString().split('T')[0]}.html`
+                    : reportType === 'ropa'
+                    ? `bassline-processing-activities-${new Date().toISOString().split('T')[0]}.html`
+                    : `bassline-ai-decisions-${new Date().toISOString().split('T')[0]}.html`;
+                  link.download = filename;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex items-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-2 rounded font-semibold transition-smooth"
+              >
+                <Download className="w-4 h-4" />
+                Download HTML
               </button>
             </div>
           </div>
