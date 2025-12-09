@@ -368,15 +368,38 @@ def _generate_ropa_section(ropa: List) -> str:
 
     html = f'<p><strong>Total Transactions:</strong> {len(ropa)}</p>'
     html += '<table class="data-table"><thead><tr>'
-    html += '<th>Date & Time</th><th>Transaction Type</th><th>System</th><th>Purpose</th>'
+    html += '<th>Date & Time</th><th>Action</th><th>Description</th><th>System</th>'
     html += '</tr></thead><tbody>'
 
     for entry in ropa[:50]:  # Show last 50 entries
+        # Format timestamp
+        timestamp = entry.get('timestamp', 'N/A')
+        try:
+            timestamp = datetime.fromisoformat(timestamp).strftime('%b %d, %Y %I:%M %p')
+        except:
+            pass
+
+        tx_type = entry.get('transaction_type', 'N/A').upper()
+
+        # Get descriptive notes (enhanced by new PII logger)
+        notes = entry.get('notes', 'No description available')
+
+        # Highlight Article 9 health data in red if present
+        if '⚠️' in notes or 'Article 9' in notes:
+            notes = f'<span style="color: #721c24; font-weight: 600;">{notes}</span>'
+
+        # Get PII fields affected
+        pii_fields = entry.get('pii_fields', [])
+        if isinstance(pii_fields, list) and len(pii_fields) > 0:
+            fields_summary = f" ({', '.join(pii_fields[:3])}{'...' if len(pii_fields) > 3 else ''})"
+        else:
+            fields_summary = ""
+
         html += f'<tr>'
-        html += f'<td>{entry.get("timestamp", "N/A")}</td>'
-        html += f'<td><span class="badge badge-info">{entry.get("transaction_type", "N/A").upper()}</span></td>'
+        html += f'<td style="white-space: nowrap;">{timestamp}</td>'
+        html += f'<td><span class="badge badge-info">{tx_type}</span>{fields_summary}</td>'
+        html += f'<td style="max-width: 400px;">{notes}</td>'
         html += f'<td>{entry.get("processing_system", "N/A")}</td>'
-        html += f'<td>{entry.get("purpose", "N/A")}</td>'
         html += f'</tr>'
 
     html += '</tbody></table>'
@@ -776,9 +799,9 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
                     <thead>
                         <tr>
                             <th>Date & Time</th>
-                            <th>Transaction Type</th>
+                            <th>Action</th>
+                            <th>Description</th>
                             <th>System</th>
-                            <th>Purpose</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -794,12 +817,26 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
             tx_type = activity.get('transaction_type', 'N/A').upper()
             badge_class = f"badge-{activity.get('transaction_type', 'read').lower()}"
 
+            # Get descriptive notes (enhanced by new PII logger)
+            notes = activity.get('notes', 'No description available')
+
+            # Highlight Article 9 health data in red if present
+            if '⚠️' in notes or 'Article 9' in notes:
+                notes = f'<span style="color: #721c24; font-weight: 600;">{notes}</span>'
+
+            # Get PII fields affected
+            pii_fields = activity.get('pii_fields', [])
+            if isinstance(pii_fields, list) and len(pii_fields) > 0:
+                fields_summary = f" ({', '.join(pii_fields[:3])}{'...' if len(pii_fields) > 3 else ''})"
+            else:
+                fields_summary = ""
+
             html += f"""
                         <tr>
-                            <td>{timestamp}</td>
-                            <td><span class="badge {badge_class}">{tx_type}</span></td>
+                            <td style="white-space: nowrap;">{timestamp}</td>
+                            <td><span class="badge {badge_class}">{tx_type}</span>{fields_summary}</td>
+                            <td style="max-width: 400px;">{notes}</td>
                             <td>{activity.get('processing_system', 'N/A')}</td>
-                            <td>{activity.get('purpose', 'N/A')}</td>
                         </tr>
             """
 
