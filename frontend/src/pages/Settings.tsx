@@ -226,6 +226,40 @@ export function Settings() {
     }
   };
 
+  const handleDownloadMyDataJSON = async () => {
+    setComplianceLoading(true);
+    setComplianceError('');
+    setComplianceSuccess('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+      // Request JSON format for machine-readable data
+      const response = await axios.get(`${API_BASE_URL}/api/compliance/my-data?format=json`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Download JSON file
+      const dataBlob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `bassline-my-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setComplianceSuccess('Your data has been downloaded as JSON');
+      setTimeout(() => setComplianceSuccess(''), 5000);
+    } catch (error: any) {
+      setComplianceError(error.response?.data?.detail || 'Failed to download JSON data');
+    } finally {
+      setComplianceLoading(false);
+    }
+  };
+
   const handleViewROPAReport = async () => {
     setComplianceLoading(true);
     setComplianceError('');
@@ -727,8 +761,23 @@ export function Settings() {
                 <div className="flex items-center gap-3">
                   <FileDown className="w-5 h-5 text-burgundy" />
                   <div className="text-left">
-                    <div className="font-medium text-cream">Download My Data</div>
+                    <div className="font-medium text-cream">Download My Data (HTML)</div>
                     <div className="text-sm text-cream/60">Export all your personal data (GDPR Article 15)</div>
+                  </div>
+                </div>
+                <Download className="w-5 h-5 text-cream/40" />
+              </button>
+
+              <button
+                onClick={handleDownloadMyDataJSON}
+                disabled={complianceLoading}
+                className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-center gap-3">
+                  <FileDown className="w-5 h-5 text-burgundy" />
+                  <div className="text-left">
+                    <div className="font-medium text-cream">Download My Data (JSON)</div>
+                    <div className="text-sm text-cream/60">Machine-readable data export for data portability</div>
                   </div>
                 </div>
                 <Download className="w-5 h-5 text-cream/40" />

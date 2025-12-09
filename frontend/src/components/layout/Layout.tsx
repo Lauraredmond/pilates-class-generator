@@ -89,7 +89,7 @@ export function Layout({ children }: LayoutProps) {
                 to={path}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                   isActive
-                    ? 'bg-energy-gradient text-cream shadow-md'
+                    ? 'bg-burgundy text-cream shadow-md font-semibold'
                     : 'text-cream/70 hover:text-cream hover:bg-cream/10'
                 }`}
               >
