@@ -179,14 +179,14 @@ export function AIGenerationPanel() {
         duration_minutes: lastFormData.duration,
         movements_snapshot: results.sequence.movements,  // Full sequence (movements + transitions)
         muscle_balance: results.sequence.muscle_balance,
-        class_name: 'AI Generated Class',
+        class_name: 'Automatically Generated Class',
       });
 
       console.log('[AIGenerationPanel] Class saved to database:', saveResponse.data);
 
       // Add generated sequence to current class (frontend state)
       setCurrentClass({
-        name: 'AI Generated Class',
+        name: 'Automatically Generated Class',
         description: `${lastFormData.difficulty} level - ${lastFormData.duration} minutes`,
         target_duration_minutes: lastFormData.duration,
         difficulty_level: lastFormData.difficulty,
