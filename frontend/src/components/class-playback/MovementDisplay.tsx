@@ -162,27 +162,32 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
         style={{ scrollBehavior: 'auto' }}
       >
         <div className="max-w-4xl w-full">
-          <div className="text-center space-y-8">
+          {/* Mobile: space-y-4, Desktop: space-y-8 */}
+          <div className="text-center space-y-4 md:space-y-8">
             {narrative.split('\n').map((line, index) => {
               if (index === 0 || line.includes(':')) {
                 return (
-                  <h1 key={index} className="text-5xl font-bold text-cream mb-8 tracking-wide">
+                  // Mobile: mb-4, Desktop: mb-8
+                  <h1 key={index} className="text-5xl font-bold text-cream mb-4 md:mb-8 tracking-wide">
                     {line}
                   </h1>
                 );
               }
               if (line.trim() === '') {
-                return <div key={index} className="h-8" />;
+                // Mobile: h-4, Desktop: h-8
+                return <div key={index} className="h-4 md:h-8" />;
               }
               if (line.startsWith('•')) {
                 return (
-                  <p key={index} className="text-3xl text-cream/90 leading-loose font-light px-8 text-left">
+                  // Mobile: leading-normal, Desktop: leading-loose
+                  <p key={index} className="text-3xl text-cream/90 leading-normal md:leading-loose font-light px-8 text-left">
                     {line}
                   </p>
                 );
               }
               return (
-                <p key={index} className="text-4xl text-cream/90 leading-loose font-light px-8">
+                // Mobile: leading-normal, Desktop: leading-loose
+                <p key={index} className="text-4xl text-cream/90 leading-normal md:leading-loose font-light px-8">
                   {line}
                 </p>
               );
@@ -305,12 +310,14 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
       style={{ scrollBehavior: 'auto' }}
     >
       <div className="max-w-4xl w-full">
-        <div className="text-center space-y-8">
+        {/* Mobile: space-y-4, Desktop: space-y-8 */}
+        <div className="text-center space-y-4 md:space-y-8">
           {narrative.split('\n').map((line, index) => {
             // Title styling
             if (index === 0) {
               return (
-                <h1 key={index} className="text-6xl font-bold text-cream mb-12 tracking-wide">
+                // Mobile: mb-6, Desktop: mb-12
+                <h1 key={index} className="text-6xl font-bold text-cream mb-6 md:mb-12 tracking-wide">
                   {line}
                 </h1>
               );
@@ -318,13 +325,15 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
 
             // Empty lines create spacing
             if (line.trim() === '') {
-              return <div key={index} className="h-8" />;
+              // Mobile: h-4, Desktop: h-8
+              return <div key={index} className="h-4 md:h-8" />;
             }
 
             // Safety warnings in yellow
             if (line.startsWith('IMPORTANT:')) {
               return (
-                <p key={index} className="text-3xl text-yellow-400 leading-loose font-light px-8">
+                // Mobile: leading-normal, Desktop: leading-loose
+                <p key={index} className="text-3xl text-yellow-400 leading-normal md:leading-loose font-light px-8">
                   {line}
                 </p>
               );
@@ -332,7 +341,8 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
 
             // Regular narrative text
             return (
-              <p key={index} className="text-4xl text-cream/90 leading-loose font-light px-8">
+              // Mobile: leading-normal, Desktop: leading-loose
+              <p key={index} className="text-4xl text-cream/90 leading-normal md:leading-loose font-light px-8">
                 {line}
               </p>
             );
