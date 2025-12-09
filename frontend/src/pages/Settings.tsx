@@ -934,7 +934,7 @@ export function Settings() {
 
       {/* Compliance Report Modal */}
       {showReportModal && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-0 md:p-4 z-50 overflow-hidden">
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-0 md:p-4 z-[60] overflow-hidden">
           <div className="bg-charcoal rounded-none md:rounded-lg shadow-2xl w-full h-full md:max-w-6xl md:max-h-[90vh] flex flex-col">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-cream/20 flex-shrink-0">
