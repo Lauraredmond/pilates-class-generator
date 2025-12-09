@@ -5,9 +5,8 @@ Handles beta tester feedback submissions and email notifications
 
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
-from backend.models.feedback import FeedbackSubmission, FeedbackResponse
-from backend.api.auth import get_current_user
-from backend.models.user import User
+from models.feedback import FeedbackSubmission, FeedbackResponse
+from utils.auth import get_current_user_id
 from supabase import create_client, Client
 import os
 from datetime import datetime
@@ -24,7 +23,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 @router.post("/submit", response_model=FeedbackResponse)
 async def submit_feedback(
     feedback: FeedbackSubmission,
-    current_user: User = Depends(get_current_user)
+    user_id: str = Depends(get_current_user_id)
 ):
     """
     Submit beta tester feedback
@@ -42,7 +41,7 @@ async def submit_feedback(
         # Store feedback in Supabase
         feedback_data = {
             "id": feedback_id,
-            "user_id": current_user.id,
+            "user_id": user_id,
             "name": feedback.name,
             "email": feedback.email,
             "country": feedback.country,
@@ -76,14 +75,14 @@ async def submit_feedback(
 
 @router.get("/my-submissions")
 async def get_my_feedback(
-    current_user: User = Depends(get_current_user)
+    user_id: str = Depends(get_current_user_id)
 ):
     """Get all feedback submissions for the current user"""
 
     try:
         result = supabase.table("beta_feedback")\
             .select("*")\
-            .eq("user_id", current_user.id)\
+            .eq("user_id", user_id)\
             .order("created_at", desc=True)\
             .execute()
 
