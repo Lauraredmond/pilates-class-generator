@@ -470,6 +470,11 @@ async def export_my_data(
         # Saved classes (class_plans table)
         try:
             classes = supabase_admin.table('class_plans').select('*').eq('user_id', user_id).execute()
+            print(f"📊 DEBUG: Fetching class_plans for user_id={user_id}")
+            print(f"📊 DEBUG: Found {len(classes.data)} classes")
+            if classes.data:
+                print(f"📊 DEBUG: Sample class data: {classes.data[0]}")
+
             # Transform data to match expected format
             transformed_classes = []
             for cls in classes.data:
@@ -479,13 +484,21 @@ async def export_my_data(
                     'created_at': cls.get('created_at', 'N/A')
                 })
             user_data['saved_classes'] = transformed_classes
+            print(f"📊 DEBUG: Transformed {len(transformed_classes)} classes")
         except Exception as e:
-            print(f"Error fetching class_plans: {e}")
+            print(f"❌ Error fetching class_plans: {e}")
+            import traceback
+            traceback.print_exc()
             user_data['saved_classes'] = []
 
         # Class history
         try:
             history = supabase_admin.table('class_history').select('*, class_plans!inner(title)').eq('user_id', user_id).execute()
+            print(f"📊 DEBUG: Fetching class_history for user_id={user_id}")
+            print(f"📊 DEBUG: Found {len(history.data)} history entries")
+            if history.data:
+                print(f"📊 DEBUG: Sample history data: {history.data[0]}")
+
             # Transform data to match expected format
             transformed_history = []
             for item in history.data:
@@ -495,8 +508,11 @@ async def export_my_data(
                     'duration': item.get('actual_duration_minutes', 'N/A')
                 })
             user_data['class_history'] = transformed_history
+            print(f"📊 DEBUG: Transformed {len(transformed_history)} history entries")
         except Exception as e:
-            print(f"Error fetching class_history: {e}")
+            print(f"❌ Error fetching class_history: {e}")
+            import traceback
+            traceback.print_exc()
             user_data['class_history'] = []
 
         # ROPA audit log (what we've done with their data) - use admin client to bypass RLS
