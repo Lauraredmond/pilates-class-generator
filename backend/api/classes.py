@@ -999,7 +999,7 @@ class SaveCompletedClassRequest(BaseModel):
     duration_minutes: int
     movements_snapshot: List[dict]  # Full sequence with movements + transitions
     muscle_balance: dict
-    class_name: Optional[str] = "AI Generated Class"
+    class_name: Optional[str] = "Automatically Generated Class"
 
 
 class SaveCompletedClassResponse(BaseModel):
