@@ -518,6 +518,12 @@ export function Settings() {
                 <p className="text-cream">{user.age_range}</p>
               </div>
             )}
+            {user?.gender_identity && (
+              <div>
+                <label className="text-sm text-cream/60">Gender Identity</label>
+                <p className="text-cream">{user.gender_identity}</p>
+              </div>
+            )}
             {user?.country && (
               <div>
                 <label className="text-sm text-cream/60">Country</label>
