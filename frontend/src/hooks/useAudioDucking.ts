@@ -24,6 +24,7 @@ interface AudioDuckingState {
   musicReady: boolean;
   voiceoverReady: boolean;
   isPlaying: boolean;
+  voiceoverPlaying: boolean;  // NEW: Track when voiceover is actually playing
   currentVolume: number;
   error: string | null;
 }
@@ -41,6 +42,7 @@ export function useAudioDucking({
     musicReady: false,
     voiceoverReady: false,
     isPlaying: false,
+    voiceoverPlaying: false,  // NEW: Initially false
     currentVolume: musicVolume,
     error: null
   });
@@ -198,12 +200,14 @@ export function useAudioDucking({
       // Duck music when voiceover starts
       audio.addEventListener('play', () => {
         console.log('🎙️ Voiceover started - ducking music to', duckedVolume);
+        setState(prev => ({ ...prev, voiceoverPlaying: true }));  // NEW: Track voiceover playing
         duckMusic(duckedVolume);
       });
 
       // Restore music volume when voiceover ends
       audio.addEventListener('ended', () => {
         console.log('🎙️ Voiceover ended - restoring music to', musicVolume);
+        setState(prev => ({ ...prev, voiceoverPlaying: false }));  // NEW: Track voiceover stopped
         duckMusic(musicVolume);
       });
 
