@@ -1,4 +1,4 @@
-export function Generate() {
+export function FounderStory() {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Hero Section with Logo */}
