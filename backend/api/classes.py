@@ -1057,7 +1057,7 @@ async def save_completed_class(request: SaveCompletedClassRequest):
             'user_id': request.user_id,
             'duration_minutes': request.duration_minutes,
             'difficulty_level': request.difficulty,
-            'notes': f"Accepted & saved from AI generation - {len(movements_only)} movements",
+            'description': f"Accepted & saved from AI generation - {len(movements_only)} movements",  # Changed from 'notes' to 'description'
             'total_movements': len(movements_only),
             'main_sequence': request.movements_snapshot,  # Use main_sequence instead of movements
             'generated_by_ai': True,
