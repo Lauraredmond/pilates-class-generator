@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -810,6 +810,20 @@ export function Settings() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Beta Tester Feedback Link */}
+      <div className="my-8 text-center">
+        <button
+          onClick={() => navigate('/beta-feedback')}
+          className="inline-flex items-center gap-3 bg-burgundy hover:bg-burgundy/90 text-cream px-6 py-4 rounded-lg font-semibold transition-smooth shadow-lg hover:shadow-xl"
+        >
+          <MessageSquare className="w-6 h-6" />
+          <span>Beta Tester Feedback & Queries</span>
+        </button>
+        <p className="text-cream/60 text-sm mt-3">
+          Share your experience, report issues, or ask questions about Bassline Pilates
+        </p>
       </div>
 
       {/* Danger Zone - Delete Account */}
