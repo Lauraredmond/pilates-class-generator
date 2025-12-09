@@ -147,7 +147,7 @@ export function Profile() {
             {!isEditingProfile && (
               <button
                 onClick={() => setIsEditingProfile(true)}
-                className="flex items-center gap-2 text-burgundy hover:text-burgundy/80 transition-smooth"
+                className="flex items-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-2 rounded font-semibold transition-smooth"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
