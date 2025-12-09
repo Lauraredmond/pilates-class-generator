@@ -4,7 +4,7 @@ import { Layout } from './components/layout/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Home } from './pages/Home';
 import { Classes } from './pages/Classes';
-import { Generate } from './pages/Generate';
+import { FounderStory } from './pages/FounderStory';
 import { ClassBuilder } from './pages/ClassBuilder';
 import { Analytics } from './pages/Analytics';
 import { Profile } from './pages/Profile';
@@ -126,7 +126,7 @@ function App() {
         <Route path="/generate" element={
           <ProtectedRoute>
             <Layout>
-              <Generate />
+              <FounderStory />
             </Layout>
           </ProtectedRoute>
         } />
