@@ -21,8 +21,8 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
     // Reset scroll to top when item changes
     container.scrollTop = 0;
 
-    // Calculate scroll speed based on duration (19% faster for voiceover sync)
-    const duration = item.duration_seconds * 1000 * 0.81; // Convert to ms, 19% faster (0.9 * 0.9)
+    // Calculate scroll speed based on duration (25% faster for voiceover sync)
+    const duration = item.duration_seconds * 1000 * 0.75; // Convert to ms, 25% faster (0.81 * 0.93)
     const scrollHeight = container.scrollHeight - container.clientHeight;
     const scrollSpeed = scrollHeight / duration; // pixels per ms
 
