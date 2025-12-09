@@ -1,42 +1,17 @@
 /**
  * MovementDisplay Component
  * Teleprompter-style auto-scrolling narrative display
- * Synchronized with voiceover playback
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { PlaybackItem } from './ClassPlayback';
 
 interface MovementDisplayProps {
   item: PlaybackItem;
-  voiceoverPlaying: boolean;  // NEW: Whether voiceover is currently playing
-  hasVoiceover: boolean;      // NEW: Whether this section has voiceover
 }
 
-export function MovementDisplay({ item, voiceoverPlaying, hasVoiceover }: MovementDisplayProps) {
+export function MovementDisplay({ item }: MovementDisplayProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [showNarrative, setShowNarrative] = useState(false);  // NEW: Control narrative visibility
-
-  // NEW: Synchronize narrative display with voiceover playback
-  useEffect(() => {
-    // Reset narrative visibility when item changes
-    setShowNarrative(false);
-
-    if (hasVoiceover) {
-      // Wait for voiceover to start playing
-      if (voiceoverPlaying) {
-        console.log('✅ Voiceover playing - showing narrative');
-        setShowNarrative(true);
-      }
-    } else {
-      // No voiceover - show narrative after short delay to prevent flash
-      const timeout = setTimeout(() => {
-        console.log('✅ No voiceover - showing narrative after delay');
-        setShowNarrative(true);
-      }, 300);  // 300ms delay for smoother transition
-      return () => clearTimeout(timeout);
-    }
-  }, [item, voiceoverPlaying, hasVoiceover]);
 
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
   useEffect(() => {
@@ -180,24 +155,6 @@ export function MovementDisplay({ item, voiceoverPlaying, hasVoiceover }: Moveme
 
   // Helper function to render teleprompter-style content
   function renderTeleprompter(narrative: string) {
-    // Show loading message while waiting for voiceover
-    if (!showNarrative) {
-      return (
-        <div className="h-full flex items-center justify-center px-8">
-          <div className="max-w-4xl w-full text-center">
-            <div className="animate-pulse">
-              <p className="text-3xl text-cream/60 mb-4">
-                {hasVoiceover ? '🎙️ Preparing voiceover...' : 'Loading...'}
-              </p>
-              <p className="text-xl text-cream/40">
-                {hasVoiceover ? 'Narrative will display when audio starts' : 'Please wait'}
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div
         ref={scrollContainerRef}
@@ -341,24 +298,6 @@ export function MovementDisplay({ item, voiceoverPlaying, hasVoiceover }: Moveme
   const narrative = buildNarrative();
 
   // Movement display - True teleprompter with auto-scrolling narrative
-  // Show loading message while waiting for voiceover
-  if (!showNarrative) {
-    return (
-      <div className="h-full flex items-center justify-center px-8">
-        <div className="max-w-4xl w-full text-center">
-          <div className="animate-pulse">
-            <p className="text-3xl text-cream/60 mb-4">
-              {hasVoiceover ? '🎙️ Preparing voiceover...' : 'Loading...'}
-            </p>
-            <p className="text-xl text-cream/40">
-              {hasVoiceover ? 'Narrative will display when audio starts' : 'Please wait'}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       ref={scrollContainerRef}
