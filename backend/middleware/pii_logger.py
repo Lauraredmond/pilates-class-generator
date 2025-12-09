@@ -12,12 +12,49 @@ from utils.supabase_admin import supabase_admin  # Use admin client to bypass RL
 class PIILogger:
     """Middleware to log all PII transactions for GDPR ROPA compliance"""
 
-    # Define which fields are considered PII
-    PII_FIELDS = [
-        'email', 'full_name', 'age_range', 'gender_identity',
-        'country', 'phone_number', 'address', 'pilates_experience',
-        'goals', 'ip_address'
-    ]
+    # Cache for PII field registry to avoid repeated database queries
+    _pii_registry_cache = None
+    _cache_timestamp = None
+    _cache_ttl_seconds = 3600  # Refresh cache every hour
+
+    @staticmethod
+    async def get_pii_registry() -> Dict[str, Dict[str, Any]]:
+        """
+        Get PII field registry from database with caching
+
+        Returns:
+            Dictionary mapping "table.column" to PII classification metadata
+        """
+        from datetime import datetime
+
+        # Check if cache is still valid
+        if PIILogger._pii_registry_cache and PIILogger._cache_timestamp:
+            cache_age = (datetime.utcnow() - PIILogger._cache_timestamp).total_seconds()
+            if cache_age < PIILogger._cache_ttl_seconds:
+                return PIILogger._pii_registry_cache
+
+        try:
+            # Fetch all PII classifications from registry
+            result = supabase_admin.table('pii_field_registry') \
+                .select('*') \
+                .execute()
+
+            # Build lookup dictionary
+            registry = {}
+            for field in result.data:
+                key = f"{field['table_name']}.{field['column_name']}"
+                registry[key] = field
+
+            # Update cache
+            PIILogger._pii_registry_cache = registry
+            PIILogger._cache_timestamp = datetime.utcnow()
+
+            return registry
+
+        except Exception as e:
+            print(f"⚠️  Failed to load PII registry: {e}")
+            # Return empty dict as fallback - logging will continue but without PII detection
+            return {}
 
     @staticmethod
     async def log_pii_access(
@@ -95,87 +132,178 @@ class PIILogger:
             return None
 
     @staticmethod
-    def detect_pii_fields(data: Dict[str, Any]) -> List[str]:
+    async def detect_pii_fields(data: Dict[str, Any], table_name: Optional[str] = None) -> Dict[str, Any]:
         """
-        Automatically detect which PII fields are in a data dict
+        Automatically detect which PII fields are in a data dict using registry
 
         Args:
             data: Dictionary of data to check for PII
+            table_name: Optional table name for more accurate matching
 
         Returns:
-            List of PII field names found in the data
+            Dictionary with:
+            - 'fields': List of PII field names found
+            - 'categories': Dict mapping field to PII category
+            - 'has_health_data': Boolean indicating Article 9 special category data
+            - 'health_fields': List of health data fields (Article 9)
         """
         if not data:
-            return []
+            return {
+                'fields': [],
+                'categories': {},
+                'has_health_data': False,
+                'health_fields': []
+            }
+
+        # Get PII registry
+        registry = await PIILogger.get_pii_registry()
 
         detected_fields = []
+        field_categories = {}
+        health_fields = []
 
-        for field in PIILogger.PII_FIELDS:
-            # Check both snake_case and camelCase variants
-            if field in data or field.replace('_', '') in data:
-                detected_fields.append(field)
+        # Check each field in the data against registry
+        for field_name in data.keys():
+            # Try exact match with table name if provided
+            if table_name:
+                registry_key = f"{table_name}.{field_name}"
+                if registry_key in registry:
+                    classification = registry[registry_key]
+                    if classification['pii_category'] != 'NONE':
+                        detected_fields.append(field_name)
+                        field_categories[field_name] = classification['pii_category']
 
-        return detected_fields
+                        # Check for Article 9 health data
+                        if classification['pii_category'] == 'HEALTH' or classification['is_sensitive']:
+                            health_fields.append(field_name)
+                    continue
+
+            # Try matching field name across all tables (less accurate)
+            matched = False
+            for registry_key, classification in registry.items():
+                if field_name in registry_key and classification['pii_category'] != 'NONE':
+                    detected_fields.append(field_name)
+                    field_categories[field_name] = classification['pii_category']
+
+                    # Check for Article 9 health data
+                    if classification['pii_category'] == 'HEALTH' or classification['is_sensitive']:
+                        health_fields.append(field_name)
+                    matched = True
+                    break
+
+        return {
+            'fields': detected_fields,
+            'categories': field_categories,
+            'has_health_data': len(health_fields) > 0,
+            'health_fields': health_fields
+        }
 
     @staticmethod
     async def log_profile_read(user_id: str, request: Request, profile_data: Dict[str, Any]):
         """Convenience method for logging profile reads"""
-        pii_fields = PIILogger.detect_pii_fields(profile_data)
+        pii_detection = await PIILogger.detect_pii_fields(profile_data, table_name='user_profiles')
 
-        if pii_fields:
+        if pii_detection['fields']:
+            # Build descriptive notes
+            notes = 'User viewed their own profile'
+            if pii_detection['has_health_data']:
+                notes += f" (includes Article 9 health data: {', '.join(pii_detection['health_fields'])})"
+
             await PIILogger.log_pii_access(
                 user_id=user_id,
                 transaction_type='read',
-                pii_fields=pii_fields,
+                pii_fields=pii_detection['fields'],
                 purpose='contract',  # User accessing their own data per Terms of Service
                 processing_system='profile_management',
                 request=request,
-                notes='User viewed their own profile'
+                notes=notes
             )
 
     @staticmethod
     async def log_profile_update(user_id: str, request: Request, updated_fields: Dict[str, Any]):
         """Convenience method for logging profile updates"""
-        pii_fields = PIILogger.detect_pii_fields(updated_fields)
+        pii_detection = await PIILogger.detect_pii_fields(updated_fields, table_name='user_profiles')
 
-        if pii_fields:
+        if pii_detection['fields']:
+            # Build descriptive notes with field names and categories
+            field_descriptions = []
+            for field in pii_detection['fields']:
+                category = pii_detection['categories'].get(field, 'UNKNOWN')
+                field_descriptions.append(f"{field} ({category})")
+
+            notes = f"User updated profile fields: {', '.join(field_descriptions)}"
+
+            # Add Article 9 warning if health data modified
+            if pii_detection['has_health_data']:
+                notes += f" ⚠️ Includes Article 9 special category health data"
+
             await PIILogger.log_pii_access(
                 user_id=user_id,
                 transaction_type='update',
-                pii_fields=pii_fields,
+                pii_fields=pii_detection['fields'],
                 purpose='contract',
                 processing_system='profile_management',
                 request=request,
-                notes=f'User updated profile fields: {", ".join(pii_fields)}'
+                notes=notes
             )
 
     @staticmethod
     async def log_registration(user_id: str, request: Request, registration_data: Dict[str, Any]):
         """Convenience method for logging new user registration"""
-        pii_fields = PIILogger.detect_pii_fields(registration_data)
+        pii_detection = await PIILogger.detect_pii_fields(registration_data, table_name='user_profiles')
 
-        if pii_fields:
+        if pii_detection['fields']:
+            # Build descriptive notes
+            notes = f"New user registration with fields: {', '.join(pii_detection['fields'])}"
+
+            # Add Article 9 warning if health data collected
+            if pii_detection['has_health_data']:
+                notes += f" ⚠️ Includes Article 9 special category health data (requires explicit consent)"
+
             await PIILogger.log_pii_access(
                 user_id=user_id,
                 transaction_type='create',
-                pii_fields=pii_fields,
+                pii_fields=pii_detection['fields'],
                 purpose='consent',  # User consented during registration
                 processing_system='authentication',
                 request=request,
-                notes='New user registration'
+                notes=notes
             )
 
     @staticmethod
     async def log_account_deletion(user_id: str, request: Request):
         """Convenience method for logging account deletion"""
+        # Get all PII fields for user_profiles table from registry
+        registry = await PIILogger.get_pii_registry()
+
+        # Extract all user_profiles PII fields
+        deleted_fields = []
+        has_health_data = False
+        for key, classification in registry.items():
+            if 'user_profiles' in key and classification['pii_category'] != 'NONE':
+                field_name = classification['column_name']
+                deleted_fields.append(field_name)
+
+                # Check for Article 9 health data
+                if classification['pii_category'] == 'HEALTH' or classification['is_sensitive']:
+                    has_health_data = True
+
+        # Fallback if registry not available
+        if not deleted_fields:
+            deleted_fields = ['email', 'full_name', 'age_range', 'gender_identity', 'country', 'goals']
+
+        notes = 'User exercised GDPR Article 17 right to erasure (account deletion) - all user data deleted'
+        if has_health_data:
+            notes += ' ⚠️ Includes Article 9 special category health data'
+
         await PIILogger.log_pii_access(
             user_id=user_id,
             transaction_type='delete',
-            pii_fields=['email', 'full_name', 'age_range', 'gender_identity', 'country', 'goals'],
+            pii_fields=deleted_fields,
             purpose='consent',  # User exercising right to erasure
             processing_system='authentication',
             request=request,
-            notes='User exercised GDPR right to erasure (account deletion)'
+            notes=notes
         )
 
     @staticmethod
