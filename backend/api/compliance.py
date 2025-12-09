@@ -191,7 +191,7 @@ def generate_html_report(user_data: Dict[str, Any]) -> str:
             <div class="info-box">
                 <strong>ℹ️ About This Report:</strong> This document contains all personal data we hold about you.
                 You have the right to access, correct, delete, or transfer this data at any time.
-                For questions, contact: {metadata.get('data_controller_contact', 'support@bassline.com')}
+                For questions, contact: {metadata.get('data_controller_contact', 'laura.redm@gmail.com')}
             </div>
 
             <!-- PROFILE SECTION -->
@@ -259,7 +259,7 @@ def generate_html_report(user_data: Dict[str, Any]) -> str:
                 </div>
                 <div class="data-item">
                     <span class="label">Right to Object</span>
-                    <span class="value">Contact {metadata.get('data_controller_contact', 'support@bassline.com')}</span>
+                    <span class="value">Contact {metadata.get('data_controller_contact', 'laura.redm@gmail.com')}</span>
                 </div>
             </div>
 
@@ -467,18 +467,36 @@ async def export_my_data(
         preferences = supabase_admin.table('user_preferences').select('*').eq('user_id', user_id).execute()
         user_data['preferences'] = preferences.data[0] if preferences.data else None
 
-        # Saved classes (if table exists)
+        # Saved classes (class_plans table)
         try:
-            classes = supabase_admin.table('saved_classes').select('*').eq('user_id', user_id).execute()
-            user_data['saved_classes'] = classes.data
-        except:
+            classes = supabase_admin.table('class_plans').select('*').eq('user_id', user_id).execute()
+            # Transform data to match expected format
+            transformed_classes = []
+            for cls in classes.data:
+                transformed_classes.append({
+                    'name': cls.get('title', 'Untitled Class'),
+                    'duration': cls.get('duration_minutes', 'N/A'),
+                    'created_at': cls.get('created_at', 'N/A')
+                })
+            user_data['saved_classes'] = transformed_classes
+        except Exception as e:
+            print(f"Error fetching class_plans: {e}")
             user_data['saved_classes'] = []
 
-        # Class history (if table exists)
+        # Class history
         try:
-            history = supabase_admin.table('class_history').select('*').eq('user_id', user_id).execute()
-            user_data['class_history'] = history.data
-        except:
+            history = supabase_admin.table('class_history').select('*, class_plans!inner(title)').eq('user_id', user_id).execute()
+            # Transform data to match expected format
+            transformed_history = []
+            for item in history.data:
+                transformed_history.append({
+                    'class_name': item.get('class_plans', {}).get('title', 'N/A') if isinstance(item.get('class_plans'), dict) else 'N/A',
+                    'completed_at': item.get('taught_date', 'N/A'),
+                    'duration': item.get('actual_duration_minutes', 'N/A')
+                })
+            user_data['class_history'] = transformed_history
+        except Exception as e:
+            print(f"Error fetching class_history: {e}")
             user_data['class_history'] = []
 
         # ROPA audit log (what we've done with their data) - use admin client to bypass RLS
@@ -494,7 +512,7 @@ async def export_my_data(
             'export_date': datetime.utcnow().isoformat(),
             'export_format': format,
             'data_controller': 'Bassline Pilates',
-            'data_controller_contact': 'support@bassline.com',  # Update with real contact
+            'data_controller_contact': 'laura.redm@gmail.com',
             'gdpr_article': 'Article 15 - Right to Access',
             'gdpr_article_url': 'https://gdpr-info.eu/art-15-gdpr/',
             'total_records': {
@@ -1069,7 +1087,7 @@ async def get_ropa_report(
                 },
                 'right_to_object': {
                     'description': 'You can object to certain data processing',
-                    'how_to_exercise': 'Contact support@bassline.com'  # Update with real email
+                    'how_to_exercise': 'Contact laura.redm@gmail.com'
                 },
                 'right_to_withdraw_consent': {
                     'description': 'You can withdraw consent for data processing',
@@ -1077,7 +1095,7 @@ async def get_ropa_report(
                 }
             },
             'data_protection_officer': {
-                'contact': 'dpo@bassline.com',  # Update with real contact
+                'contact': 'laura.redm@gmail.com',
                 'role': 'Handles data protection inquiries and complaints'
             },
             'supervisory_authority': {
@@ -1474,7 +1492,7 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
                     </li>
                     <li>
                         <strong>Right to Human Review</strong>
-                        <p>You can request human review of any AI decision by contacting support@bassline.com</p>
+                        <p>You can request human review of any AI decision by contacting laura.redm@gmail.com</p>
                     </li>
                     <li>
                         <strong>Right to Not Be Subject to Automated Decision-Making</strong>
@@ -1604,7 +1622,7 @@ async def get_privacy_policy():
         'full_policy_url': 'https://bassline.com/privacy',  # Update with real URL
         'gdpr_compliant': True,
         'eu_ai_act_compliant': True,
-        'contact': 'privacy@bassline.com'  # Update with real email
+        'contact': 'laura.redm@gmail.com'
     }
 
 
