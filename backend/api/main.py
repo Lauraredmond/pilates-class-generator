@@ -10,7 +10,7 @@ from loguru import logger
 import time
 
 # Import routers
-from api import movements, agents, classes, analytics, soundcloud_auth, soundcloud_api, auth, users, compliance, music, beta_errors, class_sections, movement_levels
+from api import movements, agents, classes, analytics, soundcloud_auth, soundcloud_api, auth, users, compliance, music, beta_errors, class_sections, movement_levels, feedback
 
 app = FastAPI(
     title="Pilates Class Planner API",
@@ -90,6 +90,7 @@ app.include_router(compliance.router, tags=["Compliance"])  # GDPR & AI Act comp
 app.include_router(music.router, tags=["Music"])  # Music integration (Musopen/FreePD)
 app.include_router(class_sections.router, tags=["Class Sections"])  # Session 11: 6 class sections
 app.include_router(beta_errors.router, prefix="/api", tags=["Beta Errors"])  # Beta error tracking (admin only)
+app.include_router(feedback.router, tags=["Feedback"])  # Beta tester feedback & queries
 
 
 # Global exception handler

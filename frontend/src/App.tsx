@@ -9,6 +9,7 @@ import { ClassBuilder } from './pages/ClassBuilder';
 import { Analytics } from './pages/Analytics';
 import { Profile } from './pages/Profile';
 import { Settings } from './pages/Settings';
+import { BetaFeedback } from './pages/BetaFeedback';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ResetPassword } from './pages/ResetPassword';
@@ -155,6 +156,13 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <Settings />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/beta-feedback" element={
+          <ProtectedRoute>
+            <Layout>
+              <BetaFeedback />
             </Layout>
           </ProtectedRoute>
         } />
