@@ -245,6 +245,10 @@ export function AIGenerationPanel() {
           duration_seconds: (results as any).completeClass.preparation.duration_seconds,
           breathing_pattern: (results as any).completeClass.preparation.breathing_pattern,
           breathing_focus: (results as any).completeClass.preparation.breathing_focus,
+          // Voiceover audio fields
+          voiceover_url: (results as any).completeClass.preparation.voiceover_url,
+          voiceover_duration: (results as any).completeClass.preparation.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.preparation.voiceover_enabled || false,
         },
         // Section 2: Warm-up
         {
@@ -254,6 +258,10 @@ export function AIGenerationPanel() {
           movements: (results as any).completeClass.warmup.movements || [],
           duration_seconds: (results as any).completeClass.warmup.duration_seconds,
           focus_area: (results as any).completeClass.warmup.focus_area,
+          // Voiceover audio fields
+          voiceover_url: (results as any).completeClass.warmup.voiceover_url,
+          voiceover_duration: (results as any).completeClass.warmup.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.warmup.voiceover_enabled || false,
         },
         // Section 3: Main movements (AI-generated, includes movements + transitions)
         // Use results.sequence.movements which contains BOTH movements and transitions from AI
@@ -295,6 +303,10 @@ export function AIGenerationPanel() {
           duration_seconds: (results as any).completeClass.cooldown.duration_seconds,
           target_muscles: (results as any).completeClass.cooldown.target_muscles || [],
           recovery_focus: (results as any).completeClass.cooldown.recovery_focus,
+          // Voiceover audio fields
+          voiceover_url: (results as any).completeClass.cooldown.voiceover_url,
+          voiceover_duration: (results as any).completeClass.cooldown.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.cooldown.voiceover_enabled || false,
         },
         // Section 5: Closing Meditation
         {
@@ -304,6 +316,10 @@ export function AIGenerationPanel() {
           duration_seconds: (results as any).completeClass.meditation.duration_seconds,
           breathing_guidance: (results as any).completeClass.meditation.breathing_guidance,
           meditation_theme: (results as any).completeClass.meditation.meditation_theme,
+          // Voiceover audio fields
+          voiceover_url: (results as any).completeClass.meditation.voiceover_url,
+          voiceover_duration: (results as any).completeClass.meditation.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.meditation.voiceover_enabled || false,
         },
         // Section 6: HomeCare Advice
         {
@@ -313,6 +329,10 @@ export function AIGenerationPanel() {
           actionable_tips: (results as any).completeClass.homecare.actionable_tips || [],
           duration_seconds: (results as any).completeClass.homecare.duration_seconds,
           focus_area: (results as any).completeClass.homecare.focus_area,
+          // Voiceover audio fields
+          voiceover_url: (results as any).completeClass.homecare.voiceover_url,
+          voiceover_duration: (results as any).completeClass.homecare.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.homecare.voiceover_enabled || false,
         },
       ]
     : [];
