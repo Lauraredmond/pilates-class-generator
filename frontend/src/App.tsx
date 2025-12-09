@@ -124,7 +124,7 @@ function App() {
             </Layout>
           </ProtectedRoute>
         } />
-        <Route path="/generate" element={
+        <Route path="/founder-story" element={
           <ProtectedRoute>
             <Layout>
               <FounderStory />

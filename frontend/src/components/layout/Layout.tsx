@@ -28,7 +28,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/analytics', icon: BarChart3, label: 'Analytics', shortLabel: 'Stats' },
     { path: '/profile', icon: User, label: 'Profile', shortLabel: 'Profile' },
     { path: '/settings', icon: Settings, label: 'Settings', shortLabel: 'Settings' },
-    { path: '/generate', icon: LogoIcon, label: 'Founder Story', shortLabel: 'Story' },
+    { path: '/founder-story', icon: LogoIcon, label: 'Founder Story', shortLabel: 'Story' },
   ];
 
   return (
