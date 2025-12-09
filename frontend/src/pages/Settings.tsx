@@ -768,20 +768,15 @@ export function Settings() {
                 <Download className="w-5 h-5 text-cream/40" />
               </button>
 
-              <button
-                onClick={handleDownloadMyDataJSON}
-                disabled={complianceLoading}
-                className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center gap-3">
-                  <FileDown className="w-5 h-5 text-burgundy" />
-                  <div className="text-left">
-                    <div className="font-medium text-cream">Download My Data (JSON)</div>
-                    <div className="text-sm text-cream/60">Machine-readable data export for data portability</div>
-                  </div>
-                </div>
-                <Download className="w-5 h-5 text-cream/40" />
-              </button>
+              <div className="text-right">
+                <button
+                  onClick={handleDownloadMyDataJSON}
+                  disabled={complianceLoading}
+                  className="text-sm text-cream/50 hover:text-cream underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  or download as JSON
+                </button>
+              </div>
 
               <button
                 onClick={handleViewROPAReport}
@@ -812,25 +807,6 @@ export function Settings() {
                 </div>
                 <Shield className="w-5 h-5 text-cream/40" />
               </button>
-            </div>
-
-            {/* Compliance Status Badges */}
-            <div className="bg-burgundy/10 rounded p-4">
-              <p className="text-cream font-medium mb-3">Compliance Status</p>
-              <div className="flex flex-wrap gap-3">
-                <div className="flex items-center gap-2 bg-green-900/30 px-3 py-2 rounded">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span className="text-green-400 text-sm font-medium">GDPR Compliant</span>
-                </div>
-                <div className="flex items-center gap-2 bg-green-900/30 px-3 py-2 rounded">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span className="text-green-400 text-sm font-medium">EU AI Act Compliant</span>
-                </div>
-              </div>
-              <p className="text-cream/60 text-xs mt-3">
-                Your data is protected and processed transparently in accordance with GDPR and EU AI Act regulations.
-                You have the right to access, correct, delete, and export your data at any time.
-              </p>
             </div>
           </div>
         )}
