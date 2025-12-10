@@ -12,6 +12,7 @@ from utils.supabase_client import supabase
 from utils.supabase_admin import supabase_admin  # Service role client for compliance operations
 from middleware.pii_logger import PIILogger
 import json
+import html  # HTML escaping for XSS prevention
 
 router = APIRouter()
 
@@ -281,23 +282,35 @@ def _generate_profile_section(profile: Dict) -> str:
     if not profile:
         return '<div class="empty-state">No profile information available</div>'
 
-    html = '<div class="data-item">'
-    html += f'<span class="label">Email:</span> <span class="value">{profile.get("email", "N/A")}</span><br>'
-    html += f'<span class="label">Full Name:</span> <span class="value">{profile.get("full_name", "N/A")}</span><br>'
-    html += f'<span class="label">Age Range:</span> <span class="value">{profile.get("age_range", "N/A")}</span><br>'
-    html += f'<span class="label">Gender Identity:</span> <span class="value">{profile.get("gender_identity", "Prefer not to say")}</span><br>'
-    html += f'<span class="label">Country:</span> <span class="value">{profile.get("country", "N/A")}</span><br>'
-    html += f'<span class="label">Pilates Experience:</span> <span class="value">{profile.get("pilates_experience", "N/A")}</span><br>'
+    # XSS PREVENTION: Escape all user data before embedding in HTML
+    user_email = html.escape(profile.get("email", "N/A"))
+    user_name = html.escape(profile.get("full_name", "N/A"))
+    user_age_range = html.escape(profile.get("age_range", "N/A"))
+    user_gender = html.escape(profile.get("gender_identity", "Prefer not to say"))
+    user_country = html.escape(profile.get("country", "N/A"))
+    user_experience = html.escape(profile.get("pilates_experience", "N/A"))
+    user_created_at = html.escape(profile.get("created_at", "N/A"))
+    user_last_login = html.escape(profile.get("last_login", "N/A"))
+
+    html_str = '<div class="data-item">'
+    html_str += f'<span class="label">Email:</span> <span class="value">{user_email}</span><br>'
+    html_str += f'<span class="label">Full Name:</span> <span class="value">{user_name}</span><br>'
+    html_str += f'<span class="label">Age Range:</span> <span class="value">{user_age_range}</span><br>'
+    html_str += f'<span class="label">Gender Identity:</span> <span class="value">{user_gender}</span><br>'
+    html_str += f'<span class="label">Country:</span> <span class="value">{user_country}</span><br>'
+    html_str += f'<span class="label">Pilates Experience:</span> <span class="value">{user_experience}</span><br>'
 
     goals = profile.get("goals", [])
     if goals:
-        html += f'<span class="label">Goals:</span> <span class="value">{", ".join(goals)}</span><br>'
+        # XSS PREVENTION: Escape each goal before joining
+        escaped_goals = [html.escape(str(goal)) for goal in goals]
+        html_str += f'<span class="label">Goals:</span> <span class="value">{", ".join(escaped_goals)}</span><br>'
 
-    html += f'<span class="label">Account Created:</span> <span class="value">{profile.get("created_at", "N/A")}</span><br>'
-    html += f'<span class="label">Last Login:</span> <span class="value">{profile.get("last_login", "N/A")}</span>'
-    html += '</div>'
+    html_str += f'<span class="label">Account Created:</span> <span class="value">{user_created_at}</span><br>'
+    html_str += f'<span class="label">Last Login:</span> <span class="value">{user_last_login}</span>'
+    html_str += '</div>'
 
-    return html
+    return html_str
 
 
 def _generate_preferences_section(preferences: Dict) -> str:
@@ -305,18 +318,22 @@ def _generate_preferences_section(preferences: Dict) -> str:
     if not preferences:
         return '<div class="empty-state">No preferences configured</div>'
 
-    html = '<div class="data-item">'
-    html += f'<span class="label">AI Strictness Level:</span> <span class="value">{preferences.get("strictness_level", "N/A")}</span><br>'
-    html += f'<span class="label">Default Class Duration:</span> <span class="value">{preferences.get("default_class_duration", "N/A")} minutes</span><br>'
-    html += f'<span class="label">Email Notifications:</span> <span class="value">{"✓ Enabled" if preferences.get("email_notifications") else "✗ Disabled"}</span><br>'
-    html += f'<span class="label">Class Reminders:</span> <span class="value">{"✓ Enabled" if preferences.get("class_reminders") else "✗ Disabled"}</span><br>'
-    html += f'<span class="label">Weekly Summary:</span> <span class="value">{"✓ Enabled" if preferences.get("weekly_summary") else "✗ Disabled"}</span><br>'
-    html += f'<span class="label">Analytics:</span> <span class="value">{"✓ Enabled" if preferences.get("analytics_enabled") else "✗ Disabled"}</span><br>'
-    html += f'<span class="label">Data Sharing:</span> <span class="value">{"✓ Enabled" if preferences.get("data_sharing_enabled") else "✗ Disabled"}</span><br>'
-    html += f'<span class="label">MCP Research:</span> <span class="value">{"✓ Enabled" if preferences.get("enable_mcp_research") else "✗ Disabled"}</span>'
-    html += '</div>'
+    # XSS PREVENTION: Escape user-configurable values
+    strictness_level = html.escape(str(preferences.get("strictness_level", "N/A")))
+    class_duration = html.escape(str(preferences.get("default_class_duration", "N/A")))
 
-    return html
+    html_str = '<div class="data-item">'
+    html_str += f'<span class="label">AI Strictness Level:</span> <span class="value">{strictness_level}</span><br>'
+    html_str += f'<span class="label">Default Class Duration:</span> <span class="value">{class_duration} minutes</span><br>'
+    html_str += f'<span class="label">Email Notifications:</span> <span class="value">{"✓ Enabled" if preferences.get("email_notifications") else "✗ Disabled"}</span><br>'
+    html_str += f'<span class="label">Class Reminders:</span> <span class="value">{"✓ Enabled" if preferences.get("class_reminders") else "✗ Disabled"}</span><br>'
+    html_str += f'<span class="label">Weekly Summary:</span> <span class="value">{"✓ Enabled" if preferences.get("weekly_summary") else "✗ Disabled"}</span><br>'
+    html_str += f'<span class="label">Analytics:</span> <span class="value">{"✓ Enabled" if preferences.get("analytics_enabled") else "✗ Disabled"}</span><br>'
+    html_str += f'<span class="label">Data Sharing:</span> <span class="value">{"✓ Enabled" if preferences.get("data_sharing_enabled") else "✗ Disabled"}</span><br>'
+    html_str += f'<span class="label">MCP Research:</span> <span class="value">{"✓ Enabled" if preferences.get("enable_mcp_research") else "✗ Disabled"}</span>'
+    html_str += '</div>'
+
+    return html_str
 
 
 def _generate_saved_classes_section(classes: List) -> str:
@@ -854,23 +871,32 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
             # Get descriptive notes (enhanced by new PII logger)
             notes = activity.get('notes', 'No description available')
 
+            # XSS PREVENTION: Escape notes before embedding in HTML
+            notes_escaped = html.escape(notes)
+
             # Highlight Article 9 health data in red if present
+            # (Escape check uses original, display uses escaped version)
             if '⚠️' in notes or 'Article 9' in notes:
-                notes = f'<span style="color: #721c24; font-weight: 600;">{notes}</span>'
+                notes_escaped = f'<span style="color: #721c24; font-weight: 600;">{notes_escaped}</span>'
 
             # Get PII fields affected
             pii_fields = activity.get('pii_fields', [])
             if isinstance(pii_fields, list) and len(pii_fields) > 0:
-                fields_summary = f" ({', '.join(pii_fields[:3])}{'...' if len(pii_fields) > 3 else ''})"
+                # XSS PREVENTION: Escape each PII field name
+                escaped_fields = [html.escape(str(f)) for f in pii_fields[:3]]
+                fields_summary = f" ({', '.join(escaped_fields)}{'...' if len(pii_fields) > 3 else ''})"
             else:
                 fields_summary = ""
+
+            # XSS PREVENTION: Escape processing system
+            processing_system = html.escape(activity.get('processing_system', 'N/A'))
 
             html += f"""
                         <tr>
                             <td style="white-space: nowrap;">{timestamp}</td>
                             <td><span class="badge {badge_class}">{tx_type}</span>{fields_summary}</td>
-                            <td style="max-width: 400px;">{notes}</td>
-                            <td>{activity.get('processing_system', 'N/A')}</td>
+                            <td style="max-width: 400px;">{notes_escaped}</td>
+                            <td>{processing_system}</td>
                         </tr>
             """
 
@@ -1431,6 +1457,11 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
             reasoning = decision.get('reasoning', 'No reasoning provided')
             overridden = decision.get('user_overridden', False)
 
+            # XSS PREVENTION: Escape all display values before embedding in HTML
+            agent_type_escaped = html.escape(agent_type)
+            model_name_escaped = html.escape(model_name)
+            reasoning_escaped = html.escape(reasoning)
+
             # Determine confidence level for badge color
             if confidence >= 0.8:
                 conf_class = "confidence-high"
@@ -1442,19 +1473,19 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
             html += f"""
                 <div class="decision-card">
                     <div class="decision-header">
-                        <div class="decision-title">{agent_type}</div>
+                        <div class="decision-title">{agent_type_escaped}</div>
                         <div>
                             <span class="confidence-badge {conf_class}">{confidence * 100:.1f}% Confidence</span>
                             {('<span class="badge badge-override">⚠️ You Overrode This</span>' if overridden else '')}
                         </div>
                     </div>
                     <p><strong>Date & Time:</strong> {timestamp}</p>
-                    <p><strong>AI Model:</strong> {model_name}</p>
-                    <p><strong>Agent Type:</strong> <span class="badge badge-agent">{agent_type}</span></p>
+                    <p><strong>AI Model:</strong> {model_name_escaped}</p>
+                    <p><strong>Agent Type:</strong> <span class="badge badge-agent">{agent_type_escaped}</span></p>
                     <div style="margin-top: 15px;">
                         <strong>🧠 AI Reasoning:</strong>
                         <p style="margin-top: 8px; padding: 15px; background: white; border-radius: 6px; border-left: 3px solid #7a1f1f;">
-                            {reasoning}
+                            {reasoning_escaped}
                         </p>
                     </div>
                 </div>
