@@ -7,6 +7,7 @@ Security:
 - Password complexity
 - Wireshark
 - ChatGPT run book
+Can you create a runbook for yourself to reperform all of the security checks that we have performed this evening (which are documented in the XXX security audit reports in the 1. Security testing folder) so taht we can re-run just before I release the beta veresion
 
 Data Privacy/ Compliance stuff
 
