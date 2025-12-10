@@ -2892,6 +2892,44 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 **Priority Order (User-Specified):**
 
+#### **0. CRITICAL SECURITY: Git History Cleanup for Exposed Secrets** (DEFERRED - User Request December 10, 2025)
+
+**Context:** Cryptography & Secrets Management security audit (December 10, 2025) found 3 files with old JWT-format Supabase service role keys committed to git history:
+- `apply_migration_012.py` (line 12)
+- `debug_cooldown.py` (line 9)
+- `verify_migration_012.py` (line 9)
+
+**User Confirmed:** Keys are old "eyJ" format (likely rotated when Supabase migrated to "sb_" format). Current production uses newer "sb_" format keys via environment variables (verified secure ✅).
+
+**Risk Assessment:** 🟡 MEDIUM (downgraded from CRITICAL based on key rotation)
+- Old keys likely invalid
+- Current production is secure
+- Git cleanup is best practice, not urgent
+
+**Required Actions:**
+
+1. **Verify Old Keys Invalid** (5 minutes) - Test connection with old key to confirm 401 Unauthorized
+2. **Create Full Backup** (5 minutes) - `cp -r MVP2 MVP2-BACKUP-$(date +%Y%m%d)`
+3. **Test on Clone First** (10 minutes) - Run BFG on test clone, verify commits/files preserved
+4. **Clean Git History** (30 minutes) - Use BFG Repo-Cleaner to remove 3 files from all commits
+5. **Update Migration Scripts** (20 minutes) - Change to use environment variables
+6. **Add Pre-Commit Hook** (15 minutes) - Install git-secrets to prevent future leaks
+
+**Important User Concern:** "Commit history is too valuable to lose"
+- ✅ **What You Keep:** All commit messages, dates, authors, branches, tags, timeline, ALL OTHER FILES
+- ❌ **What Removes:** ONLY the 3 secret files from ALL commits (they're temp utility scripts, not production code)
+- ✅ **Safety:** Full backup created first, test on clone before applying to real repo
+
+**Complete Documentation:**
+- `/Users/lauraredmond/Documents/Bassline/Admin/10. Testing/1. Security/Cryptography & Secrets Management/CRYPTOGRAPHY_SECRETS_AUDIT_2025-12-10.md`
+- `/Users/lauraredmond/Documents/Bassline/Admin/10. Testing/1. Security/Cryptography & Secrets Management/KEY_ROTATION_VERIFICATION.md`
+
+**Total Time:** ~1 hour (verification + optional cleanup)
+
+**User Decision:** Deferred to future session when ready to proceed with git cleanup.
+
+---
+
 #### **0. NEXT SESSION START: Voiceover Implementation & Mobile Fixes** (CRITICAL - December 9, 2025)
 
 **START NEXT SESSION BY REVIEWING:**
