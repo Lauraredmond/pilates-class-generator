@@ -1,6 +1,17 @@
 #Yes, Git Production: main@3c0b4f1 is finally working for AI-powered mode. Can we make a note of this in Git comments, claude.md, as a milestone Git repo version? Further, can we add each of the below into future plans, they are ordered by priority
 
+Re-record prep phase at slower speed
 
+Security:
+- Check JWT
+- Password complexity
+- Wireshark
+- ChatGPT run book
+
+Data Privacy/ Compliance stuff
+
+Analytics page:
+- Review charts, clear data and check all are correct. I can see that difficulty progression is not correct.
 
 
 

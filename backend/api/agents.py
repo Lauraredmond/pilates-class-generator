@@ -730,14 +730,16 @@ Return all 6 sections with complete details (narrative, timing, instructions).
             preparation = None
 
         # Step 3: Select warm-up routine (Section 2)
+        # NOTE: Migration 019 left only ONE warmup: "Comprehensive Full Body Warm-up"
+        # So we can just select it directly (no need for RPC function)
         try:
-            warmup_response = supabase.rpc(
-                'select_warmup_by_muscle_groups',
-                {'target_muscles': target_muscles, 'user_mode': 'default'}
-            ).execute()
+            warmup_response = supabase.table('warmup_routines') \
+                .select('*') \
+                .eq('routine_name', 'Comprehensive Full Body Warm-up') \
+                .limit(1) \
+                .execute()
 
-            # RPC functions return a list (SETOF), extract first element
-            warmup = warmup_response.data[0] if warmup_response.data and len(warmup_response.data) > 0 else None
+            warmup = warmup_response.data[0] if warmup_response.data else None
             logger.info(f"Selected warmup: {warmup.get('routine_name') if warmup else 'None'}")
         except Exception as e:
             logger.error(f"Failed to fetch warmup routine: {e}")
@@ -747,34 +749,19 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         # The sequence_result contains the main movements
 
         # Step 5: Select cool-down sequence (Section 4)
-        cooldown = None
+        # Use "Full Body Recovery and Integration" as default cooldown
         try:
-            cooldown_response = supabase.rpc(
-                'select_cooldown_by_muscle_groups',
-                {'p_target_muscles': target_muscles, 'user_mode': 'default'}
-            ).execute()
+            cooldown_response = supabase.table('cooldown_sequences') \
+                .select('*') \
+                .eq('sequence_name', 'Full Body Recovery and Integration') \
+                .limit(1) \
+                .execute()
 
-            # RPC functions return a list (SETOF), extract first element
-            cooldown = cooldown_response.data[0] if cooldown_response.data and len(cooldown_response.data) > 0 else None
-            logger.info(f"RPC returned cooldown: {cooldown.get('sequence_name') if cooldown else 'None (empty result)'}")
+            cooldown = cooldown_response.data[0] if cooldown_response.data else None
+            logger.info(f"Selected cooldown: {cooldown.get('sequence_name') if cooldown else 'None'}")
         except Exception as e:
-            logger.error(f"Failed to call cooldown RPC: {e}")
+            logger.error(f"Failed to fetch cooldown sequence: {e}")
             cooldown = None
-
-        # FALLBACK: If no cooldown (either error or no match), select Full Body cooldown
-        if not cooldown:
-            try:
-                logger.info("No specific cooldown found, using Full Body Recovery fallback")
-                fallback_response = supabase.table('cooldown_sequences') \
-                    .select('*') \
-                    .eq('sequence_name', 'Full Body Recovery and Integration') \
-                    .limit(1) \
-                    .execute()
-                cooldown = fallback_response.data[0] if fallback_response.data else None
-                logger.info(f"Fallback cooldown: {cooldown.get('sequence_name') if cooldown else 'None (not found in DB!)'}")
-            except Exception as fallback_error:
-                logger.error(f"Fallback cooldown selection also failed: {fallback_error}")
-                cooldown = None
 
         # Step 6: Select meditation (Section 5)
         try:
