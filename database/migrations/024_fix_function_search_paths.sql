@@ -17,6 +17,31 @@
 -- to execute malicious code instead of legitimate database objects.
 
 -- =============================================================================
+-- STEP 1: DROP EXISTING FUNCTIONS (Required to change parameter names)
+-- =============================================================================
+-- PostgreSQL won't let us change parameter names with CREATE OR REPLACE
+-- We must DROP the function first, then CREATE with new secure version
+
+DROP FUNCTION IF EXISTS calculate_playlist_duration(uuid);
+DROP FUNCTION IF EXISTS update_music_tracks_updated_at();
+DROP FUNCTION IF EXISTS update_music_playlists_updated_at();
+DROP FUNCTION IF EXISTS get_playlist_with_tracks(uuid);
+DROP FUNCTION IF EXISTS select_warmup_by_muscle_groups(text[], varchar);
+DROP FUNCTION IF EXISTS select_cooldown_by_muscle_groups(text[], varchar);
+DROP FUNCTION IF EXISTS validate_required_elements(jsonb);
+DROP FUNCTION IF EXISTS check_pregnancy_exclusion(uuid, uuid);
+DROP FUNCTION IF EXISTS log_pregnancy_detection();
+DROP FUNCTION IF EXISTS check_consecutive_muscle_overuse(uuid, varchar, integer);
+DROP FUNCTION IF EXISTS get_user_movement_history(uuid, integer);
+DROP FUNCTION IF EXISTS calculate_movement_novelty_score(uuid, uuid);
+DROP FUNCTION IF EXISTS update_updated_at_column();
+DROP FUNCTION IF EXISTS update_beta_feedback_updated_at();
+
+-- =============================================================================
+-- STEP 2: RECREATE FUNCTIONS WITH SECURITY FIXES
+-- =============================================================================
+
+-- =============================================================================
 -- PART 1: MUSIC SYSTEM FUNCTIONS
 -- =============================================================================
 
