@@ -1,24 +1,28 @@
-[Log] [ClassBuilder] useEffect triggered, movements.length: – 0 (index-CYoN25a0.js, line 289)
-[Log] [ClassBuilder] Force fetching movements from API... (index-CYoN25a0.js, line 289)
-[Log] [ClassBuilder] API response: – 34 – "movements received" (index-CYoN25a0.js, line 289)
-[Log] [ClassBuilder] Sample movement: – Object (index-CYoN25a0.js, line 289)
-Object
-[Log] [AIGenerationPanel] Using authenticated user ID: – "c9d2e79e-9b6a-4d90-9295-e3e53338c4ec" (index-CYoN25a0.js, line 289)
-[Log] [AIGenerationPanel] StandardAgent orchestration complete: – Object (index-CYoN25a0.js, line 289)
-Object
-[Log] [AIGenerationPanel] All 6 sections received from backend: – Object (index-CYoN25a0.js, line 289)
-Object
-[Error] Failed to load resource: the server responded with a status of 500 () (save-completed, line 0)
-[Error] API Error: – Object
-Object
-	(anonymous function) (index-CYoN25a0.js:229:4030)
-[Error] [AIGenerationPanel] Failed to save class: – G
-G
-	(anonymous function) (index-CYoN25a0.js:289:16850)
-[Error] Failed to load resource: the server responded with a status of 500 () (save-completed, line 0)
-[Error] API Error: – {detail: "Failed to save completed class: {'message': \"Could…code': 'PGRST204', 'hint': None, 'details': None}"}
-{detail: "Failed to save completed class: {'message': \"Could…code': 'PGRST204', 'hint': None, 'details': None}"}Object
-	(anonymous function) (index-CYoN25a0.js:229:4030)
-[Error] [AIGenerationPanel] Failed to save class: – G {stack: "ux@https://basslinemvp.netlify.app/assets/index-CY…mvp.netlify.app/assets/index-CYoN25a0.js:211:2102", message: "Request failed with status code 500", name: "AxiosError", …}
-G {stack: "ux@https://basslinemvp.netlify.app/assets/index-CY…mvp.netlify.app/assets/index-CYoN25a0.js:211:2102", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}G
-	(anonymous function) (index-CYoN25a0.js:289:16850)
+[Log] [ClassBuilder] useEffect triggered, movements.length: – 34 (index-CTsEI4gt.js, line 304)
+[Log] [ClassBuilder] Force fetching movements from API... (index-CTsEI4gt.js, line 304)
+[Log] [ClassBuilder] API response: – 34 – "movements received" (index-CTsEI4gt.js, line 304)
+[Log] [ClassBuilder] Sample movement: – {id: "e33a11f1-3591-4e36-b128-cfc30522267d", movement_number: 1, code: "the_hundred", …} (index-CTsEI4gt.js, line 304)
+{id: "e33a11f1-3591-4e36-b128-cfc30522267d", movement_number: 1, code: "the_hundred", name: "The Hundred", category: "Mat-based", …}Object
+[Log] [AIGenerationPanel] Using authenticated user ID: – "c9d2e79e-9b6a-4d90-9295-e3e53338c4ec" (index-CTsEI4gt.js, line 304)
+[Log] [AIGenerationPanel] StandardAgent orchestration complete: – {mode: "DEFAULT (Database)", movementCount: 10, transitionCount: 9, …} (index-CTsEI4gt.js, line 304)
+{mode: "DEFAULT (Database)", movementCount: 10, transitionCount: 9, totalItems: 19, orchestrationTimeMs: 1360.0666522979736}Object
+[Log] [AIGenerationPanel] All 6 sections received from backend: – {hasPreparation: true, hasWarmup: false, hasCooldown: true, …} (index-CTsEI4gt.js, line 304)
+{hasPreparation: true, hasWarmup: false, hasCooldown: true, hasHomecare: true, hasMeditation: true, …}Object
+[Error] TypeError: null is not an object (evaluating 'i.completeClass.warmup.routine_name') — index-CTsEI4gt.js:304:17858
+	vc (index-CTsEI4gt.js:40:167)
+	(anonymous function) (index-CTsEI4gt.js:40:390)
+	ih (index-CTsEI4gt.js:38:15532)
+	wh (index-CTsEI4gt.js:40:32022)
+	_g (index-CTsEI4gt.js:40:31443)
+	Av (index-CTsEI4gt.js:40:31002)
+	zv (index-CTsEI4gt.js:40:40831)
+	ts (index-CTsEI4gt.js:40:40194)
+	jg (index-CTsEI4gt.js:40:35122)
+	w (index-CTsEI4gt.js:25:1556)
+	L (index-CTsEI4gt.js:25:1918)
+[Error] TypeError: null is not an object (evaluating 'i.completeClass.warmup.routine_name')
+	zv (index-CTsEI4gt.js:40:41114)
+	ts (index-CTsEI4gt.js:40:40194)
+	jg (index-CTsEI4gt.js:40:35122)
+	w (index-CTsEI4gt.js:25:1556)
+	L (index-CTsEI4gt.js:25:1918)
