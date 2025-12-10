@@ -191,7 +191,7 @@ class SupabaseMusicSource(MusicSource):
             # Use the database function for better performance
             response = self.supabase.rpc(
                 'get_playlist_with_tracks',
-                {'playlist_uuid': playlist_id}
+                {'playlist_id_param': playlist_id}  # Fixed: database function expects 'playlist_id_param' not 'playlist_uuid'
             ).execute()
 
             if not response.data:
