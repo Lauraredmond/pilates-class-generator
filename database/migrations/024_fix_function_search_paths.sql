@@ -21,21 +21,26 @@
 -- =============================================================================
 -- PostgreSQL won't let us change parameter names with CREATE OR REPLACE
 -- We must DROP the function first, then CREATE with new secure version
+--
+-- NOTE: Trigger functions must use CASCADE to drop dependent triggers
+-- We'll recreate the triggers after recreating the functions
 
 DROP FUNCTION IF EXISTS calculate_playlist_duration(uuid);
-DROP FUNCTION IF EXISTS update_music_tracks_updated_at();
-DROP FUNCTION IF EXISTS update_music_playlists_updated_at();
 DROP FUNCTION IF EXISTS get_playlist_with_tracks(uuid);
 DROP FUNCTION IF EXISTS select_warmup_by_muscle_groups(text[], varchar);
 DROP FUNCTION IF EXISTS select_cooldown_by_muscle_groups(text[], varchar);
 DROP FUNCTION IF EXISTS validate_required_elements(jsonb);
 DROP FUNCTION IF EXISTS check_pregnancy_exclusion(uuid, uuid);
-DROP FUNCTION IF EXISTS log_pregnancy_detection();
 DROP FUNCTION IF EXISTS check_consecutive_muscle_overuse(uuid, varchar, integer);
 DROP FUNCTION IF EXISTS get_user_movement_history(uuid, integer);
 DROP FUNCTION IF EXISTS calculate_movement_novelty_score(uuid, uuid);
-DROP FUNCTION IF EXISTS update_updated_at_column();
-DROP FUNCTION IF EXISTS update_beta_feedback_updated_at();
+
+-- Trigger functions - must use CASCADE to drop dependent triggers
+DROP FUNCTION IF EXISTS update_music_tracks_updated_at() CASCADE;
+DROP FUNCTION IF EXISTS update_music_playlists_updated_at() CASCADE;
+DROP FUNCTION IF EXISTS log_pregnancy_detection() CASCADE;
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+DROP FUNCTION IF EXISTS update_beta_feedback_updated_at() CASCADE;
 
 -- =============================================================================
 -- STEP 2: RECREATE FUNCTIONS WITH SECURITY FIXES
@@ -409,6 +414,64 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+-- =============================================================================
+-- STEP 3: RECREATE TRIGGERS (Dropped by CASCADE in Step 1)
+-- =============================================================================
+-- These triggers were automatically dropped when we used CASCADE above
+-- We must recreate them now that the functions have been recreated
+
+-- Trigger for music_tracks table
+CREATE TRIGGER music_tracks_updated_at
+    BEFORE UPDATE ON music_tracks
+    FOR EACH ROW
+    EXECUTE FUNCTION update_music_tracks_updated_at();
+
+-- Trigger for music_playlists table
+CREATE TRIGGER music_playlists_updated_at
+    BEFORE UPDATE ON music_playlists
+    FOR EACH ROW
+    EXECUTE FUNCTION update_music_playlists_updated_at();
+
+-- Trigger for student_profiles table (pregnancy detection)
+CREATE TRIGGER trigger_log_pregnancy_detection
+    BEFORE UPDATE ON student_profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION log_pregnancy_detection();
+
+-- Trigger for beta_feedback table
+CREATE TRIGGER update_beta_feedback_updated_at_trigger
+    BEFORE UPDATE ON beta_feedback
+    FOR EACH ROW
+    EXECUTE FUNCTION update_beta_feedback_updated_at();
+
+-- Triggers using update_updated_at_column() function
+-- (These were dropped by CASCADE and must be recreated)
+
+CREATE TRIGGER update_movements_updated_at
+    BEFORE UPDATE ON movements
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_class_plans_updated_at
+    BEFORE UPDATE ON class_plans
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_movement_usage_updated_at
+    BEFORE UPDATE ON movement_usage
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_student_profiles_updated_at
+    BEFORE UPDATE ON student_profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
 -- VERIFICATION QUERIES (Run after migration to verify)
