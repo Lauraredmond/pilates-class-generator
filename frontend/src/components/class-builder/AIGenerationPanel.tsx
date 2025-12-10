@@ -236,32 +236,32 @@ export function AIGenerationPanel() {
   // Uses AI-generated movements (9 movements + 8 transitions) with framing sections
   const playbackItems: PlaybackItem[] = results && (results as any).completeClass
     ? [
-        // Section 1: Preparation
+        // Section 1: Preparation (null-safe: preparation may be missing if backend fails)
         {
           type: 'preparation' as const,
-          script_name: (results as any).completeClass.preparation.script_name,
-          narrative: (results as any).completeClass.preparation.narrative,
-          key_principles: (results as any).completeClass.preparation.key_principles || [],
-          duration_seconds: (results as any).completeClass.preparation.duration_seconds,
-          breathing_pattern: (results as any).completeClass.preparation.breathing_pattern,
-          breathing_focus: (results as any).completeClass.preparation.breathing_focus,
+          script_name: (results as any).completeClass.preparation?.script_name || 'Pilates Principles',
+          narrative: (results as any).completeClass.preparation?.narrative || 'No preparation narrative available.',
+          key_principles: (results as any).completeClass.preparation?.key_principles || [],
+          duration_seconds: (results as any).completeClass.preparation?.duration_seconds || 240,
+          breathing_pattern: (results as any).completeClass.preparation?.breathing_pattern || 'Inhale/Exhale',
+          breathing_focus: (results as any).completeClass.preparation?.breathing_focus || 'Lateral breathing',
           // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.preparation.voiceover_url,
-          voiceover_duration: (results as any).completeClass.preparation.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.preparation.voiceover_enabled || false,
+          voiceover_url: (results as any).completeClass.preparation?.voiceover_url,
+          voiceover_duration: (results as any).completeClass.preparation?.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.preparation?.voiceover_enabled || false,
         },
-        // Section 2: Warm-up
+        // Section 2: Warm-up (null-safe: warmup may be missing if backend fails)
         {
           type: 'warmup' as const,
-          routine_name: (results as any).completeClass.warmup.routine_name,
-          narrative: (results as any).completeClass.warmup.narrative,
-          movements: (results as any).completeClass.warmup.movements || [],
-          duration_seconds: (results as any).completeClass.warmup.duration_seconds,
-          focus_area: (results as any).completeClass.warmup.focus_area,
+          routine_name: (results as any).completeClass.warmup?.routine_name || 'Full Body Warm-up',
+          narrative: (results as any).completeClass.warmup?.narrative || 'No warmup narrative available.',
+          movements: (results as any).completeClass.warmup?.movements || [],
+          duration_seconds: (results as any).completeClass.warmup?.duration_seconds || 180,
+          focus_area: (results as any).completeClass.warmup?.focus_area || 'full_body',
           // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.warmup.voiceover_url,
-          voiceover_duration: (results as any).completeClass.warmup.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.warmup.voiceover_enabled || false,
+          voiceover_url: (results as any).completeClass.warmup?.voiceover_url,
+          voiceover_duration: (results as any).completeClass.warmup?.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.warmup?.voiceover_enabled || false,
         },
         // Section 3: Main movements (AI-generated, includes movements + transitions)
         // Use results.sequence.movements which contains BOTH movements and transitions from AI
@@ -294,45 +294,45 @@ export function AIGenerationPanel() {
             voiceover_enabled: (m as any).voiceover_enabled || false,
           };
         }),
-        // Section 4: Cool-down
+        // Section 4: Cool-down (null-safe: cooldown may be missing if backend fails)
         {
           type: 'cooldown' as const,
-          sequence_name: (results as any).completeClass.cooldown.sequence_name,
-          narrative: (results as any).completeClass.cooldown.narrative,
-          stretches: (results as any).completeClass.cooldown.stretches || [],
-          duration_seconds: (results as any).completeClass.cooldown.duration_seconds,
-          target_muscles: (results as any).completeClass.cooldown.target_muscles || [],
-          recovery_focus: (results as any).completeClass.cooldown.recovery_focus,
+          sequence_name: (results as any).completeClass.cooldown?.sequence_name || 'Full Body Cooldown',
+          narrative: (results as any).completeClass.cooldown?.narrative || 'No cooldown narrative available.',
+          stretches: (results as any).completeClass.cooldown?.stretches || [],
+          duration_seconds: (results as any).completeClass.cooldown?.duration_seconds || 180,
+          target_muscles: (results as any).completeClass.cooldown?.target_muscles || [],
+          recovery_focus: (results as any).completeClass.cooldown?.recovery_focus || 'full_body',
           // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.cooldown.voiceover_url,
-          voiceover_duration: (results as any).completeClass.cooldown.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.cooldown.voiceover_enabled || false,
+          voiceover_url: (results as any).completeClass.cooldown?.voiceover_url,
+          voiceover_duration: (results as any).completeClass.cooldown?.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.cooldown?.voiceover_enabled || false,
         },
-        // Section 5: Closing Meditation
+        // Section 5: Closing Meditation (null-safe: meditation may be missing if backend fails)
         {
           type: 'meditation' as const,
-          script_name: (results as any).completeClass.meditation.script_name,
-          script_text: (results as any).completeClass.meditation.script_text,
-          duration_seconds: (results as any).completeClass.meditation.duration_seconds,
-          breathing_guidance: (results as any).completeClass.meditation.breathing_guidance,
-          meditation_theme: (results as any).completeClass.meditation.meditation_theme,
+          script_name: (results as any).completeClass.meditation?.script_name || 'Body Scan & Gratitude',
+          script_text: (results as any).completeClass.meditation?.script_text || 'No meditation script available.',
+          duration_seconds: (results as any).completeClass.meditation?.duration_seconds || 300,
+          breathing_guidance: (results as any).completeClass.meditation?.breathing_guidance || '',
+          meditation_theme: (results as any).completeClass.meditation?.meditation_theme || 'body_scan',
           // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.meditation.voiceover_url,
-          voiceover_duration: (results as any).completeClass.meditation.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.meditation.voiceover_enabled || false,
+          voiceover_url: (results as any).completeClass.meditation?.voiceover_url,
+          voiceover_duration: (results as any).completeClass.meditation?.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.meditation?.voiceover_enabled || false,
         },
-        // Section 6: HomeCare Advice
+        // Section 6: HomeCare Advice (null-safe: homecare may be missing if backend fails)
         {
           type: 'homecare' as const,
-          advice_name: (results as any).completeClass.homecare.advice_name,
-          advice_text: (results as any).completeClass.homecare.advice_text,
-          actionable_tips: (results as any).completeClass.homecare.actionable_tips || [],
-          duration_seconds: (results as any).completeClass.homecare.duration_seconds,
-          focus_area: (results as any).completeClass.homecare.focus_area,
+          advice_name: (results as any).completeClass.homecare?.advice_name || 'Post-Class Care',
+          advice_text: (results as any).completeClass.homecare?.advice_text || 'No homecare advice available.',
+          actionable_tips: (results as any).completeClass.homecare?.actionable_tips || [],
+          duration_seconds: (results as any).completeClass.homecare?.duration_seconds || 60,
+          focus_area: (results as any).completeClass.homecare?.focus_area || 'general',
           // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.homecare.voiceover_url,
-          voiceover_duration: (results as any).completeClass.homecare.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.homecare.voiceover_enabled || false,
+          voiceover_url: (results as any).completeClass.homecare?.voiceover_url,
+          voiceover_duration: (results as any).completeClass.homecare?.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.homecare?.voiceover_enabled || false,
         },
       ]
     : [];
