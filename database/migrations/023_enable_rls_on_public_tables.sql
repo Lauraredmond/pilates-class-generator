@@ -18,18 +18,19 @@
 -- -----------------------------------------------------------------------------
 -- Table: user_profiles
 -- Access: Users can only read/update their own profile
+-- NOTE: user_profiles table uses 'id' as primary key (NOT 'user_id')
 -- -----------------------------------------------------------------------------
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view own profile"
   ON user_profiles
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = id);
 
 CREATE POLICY "Users can update own profile"
   ON user_profiles
   FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = id);
 
 -- -----------------------------------------------------------------------------
 -- Table: user_preferences
