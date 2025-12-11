@@ -62,10 +62,10 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
                 Many Pilates movements and setup positions included in this application can be harmful to pregnant individuals, particularly after the first trimester. These movements may involve:
               </p>
               <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Lying flat on your back (supine position) - can restrict blood flow to the fetus</li>
+                <li>Lying flat on your back (supine position) - can restrict blood flow to the foetus</li>
                 <li>Deep abdominal work - may increase intra-abdominal pressure</li>
                 <li>Twisting movements - can strain the abdomen and pelvis</li>
-                <li>Prone (face-down) positions - unsafe for developing fetus</li>
+                <li>Prone (face-down) positions - unsafe for developing foetus</li>
               </ul>
               <p className="font-bold bg-red-100 p-3 rounded border border-red-300">
                 If you are pregnant or suspect you may be pregnant, DO NOT use this application without explicit written approval from your obstetrician or midwife. Specialized prenatal Pilates instruction from a qualified prenatal Pilates instructor is required.

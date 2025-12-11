@@ -119,7 +119,7 @@ export function Register() {
       <div className="bg-cream rounded-lg shadow-xl p-8 max-w-2xl w-full">
         <h1 className="text-3xl font-bold text-burgundy mb-2 text-center">Create Account</h1>
         <p className="text-charcoal/70 text-sm text-center mb-6">
-          Help us personalize your Pilates experience
+          Help us personalise your Pilates experience
         </p>
 
         {error && (
@@ -226,7 +226,7 @@ export function Register() {
           {/* Profile Information */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-burgundy border-b border-burgundy/20 pb-2">
-              About You <span className="text-sm font-normal text-charcoal/60">(optional but helpful)</span>
+              About You <span className="text-sm font-normal text-charcoal/60"></span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
