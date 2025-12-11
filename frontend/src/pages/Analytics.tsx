@@ -20,6 +20,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import { logger } from '../utils/logger';
 
 // Register Chart.js components
 ChartJS.register(
@@ -116,7 +117,7 @@ export function Analytics() {
         setDifficultyProgression(difficultyProgResponse.data);
         setMuscleDistribution(muscleDistResponse.data);
       } catch (err: any) {
-        console.error('Failed to fetch analytics:', err);
+        logger.error('Failed to fetch analytics:', err);
         setError(err.response?.data?.detail || 'Failed to load analytics data');
       } finally {
         setIsLoading(false);
@@ -628,7 +629,7 @@ function AdminLLMUsageLogs({ userId }: AdminLLMUsageLogsProps) {
         setLLMStats(statsResponse.data);
         setLLMLogs(logsResponse.data.logs);
       } catch (err: any) {
-        console.error('Failed to fetch LLM data:', err);
+        logger.error('Failed to fetch LLM data:', err);
         if (err.response?.status === 403) {
           setError('Admin access required to view LLM logs');
         } else {

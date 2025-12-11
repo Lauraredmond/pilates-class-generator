@@ -4,10 +4,13 @@ Re-record prep phase at slower speed
 
 Security:
 - Check JWT
-- Password complexity
+
 - Wireshark
 - ChatGPT run book
 Can you create a runbook for yourself to reperform all of the security checks that we have performed this evening (which are documented in the XXX security audit reports in the 1. Security testing folder) so taht we can re-run just before I release the beta veresion
+Review movements table for accuracy of data - e.g. are beginner, intermed, advanced allocated correctly etc
+
+
 
 Data Privacy/ Compliance stuff
 
@@ -23,7 +26,7 @@ Analytics page:
 #Can we note the below as to be picked up in our next session as well.
 4. Add nutrion tracker - I need to provide substantial information here. Ask CC to create a table of food and corresponding metrics. Data is here: /Users/lauraredmond/Documents/Bassline/Admin/7. Product/Nutrition/Nutrition Information-Table-LRAdjusted.xlsx. Then have a rest day plan and a training day plan. For some reason, the numbers file seems to have disaggregated these and they're stored in the training-1 folder in the nutrition folder. Open numberes sheet to observe the formulae in the rest day and training day plans. Simple enough. Might need to screenshot them for CC. Have a think on how to make this really user friendly to use
 
-8. Try Supabase user confirmation again, as prior issues may have been down to temporary issue on supabase side
+
 
 9. Advanced Delivery Modes - Seek to incorporate at least audio, maybe visual
 9.5 - Rigorous review of Supabase Pilates content. Cross-compare with folder.
@@ -37,6 +40,12 @@ Analytics page:
 
 
 ****DONE****
+
+8. Try Supabase user confirmation again, as prior issues may have been down to temporary issue on supabase side
+
+- Password complexity
+
+Can I confirm that we have deleted the 3 secret files from ALL commits (they're temp utility scripts, not production code) so that they're not published going forward? i don't want to false positive on this security issue again before we do a full git clean
 
 1. Can you add one more music style of "Jazz" for playing during sections 1 to 4 of the class. It should be selected via the "Movement music" option which appears on the class builder page. Have that genre point to this music to be played upon selection of Jazz: https://archive.org/details/1-hour-relaxing-jazz-coffee-shop-music-the-best-melodies-that-will-warm-your-heart?
 music_tracks Supabase table needs to be updated, among other things

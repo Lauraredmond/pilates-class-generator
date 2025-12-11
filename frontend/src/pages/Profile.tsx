@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardBody, CardTitle } from '../components/ui/Card';
 import { Edit2, Save, X, CheckCircle } from 'lucide-react';
+import { logger } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -45,7 +46,7 @@ export function Profile() {
         const response = await axios.get(`${API_BASE_URL}/api/users/me/stats`);
         setStats(response.data);
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        logger.error('Failed to fetch stats:', error);
       } finally {
         setLoading(false);
       }

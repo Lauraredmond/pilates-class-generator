@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://pilates-class-generator-api3.onrender.com';
 
@@ -46,7 +47,7 @@ const MusicPeriodSelector: React.FC<MusicPeriodSelectorProps> = ({
       const response = await axios.get(`${API_BASE_URL}/api/music/stylistic-periods`);
       setPeriods(response.data);
     } catch (err) {
-      console.error('Failed to fetch stylistic periods:', err);
+      logger.error('Failed to fetch stylistic periods:', err);
       setError('Unable to load musical periods. Please try again.');
     } finally {
       setLoading(false);
