@@ -15,6 +15,8 @@ from dotenv import load_dotenv
 from loguru import logger
 from collections import defaultdict
 
+from models.error import ErrorMessages
+
 # Load environment variables
 load_dotenv()
 
@@ -202,8 +204,8 @@ async def get_user_analytics_summary(user_id: str):
         )
 
     except Exception as e:
-        logger.error(f"Error fetching summary: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching user analytics summary for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/movement-history/{user_id}", response_model=List[TimeSeriesData])
@@ -281,8 +283,8 @@ async def get_movement_history(
         return result
 
     except Exception as e:
-        logger.error(f"Error fetching movement history: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching movement history for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/muscle-group-history/{user_id}", response_model=List[TimeSeriesData])
@@ -406,8 +408,8 @@ async def get_muscle_group_history(
         return result
 
     except Exception as e:
-        logger.error(f"Error fetching muscle group history: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching muscle group history for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/practice-frequency/{user_id}", response_model=PracticeFrequencyData)
@@ -458,8 +460,8 @@ async def get_practice_frequency(
         )
 
     except Exception as e:
-        logger.error(f"Error fetching practice frequency: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching practice frequency for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/difficulty-progression/{user_id}", response_model=DifficultyProgressionData)
@@ -530,8 +532,8 @@ async def get_difficulty_progression(
         )
 
     except Exception as e:
-        logger.error(f"Error fetching difficulty progression: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching difficulty progression for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/muscle-distribution/{user_id}", response_model=MuscleDistributionData)
@@ -633,8 +635,8 @@ async def get_muscle_distribution(
         )
 
     except Exception as e:
-        logger.error(f"Error fetching muscle distribution: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching muscle distribution for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 # Helper functions (same as before)
@@ -857,7 +859,7 @@ async def get_llm_invocation_logs(
         logger.error(f"Error fetching LLM logs: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to fetch LLM logs: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -943,7 +945,7 @@ async def get_llm_usage_statistics(
         logger.error(f"Error calculating LLM usage stats: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to calculate LLM usage statistics: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -981,7 +983,7 @@ async def get_single_llm_log(
         logger.error(f"Error fetching LLM log: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to fetch LLM log: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -1065,7 +1067,7 @@ async def find_user_id_by_email(
         logger.error(f"Error finding user: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to find user: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -1172,5 +1174,5 @@ async def backfill_muscle_groups_in_class_history(
         logger.error(f"Error during backfill: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Backfill failed: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )

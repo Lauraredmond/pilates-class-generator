@@ -13,8 +13,12 @@ from dotenv import load_dotenv
 
 from utils.auth import get_current_user_id, hash_password
 from models.user import UserPreferences
+from utils.logger import get_logger
+from models.error import ErrorMessages
 
 load_dotenv()
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
@@ -91,9 +95,10 @@ async def get_user_profile(user_id: str = Depends(get_current_user_id)):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to fetch profile for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch profile: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -139,9 +144,10 @@ async def update_user_profile(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to update profile for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update profile: {str(e)}"
+            detail=ErrorMessages.PROFILE_UPDATE_FAILED
         )
 
 
@@ -194,9 +200,10 @@ async def change_password(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Password change failed for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Password change failed: {str(e)}"
+            detail=ErrorMessages.PASSWORD_CHANGE_FAILED
         )
 
 
@@ -279,9 +286,10 @@ async def get_user_stats(user_id: str = Depends(get_current_user_id)):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to fetch stats for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch stats: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -304,9 +312,10 @@ async def delete_user_account(user_id: str = Depends(get_current_user_id)):
         return None
 
     except Exception as e:
+        logger.error(f"Account deletion failed for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Account deletion failed: {str(e)}"
+            detail=ErrorMessages.INTERNAL_ERROR
         )
 
 
@@ -325,9 +334,10 @@ async def get_user_preferences(user_id: str = Depends(get_current_user_id)):
         return UserPreferences(**result.data[0])
 
     except Exception as e:
+        logger.error(f"Failed to fetch preferences for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch preferences: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -350,7 +360,8 @@ async def update_user_preferences(
         return UserPreferences(**result.data[0])
 
     except Exception as e:
+        logger.error(f"Failed to update preferences for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update preferences: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )

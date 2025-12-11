@@ -13,6 +13,8 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 from loguru import logger
 
+from models.error import ErrorMessages
+
 # Import services
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -261,7 +263,7 @@ async def create_class_plan(plan: ClassPlanCreate):
         logger.error(f"Error creating class plan: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {str(e)}"
+            detail=ErrorMessages.INTERNAL_ERROR
         )
 
 
@@ -311,7 +313,7 @@ async def get_class_plan(class_id: str):
         logger.error(f"Error fetching class plan: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -367,7 +369,7 @@ async def get_user_class_plans(
         logger.error(f"Error fetching user class plans: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -425,7 +427,7 @@ async def delete_class_plan(class_id: str, user_id: str = Query(...)):
         logger.error(f"Error deleting class plan: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -565,7 +567,7 @@ async def update_class_plan(class_id: str, update: ClassPlanUpdate):
         logger.error(f"Error updating class plan: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {str(e)}"
+            detail=ErrorMessages.INTERNAL_ERROR
         )
 
 
@@ -984,7 +986,7 @@ async def generate_class(request: ClassGenerationRequest):
         logger.error(f"Error generating class: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Class generation failed: {str(e)}"
+            detail=ErrorMessages.INTERNAL_ERROR
         )
 
 
@@ -1204,5 +1206,5 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         logger.error("Error saving completed class: {}", e, exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to save completed class: {str(e)}"
+            detail=ErrorMessages.INTERNAL_ERROR
         )
