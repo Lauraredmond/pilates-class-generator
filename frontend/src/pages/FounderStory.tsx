@@ -116,7 +116,7 @@ export function FounderStory() {
             Ready to Experience Bassline Pilates?
           </h3>
           <p className="text-cream/90 mb-6 max-w-xl">
-            Join fellow practitioners transforming their Pilates practice with intelligent,
+            Join fellow practitioners transforming their Pilates practise with intelligent,
             personalised class generation.
           </p>
           <a
