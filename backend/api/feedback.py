@@ -15,8 +15,10 @@ import uuid
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
 
 # Supabase client for storing feedback
+# Uses service role key (like other endpoints) to bypass RLS
+# Security enforced at application layer via get_current_user_id()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # Service role key, not anon key
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
