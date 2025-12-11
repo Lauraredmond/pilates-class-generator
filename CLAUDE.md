@@ -2942,23 +2942,15 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
    - Cooldown sequences
    - Closing meditation scripts
    - Closing homecare advice
+   - **Transitions** (database + frontend update needed)
    - Follow checklist for each section to avoid data transformation bugs
    - All backend/frontend code already updated - just need audio uploads
 
-2. **Fix Mobile Device Issues:**
-   - **Issue:** DPIA and ROPA compliance reports not viewable on mobile devices
-   - **Location:** Settings page → Compliance dashboard
-   - **Symptoms:** Reports likely not responsive or have layout issues on mobile
-   - **Fix Required:**
-     - Check responsive CSS for compliance dashboard
-     - Test report viewing on mobile viewport
-     - Ensure tables/charts are mobile-friendly
-     - Add horizontal scroll if needed for wide tables
-   - **Files to Check:**
-     - `frontend/src/pages/Settings.tsx` (compliance dashboard UI)
-     - `frontend/src/components/compliance/*` (if separate components exist)
+2. **Fix Mobile Device Issues:** ✅ COMPLETED
+   - DPIA and ROPA compliance reports now viewable on mobile devices
+   - Responsive CSS implemented
 
-3. **Continue with Existing Roadmap:**
+3. **Continue with Existing Roadmap:** ✅ IN PROGRESS
    - Then proceed with tasks #1-12 below
 
 **Estimated Time:** 3-4 hours

@@ -12,6 +12,7 @@ import { agentsApi, classPlansApi } from '../../services/api';
 import { GenerationForm, GenerationFormData } from './ai-generation/GenerationForm';
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
 import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
+import { logger } from '../../utils/logger';
 
 export function AIGenerationPanel() {
   const { user } = useAuth();
@@ -34,7 +35,7 @@ export function AIGenerationPanel() {
       if (!user) {
         throw new Error('You must be logged in to generate a class');
       }
-      console.log('[AIGenerationPanel] Using authenticated user ID:', user.id);
+      logger.debug('[AIGenerationPanel] Class generation started');
 
       // SESSION 11.5: Use StandardAgent orchestration for ALL 6 sections
       // JENTIC STANDARDAGENT: Single orchestrated call for complete class
@@ -68,22 +69,10 @@ export function AIGenerationPanel() {
       const meditationData = backendData.meditation;
       const homecareData = backendData.homecare;
 
-      console.log('[AIGenerationPanel] StandardAgent orchestration complete:', {
-        mode: backendData.ai_reasoning ? 'AI AGENT (ReWOO)' : 'DEFAULT (Database)',
+      logger.debug('[AIGenerationPanel] Class generation complete', {
+        mode: backendData.ai_reasoning ? 'AI AGENT' : 'DEFAULT',
         movementCount: sequenceResponse.data.movement_count,
         transitionCount: sequenceResponse.data.transition_count,
-        totalItems: sequenceResponse.data.sequence.length,
-        orchestrationTimeMs: backendData.total_processing_time_ms,
-      });
-
-      console.log('[AIGenerationPanel] All 6 sections received from backend:', {
-        hasPreparation: !!preparationData,
-        hasWarmup: !!warmupData,
-        hasCooldown: !!cooldownData,
-        hasHomecare: !!homecareData,
-        hasMeditation: !!meditationData,
-        preparationSource: preparationData?.script_name || 'MISSING',
-        homecareSource: homecareData?.advice_name || 'MISSING',
       });
 
       // COMBINED RESULTS: AI sequence for modal, 6-section structure for playback
@@ -151,7 +140,7 @@ export function AIGenerationPanel() {
       setShowResultsModal(true); // Show the modal
       showToast('Complete 6-section class generated successfully!', 'success');
     } catch (error: any) {
-      console.error('Failed to generate complete class:', error);
+      logger.error('Failed to generate complete class:', error);
       const errorMessage =
         error.response?.data?.detail || error.message || 'Failed to generate complete class';
       showToast(errorMessage, 'error');
@@ -182,7 +171,7 @@ export function AIGenerationPanel() {
         class_name: 'Automatically Generated Class',
       });
 
-      console.log('[AIGenerationPanel] Class saved to database:', saveResponse.data);
+      logger.debug('[AIGenerationPanel] Class saved to database');
 
       // Add generated sequence to current class (frontend state)
       setCurrentClass({
@@ -206,7 +195,7 @@ export function AIGenerationPanel() {
       showToast(message, 'success');
       setShowResultsModal(false); // Close the modal but keep results for Play Class button
     } catch (error: any) {
-      console.error('[AIGenerationPanel] Failed to save class:', error);
+      logger.error('Failed to save class:', error);
       const errorMessage =
         error.response?.data?.detail || error.message || 'Failed to save class to database';
       showToast(errorMessage, 'error');
@@ -274,6 +263,10 @@ export function AIGenerationPanel() {
               narrative: (m as any).narrative || '',
               duration_seconds: m.duration_seconds || 60,
               name: m.name || 'Transition',
+              // Voiceover audio fields (Session: Transitions voiceover support)
+              voiceover_url: (m as any).voiceover_url,
+              voiceover_duration: (m as any).voiceover_duration,
+              voiceover_enabled: (m as any).voiceover_enabled || false,
             };
           }
           return {
