@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare } from 'lucide-react';
+import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare, FileText } from 'lucide-react';
 import { logger } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -19,6 +19,7 @@ export function Settings() {
     ai: false,
     music: false,
     compliance: false,
+    policies: false,
     danger: false
   });
 
@@ -808,6 +809,120 @@ export function Settings() {
                 </div>
                 <Shield className="w-5 h-5 text-cream/40" />
               </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Policies & Agreements */}
+      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
+        <button
+          onClick={() => toggleSection('policies')}
+          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <FileText className="w-6 h-6 text-burgundy" />
+            <h2 className="text-xl font-semibold text-cream">Policies & Agreements</h2>
+          </div>
+          {expandedSections.policies ? (
+            <ChevronUp className="w-5 h-5 text-cream/60" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-cream/60" />
+          )}
+        </button>
+
+        {expandedSections.policies && (
+          <div className="px-6 pb-6">
+            <p className="text-cream/60 text-sm mb-4">
+              Review the legal policies and agreements for Bassline Pilates
+            </p>
+
+            {/* Policy Links */}
+            <div className="space-y-3">
+              {/* Privacy Policy */}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-burgundy" />
+                  <div>
+                    <div className="font-medium text-cream">Privacy Policy</div>
+                    <div className="text-sm text-cream/60">How we collect, use, and protect your personal data</div>
+                  </div>
+                </div>
+                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+              </a>
+
+              {/* Beta Tester Agreement */}
+              <a
+                href="/beta-agreement"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-burgundy" />
+                  <div>
+                    <div className="font-medium text-cream">Beta Tester Agreement</div>
+                    <div className="text-sm text-cream/60">Terms and conditions for beta testing participation</div>
+                  </div>
+                </div>
+                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+              </a>
+
+              {/* Security Overview */}
+              <a
+                href="/security"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-burgundy" />
+                  <div>
+                    <div className="font-medium text-cream">Security Overview</div>
+                    <div className="text-sm text-cream/60">Our security practices and compliance measures</div>
+                  </div>
+                </div>
+                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+              </a>
+
+              {/* Data Handling During Beta */}
+              <a
+                href="/data-during-beta"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <Database className="w-5 h-5 text-burgundy" />
+                  <div>
+                    <div className="font-medium text-cream">Data Handling During Beta</div>
+                    <div className="text-sm text-cream/60">How we handle your data during beta testing</div>
+                  </div>
+                </div>
+                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+              </a>
+
+              {/* Health & Safety Disclaimer */}
+              <a
+                href="/safety"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-burgundy" />
+                  <div>
+                    <div className="font-medium text-cream">Health & Safety Disclaimer</div>
+                    <div className="text-sm text-cream/60">Important safety information for using the platform</div>
+                  </div>
+                </div>
+                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+              </a>
             </div>
           </div>
         )}
