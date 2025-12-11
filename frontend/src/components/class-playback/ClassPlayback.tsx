@@ -379,7 +379,7 @@ export function ClassPlayback({
   const progressPercentage = ((totalItems - currentIndex - 1 + (1 - timeRemaining / currentItem.duration_seconds)) / totalItems) * 100;
 
   return (
-    <div className={`fixed inset-0 z-50 bg-burgundy ${className}`}>
+    <div className={`fixed inset-0 z-[100] bg-burgundy ${className}`}>
       {/* Progress bar */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-burgundy-dark">
         <div
