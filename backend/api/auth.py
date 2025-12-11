@@ -12,6 +12,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 
 from models.user import UserCreate, UserLogin, TokenResponse, TokenRefresh
+from models.error import ErrorMessages
 from utils.auth import (
     hash_password,
     verify_password,
@@ -19,9 +20,12 @@ from utils.auth import (
     refresh_access_token,
     get_current_user_id
 )
+from utils.logger import get_logger
 from middleware.pii_logger import PIILogger
 
 load_dotenv()
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -250,9 +254,11 @@ async def register(user_data: UserCreate, request: Request):
     except HTTPException:
         raise
     except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"User registration failed for email {user_data.email}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Registration failed: {str(e)}"
+            detail=ErrorMessages.INTERNAL_ERROR
         )
 
 
@@ -311,9 +317,11 @@ async def login(credentials: UserLogin):
     except HTTPException:
         raise
     except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"Login failed for email {credentials.email}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Login failed: {str(e)}"
+            detail=ErrorMessages.INTERNAL_ERROR
         )
 
 
@@ -330,9 +338,11 @@ async def refresh_token(token_data: TokenRefresh):
     except HTTPException:
         raise
     except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"Token refresh failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token refresh failed: {str(e)}"
+            detail=ErrorMessages.TOKEN_INVALID
         )
 
 
@@ -446,9 +456,11 @@ async def confirm_password_reset(reset_data: PasswordResetConfirm):
                 detail="Invalid or expired reset token. Please request a new password reset link."
             )
 
+        # Server-side logging with full error details
+        logger.error(f"Password reset failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Password reset failed: {str(e)}"
+            detail=ErrorMessages.PASSWORD_CHANGE_FAILED
         )
 
 
@@ -490,9 +502,11 @@ async def get_current_user(request: Request, user_id: str = Depends(get_current_
     except HTTPException:
         raise
     except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"User fetch failed for user_id {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch user: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -565,9 +579,11 @@ async def update_profile(
     except HTTPException:
         raise
     except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"Profile update failed for user_id {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Profile update failed: {str(e)}"
+            detail=ErrorMessages.PROFILE_UPDATE_FAILED
         )
 
 
@@ -615,9 +631,11 @@ async def change_password(
                 {"password": password_data.new_password}
             )
         except Exception as auth_error:
+            # Server-side logging with full error details
+            logger.error(f"Supabase Auth password update failed for user_id {user_id}: {str(auth_error)}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to update password in auth service: {str(auth_error)}"
+                detail=ErrorMessages.PASSWORD_CHANGE_FAILED
             )
 
         # Update hashed password in our database
@@ -633,9 +651,11 @@ async def change_password(
     except HTTPException:
         raise
     except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"Password change failed for user_id {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Password change failed: {str(e)}"
+            detail=ErrorMessages.PASSWORD_CHANGE_FAILED
         )
 
 
@@ -705,9 +725,11 @@ async def delete_account(
     except HTTPException:
         raise
     except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"Account deletion failed for user_id {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Account deletion failed: {str(e)}"
+            detail=ErrorMessages.ACCOUNT_DELETION_FAILED
         )
 
 
@@ -750,9 +772,11 @@ async def get_preferences(user_id: str = Depends(get_current_user_id)):
     except HTTPException:
         raise
     except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"Preferences fetch failed for user_id {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch preferences: {str(e)}"
+            detail=ErrorMessages.PREFERENCES_FETCH_FAILED
         )
 
 
@@ -879,7 +903,9 @@ async def update_preferences(
     except HTTPException:
         raise
     except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"Preferences update failed for user_id {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Preferences update failed: {str(e)}"
+            detail=ErrorMessages.PREFERENCES_UPDATE_FAILED
         )

@@ -6,11 +6,15 @@ Handles beta tester feedback submissions and email notifications
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from models.feedback import FeedbackSubmission, FeedbackResponse
+from models.error import ErrorMessages
 from utils.auth import get_current_user_id
+from utils.logger import get_logger
 from supabase import create_client, Client
 import os
 from datetime import datetime
 import uuid
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
 
@@ -68,10 +72,11 @@ async def submit_feedback(
         )
 
     except Exception as e:
-        print(f"Error submitting feedback: {str(e)}")
+        # Server-side logging with full error details
+        logger.error(f"Feedback submission failed for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to submit feedback: {str(e)}"
+            detail=ErrorMessages.FEEDBACK_SUBMIT_FAILED
         )
 
 
@@ -91,8 +96,9 @@ async def get_my_feedback(
         return {"feedback": result.data}
 
     except Exception as e:
-        print(f"Error fetching feedback: {str(e)}")
+        # Server-side logging with full error details
+        logger.error(f"Feedback fetch failed for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to fetch feedback: {str(e)}"
+            detail=ErrorMessages.FEEDBACK_FETCH_FAILED
         )
