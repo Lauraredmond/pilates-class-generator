@@ -10,11 +10,14 @@ from datetime import datetime
 from api.auth import get_current_user_id
 from utils.supabase_client import supabase
 from utils.supabase_admin import supabase_admin  # Service role client for compliance operations
+from utils.logger import get_logger
+from models.error import ErrorMessages
 from middleware.pii_logger import PIILogger
 import json
 import html  # HTML escaping for XSS prevention
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 def generate_html_report(user_data: Dict[str, Any]) -> str:
@@ -577,10 +580,11 @@ async def export_my_data(
             )
 
     except Exception as e:
-        print(f"Error exporting user data: {e}")
+        # Server-side logging with full error details
+        logger.error(f"Data export failed for user_id {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to export data: {str(e)}"
+            detail=ErrorMessages.DATA_EXPORT_FAILED
         )
 
 
@@ -1154,10 +1158,11 @@ async def get_ropa_report(
             return report
 
     except Exception as e:
-        print(f"Error generating ROPA report: {e}")
+        # Server-side logging with full error details
+        logger.error(f"ROPA report generation failed for user_id {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate ROPA report: {str(e)}"
+            detail=ErrorMessages.ROPA_REPORT_FAILED
         )
 
 
@@ -1648,10 +1653,11 @@ async def get_ai_decisions(
             return report
 
     except Exception as e:
-        print(f"Error fetching AI decisions: {e}")
+        # Server-side logging with full error details
+        logger.error(f"AI decisions fetch failed for user_id {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch AI decisions: {str(e)}"
+            detail=ErrorMessages.AI_DECISIONS_FETCH_FAILED
         )
 
 
