@@ -1,0 +1,56 @@
+Bassline Pilates Beta Tester Agreement (Beta Version)
+
+1. Introduction
+Thank you for participating as a beta tester for Bassline Pilates. This Agreement outlines your responsibilities, our commitments, and important limitations while using the Bassline Pilates beta application ("the Service").
+
+2. Purpose of Beta Testing
+The beta version is provided for the purpose of testing, feedback, and identification of bugs, usability issues, and security improvements. Features are experimental and may change.
+
+3. Voluntary Participation
+Your participation is voluntary and you may stop using the beta at any time.
+
+4. Health & Safety Disclaimer
+Bassline Pilates is an exercise‑support tool intended to supplement—not replace—professional Pilates instruction.
+Always consult a medical professional before beginning any new exercise program.
+You participate at your own risk.
+Stop exercising immediately if you feel pain, dizziness, or discomfort.
+
+5. Data Collected
+During beta testing, the Service may collect:
+- Account details (email, optional profile info)
+- Class selections and workout history
+- Muscle‑group usage records
+- App interactions and analytics events
+- Device metadata (browser type, timestamp)
+
+6. Confidentiality
+The beta version, its features, and materials are confidential. You agree not to share screenshots, videos, or details publicly without permission.
+
+7. Security Measures
+Bassline Pilates has undergone early-stage security testing, including:
+- Claude Code secure‑coding review
+- GitGuardian secret‑leak scanning
+- OWASP ZAP local web‑app scanning
+- Wireshark packet inspection verifying no PII is transmitted in clear text
+
+These tests identify issues, but cannot guarantee complete security.
+
+8. No Warranty
+The Service is provided “as is.”
+We do not guarantee uptime, accuracy, safety, or fitness for any purpose.
+
+9. Limitation of Liability
+To the maximum extent allowed by law, Bassline Pilates is not responsible for:
+- Injuries sustained while performing exercises
+- Data loss, service interruptions, or technical issues
+- Decisions made based on beta functionality or outputs
+
+10. Your Feedback
+By providing feedback, you grant Bassline Pilates permission to use your comments for product improvement without obligation or compensation.
+
+11. Governing Law
+This Agreement is governed by the laws of Ireland.
+
+12. Contact
+For questions or concerns: laura.redm@gmail.com or else use the feedback link within the application settings page.
+

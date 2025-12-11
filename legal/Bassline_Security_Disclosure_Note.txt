@@ -1,0 +1,80 @@
+Bassline Pilates – Security Disclosure Note
+
+Thank you for testing the Bassline Pilates beta.
+We want you to feel confident that your data and your device are safe while using the app.
+Below is an explanation of the security steps we’ve taken and what you should know as a tester.
+
+1. What We Tested
+Before inviting testers, Bassline Pilates underwent a structured security review aligned to the key 2025 OWASP Top Risk Categories.  
+Our testing covered the following areas:
+
+• Automated Scanning (OWASP ZAP)
+  – Scanned the public-facing app for common vulnerabilities such as broken access control, injection issues, and misconfigurations.
+
+• Dependency & Supply Chain Security (AuditNOM, GitGuardian)
+  – Reviewed npm packages for known vulnerabilities.
+  – Detected malicious or outdated dependencies.
+  – Ensured no API keys, secrets, or credentials were exposed in the repository.
+
+• Authentication & Authorization
+  – Verified session handling, login security, and access restrictions.
+  – Ensured users can access only their own data.
+
+• Database Security (Supabase RLS)
+  – Confirmed Row Level Security rules properly isolate user data.
+  – Reviewed policy logic for correctness and least‑privilege access.
+
+• Input Validation & Injection Protection
+  – Checked for unsafe handling of user input that could allow SQL injection, XSS, or logic bypass.
+
+• Cryptography & Secrets Management
+  – Confirmed that all traffic uses HTTPS.
+  – Verified password hashing and secure credential storage in environment variables.
+
+• Logging & Error Handling
+  – Ensured logs do not contain sensitive data.
+  – Checked that error messages do not leak internal information.
+
+• Business Logic & Insecure Design
+  – Reviewed app flows to identify places where users could bypass intended restrictions or misuse features.
+
+• Frontend Security Hardening
+  – Ensured user-generated content is not injected as HTML.
+  – Reviewed React components to reduce XSS risks.
+
+In addition, **Wireshark packet analysis** was performed to confirm that no personal data is transmitted in clear text over the network.
+
+2. What These Tests Mean for You
+These checks help identify issues early and improve the safety of your testing experience.  
+They do not guarantee perfect security, but they demonstrate that Bassline Pilates is being built with strong, modern security practices.
+
+3. What Bassline Pilates Does NOT Do
+• We do not sell or rent your data.  
+• We do not use third‑party advertising or behavioural tracking.  
+• We do not collect sensitive health data such as injuries or medical history.  
+
+4. What You Should Know as a Tester
+Because this is a beta:
+• Bugs may appear.  
+• Features may behave inconsistently.  
+• Data may be reset during updates.  
+• Security controls will continue to evolve.
+
+Please report anything unusual to: laura.redm@gmail.com or via the feedback link on the application settings page.
+
+5. How Your Data Is Stored
+All core data is stored in the EU:
+• Supabase (Ireland – eu-west-1)  
+• Render Backend (Germany – eu-central-1)  
+• Resend Email Infrastructure (EU region, with limited metadata potentially processed in US under standard contractual clauses)
+
+Netlify serves the static frontend globally but does not store user data.
+
+6. Your Responsibilities
+• Use a strong, unique password.  
+• Do not share screenshots or internal features publicly.  
+• Report issues or concerns quickly.  
+
+7. Contact
+If you have questions, contact: laura.redm@gmail.com or via the feedback link on the application settings page.
+
