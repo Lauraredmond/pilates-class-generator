@@ -413,7 +413,7 @@ export function ClassPlayback({
 
         {/* Movement Display */}
         <div className="flex-1 overflow-y-auto">
-          <MovementDisplay item={currentItem} />
+          <MovementDisplay item={currentItem} isPaused={isPaused} />
         </div>
 
         {/* Playback Controls */}
