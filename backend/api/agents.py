@@ -42,6 +42,7 @@ from models import (
     CompleteClassResponse,
     AgentDecision
 )
+from models.error import ErrorMessages
 
 from utils.auth import get_current_user_id  # REAL JWT authentication
 
@@ -125,18 +126,19 @@ def call_agent_tool(
 
     except ValueError as e:
         # Tool not found or invalid parameters
-        logger.error(f"Tool execution validation error: {e}")
+        logger.error(f"Tool execution validation error for user {user_id}, tool {tool_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=404 if "not found" in str(e).lower() else 400,
-            detail=str(e)
+            detail=ErrorMessages.VALIDATION_ERROR
         )
     except HTTPException:
         raise  # Re-raise HTTP exceptions
     except Exception as e:
-        logger.error(f"Tool execution error: {e}", exc_info=True)
+        # Server-side logging with full error details
+        logger.error(f"Tool {tool_id} execution failed for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Tool execution failed: {str(e)}"
+            detail=ErrorMessages.INTERNAL_ERROR
         )
 
 
@@ -331,14 +333,16 @@ async def generate_sequence(
         if 'result' in locals() and result.get('success'):
             logger.info("Returning successful result despite KeyError (logged to beta_errors table)")
             return result
-        raise HTTPException(status_code=500, detail=f"KeyError: {str(e)}")
+        # Server-side logging with full error details
+        logger.error(f"KeyError in sequence generation for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.INTERNAL_ERROR)
 
     except ValueError as e:
-        logger.error(f"Validation error: {e}", exc_info=True)
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Validation error in sequence generation for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=400, detail=ErrorMessages.VALIDATION_ERROR)
     except Exception as e:
-        logger.error(f"Sequence generation error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Sequence generation error for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.INTERNAL_ERROR)
 
 
 @router.post("/select-music", response_model=dict)
@@ -379,10 +383,11 @@ async def select_music(
     except HTTPException:
         raise  # Re-raise HTTPException from call_orchestrator_tool
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Validation error in music selection for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=400, detail=ErrorMessages.VALIDATION_ERROR)
     except Exception as e:
-        logger.error(f"Music selection error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Music selection error for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.INTERNAL_ERROR)
 
 
 @router.post("/create-meditation", response_model=dict)
@@ -423,10 +428,11 @@ async def create_meditation(
     except HTTPException:
         raise  # Re-raise HTTPException from call_orchestrator_tool
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Validation error in meditation creation for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=400, detail=ErrorMessages.VALIDATION_ERROR)
     except Exception as e:
-        logger.error(f"Meditation creation error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Meditation creation error for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.INTERNAL_ERROR)
 
 
 @router.post("/research-cues", response_model=dict)
@@ -468,10 +474,11 @@ async def research_cues(
     except HTTPException:
         raise  # Re-raise HTTPException from call_orchestrator_tool
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Validation error in research for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=400, detail=ErrorMessages.VALIDATION_ERROR)
     except Exception as e:
-        logger.error(f"Research error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Research error for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.INTERNAL_ERROR)
 
 
 @router.post("/generate-complete-class", response_model=dict)
@@ -856,8 +863,8 @@ Return all 6 sections with complete details (narrative, timing, instructions).
     except HTTPException:
         raise  # Re-raise HTTPException from call_orchestrator_tool
     except Exception as e:
-        logger.error(f"Complete class generation error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Complete class generation error for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.INTERNAL_ERROR)
 
 
 @router.get("/agent-info")
