@@ -59,7 +59,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       let currentPixelPosition = 0;
       const lineHeight = 80; // Approximate line height in pixels
 
-      lines.forEach((line, index) => {
+      lines.forEach((line) => {
         // Match pause markers like [Pause: 20s] or [Pause: 15s]
         const pauseMatch = line.match(/\[Pause:\s*(\d+)s\]/i);
         if (pauseMatch) {
