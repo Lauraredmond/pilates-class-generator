@@ -15,11 +15,9 @@ export function Settings() {
   const [expandedSections, setExpandedSections] = useState({
     security: true,
     notifications: false,
-    privacy: false,
     ai: false,
     music: false,
     compliance: false,
-    policies: false,
     danger: false
   });
 
@@ -452,65 +450,6 @@ export function Settings() {
         )}
       </div>
 
-      {/* Privacy Settings */}
-      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
-        <button
-          onClick={() => toggleSection('privacy')}
-          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Shield className="w-6 h-6 text-burgundy" />
-            <h2 className="text-xl font-semibold text-cream">Privacy Settings</h2>
-          </div>
-          {expandedSections.privacy ? (
-            <ChevronUp className="w-5 h-5 text-cream/60" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-cream/60" />
-          )}
-        </button>
-
-        {expandedSections.privacy && (
-          <div className="px-6 pb-6">
-            <p className="text-cream/60 text-sm mb-4">
-              Control how your data is used
-            </p>
-            {preferencesLoading ? (
-              <p className="text-cream/50">Loading preferences...</p>
-            ) : (
-              <div className="space-y-4">
-                <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
-                  <div>
-                    <div className="font-medium text-cream">Analytics</div>
-                    <div className="text-sm text-cream/60">Help us improve by sharing anonymous usage data</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={preferences.analytics_enabled}
-                    onChange={(e) => updatePreference('analytics_enabled', e.target.checked)}
-                    disabled={preferencesSaving}
-                    className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
-                  <div>
-                    <div className="font-medium text-cream">Data Sharing</div>
-                    <div className="text-sm text-cream/60">Allow sharing data with third-party services</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={preferences.data_sharing_enabled}
-                    onChange={(e) => updatePreference('data_sharing_enabled', e.target.checked)}
-                    disabled={preferencesSaving}
-                    className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
-                  />
-                </label>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* AI Settings */}
       <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
         <button
@@ -716,7 +655,7 @@ export function Settings() {
         )}
       </div>
 
-      {/* Compliance & Privacy Dashboard */}
+      {/* Data, Privacy & General Compliance */}
       <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
         <button
           onClick={() => toggleSection('compliance')}
@@ -724,7 +663,7 @@ export function Settings() {
         >
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-burgundy" />
-            <h2 className="text-xl font-semibold text-cream">Data & Privacy Rights</h2>
+            <h2 className="text-xl font-semibold text-cream">Data, Privacy & General Compliance</h2>
           </div>
           {expandedSections.compliance ? (
             <ChevronUp className="w-5 h-5 text-cream/60" />
@@ -735,8 +674,8 @@ export function Settings() {
 
         {expandedSections.compliance && (
           <div className="px-6 pb-6">
-            <p className="text-cream/60 text-sm mb-4">
-              Access your data and compliance reports
+            <p className="text-cream/60 text-sm mb-6">
+              Manage your privacy settings, access your data, and review compliance information
             </p>
 
             {/* Success/Error Messages */}
@@ -753,176 +692,212 @@ export function Settings() {
               </div>
             )}
 
-            {/* Compliance Actions */}
-            <div className="space-y-3 mb-4">
-              <button
-                onClick={handleDownloadMyData}
-                disabled={complianceLoading}
-                className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center gap-3">
-                  <FileDown className="w-5 h-5 text-burgundy" />
-                  <div className="text-left">
-                    <div className="font-medium text-cream">Download My Data (HTML)</div>
-                    <div className="text-sm text-cream/60">Export all your personal data (GDPR Article 15)</div>
-                  </div>
-                </div>
-                <Download className="w-5 h-5 text-cream/40" />
-              </button>
+            {/* Privacy Settings */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-cream mb-3 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-burgundy" />
+                Privacy Settings
+              </h3>
+              <p className="text-cream/60 text-sm mb-4">
+                Control how your data is used
+              </p>
+              {preferencesLoading ? (
+                <p className="text-cream/50">Loading preferences...</p>
+              ) : (
+                <div className="space-y-3">
+                  <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+                    <div>
+                      <div className="font-medium text-cream">Analytics</div>
+                      <div className="text-sm text-cream/60">Help us improve by sharing anonymous usage data</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={preferences.analytics_enabled}
+                      onChange={(e) => updatePreference('analytics_enabled', e.target.checked)}
+                      disabled={preferencesSaving}
+                      className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+                    />
+                  </label>
 
-              <div className="text-right">
+                  <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+                    <div>
+                      <div className="font-medium text-cream">Data Sharing</div>
+                      <div className="text-sm text-cream/60">Allow sharing data with third-party services</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={preferences.data_sharing_enabled}
+                      onChange={(e) => updatePreference('data_sharing_enabled', e.target.checked)}
+                      disabled={preferencesSaving}
+                      className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* Data Access & Compliance Actions */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-cream mb-3 flex items-center gap-2">
+                <Database className="w-5 h-5 text-burgundy" />
+                Data Access & Compliance
+              </h3>
+              <p className="text-cream/60 text-sm mb-4">
+                Access your data and compliance reports
+              </p>
+              <div className="space-y-3">
                 <button
-                  onClick={handleDownloadMyDataJSON}
+                  onClick={handleDownloadMyData}
                   disabled={complianceLoading}
-                  className="text-sm text-cream/50 hover:text-cream underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  or download as JSON
+                  <div className="flex items-center gap-3">
+                    <FileDown className="w-5 h-5 text-burgundy" />
+                    <div className="text-left">
+                      <div className="font-medium text-cream">Download My Data (HTML)</div>
+                      <div className="text-sm text-cream/60">Export all your personal data (GDPR Article 15)</div>
+                    </div>
+                  </div>
+                  <Download className="w-5 h-5 text-cream/40" />
+                </button>
+
+                <div className="text-right">
+                  <button
+                    onClick={handleDownloadMyDataJSON}
+                    disabled={complianceLoading}
+                    className="text-sm text-cream/50 hover:text-cream underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    or download as JSON
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleViewROPAReport}
+                  disabled={complianceLoading}
+                  className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-3">
+                    <Database className="w-5 h-5 text-burgundy" />
+                    <div className="text-left">
+                      <div className="font-medium text-cream">View Processing Activities</div>
+                      <div className="text-sm text-cream/60">See how your data has been processed (GDPR Article 30)</div>
+                    </div>
+                  </div>
+                  <Info className="w-5 h-5 text-cream/40" />
+                </button>
+
+                <button
+                  onClick={handleViewAIDecisions}
+                  disabled={complianceLoading}
+                  className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-3">
+                    <Info className="w-5 h-5 text-burgundy" />
+                    <div className="text-left">
+                      <div className="font-medium text-cream">View AI Decisions</div>
+                      <div className="text-sm text-cream/60">Understand AI recommendations (EU AI Act transparency)</div>
+                    </div>
+                  </div>
+                  <Shield className="w-5 h-5 text-cream/40" />
                 </button>
               </div>
-
-              <button
-                onClick={handleViewROPAReport}
-                disabled={complianceLoading}
-                className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center gap-3">
-                  <Database className="w-5 h-5 text-burgundy" />
-                  <div className="text-left">
-                    <div className="font-medium text-cream">View Processing Activities</div>
-                    <div className="text-sm text-cream/60">See how your data has been processed (GDPR Article 30)</div>
-                  </div>
-                </div>
-                <Info className="w-5 h-5 text-cream/40" />
-              </button>
-
-              <button
-                onClick={handleViewAIDecisions}
-                disabled={complianceLoading}
-                className="w-full flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center gap-3">
-                  <Info className="w-5 h-5 text-burgundy" />
-                  <div className="text-left">
-                    <div className="font-medium text-cream">View AI Decisions</div>
-                    <div className="text-sm text-cream/60">Understand AI recommendations (EU AI Act transparency)</div>
-                  </div>
-                </div>
-                <Shield className="w-5 h-5 text-cream/40" />
-              </button>
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* Policies & Agreements */}
-      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
-        <button
-          onClick={() => toggleSection('policies')}
-          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <FileText className="w-6 h-6 text-burgundy" />
-            <h2 className="text-xl font-semibold text-cream">Policies & Agreements</h2>
-          </div>
-          {expandedSections.policies ? (
-            <ChevronUp className="w-5 h-5 text-cream/60" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-cream/60" />
-          )}
-        </button>
-
-        {expandedSections.policies && (
-          <div className="px-6 pb-6">
-            <p className="text-cream/60 text-sm mb-4">
-              Review the legal policies and agreements for Bassline Pilates
-            </p>
-
-            {/* Policy Links */}
-            <div className="space-y-3">
-              {/* Privacy Policy */}
-              <a
-                href="/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-burgundy" />
-                  <div>
-                    <div className="font-medium text-cream">Privacy Policy</div>
-                    <div className="text-sm text-cream/60">How we collect, use, and protect your personal data</div>
+            {/* Policies & Agreements */}
+            <div>
+              <h3 className="text-lg font-semibold text-cream mb-3 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-burgundy" />
+                Policies & Agreements
+              </h3>
+              <p className="text-cream/60 text-sm mb-4">
+                Review the legal policies and agreements for Bassline Pilates
+              </p>
+              <div className="space-y-3">
+                {/* Privacy Policy */}
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-burgundy" />
+                    <div>
+                      <div className="font-medium text-cream">Privacy Policy</div>
+                      <div className="text-sm text-cream/60">How we collect, use, and protect your personal data</div>
+                    </div>
                   </div>
-                </div>
-                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
-              </a>
+                  <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+                </a>
 
-              {/* Beta Tester Agreement */}
-              <a
-                href="/beta-agreement"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-burgundy" />
-                  <div>
-                    <div className="font-medium text-cream">Beta Tester Agreement</div>
-                    <div className="text-sm text-cream/60">Terms and conditions for beta testing participation</div>
+                {/* Beta Tester Agreement */}
+                <a
+                  href="/beta-agreement"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-burgundy" />
+                    <div>
+                      <div className="font-medium text-cream">Beta Tester Agreement</div>
+                      <div className="text-sm text-cream/60">Terms and conditions for beta testing participation</div>
+                    </div>
                   </div>
-                </div>
-                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
-              </a>
+                  <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+                </a>
 
-              {/* Security Overview */}
-              <a
-                href="/security"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-burgundy" />
-                  <div>
-                    <div className="font-medium text-cream">Security Overview</div>
-                    <div className="text-sm text-cream/60">Our security practices and compliance measures</div>
+                {/* Security Overview */}
+                <a
+                  href="/security"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-burgundy" />
+                    <div>
+                      <div className="font-medium text-cream">Security Overview</div>
+                      <div className="text-sm text-cream/60">Our security practices and compliance measures</div>
+                    </div>
                   </div>
-                </div>
-                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
-              </a>
+                  <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+                </a>
 
-              {/* Data Handling During Beta */}
-              <a
-                href="/data-during-beta"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <Database className="w-5 h-5 text-burgundy" />
-                  <div>
-                    <div className="font-medium text-cream">Data Handling During Beta</div>
-                    <div className="text-sm text-cream/60">How we handle your data during beta testing</div>
+                {/* Data Handling During Beta */}
+                <a
+                  href="/data-during-beta"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Database className="w-5 h-5 text-burgundy" />
+                    <div>
+                      <div className="font-medium text-cream">Data Handling During Beta</div>
+                      <div className="text-sm text-cream/60">How we handle your data during beta testing</div>
+                    </div>
                   </div>
-                </div>
-                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
-              </a>
+                  <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+                </a>
 
-              {/* Health & Safety Disclaimer */}
-              <a
-                href="/safety"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-burgundy" />
-                  <div>
-                    <div className="font-medium text-cream">Health & Safety Disclaimer</div>
-                    <div className="text-sm text-cream/60">Important safety information for using the platform</div>
+                {/* Health & Safety Disclaimer */}
+                <a
+                  href="/safety"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 bg-burgundy/10 rounded hover:bg-burgundy/20 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-burgundy" />
+                    <div>
+                      <div className="font-medium text-cream">Health & Safety Disclaimer</div>
+                      <div className="text-sm text-cream/60">Important safety information for using the platform</div>
+                    </div>
                   </div>
-                </div>
-                <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
-              </a>
+                  <ChevronUp className="w-5 h-5 text-cream/40 group-hover:text-cream/60 transform rotate-90" />
+                </a>
+              </div>
             </div>
           </div>
         )}
