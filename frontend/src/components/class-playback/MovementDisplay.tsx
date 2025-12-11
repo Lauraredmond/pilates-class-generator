@@ -8,9 +8,10 @@ import { PlaybackItem } from './ClassPlayback';
 
 interface MovementDisplayProps {
   item: PlaybackItem;
+  isPaused?: boolean; // Pause narrative scroll when H&S modal is shown
 }
 
-export function MovementDisplay({ item }: MovementDisplayProps) {
+export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
@@ -21,8 +22,11 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
     // Reset scroll to top when item changes
     container.scrollTop = 0;
 
-    // Calculate scroll speed based on duration (25% faster for voiceover sync)
-    const duration = item.duration_seconds * 1000 * 0.75; // Convert to ms, 25% faster (0.81 * 0.93)
+    // Don't start scrolling if paused (e.g., H&S modal is shown)
+    if (isPaused) return;
+
+    // Calculate scroll speed based on duration (50% slower for readability - user requested)
+    const duration = item.duration_seconds * 1000 * 1.5; // Convert to ms, 50% slower (1.5x duration)
     const scrollHeight = container.scrollHeight - container.clientHeight;
     const scrollSpeed = scrollHeight / duration; // pixels per ms
 
@@ -54,7 +58,7 @@ export function MovementDisplay({ item }: MovementDisplayProps) {
         cancelAnimationFrame(animationFrame);
       }
     };
-  }, [item.duration_seconds]);
+  }, [item.duration_seconds, isPaused]);
 
   // Handle different section types
   if (item.type === 'transition') {
