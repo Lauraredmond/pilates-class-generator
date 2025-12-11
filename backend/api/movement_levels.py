@@ -13,8 +13,12 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 
 from utils.auth import get_current_user_id
+from utils.logger import get_logger
+from models.error import ErrorMessages
 
 load_dotenv()
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/movements", tags=["Movement Levels"])
 
@@ -83,9 +87,10 @@ async def get_movement_levels(
         return result.data
 
     except Exception as e:
+        logger.error(f"Movement levels fetch failed for movement {movement_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch movement levels: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -124,9 +129,10 @@ async def get_movement_level(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Movement level {level_number} fetch failed for movement {movement_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch movement level: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -174,9 +180,10 @@ async def create_movement_level(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Movement level creation failed for movement {movement_id}, level {level_data.level_number}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create movement level: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -215,9 +222,10 @@ async def update_movement_level(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Movement level {level_number} update failed for movement {movement_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update movement level: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -246,7 +254,8 @@ async def delete_movement_level(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Movement level {level_number} deletion failed for movement {movement_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete movement level: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
