@@ -3,38 +3,8 @@
 [Log] [ClassBuilder] API response: – 34 – "movements received" (index-DG4TOdG4.js, line 74)
 [Log] [ClassBuilder] Sample movement: – Object (index-DG4TOdG4.js, line 74)
 Object
-[Log] [AIGenerationPanel] Using authenticated user ID: – "c9d2e79e-9b6a-4d90-9295-e3e53338c4ec" (index-DG4TOdG4.js, line 74)
-[Log] [AIGenerationPanel] StandardAgent orchestration complete: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] [AIGenerationPanel] All 6 sections received from backend: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] [AIGenerationPanel] Class saved to database: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🎛️ Web Audio API initialized (index-DG4TOdG4.js, line 74)
-[Log] 🎙️ Voiceover ready: – "https://lixvcebtwusmaipodcpc.supabase.co/storage/v1/object/public/movement-voiceovers/1-preparation-phase.mp3" (index-DG4TOdG4.js, line 74)
-[Log] 🎙️ Auto-playing voiceover (not paused) (index-DG4TOdG4.js, line 74)
-[Log] 🎙️ Voiceover started - ducking music to – 0.2 (index-DG4TOdG4.js, line 74)
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Error] Failed to load resource: the server responded with a status of 500 () (32175c98-e1d4-457a-a76c-b35ee3953419, line 0)
-[Error] Error fetching music playlist: – ve
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – ve
 ve
-	(anonymous function) (index-DG4TOdG4.js:74:8093)
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
+	(anonymous function) (index-DG4TOdG4.js:82:18232)
+[Error] Failed to load resource: the server responded with a status of 500 () (submit, line 0)
