@@ -9,7 +9,9 @@ import axios from 'axios';
 import { MovementDisplay } from './MovementDisplay';
 import { PlaybackControls } from './PlaybackControls';
 import { TimerDisplay } from './TimerDisplay';
+import { HealthSafetyModal } from '../modals/HealthSafetyModal';
 import { useAudioDucking } from '../../hooks/useAudioDucking';
+import { useAuth } from '../../context/AuthContext';
 import { logger } from '../../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://pilates-class-generator-api3.onrender.com';
@@ -180,13 +182,25 @@ export function ClassPlayback({
   onComplete,
   onExit,
 }: ClassPlaybackProps) {
+  const { user, acceptSafety } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isPaused, setIsPaused] = useState(true); // Start paused if safety modal needs to be shown
   const [timeRemaining, setTimeRemaining] = useState(items[0]?.duration_seconds || 0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
   const [currentPlaylist, setCurrentPlaylist] = useState<MusicPlaylist | null>(null);
   const [currentTrackIndex] = useState(0); // TODO: Add track advancement when useAudioDucking supports onMusicEnded callback
   const [musicError, setMusicError] = useState<string | null>(null);
+
+  // Check if user needs to accept Health & Safety disclaimer
+  useEffect(() => {
+    if (user && !user.accepted_safety_at) {
+      setShowSafetyModal(true);
+      setIsPaused(true); // Pause playback until accepted
+    } else {
+      setIsPaused(false); // Start playback if already accepted
+    }
+  }, [user]);
 
   const currentItem = items[currentIndex];
   const totalItems = items.length;
@@ -338,6 +352,25 @@ export function ClassPlayback({
     setShowExitConfirm(false);
   }, []);
 
+  const handleSafetyAccept = useCallback(async () => {
+    try {
+      await acceptSafety();
+      setShowSafetyModal(false);
+      setIsPaused(false); // Resume playback after acceptance
+    } catch (error) {
+      logger.error('Failed to record safety acceptance:', error);
+      // Still close modal and allow playback (graceful degradation)
+      setShowSafetyModal(false);
+      setIsPaused(false);
+    }
+  }, [acceptSafety]);
+
+  const handleSafetyDecline = useCallback(() => {
+    // User declined safety disclaimer - exit playback
+    setShowSafetyModal(false);
+    onExit?.();
+  }, [onExit]);
+
   if (!currentItem) {
     return null;
   }
@@ -395,6 +428,14 @@ export function ClassPlayback({
           />
         </div>
       </div>
+
+      {/* Health & Safety Modal - Shown before first class */}
+      {showSafetyModal && (
+        <HealthSafetyModal
+          onAccept={handleSafetyAccept}
+          onDecline={handleSafetyDecline}
+        />
+      )}
 
       {/* Exit Confirmation Modal */}
       {showExitConfirm && (
