@@ -16,6 +16,12 @@ import { ResetPassword } from './pages/ResetPassword';
 import { ResetPasswordConfirm } from './pages/ResetPasswordConfirm';
 import { EmailConfirm } from './pages/EmailConfirm';
 import { MedicalDisclaimer } from './components/MedicalDisclaimer';
+// Legal policy pages (public access)
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { BetaAgreement } from './pages/BetaAgreement';
+import { SecurityDisclosure } from './pages/SecurityDisclosure';
+import { DataDuringBeta } from './pages/DataDuringBeta';
+import { HealthSafety } from './pages/HealthSafety';
 
 function App() {
   const [disclaimerAccepted, setDisclaimerAccepted] = useState<boolean>(false);
@@ -108,6 +114,13 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/reset-password-confirm" element={<ResetPasswordConfirm />} />
         <Route path="/auth/confirm" element={<EmailConfirm />} />
+
+        {/* Legal policy pages (public access) */}
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/beta-agreement" element={<BetaAgreement />} />
+        <Route path="/security" element={<SecurityDisclosure />} />
+        <Route path="/data-during-beta" element={<DataDuringBeta />} />
+        <Route path="/safety" element={<HealthSafety />} />
 
         {/* Protected routes (with layout) */}
         <Route path="/" element={
