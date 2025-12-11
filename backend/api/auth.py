@@ -716,6 +716,10 @@ async def delete_account(
         # Delete user preferences (should cascade, but being explicit)
         supabase.table("user_preferences").delete().eq("user_id", user_id).execute()
 
+        # Delete from users table (tokenized email table)
+        # This table was created during registration and must be cleaned up
+        supabase.table("users").delete().eq("id", user_id).execute()
+
         # Delete user profile (this is the main record)
         supabase.table("user_profiles").delete().eq("id", user_id).execute()
 
