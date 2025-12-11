@@ -38,10 +38,72 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
     let startTime: number;
     let animationFrame: number;
+    let isPausedForMarker = false;
+    let pauseStartTime: number | null = null;
+    let pauseDuration = 0;
+    let totalPausedTime = 0;
+
+    // Parse narrative for pause markers like "[Pause: 20s]"
+    const getNarrative = (): string => {
+      if ('narrative' in item && item.narrative) return item.narrative;
+      if ('script_text' in item && item.script_text) return item.script_text;
+      if ('advice_text' in item && item.advice_text) return item.advice_text;
+      return '';
+    };
+
+    const narrative = getNarrative();
+    const pauseMarkers: { position: number; duration: number }[] = [];
+
+    if (narrative) {
+      const lines = narrative.split('\n');
+      let currentPixelPosition = 0;
+      const lineHeight = 80; // Approximate line height in pixels
+
+      lines.forEach((line, index) => {
+        // Match pause markers like [Pause: 20s] or [Pause: 15s]
+        const pauseMatch = line.match(/\[Pause:\s*(\d+)s\]/i);
+        if (pauseMatch) {
+          const pauseSeconds = parseInt(pauseMatch[1], 10);
+          pauseMarkers.push({
+            position: currentPixelPosition,
+            duration: pauseSeconds * 1000, // Convert to ms
+          });
+        }
+        currentPixelPosition += lineHeight;
+      });
+    }
 
     const scroll = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
+      const elapsed = timestamp - startTime - totalPausedTime;
+
+      // Check if we should pause at a marker
+      const currentScrollPos = scrollSpeed * elapsed;
+      const activePause = pauseMarkers.find(
+        marker => currentScrollPos >= marker.position && currentScrollPos < marker.position + 50
+      );
+
+      if (activePause && !isPausedForMarker) {
+        // Start pause
+        isPausedForMarker = true;
+        pauseStartTime = timestamp;
+        pauseDuration = activePause.duration;
+      }
+
+      if (isPausedForMarker && pauseStartTime) {
+        const pauseElapsed = timestamp - pauseStartTime;
+        if (pauseElapsed < pauseDuration) {
+          // Still paused - don't advance scroll
+          container.scrollTop = currentScrollPos;
+          animationFrame = requestAnimationFrame(scroll);
+          return;
+        } else {
+          // Pause complete - resume scrolling
+          isPausedForMarker = false;
+          totalPausedTime += pauseDuration;
+          pauseStartTime = null;
+        }
+      }
 
       // Calculate new scroll position
       const newScrollTop = Math.min(scrollSpeed * elapsed, scrollHeight);
@@ -176,6 +238,11 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
           {/* Mobile: space-y-2 (very tight), Desktop: space-y-8 */}
           <div className="text-center space-y-2 md:space-y-8">
             {narrative.split('\n').map((line, index) => {
+              // Skip pause marker lines (don't display them)
+              if (line.match(/\[Pause:\s*\d+s\]/i)) {
+                return null;
+              }
+
               if (index === 0 || line.includes(':')) {
                 return (
                   // Mobile: mb-2, Desktop: mb-8
@@ -325,6 +392,11 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
         {/* Mobile: space-y-2 (very tight), Desktop: space-y-8 */}
         <div className="text-center space-y-2 md:space-y-8">
           {narrative.split('\n').map((line, index) => {
+            // Skip pause marker lines (don't display them)
+            if (line.match(/\[Pause:\s*\d+s\]/i)) {
+              return null;
+            }
+
             // Title styling
             if (index === 0) {
               return (
