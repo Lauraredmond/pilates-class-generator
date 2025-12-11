@@ -52,7 +52,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     };
 
     const narrative = getNarrative();
-    const pauseMarkers: { position: number; duration: number }[] = [];
+    const pauseMarkers: { position: number; duration: number; completed: boolean }[] = [];
 
     if (narrative) {
       const lines = narrative.split('\n');
@@ -67,6 +67,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
           pauseMarkers.push({
             position: currentPixelPosition,
             duration: pauseSeconds * 1000, // Convert to ms
+            completed: false, // Track if this pause has been executed
           });
         }
         currentPixelPosition += lineHeight;
@@ -77,10 +78,12 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime - totalPausedTime;
 
-      // Check if we should pause at a marker
+      // Calculate current scroll position
       const currentScrollPos = scrollSpeed * elapsed;
+
+      // Check if we should pause at a marker (only if not already completed)
       const activePause = pauseMarkers.find(
-        marker => currentScrollPos >= marker.position && currentScrollPos < marker.position + 50
+        marker => !marker.completed && currentScrollPos >= marker.position && currentScrollPos < marker.position + 100
       );
 
       if (activePause && !isPausedForMarker) {
@@ -98,7 +101,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
           animationFrame = requestAnimationFrame(scroll);
           return;
         } else {
-          // Pause complete - resume scrolling
+          // Pause complete - mark as completed and resume scrolling
+          if (activePause) {
+            activePause.completed = true; // Mark this pause as completed so it won't trigger again
+          }
           isPausedForMarker = false;
           totalPausedTime += pauseDuration;
           pauseStartTime = null;
