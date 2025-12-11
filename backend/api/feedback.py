@@ -7,11 +7,17 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from models.feedback import FeedbackSubmission, FeedbackResponse
 from utils.auth import get_current_user_id
-from utils.supabase_admin import supabase_admin
+from supabase import create_client, Client
+import os
 from datetime import datetime
 import uuid
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
+
+# Supabase client for storing feedback
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 @router.post("/submit", response_model=FeedbackResponse)
@@ -46,9 +52,8 @@ async def submit_feedback(
             "status": "new"  # new, reviewed, resolved
         }
 
-        # Insert into Supabase (using admin client to bypass RLS)
-        # User is already authenticated via get_current_user_id() dependency
-        result = supabase_admin.table("beta_feedback").insert(feedback_data).execute()
+        # Insert into Supabase
+        result = supabase.table("beta_feedback").insert(feedback_data).execute()
 
         # TODO: Send email notification via Supabase Auth
         # This will work once SMTP is configured in Supabase dashboard
@@ -75,8 +80,7 @@ async def get_my_feedback(
     """Get all feedback submissions for the current user"""
 
     try:
-        # Use admin client to bypass RLS (user is already authenticated)
-        result = supabase_admin.table("beta_feedback")\
+        result = supabase.table("beta_feedback")\
             .select("*")\
             .eq("user_id", user_id)\
             .order("created_at", desc=True)\
