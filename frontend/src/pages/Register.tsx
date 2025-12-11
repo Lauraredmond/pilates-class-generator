@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth, type RegistrationData } from '../context/AuthContext';
+import { CountrySelect } from '../components/ui/CountrySelect';
 
 export function Register() {
   const [email, setEmail] = useState('');
@@ -264,13 +265,11 @@ export function Register() {
                 <label htmlFor="country" className="block text-sm font-medium text-charcoal mb-1">
                   Country
                 </label>
-                <input
-                  id="country"
-                  type="text"
+                <CountrySelect
                   value={country}
-                  onChange={(e) => setCountry(e.target.value)}
+                  onChange={setCountry}
                   className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
-                  placeholder="United States"
+                  placeholder="Select or type country"
                 />
               </div>
 
