@@ -38,25 +38,3 @@ Object
 Object
 [Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
 Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – Object (index-DG4TOdG4.js, line 74)
-Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, …} (index-DG4TOdG4.js, line 74)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…ublic/movement-voiceovers/1-preparation-phase.mp3", voiceoverDuration: 107, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, …} (index-DG4TOdG4.js, line 74)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…ublic/movement-voiceovers/1-preparation-phase.mp3", voiceoverDuration: 107, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, …} (index-DG4TOdG4.js, line 74)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…ublic/movement-voiceovers/1-preparation-phase.mp3", voiceoverDuration: 107, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, …} (index-DG4TOdG4.js, line 74)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…ublic/movement-voiceovers/1-preparation-phase.mp3", voiceoverDuration: 107, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, …} (index-DG4TOdG4.js, line 74)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…ublic/movement-voiceovers/1-preparation-phase.mp3", voiceoverDuration: 107, …}Object
-[Log] 🔍 VOICEOVER DEBUG: – {currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, …} (index-DG4TOdG4.js, line 74)
-{currentItemType: "preparation", currentItemName: "Pilates Principles Introduction", voiceoverEnabled: true, voiceoverUrl: "https://lixvcebtwusmaipodcpc.supabase.co/storage/v…ublic/movement-voiceovers/1-preparation-phase.mp3", voiceoverDuration: 107, …}Object
