@@ -1,7 +1,7 @@
 /**
  * GeneratedResults Component
- * Modal to display AI-generated class results with tabbed interface
- * Tabs: Sequence, Music, Meditation
+ * Modal to display auto-generated class results with tabbed interface
+ * Tabs: Sequence (Music and Meditation tabs hidden as of 2025-12-11)
  */
 
 import { useState } from 'react';
@@ -90,34 +90,35 @@ export function GeneratedResults({
         </svg>
       ),
     },
-    {
-      id: 'music',
-      label: 'Music',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 'meditation',
-      label: 'Meditation',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
-    },
+    // Music and Meditation tabs hidden per user request (2025-12-11)
+    // {
+    //   id: 'music',
+    //   label: 'Music',
+    //   icon: (
+    //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //       <path
+    //         strokeLinecap="round"
+    //         strokeLinejoin="round"
+    //         strokeWidth={2}
+    //         d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+    //       />
+    //     </svg>
+    //   ),
+    // },
+    // {
+    //   id: 'meditation',
+    //   label: 'Meditation',
+    //   icon: (
+    //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //       <path
+    //         strokeLinecap="round"
+    //         strokeLinejoin="round"
+    //         strokeWidth={2}
+    //         d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+    //       />
+    //     </svg>
+    //   ),
+    // },
   ];
 
   return (
@@ -128,10 +129,10 @@ export function GeneratedResults({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-cream mb-1">
-                Your AI-Generated Class
+                Your Auto-Generated Class
               </h2>
               <p className="text-sm text-cream/60">
-                Review the generated sequence, music, and meditation
+                Review the generated sequence
               </p>
             </div>
             <button
