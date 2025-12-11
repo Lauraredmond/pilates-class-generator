@@ -8,6 +8,7 @@ import { AutoClassBuilder } from '../components/class-builder/AutoClassBuilder';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
 import { Loading } from '../components/ui/Loading';
+import { logger } from '../utils/logger';
 
 export function ClassBuilder() {
   const setMovements = useStore((state) => state.setMovements);
@@ -19,27 +20,25 @@ export function ClassBuilder() {
   // Load movements on mount
   useEffect(() => {
     const loadMovements = async () => {
-      console.log('[ClassBuilder] useEffect triggered, movements.length:', movements.length);
+      logger.debug('[ClassBuilder] Loading movements');
 
       // Force fetch fresh data to ensure we have the latest API response
       // TODO: Add smart cache validation later
-      console.log('[ClassBuilder] Force fetching movements from API...');
       setIsLoading(true);
       setError(null);
 
       try {
         const response = await api.get('/api/movements');
-        console.log('[ClassBuilder] API response:', response.data?.length, 'movements received');
+        logger.debug('[ClassBuilder] Movements loaded');
 
         if (response.data && Array.isArray(response.data)) {
-          console.log('[ClassBuilder] Sample movement:', response.data[0]);
           setMovements(response.data);
         } else {
-          console.error('[ClassBuilder] Invalid API response format:', response.data);
+          logger.error('[ClassBuilder] Invalid API response format');
           setError('Invalid data format received from API');
         }
       } catch (error: any) {
-        console.error('[ClassBuilder] Failed to load movements:', error);
+        logger.error('[ClassBuilder] Failed to load movements:', error);
         setError(error.message || 'Failed to load movements');
       } finally {
         setIsLoading(false);

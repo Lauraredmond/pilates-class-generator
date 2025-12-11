@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { useStore } from '../../store/useStore';
+import { logger } from '../../utils/logger';
 
 export function ClassDetailsPanel() {
   const currentClass = useStore((state) => state.currentClass);
@@ -69,7 +70,7 @@ export function ClassDetailsPanel() {
 
   const handleSave = () => {
     // This will be connected to API later
-    console.log('Saving class:', currentClass);
+    logger.debug('Saving class');
     useStore.getState().showToast('Class saved successfully!', 'success');
   };
 
