@@ -29,6 +29,7 @@ COMMENT ON COLUMN <table_name>.voiceover_enabled IS 'Whether to play voiceover d
 **Example tables:**
 - ✅ `preparation_scripts`
 - ✅ `warmup_routines`
+- ✅ `transitions` (for transition narratives between movements)
 - ✅ `cooldown_sequences`
 - ✅ `closing_meditation_scripts`
 - ✅ `closing_homecare_advice`
@@ -87,6 +88,7 @@ export interface Playback<SectionType> {
 **Interfaces to update:**
 - ✅ `PlaybackPreparation`
 - ✅ `PlaybackWarmup`
+- ✅ `PlaybackTransition` (for transition narratives)
 - ✅ `PlaybackCooldown`
 - ✅ `PlaybackMeditation`
 - ✅ `PlaybackHomeCare`
@@ -133,10 +135,12 @@ When constructing `playbackItems` array, you MUST map the voiceover fields from 
 - `frontend/src/components/class-builder/AIGenerationPanel.tsx` (lines 237-338)
 
 **Sections to update:**
-- ✅ Preparation (lines 248-251)
-- ✅ Warmup (lines 261-264)
-- ✅ Cooldown (lines 306-309)
-- ✅ Meditation (lines 319-322)
+- ✅ Preparation (lines 237-240)
+- ✅ Warmup (lines 250-253)
+- ✅ Transitions (lines 267-269) ⚠️ CRITICAL - map voiceover fields in transition conditional
+- ✅ Movements (lines 281-283) ⚠️ Already updated
+- ✅ Cooldown (lines 296-298)
+- ✅ Meditation (lines 309-311)
 - ✅ HomeCare (lines 332-335)
 
 **Why This Step is Critical:**
@@ -251,18 +255,25 @@ WHERE routine_name = 'Full Body Activation';
 
 ## 🎯 Current Status (December 8, 2025)
 
-### ✅ Fully Implemented
+### ✅ Fully Implemented (Database + Frontend)
 - **Preparation Scripts**: All 5 steps complete + tested ✅
-- **Warmup Routines**: Schema + models ready, awaiting voiceover upload
-- **Cooldown Sequences**: Schema + models ready, awaiting voiceover upload
-- **Meditation Scripts**: Schema + models ready, awaiting voiceover upload
-- **HomeCare Advice**: Schema + models ready, awaiting voiceover upload
+- **Warmup Routines**: Schema + interface ready, awaiting voiceover upload
+- **Transitions**: Schema + interface ready, awaiting voiceover upload ✅ (December 11, 2025)
+- **Cooldown Sequences**: Schema + interface ready, awaiting voiceover upload
+- **Meditation Scripts**: Schema + interface ready, awaiting voiceover upload
+- **HomeCare Advice**: Schema + interface ready, awaiting voiceover upload
 
 ### 📝 Next Steps
-1. Record 4 remaining voiceovers (warmup, cooldown, meditation, homecare)
-2. Upload to Supabase Storage
-3. Update database with URLs/durations
-4. Test each section during class playback
+1. Run database migration 027 in Supabase (add voiceover columns to transitions)
+2. Record 5 remaining voiceovers:
+   - Warmup routines
+   - Transitions (optional - can enhance position cueing)
+   - Cooldown sequences
+   - Meditation scripts
+   - HomeCare advice
+3. Upload to Supabase Storage
+4. Update database with URLs/durations
+5. Test each section during class playback
 
 ---
 
@@ -272,6 +283,7 @@ WHERE routine_name = 'Full Body Activation';
 - `database/migrations/016_add_voiceover_columns_to_class_sections.sql`
 - `database/migrations/017_update_preparation_scripts.sql`
 - `database/migrations/018_remove_unused_preparation_columns.sql`
+- `database/migrations/027_add_voiceover_columns_to_transitions.sql` ✅ NEW (December 11, 2025)
 
 **Backend Models:**
 - `backend/api/class_sections.py` (Pydantic models lines 30-107)

@@ -10,6 +10,7 @@ import { MovementDisplay } from './MovementDisplay';
 import { PlaybackControls } from './PlaybackControls';
 import { TimerDisplay } from './TimerDisplay';
 import { useAudioDucking } from '../../hooks/useAudioDucking';
+import { logger } from '../../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://pilates-class-generator-api3.onrender.com';
 
@@ -109,6 +110,10 @@ export interface PlaybackTransition {
   duration_seconds: number;
   from_position?: string;
   to_position?: string;
+  // Voiceover audio
+  voiceover_url?: string;
+  voiceover_duration?: number;
+  voiceover_enabled?: boolean;
 }
 
 export interface PlaybackCooldown {
@@ -192,21 +197,6 @@ export function ClassPlayback({
       ? currentItem.voiceover_url
       : undefined;
 
-  // DEBUG: Log voiceover detection for troubleshooting
-  console.log('🔍 VOICEOVER DEBUG:', {
-    currentItemType: currentItem?.type,
-    currentItemName: currentItem && 'name' in currentItem ? (currentItem as any).name :
-                     currentItem && 'script_name' in currentItem ? (currentItem as any).script_name :
-                     currentItem && 'routine_name' in currentItem ? (currentItem as any).routine_name :
-                     currentItem && 'sequence_name' in currentItem ? (currentItem as any).sequence_name :
-                     currentItem && 'advice_name' in currentItem ? (currentItem as any).advice_name : 'N/A',
-    voiceoverEnabled: 'voiceover_enabled' in currentItem ? currentItem.voiceover_enabled : undefined,
-    voiceoverUrl: 'voiceover_url' in currentItem ? currentItem.voiceover_url : undefined,
-    voiceoverDuration: 'voiceover_duration' in currentItem ? (currentItem as any).voiceover_duration : undefined,
-    detectedVoiceover: currentVoiceover,
-    fullItemObject: currentItem
-  });
-
   // Get current track URL from playlist
   const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
 
@@ -267,7 +257,7 @@ export function ClassPlayback({
           }
         }
       } catch (error: any) {
-        console.error('Error fetching music playlist:', error);
+        logger.error('Error fetching music playlist:', error);
         setMusicError('Failed to load music. Class will continue without audio.');
       }
     };
