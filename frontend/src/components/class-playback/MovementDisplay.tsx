@@ -25,8 +25,14 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     // Don't start scrolling if paused (e.g., H&S modal is shown)
     if (isPaused) return;
 
+    // Use voiceover duration if available (syncs scroll with voiceover audio)
+    // Otherwise use section duration
+    const baseDuration = ('voiceover_duration' in item && item.voiceover_duration)
+      ? item.voiceover_duration
+      : item.duration_seconds;
+
     // Calculate scroll speed based on duration (19% slower for readability - user fine-tuned)
-    const duration = item.duration_seconds * 1000 * 1.190; // Convert to ms, 19% slower (1.190x duration)
+    const duration = baseDuration * 1000 * 1.190; // Convert to ms, 19% slower (1.190x duration)
     const scrollHeight = container.scrollHeight - container.clientHeight;
     const scrollSpeed = scrollHeight / duration; // pixels per ms
 
@@ -58,7 +64,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
         cancelAnimationFrame(animationFrame);
       }
     };
-  }, [item.duration_seconds, isPaused]);
+  }, [item, isPaused]);
 
   // Handle different section types
   if (item.type === 'transition') {
