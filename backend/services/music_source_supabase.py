@@ -198,24 +198,38 @@ class SupabaseMusicSource(MusicSource):
                 return []
 
             # Convert to MusicTrack objects
+            # NOTE: Migration 024 simplified the function to return fewer fields
+            # We need to fetch full track details separately for each track
             tracks = []
             for row in response.data:
                 try:
+                    # Fetch full track details from music_tracks table
+                    track_details = self.supabase.table('music_tracks') \
+                        .select('*') \
+                        .eq('id', row['track_id']) \
+                        .single() \
+                        .execute()
+
+                    if not track_details.data:
+                        continue
+
+                    track_data = track_details.data
+
                     # Validate streaming URL
-                    self.validate_streaming_url(row['track_audio_url'])
+                    self.validate_streaming_url(track_data['audio_url'])
 
                     track = MusicTrack(
-                        id=row['track_id'],
-                        source='SUPABASE',  # Source is from database
-                        title=row['track_title'],
-                        composer=row.get('track_composer'),
-                        artist_performer=row.get('track_performer'),
-                        duration_seconds=row['track_duration_seconds'],
-                        audio_url=row['track_audio_url'],
-                        stylistic_period=StylisticPeriod(row['track_stylistic_period']),
-                        bpm=row.get('track_bpm'),
-                        mood_tags=[],
-                        license_info={}
+                        id=track_data['id'],
+                        source=track_data['source'],
+                        title=track_data['title'],
+                        composer=track_data.get('composer'),
+                        artist_performer=track_data.get('artist_performer'),
+                        duration_seconds=track_data['duration_seconds'],
+                        audio_url=track_data['audio_url'],
+                        stylistic_period=StylisticPeriod(track_data['stylistic_period']),
+                        bpm=track_data.get('bpm'),
+                        mood_tags=track_data.get('mood_tags', []),
+                        license_info=track_data.get('license_info', {})
                     )
                     tracks.append(track)
 
