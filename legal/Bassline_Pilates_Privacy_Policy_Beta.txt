@@ -1,0 +1,120 @@
+Bassline Pilates Privacy Policy (Beta)
+
+Last Updated: December 2025
+Status: Early Beta Version — Subject to Change
+
+1. Introduction
+Welcome to Bassline Pilates (“we”, “our”, “us”). We provide a personalised Pilates planning and training experience that adapts to your practise history, muscle-group usage, and preferences. Because this is a beta release, some features, controls, and protections are still evolving — but we take your privacy seriously and want you to understand exactly how your data is used and protected.
+
+This Privacy Policy explains:
+• What data we collect
+• Why we collect it
+• How we store and protect it
+• Who has access
+• Your rights
+• How to contact us
+
+If you do not agree with this policy, please do not use the beta version of Bassline Pilates.
+
+2. What Data We Collect
+We only collect the minimum data necessary to operate the beta, generate your personalised classes, and improve system performance.
+
+A. Account Information
+• Email address
+• Encrypted password
+• Account creation timestamps
+• Age Range
+• Gender Identity
+• Country
+
+B. Profile & Training Preferences
+• Optional preference selections
+• Pilates experience level
+
+C. Practice & Movement Data
+We store:
+• Movements used in each class
+• Muscle groups activated per session
+• Practise history
+• Class generation parameters
+
+D. Device & Technical Information
+Automatically collected:
+• Browser type/version
+• Operating system
+• Device type
+• IP address
+• Basic usage analytics
+
+E. Diagnostic & Security Data
+Collected to ensure safe functioning:
+• Error logs
+• System performance metrics
+• Security scan metadata
+We do not collect biometric data, medical records, financial data, location data, or camera/microphone data.
+
+3. How We Use Your Data
+Used for:
+• Class generation
+• Tracking muscle engagement
+• Improving accuracy and stability
+• Security and account integrity
+
+We do not sell or share your data for advertising.
+
+4. Security Measures
+A. Technical Protections
+• TLS encryption
+• Password hashing
+• Row-Level Security (RLS)
+• Secure token handling
+• Minimum password complexity standards
+
+B. Security Testing Performed
+• Claude Code static analysis
+• GitGuardian secret detection
+• OWASP ZAP baseline scan
+• Supabase RLS audit
+• Wireshark packet inspection (no PII leakage)
+
+C. Beta Limitations
+• Features may change
+• Bugs may appear
+
+5. Who Has Access to Your Data
+A. Internal Access
+Only the founder has access to error logs, anonymised analytics, and security alerts.
+
+B. Third-Party Providers
+Supabase, Netlify, and Render process data only as needed.
+
+	•	Data Residency
+Bassline Pilates is designed to keep user data within the European Union wherever commercially and technically possible.
+• Supabase (Primary Database & Authentication):
+All user account data, workout history, and analytics stored in Supabase are hosted in 	Ireland (eu-west-1).
+• Render (Backend Services):
+Backend API services are deployed in Frankfurt, Germany (eu-central-1). Data 	exchanged between Supabase and Render remains within the EU.
+• Netlify (Frontend Hosting):
+The application’s frontend is served globally via CDN, but no personal data is stored or 	processed by Netlify. User data flows directly from the user’s browser to Supabase in 	Ireland.
+• Resend (Transactional Email):
+Bassline Pilates uses Resend’s EU email infrastructure (eu-west-1, Ireland) for sending 		verification and password-reset emails.
+Limited account-level metadata (e.g., delivery status logs) may be processed by Resend 		in the United States under Standard Contractual Clauses (SCCs).
+Overall, all core user data (identity, workout usage, preferences, history, and logs) is stored and processed exclusively within the EU, with only minimal email-delivery metadata potentially processed outside the EU using GDPR-approved safeguards.
+
+6. Data Retention
+Retained for the beta duration unless deleted upon request.
+
+7. Your Rights
+• Access, delete, correct, export data
+• Withdraw consent
+
+8. Children’s Privacy
+Not intended for individuals under 16.
+
+9. Changes
+We may update this policy. You will be notified of significant changes.
+
+10. Contact
+Email: laura.redm@gmail.com or the feedback link on the application settings page.
+Founder: Laura R.
+

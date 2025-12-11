@@ -18,6 +18,8 @@ interface User {
   goals?: string[];
   // Admin flag (Session 10: Admin LLM Observability)
   is_admin?: boolean;
+  // Legal acceptance timestamps (Session: Legal policy integration)
+  accepted_safety_at?: string;
 }
 
 interface RegistrationData {
@@ -42,6 +44,7 @@ interface AuthContextType {
   refreshToken: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   confirmPasswordReset: (token: string, newPassword: string) => Promise<void>;
+  acceptSafety: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -244,6 +247,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Accept Health & Safety disclaimer
+  const acceptSafety = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/api/auth/accept-safety`);
+      // Refresh user data to get updated accepted_safety_at timestamp
+      await fetchCurrentUser();
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to record safety acceptance');
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -252,7 +266,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     refreshToken,
     requestPasswordReset,
-    confirmPasswordReset
+    confirmPasswordReset,
+    acceptSafety
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
