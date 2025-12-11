@@ -1,0 +1,68 @@
+Your Data During Beta Testing – Bassline Pilates
+
+Thank you for taking part in the Bassline Pilates beta. This document explains, in clear and simple terms, how your data is used, stored, and protected while the app is still in early testing.
+
+1. What Data We Collect
+During beta testing we collect only the data needed to provide your personalised Pilates experience and improve the stability of the app:
+• Email address (for login and account recovery)  
+• Password (securely hashed; never visible to us)  
+• Age Range
+• Gender Identity
+• Country
+• Your class preferences (duration, ability level, intensity)  
+• Your practice history (movements performed, timestamps, muscle-group usage)  
+• Basic device information (browser type, operating system, timestamp)  
+• Non-identifying analytics (page views, crashes, errors)
+
+We do not collect biometric data, medical information, GPS location, microphone or camera data.
+
+2. Why We Collect This Data
+We use your information to:
+• Generate tailored Pilates classes  
+• Track progression and maintain balanced muscle engagement  
+• Improve accuracy and stability of the class‑generation engine  
+• Diagnose bugs and performance issues  
+• Keep your account secure through activity logs
+
+We do not use your data for advertising, profiling, or resale.
+
+3. Where Your Data Is Stored
+Your data stays within the EU for all core functions:
+• Supabase – Primary database in Ireland (eu-west-1)  
+• Render – Backend services in Frankfurt, Germany (eu-central-1)  
+• Netlify – Serves only the frontend; does not store personal data  
+• Resend – Sends emails through EU infrastructure; limited metadata may be processed in the US under GDPR Standard Contractual Clauses (SCCs)
+
+4. Security Measures in Place
+To protect your data, we have performed early-stage security testing including:
+• Claude Code secure-coding review  
+• GitGuardian secret scanning  
+• AuditNOM dependency and supply-chain analysis  
+• OWASP ZAP automated scanning  
+• Review of authentication, authorisation, and Supabase Row-Level Security  
+• Wireshark packet analysis to ensure no PII is sent in clear text  
+
+All communication between your device and our servers uses HTTPS encryption.
+
+5. How Long We Keep Your Data
+Your data is retained for the duration of the beta.  
+
+If you stop using the beta, we may remove inactive accounts after 12 months.
+
+6. Your Rights
+You may:
+• Request a copy of your data  
+• Ask for corrections  
+• Request deletion  
+• Withdraw from the beta at any time  
+
+7. Your Responsibilities
+• Use a strong password  
+• Do not share screenshots or internal features publicly  
+• Inform us of bugs or security concerns  
+
+8. Contact
+If you have any questions about how your data is handled during beta testing:
+Email: laura.redm@gmail.com or the feedback link on the application settings page.
+
+
