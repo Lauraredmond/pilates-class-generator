@@ -16,6 +16,7 @@
  */
 
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 // Orchestrator service URL (separate from backend API)
 const ORCHESTRATOR_URL = import.meta.env.VITE_ORCHESTRATOR_URL || 'http://localhost:8001';
@@ -57,11 +58,11 @@ orchestratorClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      console.error('Orchestrator Error:', error.response.data);
+      logger.error('Orchestrator Error:', error.response.data);
     } else if (error.request) {
-      console.error('Orchestrator Network Error:', error.message);
+      logger.error('Orchestrator Network Error:', error.message);
     } else {
-      console.error('Error:', error.message);
+      logger.error('Error:', error.message);
     }
     return Promise.reject(error);
   }
@@ -228,29 +229,29 @@ export const hybridClassGeneration = async (
 ): Promise<{ method: 'orchestrator' | 'direct'; data: any }> => {
   // Check if orchestrator is enabled
   if (!USE_ORCHESTRATOR) {
-    console.log('📊 Using direct backend (orchestrator disabled)');
+    logger.debug('Using direct backend (orchestrator disabled)');
     const data = await directBackendFallback(params);
     return { method: 'direct', data };
   }
 
   // Try orchestrator first
   try {
-    console.log('🤖 Attempting Jentic orchestration...');
+    logger.debug('Attempting Jentic orchestration');
     const isHealthy = await orchestratorApi.healthCheck();
 
     if (!isHealthy) {
-      console.warn('⚠️ Orchestrator unhealthy, falling back to direct backend');
+      logger.warn('Orchestrator unhealthy, falling back to direct backend');
       const data = await directBackendFallback(params);
       return { method: 'direct', data };
     }
 
     // Use orchestrator (Jentic StandardAgent + Arazzo)
     const data = await orchestratorApi.generateCompleteClass(params);
-    console.log('✅ Jentic orchestration successful');
+    logger.debug('Jentic orchestration successful');
     return { method: 'orchestrator', data };
 
   } catch (error) {
-    console.error('❌ Orchestrator failed, falling back to direct backend:', error);
+    logger.error('Orchestrator failed, falling back to direct backend:', error);
     const data = await directBackendFallback(params);
     return { method: 'direct', data };
   }

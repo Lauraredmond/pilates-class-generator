@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare } from 'lucide-react';
+import { logger } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -157,7 +158,7 @@ export function Settings() {
         });
         setPreferences(response.data);
       } catch (error: any) {
-        console.error('Failed to fetch preferences:', error);
+        logger.error('Failed to fetch preferences:', error);
         setPreferencesError('Failed to load preferences');
       } finally {
         setPreferencesLoading(false);

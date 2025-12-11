@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { logger } from '../utils/logger';
 
 interface AudioDuckingConfig {
   musicUrl: string;
@@ -84,9 +85,9 @@ export function useAudioDucking({
       musicGainRef.current = musicGain;
       voiceoverGainRef.current = voiceoverGain;
 
-      console.log('🎛️ Web Audio API initialized');
+      logger.debug('Web Audio API initialized');
     } catch (error) {
-      console.error('Failed to initialize Web Audio API:', error);
+      logger.error('Failed to initialize Web Audio API:', error);
       setState(prev => ({
         ...prev,
         error: 'Your browser does not support advanced audio features. Voiceover may not work correctly.'
@@ -121,12 +122,12 @@ export function useAudioDucking({
 
       // Mark music as ready when loaded
       audio.addEventListener('canplaythrough', () => {
-        console.log('🎵 Music ready:', musicUrl);
+        logger.debug('Music ready');
         setState(prev => ({ ...prev, musicReady: true }));
       });
 
       audio.addEventListener('error', (e) => {
-        console.error('Music load error:', e);
+        logger.error('Music load error:', e);
         setState(prev => ({
           ...prev,
           error: 'Failed to load background music'
@@ -136,7 +137,7 @@ export function useAudioDucking({
       // Preload audio
       audio.load();
     } catch (error) {
-      console.error('Failed to setup music audio:', error);
+      logger.error('Failed to setup music audio:', error);
       setState(prev => ({
         ...prev,
         error: 'Failed to setup background music'
@@ -175,20 +176,20 @@ export function useAudioDucking({
 
       // Mark voiceover as ready when loaded
       audio.addEventListener('canplaythrough', () => {
-        console.log('🎙️ Voiceover ready:', voiceoverUrl);
+        logger.debug('Voiceover ready');
         setState(prev => ({ ...prev, voiceoverReady: true }));
 
         // AUTO-PLAY: Start voiceover immediately if not paused
         if (!isPausedRef.current && audioContextRef.current?.state !== 'suspended') {
-          console.log('🎙️ Auto-playing voiceover (not paused)');
+          logger.debug('Auto-playing voiceover');
           audio.play().catch(err => {
-            console.error('Voiceover auto-play error:', err);
+            logger.error('Voiceover auto-play error:', err);
           });
         }
       });
 
       audio.addEventListener('error', (e) => {
-        console.error('Voiceover load error:', e);
+        logger.error('Voiceover load error:', e);
         setState(prev => ({
           ...prev,
           error: 'Failed to load voiceover audio'
@@ -197,20 +198,20 @@ export function useAudioDucking({
 
       // Duck music when voiceover starts
       audio.addEventListener('play', () => {
-        console.log('🎙️ Voiceover started - ducking music to', duckedVolume);
+        logger.debug('Voiceover started - ducking music');
         duckMusic(duckedVolume);
       });
 
       // Restore music volume when voiceover ends
       audio.addEventListener('ended', () => {
-        console.log('🎙️ Voiceover ended - restoring music to', musicVolume);
+        logger.debug('Voiceover ended - restoring music');
         duckMusic(musicVolume);
       });
 
       // Preload audio
       audio.load();
     } catch (error) {
-      console.error('Failed to setup voiceover audio:', error);
+      logger.error('Failed to setup voiceover audio:', error);
       setState(prev => ({
         ...prev,
         error: 'Failed to setup voiceover audio'
@@ -266,13 +267,13 @@ export function useAudioDucking({
       // Resume AudioContext if suspended (browser autoplay policy)
       if (audioContextRef.current?.state === 'suspended') {
         audioContextRef.current.resume().then(() => {
-          console.log('🎛️ AudioContext resumed');
+          logger.debug('AudioContext resumed');
         });
       }
 
       // Play both audio streams (voiceover will auto-duck music)
       musicAudio.play().catch(err => {
-        console.error('Music play error:', err);
+        logger.error('Music play error:', err);
         setState(prev => ({
           ...prev,
           error: 'Failed to play background music. Click to enable audio.'
@@ -281,7 +282,7 @@ export function useAudioDucking({
 
       if (voiceoverAudio) {
         voiceoverAudio.play().catch(err => {
-          console.error('Voiceover play error:', err);
+          logger.error('Voiceover play error:', err);
           setState(prev => ({
             ...prev,
             error: 'Failed to play voiceover. Click to enable audio.'
@@ -301,16 +302,16 @@ export function useAudioDucking({
     const voiceoverAudio = voiceoverElementRef.current;
 
     if (!musicAudio) {
-      console.error('No music audio element available');
+      logger.error('No music audio element available');
       return;
     }
 
-    console.log('🎵 Manual play triggered by user gesture');
+    logger.debug('Manual play triggered by user gesture');
 
     // Resume AudioContext if suspended
     if (audioContextRef.current?.state === 'suspended') {
       audioContextRef.current.resume().then(() => {
-        console.log('🎛️ AudioContext resumed from user gesture');
+        logger.debug('AudioContext resumed from user gesture');
       });
     }
 
@@ -319,11 +320,11 @@ export function useAudioDucking({
     if (playPromise !== undefined) {
       playPromise
         .then(() => {
-          console.log('✅ Music started playing from user gesture');
+          logger.debug('Music started playing from user gesture');
           setState(prev => ({ ...prev, isPlaying: true, error: null }));
         })
         .catch(err => {
-          console.error('❌ Failed to play music:', err);
+          logger.error('Failed to play music:', err);
           setState(prev => ({
             ...prev,
             error: `Failed to play music: ${err.message}`
@@ -334,7 +335,7 @@ export function useAudioDucking({
     // Play voiceover if available
     if (voiceoverAudio) {
       voiceoverAudio.play().catch(err => {
-        console.error('Voiceover play error from user gesture:', err);
+        logger.error('Voiceover play error from user gesture:', err);
       });
     }
   };
