@@ -3,17 +3,19 @@
  * Displays Bassline Pilates Beta Tester Agreement
  */
 
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export function BetaAgreement() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-burgundy py-12 px-4">
       <div className="max-w-4xl mx-auto bg-cream rounded-lg shadow-xl p-8 md:p-12">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/" className="text-burgundy hover:underline text-sm mb-4 inline-block">
-            ← Back to Home
-          </Link>
+          <button onClick={() => navigate(-1)} className="text-burgundy hover:underline text-sm mb-4 inline-block">
+            ← Back
+          </button>
           <h1 className="text-4xl font-bold text-burgundy mb-2">Beta Tester Agreement</h1>
           <p className="text-charcoal/60 text-sm">
             Beta Version
@@ -125,9 +127,9 @@ export function BetaAgreement() {
 
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-charcoal/20">
-          <Link to="/" className="text-burgundy hover:underline font-medium">
-            ← Back to Home
-          </Link>
+          <button onClick={() => navigate(-1)} className="text-burgundy hover:underline font-medium">
+            ← Back
+          </button>
         </div>
       </div>
     </div>

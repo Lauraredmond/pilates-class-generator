@@ -25,8 +25,8 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     // Don't start scrolling if paused (e.g., H&S modal is shown)
     if (isPaused) return;
 
-    // Calculate scroll speed based on duration (50% slower for readability - user requested)
-    const duration = item.duration_seconds * 1000 * 1.5; // Convert to ms, 50% slower (1.5x duration)
+    // Calculate scroll speed based on duration (57% slower for readability - user requested 50% + 7% more)
+    const duration = item.duration_seconds * 1000 * 1.605; // Convert to ms, 57% slower (1.605x duration)
     const scrollHeight = container.scrollHeight - container.clientHeight;
     const scrollSpeed = scrollHeight / duration; // pixels per ms
 
