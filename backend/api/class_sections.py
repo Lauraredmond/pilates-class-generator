@@ -12,8 +12,12 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 
 from utils.auth import get_current_user_id
+from utils.logger import get_logger
+from models.error import ErrorMessages
 
 load_dotenv()
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/class-sections", tags=["Class Sections"])
 
@@ -129,9 +133,10 @@ async def get_preparation_scripts(
         return result.data
 
     except Exception as e:
+        logger.error(f"Failed to fetch preparation scripts: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch preparation scripts: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -155,9 +160,10 @@ async def get_preparation_script(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to fetch preparation script {script_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch preparation script: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -190,9 +196,10 @@ async def get_warmup_routines(
         return result.data
 
     except Exception as e:
+        logger.error(f"Failed to fetch warmup routines: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch warmup routines: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -216,9 +223,10 @@ async def get_warmup_routine(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to fetch warmup routine {routine_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch warmup routine: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -247,9 +255,10 @@ async def get_cooldown_sequences(
         return result.data
 
     except Exception as e:
+        logger.error(f"Failed to fetch cooldown sequences: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch cooldown sequences: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -273,9 +282,10 @@ async def get_cooldown_sequence(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to fetch cooldown sequence {sequence_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch cooldown sequence: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -308,9 +318,10 @@ async def get_closing_meditations(
         return result.data
 
     except Exception as e:
+        logger.error(f"Failed to fetch closing meditations: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch closing meditations: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -334,9 +345,10 @@ async def get_closing_meditation(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to fetch closing meditation {script_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch closing meditation: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -365,9 +377,10 @@ async def get_closing_homecare_advice(
         return result.data
 
     except Exception as e:
+        logger.error(f"Failed to fetch homecare advice: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch homecare advice: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -391,7 +404,8 @@ async def get_homecare_advice(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to fetch homecare advice {advice_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch homecare advice: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )

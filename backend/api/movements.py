@@ -10,8 +10,13 @@ import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
+from utils.logger import get_logger
+from models.error import ErrorMessages
+
 # Load environment variables
 load_dotenv()
+
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -62,9 +67,10 @@ async def get_all_movements():
         response = supabase.table('movements').select('*').execute()
         return response.data
     except Exception as e:
+        logger.error(f"Failed to fetch all movements: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -130,9 +136,10 @@ async def search_movements(
         return filtered_movements
 
     except Exception as e:
+        logger.error(f"Failed to search movements with filters: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -146,9 +153,10 @@ async def get_movements_by_difficulty(level: str):
         response = supabase.table('movements').select('*').eq('difficulty_level', level).execute()
         return response.data
     except Exception as e:
+        logger.error(f"Failed to fetch movements by difficulty {level}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -180,9 +188,10 @@ async def get_movement_stats():
             "database_connected": True
         }
     except Exception as e:
+        logger.error(f"Failed to fetch movement stats: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
 
 
@@ -204,7 +213,8 @@ async def get_movement_by_id(movement_id: str):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to fetch movement by ID {movement_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail=ErrorMessages.DATABASE_ERROR
         )
