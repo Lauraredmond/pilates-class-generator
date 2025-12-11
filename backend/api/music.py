@@ -27,6 +27,10 @@ from services.music_source import (
 )
 from services.music_source_supabase import create_all_sources_source
 from utils.supabase_client import get_supabase_client
+from utils.logger import get_logger
+from models.error import ErrorMessages
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/music", tags=["music"])
 
@@ -226,9 +230,11 @@ async def get_playlists(
         ]
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid parameter value: {str(e)}")
+        logger.error(f"Invalid parameter value in get_playlists: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=400, detail=ErrorMessages.VALIDATION_ERROR)
     except MusicSourceException as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch playlists: {str(e)}")
+        logger.error(f"Failed to fetch playlists: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/playlists/{playlist_id}", response_model=PlaylistWithTracksResponse)
@@ -301,7 +307,8 @@ async def get_playlist_details(
         )
 
     except MusicSourceException as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch playlist: {str(e)}")
+        logger.error(f"Failed to fetch playlist {playlist_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/tracks", response_model=List[TrackResponse])
@@ -356,9 +363,11 @@ async def get_tracks(
         ]
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid parameter value: {str(e)}")
+        logger.error(f"Invalid parameter value in get_tracks: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=400, detail=ErrorMessages.VALIDATION_ERROR)
     except MusicSourceException as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch tracks: {str(e)}")
+        logger.error(f"Failed to fetch tracks: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/tracks/{track_id}/stream-url")
@@ -394,8 +403,9 @@ async def get_track_streaming_url(
 
     except MusicSourceException as e:
         if "not found" in str(e).lower():
-            raise HTTPException(status_code=404, detail=f"Track not found: {track_id}")
-        raise HTTPException(status_code=500, detail=f"Failed to get streaming URL: {str(e)}")
+            raise HTTPException(status_code=404, detail="Track not found")
+        logger.error(f"Failed to get streaming URL for track {track_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/health")
@@ -428,4 +438,5 @@ async def music_health_check(supabase = Depends(get_supabase_client)):
         }
 
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Music system unhealthy: {str(e)}")
+        logger.error(f"Music health check failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=503, detail=ErrorMessages.INTERNAL_ERROR)

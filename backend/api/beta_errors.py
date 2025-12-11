@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from utils.auth import get_current_user_id
+from models.error import ErrorMessages
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -144,8 +145,8 @@ async def get_beta_errors(
         return response.data
 
     except Exception as e:
-        logger.error(f"Error fetching beta errors: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching beta errors for admin {admin_user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/beta-errors/stats", response_model=List[BetaErrorStats])
@@ -168,8 +169,8 @@ async def get_beta_error_stats(
         return response.data
 
     except Exception as e:
-        logger.error(f"Error fetching beta error stats: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching beta error stats for admin {admin_user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/beta-errors/{error_id}", response_model=BetaError)
@@ -200,8 +201,8 @@ async def get_beta_error(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error fetching beta error {error_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching beta error {error_id} for admin {admin_user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.patch("/beta-errors/{error_id}/status")
@@ -263,8 +264,8 @@ async def update_beta_error_status(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating beta error {error_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error updating beta error {error_id} for admin {admin_user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
 @router.get("/beta-errors/count/active")
@@ -291,5 +292,5 @@ async def get_active_beta_errors_count(
         }
 
     except Exception as e:
-        logger.error(f"Error counting active beta errors: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error counting active beta errors for admin {admin_user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
