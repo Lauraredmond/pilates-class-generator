@@ -118,6 +118,8 @@ class UserResponse(BaseModel):
     goals: Optional[list[str]] = None
     # Admin flag (Session 10: Admin LLM Observability)
     is_admin: Optional[bool] = None
+    # Legal acceptance timestamps (Session: Legal policy integration)
+    accepted_safety_at: Optional[str] = None
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -499,7 +501,8 @@ async def get_current_user(request: Request, user_id: str = Depends(get_current_
             country=user.get("country"),
             pilates_experience=user.get("pilates_experience"),
             goals=user.get("goals", []),
-            is_admin=user.get("is_admin", False)
+            is_admin=user.get("is_admin", False),
+            accepted_safety_at=user.get("accepted_safety_at")
         )
 
     except HTTPException:
@@ -576,7 +579,8 @@ async def update_profile(
             country=user.get("country"),
             pilates_experience=user.get("pilates_experience"),
             goals=user.get("goals", []),
-            is_admin=user.get("is_admin", False)
+            is_admin=user.get("is_admin", False),
+            accepted_safety_at=user.get("accepted_safety_at")
         )
 
     except HTTPException:
@@ -911,4 +915,32 @@ async def update_preferences(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorMessages.PREFERENCES_UPDATE_FAILED
+        )
+
+
+@router.post("/accept-safety", status_code=status.HTTP_200_OK)
+async def accept_safety_disclaimer(user_id: str = Depends(get_current_user_id)):
+    """
+    Record user's acceptance of Health & Safety disclaimer
+
+    Called when user accepts the HealthSafetyModal before first class
+    Stores ISO 8601 timestamp in user_profiles.accepted_safety_at
+    """
+    try:
+        # Update user profile with safety acceptance timestamp
+        supabase.table("user_profiles").update({
+            "accepted_safety_at": datetime.utcnow().isoformat()
+        }).eq("id", user_id).execute()
+
+        return {
+            "message": "Health & Safety disclaimer accepted successfully",
+            "accepted_at": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"Safety disclaimer acceptance failed for user_id {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to record safety disclaimer acceptance"
         )
