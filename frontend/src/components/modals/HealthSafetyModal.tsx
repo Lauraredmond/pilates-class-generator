@@ -46,6 +46,33 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
             </p>
           </div>
 
+          {/* Pregnancy Warning - CRITICAL */}
+          <div className="bg-red-50 p-5 rounded border-2 border-red-400">
+            <h3 className="font-bold text-red-900 mb-3 text-lg flex items-center gap-2">
+              <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              CRITICAL WARNING: Pregnancy
+            </h3>
+            <div className="space-y-3 text-sm text-red-900">
+              <p className="font-bold">
+                This application is NOT SAFE for pregnant individuals after the first trimester of pregnancy.
+              </p>
+              <p>
+                Many Pilates movements and setup positions included in this application can be harmful to pregnant individuals, particularly after the first trimester. These movements may involve:
+              </p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Lying flat on your back (supine position) - can restrict blood flow to the fetus</li>
+                <li>Deep abdominal work - may increase intra-abdominal pressure</li>
+                <li>Twisting movements - can strain the abdomen and pelvis</li>
+                <li>Prone (face-down) positions - unsafe for developing fetus</li>
+              </ul>
+              <p className="font-bold bg-red-100 p-3 rounded border border-red-300">
+                If you are pregnant or suspect you may be pregnant, DO NOT use this application without explicit written approval from your obstetrician or midwife. Specialized prenatal Pilates instruction from a qualified prenatal Pilates instructor is required.
+              </p>
+            </div>
+          </div>
+
           {/* Key Points */}
           <div className="bg-burgundy/5 p-4 rounded border border-burgundy/20">
             <h3 className="font-semibold text-burgundy mb-3">You acknowledge that:</h3>

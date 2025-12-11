@@ -129,16 +129,55 @@ export function HealthSafety() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-burgundy mb-3">Pregnancy & Postpartum</h2>
-            <p>
-              If you are pregnant, postpartum (within 12 months of delivery), or planning to become pregnant:
-            </p>
-            <ul className="list-disc pl-6">
-              <li>You <strong>must</strong> obtain medical clearance from your healthcare provider before exercising</li>
-              <li>Many Pilates movements are contraindicated during pregnancy</li>
-              <li>Postpartum exercise should be introduced gradually and only after medical clearance</li>
-              <li>Consider working with a certified prenatal/postnatal Pilates instructor</li>
-            </ul>
+            <h2 className="text-2xl font-semibold text-burgundy mb-3">CRITICAL WARNING: Pregnancy & Postpartum</h2>
+            <div className="bg-red-50 p-6 rounded border-2 border-red-400">
+              <h3 className="text-xl font-bold text-red-900 mb-4 flex items-center gap-2">
+                <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                This Application is NOT SAFE for Pregnant Individuals After the First Trimester
+              </h3>
+              <div className="space-y-4 text-red-900">
+                <p className="font-bold text-lg">
+                  DO NOT use this application if you are pregnant (beyond first trimester) or suspect you may be pregnant without explicit written approval from your obstetrician or midwife.
+                </p>
+                <p>
+                  Many Pilates movements and setup positions included in this application can be harmful to pregnant individuals, particularly after the first trimester. These movements may involve:
+                </p>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li><strong>Supine position (lying flat on your back)</strong> – Can restrict blood flow to the fetus and cause supine hypotensive syndrome, potentially depriving the baby of oxygen</li>
+                  <li><strong>Deep abdominal work</strong> – May increase intra-abdominal pressure and strain the abdominal wall, which is already under stress during pregnancy</li>
+                  <li><strong>Twisting and rotation movements</strong> – Can strain the abdomen, pelvis, and potentially affect the placenta</li>
+                  <li><strong>Prone positions (lying face-down)</strong> – Unsafe for the developing fetus and uncomfortable after the first trimester</li>
+                  <li><strong>Intense core exercises</strong> – Risk of diastasis recti (abdominal separation) and pelvic floor dysfunction</li>
+                  <li><strong>High-impact or jarring movements</strong> – Can stress loosened joints and ligaments affected by relaxin hormone</li>
+                </ul>
+                <div className="bg-red-100 p-4 rounded border-2 border-red-300">
+                  <p className="font-bold text-lg">
+                    REQUIRED: Specialized Prenatal Pilates Instruction
+                  </p>
+                  <p className="mt-2">
+                    If you are pregnant and wish to practice Pilates, you MUST work with a certified prenatal Pilates instructor who can:
+                  </p>
+                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                    <li>Provide trimester-specific modifications</li>
+                    <li>Monitor for contraindicated movements</li>
+                    <li>Adapt exercises for your changing body</li>
+                    <li>Recognize warning signs and symptoms</li>
+                  </ul>
+                </div>
+                <p className="font-bold">
+                  Postpartum Exercise (within 12 months of delivery):
+                </p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>You <strong>must</strong> obtain medical clearance from your healthcare provider before exercising</li>
+                  <li>Wait at least 6 weeks postpartum (longer for C-section recovery) before attempting any Pilates exercises</li>
+                  <li>Postpartum exercise should be introduced gradually under professional guidance</li>
+                  <li>Pelvic floor assessment is highly recommended before resuming Pilates</li>
+                  <li>Consider working with a certified postnatal Pilates instructor</li>
+                </ul>
+              </div>
+            </div>
           </section>
 
           <section>
