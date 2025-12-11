@@ -3,17 +3,19 @@
  * Important safety information for Pilates practice
  */
 
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export function HealthSafety() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-burgundy py-12 px-4">
       <div className="max-w-4xl mx-auto bg-cream rounded-lg shadow-xl p-8 md:p-12">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/" className="text-burgundy hover:underline text-sm mb-4 inline-block">
-            ← Back to Home
-          </Link>
+          <button onClick={() => navigate(-1)} className="text-burgundy hover:underline text-sm mb-4 inline-block">
+            ← Back
+          </button>
           <h1 className="text-4xl font-bold text-burgundy mb-2">Health & Safety Disclaimer</h1>
           <p className="text-charcoal/70 text-lg">
             Important information before starting your Pilates practice
@@ -145,10 +147,10 @@ export function HealthSafety() {
                   Many Pilates movements and setup positions included in this application can be harmful to pregnant individuals, particularly after the first trimester. These movements may involve:
                 </p>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li><strong>Supine position (lying flat on your back)</strong> – Can restrict blood flow to the fetus and cause supine hypotensive syndrome, potentially depriving the baby of oxygen</li>
+                  <li><strong>Supine position (lying flat on your back)</strong> – Can restrict blood flow to the foetus and cause supine hypotensive syndrome, potentially depriving the baby of oxygen</li>
                   <li><strong>Deep abdominal work</strong> – May increase intra-abdominal pressure and strain the abdominal wall, which is already under stress during pregnancy</li>
                   <li><strong>Twisting and rotation movements</strong> – Can strain the abdomen, pelvis, and potentially affect the placenta</li>
-                  <li><strong>Prone positions (lying face-down)</strong> – Unsafe for the developing fetus and uncomfortable after the first trimester</li>
+                  <li><strong>Prone positions (lying face-down)</strong> – Unsafe for the developing foetus and uncomfortable after the first trimester</li>
                   <li><strong>Intense core exercises</strong> – Risk of diastasis recti (abdominal separation) and pelvic floor dysfunction</li>
                   <li><strong>High-impact or jarring movements</strong> – Can stress loosened joints and ligaments affected by relaxin hormone</li>
                 </ul>
@@ -219,9 +221,9 @@ export function HealthSafety() {
 
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-charcoal/20">
-          <Link to="/" className="text-burgundy hover:underline font-medium">
-            ← Back to Home
-          </Link>
+          <button onClick={() => navigate(-1)} className="text-burgundy hover:underline font-medium">
+            ← Back
+          </button>
         </div>
       </div>
     </div>

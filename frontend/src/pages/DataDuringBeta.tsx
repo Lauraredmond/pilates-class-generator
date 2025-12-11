@@ -3,17 +3,19 @@
  * Explains how user data is handled during beta testing
  */
 
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export function DataDuringBeta() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-burgundy py-12 px-4">
       <div className="max-w-4xl mx-auto bg-cream rounded-lg shadow-xl p-8 md:p-12">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/" className="text-burgundy hover:underline text-sm mb-4 inline-block">
-            ← Back to Home
-          </Link>
+          <button onClick={() => navigate(-1)} className="text-burgundy hover:underline text-sm mb-4 inline-block">
+            ← Back
+          </button>
           <h1 className="text-4xl font-bold text-burgundy mb-2">Your Data During Beta Testing</h1>
           <p className="text-charcoal/70 text-lg">
             Clear and simple terms about how your data is used and protected
@@ -148,9 +150,9 @@ export function DataDuringBeta() {
 
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-charcoal/20">
-          <Link to="/" className="text-burgundy hover:underline font-medium">
-            ← Back to Home
-          </Link>
+          <button onClick={() => navigate(-1)} className="text-burgundy hover:underline font-medium">
+            ← Back
+          </button>
         </div>
       </div>
     </div>
