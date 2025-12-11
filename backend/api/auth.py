@@ -199,7 +199,10 @@ async def register(user_data: UserCreate, request: Request):
             "gender_identity": user_data.gender_identity,
             "country": user_data.country,
             "pilates_experience": user_data.pilates_experience,
-            "goals": user_data.goals if user_data.goals else []
+            "goals": user_data.goals if user_data.goals else [],
+            # Legal acceptance timestamps (Session: Legal policy integration)
+            "accepted_privacy_at": user_data.accepted_privacy_at,
+            "accepted_beta_terms_at": user_data.accepted_beta_terms_at
         }
 
         supabase.table("user_profiles").insert(profile_data).execute()

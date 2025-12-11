@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -28,6 +29,8 @@ interface RegistrationData {
   country?: string;
   pilatesExperience?: string;
   goals?: string[];
+  accepted_privacy_at?: string;
+  accepted_beta_terms_at?: string;
 }
 
 interface AuthContextType {
@@ -113,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Suppress errors during initial auth check (expected when not logged in)
         // Only log if it's a true server error (5xx)
         if (error.response?.status >= 500) {
-          console.error('Server error fetching user:', error);
+          logger.error('Server error fetching user:', error);
         }
         setLoading(false);
       }
@@ -154,7 +157,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         gender_identity: data.genderIdentity,
         country: data.country,
         pilates_experience: data.pilatesExperience,
-        goals: data.goals || []
+        goals: data.goals || [],
+        accepted_privacy_at: data.accepted_privacy_at,
+        accepted_beta_terms_at: data.accepted_beta_terms_at
       });
 
       // Registration successful - user must now confirm email
@@ -181,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
       }
     } catch (error) {
-      console.error('Logout API call failed:', error);
+      logger.error('Logout API call failed:', error);
     } finally {
       // Always clear local state
       clearTokens();

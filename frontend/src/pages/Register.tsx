@@ -13,6 +13,8 @@ export function Register() {
   const [country, setCountry] = useState('');
   const [pilatesExperience, setPilatesExperience] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [acceptedBetaTerms, setAcceptedBetaTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -43,6 +45,12 @@ export function Register() {
       return;
     }
 
+    // Validate legal acceptance
+    if (!acceptedPrivacy || !acceptedBetaTerms) {
+      setError('You must accept the Privacy Policy and Beta Agreement to register');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -54,7 +62,9 @@ export function Register() {
         genderIdentity: genderIdentity || undefined,
         country: country || undefined,
         pilatesExperience: pilatesExperience || undefined,
-        goals: goals.length > 0 ? goals : undefined
+        goals: goals.length > 0 ? goals : undefined,
+        accepted_privacy_at: new Date().toISOString(),
+        accepted_beta_terms_at: new Date().toISOString()
       };
 
       await register(registrationData);
@@ -354,9 +364,52 @@ export function Register() {
             </div>
           </div>
 
+          {/* Legal Agreements - Required */}
+          <div className="space-y-3 pt-4 border-t border-charcoal/20">
+            <h2 className="text-lg font-semibold text-burgundy">
+              Legal Agreements <span className="text-red-500">*</span>
+            </h2>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptedPrivacy}
+                onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy border-charcoal/30 rounded"
+                required
+              />
+              <span className="text-sm text-charcoal">
+                I have read and agree to the{' '}
+                <Link to="/privacy" target="_blank" className="text-burgundy hover:underline font-medium">
+                  Privacy Policy
+                </Link>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptedBetaTerms}
+                onChange={(e) => setAcceptedBetaTerms(e.target.checked)}
+                className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy border-charcoal/30 rounded"
+                required
+              />
+              <span className="text-sm text-charcoal">
+                I have read and agree to the{' '}
+                <Link to="/beta-agreement" target="_blank" className="text-burgundy hover:underline font-medium">
+                  Beta Tester Agreement
+                </Link>
+                {' '}and{' '}
+                <Link to="/safety" target="_blank" className="text-burgundy hover:underline font-medium">
+                  Health & Safety Disclaimer
+                </Link>
+              </span>
+            </label>
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !acceptedPrivacy || !acceptedBetaTerms}
             className="w-full bg-burgundy text-cream py-3 rounded font-semibold hover:bg-burgundy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-smooth mt-6"
           >
             {loading ? 'Creating account...' : 'Create Account'}

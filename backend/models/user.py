@@ -25,6 +25,9 @@ class UserCreate(UserBase):
     country: Optional[str] = Field(None, description="User country")
     pilates_experience: Optional[str] = Field(None, description="Beginner, Intermediate, Advanced, Instructor")
     goals: Optional[list[str]] = Field(default_factory=list, description="stress_relief, tone_strength, performance, habit_building")
+    # Legal acceptance timestamps (Session: Legal policy integration)
+    accepted_privacy_at: Optional[str] = Field(None, description="ISO 8601 timestamp when user accepted Privacy Policy")
+    accepted_beta_terms_at: Optional[str] = Field(None, description="ISO 8601 timestamp when user accepted Beta Agreement")
 
 
 class UserLogin(BaseModel):

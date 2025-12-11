@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -198,7 +199,7 @@ export async function assembleCompleteClass(
 
     if (missingDataErrors.length > 0) {
       const errorMessage = `Cannot assemble complete class - database tables need seed data:\n\n${missingDataErrors.join('\n')}\n\nPlease populate the database with sample data for all 6 class sections.`;
-      console.error('[ClassAssembly]', errorMessage);
+      logger.error('[ClassAssembly]', errorMessage);
       throw new Error(errorMessage);
     }
 
@@ -218,7 +219,7 @@ export async function assembleCompleteClass(
     return completeClass;
 
   } catch (error: any) {
-    console.error('Failed to assemble complete class:', error);
+    logger.error('Failed to assemble complete class:', error);
     throw new Error(error.response?.data?.detail || error.message || 'Failed to assemble class');
   }
 }

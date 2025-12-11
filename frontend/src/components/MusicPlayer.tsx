@@ -12,6 +12,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://pilates-class-generator-api3.onrender.com';
 
@@ -66,7 +67,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.play().catch((err) => {
-          console.error('Audio playback failed:', err);
+          logger.error('Audio playback failed:', err);
           handlePlaybackError('Unable to play audio. Class will continue without music.');
         });
       } else {
@@ -104,7 +105,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
         throw new Error('Invalid playlist data');
       }
     } catch (err) {
-      console.error('Failed to fetch playlist tracks:', err);
+      logger.error('Failed to fetch playlist tracks:', err);
       const errorMsg = 'Unable to load music. Your class will continue without background music.';
       setError(errorMsg);
       handlePlaybackError(errorMsg);
@@ -142,11 +143,11 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
   };
 
   const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement>) => {
-    console.error('Audio error:', e);
+    logger.error('Audio error:', e);
 
     // Try to skip to next track
     if (currentTrackIndex < tracks.length - 1) {
-      console.log('Skipping to next track due to error');
+      logger.debug('Skipping to next track due to error');
       setCurrentTrackIndex(currentTrackIndex + 1);
     } else {
       handlePlaybackError('Music track failed to load. Class continues without music.');
