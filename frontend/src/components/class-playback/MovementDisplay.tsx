@@ -52,7 +52,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     };
 
     const narrative = getNarrative();
-    const pauseMarkers: { position: number; duration: number; completed: boolean }[] = [];
+    const pauseMarkers: { position: number; duration: number }[] = [];
 
     if (narrative) {
       const lines = narrative.split('\n');
@@ -67,33 +67,41 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
           pauseMarkers.push({
             position: currentPixelPosition,
             duration: pauseSeconds * 1000, // Convert to ms
-            completed: false, // Track if this pause has been executed
           });
         }
         currentPixelPosition += lineHeight;
       });
     }
 
+    // Track which pauses have been completed by index
+    const completedPauseIndices = new Set<number>();
+    let currentPauseIndex: number | null = null;
+
     const scroll = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime - totalPausedTime;
-
-      // Calculate current scroll position
       const currentScrollPos = scrollSpeed * elapsed;
 
-      // Check if we should pause at a marker (only if not already completed)
-      const activePause = pauseMarkers.find(
-        marker => !marker.completed && currentScrollPos >= marker.position && currentScrollPos < marker.position + 100
-      );
+      // If not currently paused, check if we should start a new pause
+      if (!isPausedForMarker) {
+        const pauseIndex = pauseMarkers.findIndex(
+          (marker, index) =>
+            !completedPauseIndices.has(index) &&
+            currentScrollPos >= marker.position &&
+            currentScrollPos < marker.position + 100
+        );
 
-      if (activePause && !isPausedForMarker) {
-        // Start pause
-        isPausedForMarker = true;
-        pauseStartTime = timestamp;
-        pauseDuration = activePause.duration;
+        if (pauseIndex !== -1) {
+          // Start pause
+          currentPauseIndex = pauseIndex;
+          isPausedForMarker = true;
+          pauseStartTime = timestamp;
+          pauseDuration = pauseMarkers[pauseIndex].duration;
+        }
       }
 
-      if (isPausedForMarker && pauseStartTime) {
+      // If currently paused, check if pause is complete
+      if (isPausedForMarker && pauseStartTime !== null && currentPauseIndex !== null) {
         const pauseElapsed = timestamp - pauseStartTime;
         if (pauseElapsed < pauseDuration) {
           // Still paused - don't advance scroll
@@ -101,10 +109,9 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
           animationFrame = requestAnimationFrame(scroll);
           return;
         } else {
-          // Pause complete - mark as completed and resume scrolling
-          if (activePause) {
-            activePause.completed = true; // Mark this pause as completed so it won't trigger again
-          }
+          // Pause complete - mark this pause index as completed and resume scrolling
+          completedPauseIndices.add(currentPauseIndex);
+          currentPauseIndex = null;
           isPausedForMarker = false;
           totalPausedTime += pauseDuration;
           pauseStartTime = null;
