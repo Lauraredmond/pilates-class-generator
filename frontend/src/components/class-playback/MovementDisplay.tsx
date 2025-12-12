@@ -31,8 +31,11 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       ? item.voiceover_duration
       : item.duration_seconds;
 
-    // Calculate scroll speed based on duration (19% slower for readability - user fine-tuned)
-    const duration = baseDuration * 1000 * 1.190; // Convert to ms, 19% slower (1.190x duration)
+    // Calculate scroll speed based on duration
+    // If voiceover exists, use exact sync (1.0x). Otherwise, 19% slower for readability.
+    const hasVoiceover = 'voiceover_duration' in item && item.voiceover_duration;
+    const slowdownMultiplier = hasVoiceover ? 1.0 : 1.190;
+    const duration = baseDuration * 1000 * slowdownMultiplier;
     const scrollHeight = container.scrollHeight - container.clientHeight;
     const scrollSpeed = scrollHeight / duration; // pixels per ms
 
