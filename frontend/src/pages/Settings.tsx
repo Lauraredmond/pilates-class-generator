@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare, FileText } from 'lucide-react';
+import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare, FileText, Wrench } from 'lucide-react';
 import { logger } from '../utils/logger';
+import { RecordingModeManager } from '../components/recording-mode/RecordingModeManager';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -18,6 +19,7 @@ export function Settings() {
     ai: false,
     music: false,
     compliance: false,
+    developer: false,
     danger: false
   });
 
@@ -899,6 +901,33 @@ export function Settings() {
                 </a>
               </div>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Developer Tools */}
+      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
+        <button
+          onClick={() => toggleSection('developer')}
+          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Wrench className="w-6 h-6 text-burgundy" />
+            <h2 className="text-xl font-semibold text-cream">Developer Tools</h2>
+          </div>
+          {expandedSections.developer ? (
+            <ChevronUp className="w-5 h-5 text-cream/60" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-cream/60" />
+          )}
+        </button>
+
+        {expandedSections.developer && (
+          <div className="px-6 pb-6">
+            <p className="text-cream/60 text-sm mb-6">
+              Tools for content creators and developers
+            </p>
+            <RecordingModeManager />
           </div>
         )}
       </div>
