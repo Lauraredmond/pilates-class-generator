@@ -1,1 +1,7 @@
 [Log] [Pause Marker] Starting pause at position 880.2750000000001px (marker at 880px) (index-Do9GzLzX.js, line 17)
+[Log] [Pause Marker] Starting pause at position 1767.9472689075633px (marker at 1760px) (index-Do9GzLzX.js, line 17)
+[Log] [Pause Marker] Pause complete for index 1, setting 5s cooldown (index-Do9GzLzX.js, line 17)
+[Log] [Pause Marker] Starting pause at position 2560.179516806723px (marker at 2560px) (index-Do9GzLzX.js, line 17)
+[Log] [Pause Marker] Pause complete for index 2, setting 5s cooldown (index-Do9GzLzX.js, line 17)
+[Log] [Pause Marker] Starting pause at position 3440.683298319328px (marker at 3440px) (index-Do9GzLzX.js, line 17)
+[Log] [Pause Marker] Pause complete for index 3, setting 5s cooldown (index-Do9GzLzX.js, line 17)

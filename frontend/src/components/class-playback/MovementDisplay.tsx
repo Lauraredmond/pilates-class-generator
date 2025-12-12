@@ -36,6 +36,12 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     const scrollHeight = container.scrollHeight - container.clientHeight;
     const scrollSpeed = scrollHeight / duration; // pixels per ms
 
+    console.log('[Scroll Setup] Duration:', baseDuration, 's (adjusted:', duration / 1000, 's)');
+    console.log('[Scroll Setup] ScrollHeight:', scrollHeight, 'px');
+    console.log('[Scroll Setup] Scroll speed:', scrollSpeed.toFixed(4), 'px/ms');
+    console.log('[Scroll Setup] Container height:', container.clientHeight, 'px');
+    console.log('[Scroll Setup] Content height:', container.scrollHeight, 'px');
+
     let startTime: number;
     let animationFrame: number;
     let isPausedForMarker = false;
@@ -99,6 +105,14 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
       // If not currently paused AND not in cooldown AND pauses not disabled, check for new pause
       if (!isPausedForMarker && timestamp >= pauseCooldownUntil && !pauseMarkersDisabled) {
+        // DEBUG: Log scroll position every 60 frames (~1 second) to see if we ever reach markers
+        if (Math.floor(timestamp / 1000) % 1 === 0) {
+          console.log(`[Scroll Debug] currentScrollPos: ${Math.round(currentScrollPos)}px, container.scrollTop: ${Math.round(container.scrollTop)}px, scrollHeight: ${scrollHeight}px`);
+          if (pauseMarkers.length > 0) {
+            console.log(`[Scroll Debug] Next marker at: ${pauseMarkers.find(m => !completedPauseIndices.has(pauseMarkers.indexOf(m)))?.position || 'none'}px`);
+          }
+        }
+
         const pauseIndex = pauseMarkers.findIndex(
           (marker, index) =>
             !completedPauseIndices.has(index) &&
@@ -109,14 +123,17 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
         if (pauseIndex !== -1) {
           const markerPosition = pauseMarkers[pauseIndex].position;
 
+          console.log(`[Pause Trigger] Attempting to trigger pause ${pauseIndex} at marker position ${markerPosition}px`);
+          console.log(`[Pause Trigger] Current scroll: ${currentScrollPos}px, Last trigger: ${lastTriggerPosition}px`);
+
           // INFINITE LOOP PREVENTION: If we're trying to trigger at the SAME position again, disable pauses
           if (Math.abs(markerPosition - lastTriggerPosition) < 10) {
-            console.error('[Pause Marker] INFINITE LOOP DETECTED - Same position triggered twice. Disabling pause markers.');
+            console.error(`[Pause Marker] INFINITE LOOP DETECTED - Same position triggered twice (${markerPosition}px vs ${lastTriggerPosition}px). Disabling pause markers.`);
             pauseMarkersDisabled = true;
             // Continue scrolling normally without pauses
           } else {
             // Start pause - this is a NEW position
-            console.log(`[Pause Marker] Starting pause at position ${currentScrollPos}px (marker at ${markerPosition}px)`);
+            console.log(`[Pause Marker] ✅ Starting pause ${pauseIndex} at position ${currentScrollPos}px (marker at ${markerPosition}px)`);
             lastTriggerPosition = markerPosition;
             currentPauseIndex = pauseIndex;
             isPausedForMarker = true;
