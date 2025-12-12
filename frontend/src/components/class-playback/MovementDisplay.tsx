@@ -36,135 +36,14 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     const scrollHeight = container.scrollHeight - container.clientHeight;
     const scrollSpeed = scrollHeight / duration; // pixels per ms
 
-    console.log('[Scroll Setup] Duration:', baseDuration, 's (adjusted:', duration / 1000, 's)');
-    console.log('[Scroll Setup] ScrollHeight:', scrollHeight, 'px');
-    console.log('[Scroll Setup] Scroll speed:', scrollSpeed.toFixed(4), 'px/ms');
-    console.log('[Scroll Setup] Container height:', container.clientHeight, 'px');
-    console.log('[Scroll Setup] Content height:', container.scrollHeight, 'px');
-
     let startTime: number;
     let animationFrame: number;
-    let isPausedForMarker = false;
-    let pauseStartTime: number | null = null;
-    let pauseDuration = 0;
-    let totalPausedTime = 0;
-
-    // Parse narrative for pause markers like "[Pause: 20s]"
-    const getNarrative = (): string => {
-      if ('narrative' in item && item.narrative) return item.narrative;
-      if ('script_text' in item && item.script_text) return item.script_text;
-      if ('advice_text' in item && item.advice_text) return item.advice_text;
-      return '';
-    };
-
-    const narrative = getNarrative();
-    const pauseMarkers: { position: number; duration: number }[] = [];
-
-    if (narrative) {
-      const lines = narrative.split('\n');
-      let currentPixelPosition = 0;
-      // Mobile-safe: Use actual line height from container (responsive to screen size)
-      // Desktop: ~80px, Mobile: ~40-60px typically
-      const lineHeight = window.innerWidth < 768 ? 50 : 80;
-
-      console.log('[Pause Marker Debug] Parsing narrative...');
-      console.log('[Pause Marker Debug] Narrative length:', narrative.length);
-      console.log('[Pause Marker Debug] Line height:', lineHeight);
-
-      lines.forEach((line, lineIndex) => {
-        // Match pause markers like [Pause: 20s] or [Pause: 15s]
-        const pauseMatch = line.match(/\[Pause:\s*(\d+)s\]/i);
-        if (pauseMatch) {
-          const pauseSeconds = parseInt(pauseMatch[1], 10);
-          pauseMarkers.push({
-            position: currentPixelPosition,
-            duration: pauseSeconds * 1000, // Convert to ms
-          });
-          console.log(`[Pause Marker Debug] Found pause marker at line ${lineIndex}, position ${currentPixelPosition}px, duration ${pauseSeconds}s`);
-        }
-        currentPixelPosition += lineHeight;
-      });
-
-      console.log(`[Pause Marker Debug] Total pause markers detected: ${pauseMarkers.length}`);
-      console.log('[Pause Marker Debug] Pause markers:', pauseMarkers);
-    } else {
-      console.warn('[Pause Marker Debug] No narrative found for this item!');
-    }
-
-    // Track which pauses have been completed by index
-    const completedPauseIndices = new Set<number>();
-    let currentPauseIndex: number | null = null;
-    let pauseCooldownUntil = 0; // Prevent re-triggering immediately after pause completes
-    let pauseMarkersDisabled = false; // Kill switch if infinite loop detected
-    let lastTriggerPosition = -999; // Track last position where pause was triggered
 
     const scroll = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime - totalPausedTime;
-      const currentScrollPos = scrollSpeed * elapsed;
+      const elapsed = timestamp - startTime;
 
-      // If not currently paused AND not in cooldown AND pauses not disabled, check for new pause
-      if (!isPausedForMarker && timestamp >= pauseCooldownUntil && !pauseMarkersDisabled) {
-        // DEBUG: Log scroll position every 60 frames (~1 second) to see if we ever reach markers
-        if (Math.floor(timestamp / 1000) % 1 === 0) {
-          console.log(`[Scroll Debug] currentScrollPos: ${Math.round(currentScrollPos)}px, container.scrollTop: ${Math.round(container.scrollTop)}px, scrollHeight: ${scrollHeight}px`);
-          if (pauseMarkers.length > 0) {
-            console.log(`[Scroll Debug] Next marker at: ${pauseMarkers.find(m => !completedPauseIndices.has(pauseMarkers.indexOf(m)))?.position || 'none'}px`);
-          }
-        }
-
-        const pauseIndex = pauseMarkers.findIndex(
-          (marker, index) =>
-            !completedPauseIndices.has(index) &&
-            currentScrollPos >= marker.position &&
-            currentScrollPos < marker.position + 30 // Small detection window (was 100, then 50)
-        );
-
-        if (pauseIndex !== -1) {
-          const markerPosition = pauseMarkers[pauseIndex].position;
-
-          console.log(`[Pause Trigger] Attempting to trigger pause ${pauseIndex} at marker position ${markerPosition}px`);
-          console.log(`[Pause Trigger] Current scroll: ${currentScrollPos}px, Last trigger: ${lastTriggerPosition}px`);
-
-          // INFINITE LOOP PREVENTION: If we're trying to trigger at the SAME position again, disable pauses
-          if (Math.abs(markerPosition - lastTriggerPosition) < 10) {
-            console.error(`[Pause Marker] INFINITE LOOP DETECTED - Same position triggered twice (${markerPosition}px vs ${lastTriggerPosition}px). Disabling pause markers.`);
-            pauseMarkersDisabled = true;
-            // Continue scrolling normally without pauses
-          } else {
-            // Start pause - this is a NEW position
-            console.log(`[Pause Marker] ✅ Starting pause ${pauseIndex} at position ${currentScrollPos}px (marker at ${markerPosition}px)`);
-            lastTriggerPosition = markerPosition;
-            currentPauseIndex = pauseIndex;
-            isPausedForMarker = true;
-            pauseStartTime = timestamp;
-            pauseDuration = pauseMarkers[pauseIndex].duration;
-          }
-        }
-      }
-
-      // If currently paused, check if pause is complete
-      if (isPausedForMarker && pauseStartTime !== null && currentPauseIndex !== null) {
-        const pauseElapsed = timestamp - pauseStartTime;
-        if (pauseElapsed < pauseDuration) {
-          // Still paused - don't advance scroll
-          container.scrollTop = currentScrollPos;
-          animationFrame = requestAnimationFrame(scroll);
-          return;
-        } else {
-          // Pause complete - mark as completed, set cooldown, and resume scrolling
-          console.log(`[Pause Marker] Pause complete for index ${currentPauseIndex}, setting 5s cooldown`);
-          completedPauseIndices.add(currentPauseIndex);
-          currentPauseIndex = null;
-          isPausedForMarker = false;
-          totalPausedTime += pauseDuration;
-          pauseStartTime = null;
-          // Set 5-second cooldown to prevent re-triggering (increased from 2s for mobile)
-          pauseCooldownUntil = timestamp + 5000;
-        }
-      }
-
-      // Calculate new scroll position
+      // Simple continuous scroll - pauses are created by blank lines in the narrative
       const newScrollTop = Math.min(scrollSpeed * elapsed, scrollHeight);
       container.scrollTop = newScrollTop;
 
