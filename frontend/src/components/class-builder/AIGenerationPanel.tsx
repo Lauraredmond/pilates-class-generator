@@ -332,19 +332,22 @@ export function AIGenerationPanel() {
 
   return (
     <>
-      <Card className="h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Class Generator</CardTitle>
-        </CardHeader>
-        <CardBody className="flex-1 overflow-y-auto">
-          <GenerationForm
-            onSubmit={handleGenerateCompleteClass}
-            isLoading={isGenerating}
-            onPlayClass={handlePlayClass}
-            hasGeneratedClass={results !== null}
-          />
-        </CardBody>
-      </Card>
+      {/* Hide generation form when playback is active */}
+      {!isPlayingClass && (
+        <Card className="h-full flex flex-col">
+          <CardHeader>
+            <CardTitle>Class Generator</CardTitle>
+          </CardHeader>
+          <CardBody className="flex-1 overflow-y-auto">
+            <GenerationForm
+              onSubmit={handleGenerateCompleteClass}
+              isLoading={isGenerating}
+              onPlayClass={handlePlayClass}
+              hasGeneratedClass={results !== null}
+            />
+          </CardBody>
+        </Card>
+      )}
 
       {/* Results Modal */}
       {showResultsModal && results && !isPlayingClass && (
