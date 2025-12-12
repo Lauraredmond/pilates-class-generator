@@ -31,11 +31,17 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       ? item.voiceover_duration
       : item.duration_seconds;
 
+    // DEVICE-RESPONSIVE SCROLL SPEED
+    // Larger screens show more words per line → faster perceived scroll
+    // Solution: Slow down scroll by 25% on desktop/tablet (screens >= 768px)
+    const isLargeScreen = window.innerWidth >= 768;
+    const deviceScrollMultiplier = isLargeScreen ? 1.25 : 1.0; // 25% slower on large screens
+
     // Calculate scroll speed based on duration
     // If voiceover exists, use exact sync (1.0x). Otherwise, 19% slower for readability.
     const hasVoiceover = 'voiceover_duration' in item && item.voiceover_duration;
     const slowdownMultiplier = hasVoiceover ? 1.0 : 1.190;
-    const duration = baseDuration * 1000 * slowdownMultiplier;
+    const duration = baseDuration * 1000 * slowdownMultiplier * deviceScrollMultiplier;
     const scrollHeight = container.scrollHeight - container.clientHeight;
     const scrollSpeed = scrollHeight / duration; // pixels per ms
 
