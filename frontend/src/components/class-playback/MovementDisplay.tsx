@@ -79,43 +79,40 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     const completedPauseIndices = new Set<number>();
     let currentPauseIndex: number | null = null;
     let pauseCooldownUntil = 0; // Prevent re-triggering immediately after pause completes
-    let lastScrollPos = -1; // Track last position to detect stuck state
-    let stuckCounter = 0; // Count how many frames we've been stuck
+    let pauseMarkersDisabled = false; // Kill switch if infinite loop detected
+    let lastTriggerPosition = -999; // Track last position where pause was triggered
 
     const scroll = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime - totalPausedTime;
       const currentScrollPos = scrollSpeed * elapsed;
 
-      // MOBILE FIX: Detect if we're stuck in same position for too long (infinite loop prevention)
-      if (Math.abs(currentScrollPos - lastScrollPos) < 1) {
-        stuckCounter++;
-        if (stuckCounter > 60) { // Stuck for 60 frames = ~1 second
-          console.error('[Pause Marker] INFINITE LOOP DETECTED - Breaking out. Position:', currentScrollPos);
-          // Force skip to next section
-          return;
-        }
-      } else {
-        stuckCounter = 0;
-      }
-      lastScrollPos = currentScrollPos;
-
-      // If not currently paused AND not in cooldown, check if we should start a new pause
-      if (!isPausedForMarker && timestamp >= pauseCooldownUntil) {
+      // If not currently paused AND not in cooldown AND pauses not disabled, check for new pause
+      if (!isPausedForMarker && timestamp >= pauseCooldownUntil && !pauseMarkersDisabled) {
         const pauseIndex = pauseMarkers.findIndex(
           (marker, index) =>
             !completedPauseIndices.has(index) &&
             currentScrollPos >= marker.position &&
-            currentScrollPos < marker.position + 50 // Smaller detection window for mobile (was 100)
+            currentScrollPos < marker.position + 30 // Small detection window (was 100, then 50)
         );
 
         if (pauseIndex !== -1) {
-          // Start pause
-          console.log(`[Pause Marker] Starting pause at position ${currentScrollPos}px (marker at ${pauseMarkers[pauseIndex].position}px)`);
-          currentPauseIndex = pauseIndex;
-          isPausedForMarker = true;
-          pauseStartTime = timestamp;
-          pauseDuration = pauseMarkers[pauseIndex].duration;
+          const markerPosition = pauseMarkers[pauseIndex].position;
+
+          // INFINITE LOOP PREVENTION: If we're trying to trigger at the SAME position again, disable pauses
+          if (Math.abs(markerPosition - lastTriggerPosition) < 10) {
+            console.error('[Pause Marker] INFINITE LOOP DETECTED - Same position triggered twice. Disabling pause markers.');
+            pauseMarkersDisabled = true;
+            // Continue scrolling normally without pauses
+          } else {
+            // Start pause - this is a NEW position
+            console.log(`[Pause Marker] Starting pause at position ${currentScrollPos}px (marker at ${markerPosition}px)`);
+            lastTriggerPosition = markerPosition;
+            currentPauseIndex = pauseIndex;
+            isPausedForMarker = true;
+            pauseStartTime = timestamp;
+            pauseDuration = pauseMarkers[pauseIndex].duration;
+          }
         }
       }
 
@@ -129,14 +126,14 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
           return;
         } else {
           // Pause complete - mark as completed, set cooldown, and resume scrolling
-          console.log(`[Pause Marker] Pause complete for index ${currentPauseIndex}, setting 2s cooldown`);
+          console.log(`[Pause Marker] Pause complete for index ${currentPauseIndex}, setting 5s cooldown`);
           completedPauseIndices.add(currentPauseIndex);
           currentPauseIndex = null;
           isPausedForMarker = false;
           totalPausedTime += pauseDuration;
           pauseStartTime = null;
-          // Set 2-second cooldown to prevent immediate re-triggering (mobile fix)
-          pauseCooldownUntil = timestamp + 2000;
+          // Set 5-second cooldown to prevent re-triggering (increased from 2s for mobile)
+          pauseCooldownUntil = timestamp + 5000;
         }
       }
 
