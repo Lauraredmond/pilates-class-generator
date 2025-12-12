@@ -61,7 +61,11 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       // Desktop: ~80px, Mobile: ~40-60px typically
       const lineHeight = window.innerWidth < 768 ? 50 : 80;
 
-      lines.forEach((line) => {
+      console.log('[Pause Marker Debug] Parsing narrative...');
+      console.log('[Pause Marker Debug] Narrative length:', narrative.length);
+      console.log('[Pause Marker Debug] Line height:', lineHeight);
+
+      lines.forEach((line, lineIndex) => {
         // Match pause markers like [Pause: 20s] or [Pause: 15s]
         const pauseMatch = line.match(/\[Pause:\s*(\d+)s\]/i);
         if (pauseMatch) {
@@ -70,9 +74,15 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
             position: currentPixelPosition,
             duration: pauseSeconds * 1000, // Convert to ms
           });
+          console.log(`[Pause Marker Debug] Found pause marker at line ${lineIndex}, position ${currentPixelPosition}px, duration ${pauseSeconds}s`);
         }
         currentPixelPosition += lineHeight;
       });
+
+      console.log(`[Pause Marker Debug] Total pause markers detected: ${pauseMarkers.length}`);
+      console.log('[Pause Marker Debug] Pause markers:', pauseMarkers);
+    } else {
+      console.warn('[Pause Marker Debug] No narrative found for this item!');
     }
 
     // Track which pauses have been completed by index
