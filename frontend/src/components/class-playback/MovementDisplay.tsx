@@ -26,14 +26,18 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     if (isPaused) return;
 
     // Use voiceover duration if available (syncs scroll with voiceover audio)
+    // Check both property names: voiceover_duration_seconds (movements) and voiceover_duration (other sections)
     // Otherwise use section duration
-    const baseDuration = ('voiceover_duration' in item && item.voiceover_duration)
+    const baseDuration = ('voiceover_duration_seconds' in item && item.voiceover_duration_seconds)
+      ? item.voiceover_duration_seconds
+      : ('voiceover_duration' in item && item.voiceover_duration)
       ? item.voiceover_duration
       : item.duration_seconds;
 
     // Calculate scroll speed based on duration
     // If voiceover exists, use exact sync (1.0x). Otherwise, 19% slower for readability.
-    const hasVoiceover = 'voiceover_duration' in item && item.voiceover_duration;
+    const hasVoiceover = ('voiceover_duration_seconds' in item && item.voiceover_duration_seconds) ||
+                         ('voiceover_duration' in item && item.voiceover_duration);
     const slowdownMultiplier = hasVoiceover ? 1.0 : 1.190;
     const duration = baseDuration * 1000 * slowdownMultiplier;
     const scrollHeight = container.scrollHeight - container.clientHeight;
