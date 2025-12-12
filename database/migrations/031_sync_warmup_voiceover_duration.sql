@@ -1,11 +1,11 @@
--- Migration 031: Sync warmup voiceover duration with 6:40 minute recording
+-- Migration 031: Sync warmup voiceover duration with 6:40 minute recording + 20s pause
 -- Date: December 12, 2025
--- Purpose: Set voiceover_duration to match actual audio file length
+-- Purpose: Set voiceover_duration to match actual audio file length, add 20s pause after
 
 UPDATE warmup_routines
 SET
-  duration_seconds = 440,        -- 7.33 minutes (section duration in class timeline)
-  voiceover_duration = 400,      -- 6.67 minutes (actual voiceover audio length)
+  duration_seconds = 420,        -- 7:00 minutes (400s voiceover + 20s pause)
+  voiceover_duration = 400,      -- 6:40 minutes (actual voiceover audio length)
   voiceover_enabled = true,      -- Enable voiceover playback
   updated_at = NOW()
 WHERE routine_name = 'Comprehensive Full Body Warm-up';
@@ -17,15 +17,17 @@ SELECT
   duration_seconds / 60.0 AS duration_minutes,
   voiceover_duration,
   voiceover_duration / 60.0 AS voiceover_minutes,
+  (duration_seconds - voiceover_duration) AS pause_after_seconds,
   voiceover_enabled,
-  (voiceover_duration * 1.190) / 60.0 AS actual_scroll_minutes
+  voiceover_duration / 60.0 AS scroll_time_minutes
 FROM warmup_routines
 WHERE routine_name = 'Comprehensive Full Body Warm-up';
 
 -- Expected output:
--- duration_seconds: 440
--- duration_minutes: 7.33
--- voiceover_duration: 400
+-- duration_seconds: 420 (7:00 total)
+-- duration_minutes: 7.0
+-- voiceover_duration: 400 (6:40 voiceover)
 -- voiceover_minutes: 6.67
+-- pause_after_seconds: 20 (silent pause after voiceover)
 -- voiceover_enabled: true
--- actual_scroll_minutes: 7.93 (19% slower for readability)
+-- scroll_time_minutes: 6.67 (scroll syncs with voiceover, no slowdown)
