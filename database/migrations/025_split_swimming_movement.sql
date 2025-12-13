@@ -28,7 +28,11 @@ BEGIN
     -- Insert Swimming - Box with same attributes as Swimming - Prone
     -- Note: Only using columns that exist in current schema
     -- Level fields (level_1_description, etc.) are Y/N flags now, copied from Swimming - Prone
+    -- movement_number set to 35 (next sequential number after 34 existing movements)
+    -- code set to 'swimming_box' (URL-friendly identifier)
     INSERT INTO movements (
+        movement_number,            -- Required: NOT NULL constraint
+        code,                       -- Required: UNIQUE constraint
         name,
         category,
         difficulty_level,
@@ -48,6 +52,8 @@ BEGIN
         voiceover_enabled
     )
     SELECT
+        35 as movement_number,                  -- Next sequential number (Swimming is 24, highest is 34)
+        'swimming_box' as code,                 -- URL-friendly identifier
         'Swimming - Box' as name,
         category,
         difficulty_level,
