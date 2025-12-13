@@ -26,46 +26,45 @@ BEGIN
     WHERE name = 'Swimming - Prone';
 
     -- Insert Swimming - Box with same attributes as Swimming - Prone
+    -- Note: Only using columns that exist in current schema
+    -- Level fields (level_1_description, etc.) are Y/N flags now, copied from Swimming - Prone
     INSERT INTO movements (
         name,
         category,
         difficulty_level,
-        difficulty_rank,
         setup_position,
         duration_seconds,
         equipment_required,
-        created_from_excel,
-        -- Copy these fields from Swimming - Prone if you want identical base attributes:
         narrative,
         visual_cues,
         watch_out_points,
-        level_1_description,
-        level_2_description,
-        level_3_description,
-        full_version_description,
+        level_1_description,        -- Y/N flag
+        level_2_description,        -- Y/N flag
+        level_3_description,        -- Y/N flag
+        full_version_description,   -- Y/N flag
         breathing_pattern,
         voiceover_url,
-        voiceover_duration_seconds
+        voiceover_duration_seconds,
+        voiceover_enabled
     )
     SELECT
         'Swimming - Box' as name,
         category,
         difficulty_level,
-        difficulty_rank,
         setup_position,
         duration_seconds,
         equipment_required,
-        false as created_from_excel, -- This is manually added, not from Excel
         narrative,
         visual_cues,
         watch_out_points,
-        level_1_description,
-        level_2_description,
-        level_3_description,
-        full_version_description,
+        level_1_description,        -- Copy Y/N flag
+        level_2_description,        -- Copy Y/N flag
+        level_3_description,        -- Copy Y/N flag
+        full_version_description,   -- Copy Y/N flag
         breathing_pattern,
-        NULL as voiceover_url, -- Will need separate voiceover if different
-        NULL as voiceover_duration_seconds
+        NULL as voiceover_url,                  -- Different movement = different voiceover
+        NULL as voiceover_duration_seconds,     -- Different movement = different voiceover
+        false as voiceover_enabled              -- Will enable after uploading voiceover
     FROM movements
     WHERE name = 'Swimming - Prone'
     RETURNING id INTO new_swimming_box_id;
