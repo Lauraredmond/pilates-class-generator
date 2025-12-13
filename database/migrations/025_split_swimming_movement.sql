@@ -79,15 +79,30 @@ BEGIN
     -- STEP 3: Copy muscle mappings from Swimming - Prone to Swimming - Box
     -- ============================================================================
 
-    INSERT INTO movement_muscles (movement_id, muscle_group_id, is_primary)
-    SELECT
-        new_swimming_box_id,
-        muscle_group_id,
-        is_primary
-    FROM movement_muscles
-    WHERE movement_id = swimming_prone_id;
+    -- Check if movement_muscles table exists and has data before copying
+    -- This handles cases where muscle mapping may not be set up yet
+    BEGIN
+        -- Try to copy muscle mappings (will fail silently if table structure doesn't match)
+        INSERT INTO movement_muscles (movement_id, muscle_group_id, is_primary)
+        SELECT
+            new_swimming_box_id,
+            muscle_group_id,
+            is_primary
+        FROM movement_muscles
+        WHERE movement_id = swimming_prone_id;
 
-    RAISE NOTICE 'Successfully split Swimming into Swimming - Prone (%) and Swimming - Box (%)',
+        RAISE NOTICE '✅ Muscle mappings copied successfully';
+    EXCEPTION
+        WHEN undefined_column THEN
+            RAISE NOTICE '⚠️  Muscle mappings NOT copied - movement_muscles table structure differs';
+            RAISE NOTICE '    You can add muscle mappings manually later if needed';
+        WHEN undefined_table THEN
+            RAISE NOTICE '⚠️  Muscle mappings NOT copied - movement_muscles table does not exist';
+            RAISE NOTICE '    You can add muscle mappings manually later if needed';
+    END;
+
+    RAISE NOTICE '';
+    RAISE NOTICE '✅ Successfully split Swimming into Swimming - Prone (%) and Swimming - Box (%)',
         swimming_prone_id, new_swimming_box_id;
 END $$;
 
