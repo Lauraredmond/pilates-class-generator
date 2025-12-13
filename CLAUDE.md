@@ -1267,6 +1267,81 @@ git checkout a53672e -- frontend/src/components/class-builder/ai-generation/Gene
 
 ---
 
+## Known Issues & Fixes
+
+### Archive.org Music Rate Limiting
+
+**Issue:** Beta testers report "Failed to load background music" error during class playback
+
+**Root Cause:** Internet Archive enforces daily rate limits on streaming requests
+- Limit appears to reset at midnight (likely UTC)
+- Heavy testing during day → quota exhausted by evening
+- Different devices/IPs have separate quotas (why work iPhone still works)
+
+**Symptoms:**
+- Music works initially, then fails after heavy usage
+- Error message: "Failed to load background music"
+- Works again after midnight (quota reset)
+- Works on different devices/networks (separate quotas)
+
+**Temporary Workarounds:**
+1. Wait until midnight for quota reset
+2. Switch networks (WiFi ↔ Cellular for new IP)
+3. Clear Safari cache: Settings → Safari → Clear History and Website Data
+4. Test on different device (separate quota)
+
+**Permanent Fix: Self-Host Music on Supabase Storage**
+
+**Timeline:** 30-minute implementation (before beta testing expands)
+
+**Steps:**
+1. **Download 14 tracks from Internet Archive** (one-time, legal - public domain)
+   - All tracks documented in `database/seed_data/001_initial_music_tracks_VERIFIED.sql`
+   - Use `wget` or `curl` to download from archive.org URLs
+   - Preserve public domain licensing information
+
+2. **Upload to Supabase Storage**
+   ```sql
+   -- Create bucket (one-time)
+   INSERT INTO storage.buckets (id, name, public)
+   VALUES ('music-tracks', 'music-tracks', true);
+
+   -- Upload all 14 MP3 files via Supabase dashboard
+   -- Set cache headers: public, max-age=31536000, immutable
+   ```
+
+3. **Update database with new URLs**
+   ```sql
+   -- Replace archive.org URLs with Supabase Storage URLs
+   UPDATE music_tracks
+   SET audio_url = 'https://[project].supabase.co/storage/v1/object/public/music-tracks/[filename].mp3'
+   WHERE audio_url LIKE '%archive.org%';
+   ```
+
+4. **Update backend ALLOWED_STREAMING_DOMAINS**
+   ```python
+   # backend/config.py or wherever whitelist is defined
+   ALLOWED_STREAMING_DOMAINS = [
+       'supabase.co',  # Add Supabase Storage
+       'archive.org'   # Keep as fallback
+   ]
+   ```
+
+**Cost Analysis:**
+- Storage: 40 MB ÷ 1024 = 0.039 GB × $0.021 = $0.0008/month (~$0.00)
+- Bandwidth (100 users/month): 100 × 14 tracks × 2.86 MB avg = 4 GB × $0.09 = $0.36/month
+- **Total:** ~$0.36/month (negligible, no rate limits)
+
+**Benefits:**
+- ✅ No rate limits ever
+- ✅ Faster loading (Supabase CDN closer to users)
+- ✅ Complete control over content
+- ✅ More reliable for beta testers and production
+
+**Priority:** HIGH - Should complete before expanding beta testing to avoid user frustration
+
+---
+
 ## Performance Considerations
 
 ### Database Queries
@@ -2957,6 +3032,24 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 ---
 
+#### **⚠️ PRIORITY TASKS FOR NEXT SESSION (Complete before 2025)**
+
+**CRITICAL: These tasks MUST be completed before December 31, 2025:**
+
+1. **Single Movement Video Demo** (60 minutes)
+   - Record The Hundred demonstration
+   - Upload to Supabase, update database, deploy frontend
+   - See Priority #1 in Enhancement Roadmap below
+
+2. **Archive.org Music Migration** (30 minutes)
+   - Download 14 tracks, upload to Supabase Storage
+   - Update database URLs, test playback
+   - See "Known Issues & Fixes" section (search CLAUDE.md)
+
+**User Request:** "Please ensure that you bring this up in all of our next sessions for this project so that we are sure to complete it."
+
+---
+
 #### **1. Voiceover Support for Class Sections** (✅ COMPLETED - December 8, 2025)
 - **Goal:** Enable voiceover playback for all 6 class section types (preparation, warmup, cooldown, meditation, homecare)
 - **Status:** Infrastructure complete, preparation voiceover tested and working
@@ -2984,7 +3077,35 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Update database with URLs/durations
   - Migration 019 ready for warmup narrative update
 
-#### **2. Add Jazz Music Style** (High Priority)
+#### **2. Single Movement Video Demonstration** (HIGH PRIORITY - Complete before 2025)
+- **Goal:** Add one video demo to validate demand before investing in all 34 movements
+- **Movement:** "The Hundred" (most iconic, beginner-friendly, first in classical order)
+- **Implementation:** Picture-in-Picture video (375px wide, top-right, muted autoplay, loops)
+- **Cost:** ~$0.34/month (37.5 MB video, 100 users/month viewing)
+- **Timeline:** 60 minutes total implementation time
+- **Success Metrics:**
+  - >70% users say "Yes, add more videos" in post-class survey
+  - >10% improvement in class completion rate
+  - Stays under $0.50/month bandwidth cost
+- **Technical Steps:**
+  1. Record 2-minute demo of The Hundred (30 min)
+  2. Optimize with ffmpeg (720p H.264, ~37 MB final) (15 min)
+  3. Upload to Supabase Storage `movement-videos` bucket (5 min)
+  4. Update movements table: `SET video_url = '...' WHERE name = 'The Hundred'` (2 min)
+  5. Update MovementDisplay.tsx with picture-in-picture video element (10 min)
+  6. Test on iOS Safari + Android Chrome (3 min)
+- **User Feedback Collection:**
+  - Post-class survey: "Did you find the video demonstration helpful?"
+  - Track completion rates for classes with The Hundred
+  - Monitor bandwidth usage vs projection
+- **Expansion Path (if successful):**
+  - Tier 1: Core 5 movements (~$1.70/month)
+  - Tier 2: All Beginner (14 movements)
+  - Tier 3: All 34 movements (migrate to AWS/R2 per Infrastructure Roadmap)
+- **Context:** User feedback indicates text-only narrative is confusing for non-seasoned practitioners. One demo video validates whether visual aids increase engagement before committing to full video library.
+- Estimated Time: 60 minutes
+
+#### **3. Add Jazz Music Style** (High Priority)
 - Add "Jazz" to musical stylistic periods
 - Source: Internet Archive Jazz collection
 - Example URL: [Provide specific Internet Archive Jazz collection URL]
@@ -2992,7 +3113,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - Frontend: Add "Jazz" option to music style dropdown
 - Estimated Time: 2-3 hours
 
-#### **3. Restrict AI Mode Toggle to Admins + Cost Reduction** (High Priority)
+#### **4. Restrict AI Mode Toggle to Admins + Cost Reduction** (High Priority)
 - **Admin-Only AI Toggle:**
   - Move AI toggle from public UI to admin-only settings
   - Prevent non-admin users from triggering expensive AI operations
@@ -3008,13 +3129,13 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 - Estimated Time: 4-5 hours
 
-#### **4. Update Class Builder Page Appearance** (Medium Priority)
+#### **5. Update Class Builder Page Appearance** (Medium Priority)
 - Remove "Manual Build" option from UI
 - Add Cian's logos to class builder header
 - Update branding/styling per design specs
 - Estimated Time: 2-3 hours
 
-#### **2.5 AWS Migration Assessment** (High Priority - Cost Analysis)
+#### **6. AWS Migration Assessment** (High Priority - Cost Analysis)
 - **Context:** $1,000 AWS credits received from Amazon
 - **Questions to Answer:**
   1. How easy is it to migrate/copy MVP2 to AWS environment?
@@ -3035,7 +3156,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **Deliverable:** Cost analysis report with migration recommendation
 - Estimated Time: 4-6 hours (analysis), 20-40 hours (migration if approved)
 
-#### **5. Add Nutrition Tracker** (High Priority)
+#### **7. Add Nutrition Tracker** (High Priority)
 - **Data Source:** `/Users/lauraredmond/Documents/Bassline/Admin/7. Product/Nutrition/Nutrition Information-Table-LRAdjusted.xlsx`
 - **Implementation Steps:**
   1. **Create Food Database Table:**
@@ -3065,7 +3186,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **Next Step:** Screenshot Numbers formulae for CC, review data structure
 - Estimated Time: 15-20 hours
 
-#### **6. Add "Create My Baseline Wellness Routine" Button** (Medium Priority)
+#### **8. Add "Create My Baseline Wellness Routine" Button** (Medium Priority)
 - Add button to home page/dashboard
 - Button leads to placeholder page initially
 - **Placeholder Content:**
@@ -3079,7 +3200,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Stress management guidance
 - Estimated Time: 1-2 hours (placeholder), 40+ hours (full implementation)
 
-#### **7. Replace "Generate" Nav Icon with "Founder Story"** (Low Priority - UX Change)
+#### **9. Replace "Generate" Nav Icon with "Founder Story"** (Low Priority - UX Change)
 - Current: "Generate" icon in main navigation
 - New: "Founder Story" icon (move to extreme right of nav bar)
 - Add founder story page with:
@@ -3089,7 +3210,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Photos/testimonials
 - Estimated Time: 2-3 hours
 
-#### **8. Replace "Classes" Nav Icon with "Wellness Space"** (Low Priority - UX Change)
+#### **10. Replace "Classes" Nav Icon with "Wellness Space"** (Low Priority - UX Change)
 - Current: "Classes" icon in main navigation
 - New: "Wellness Space" icon
 - Reframe "Classes" as holistic "Wellness Space" including:
@@ -3100,7 +3221,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Meditation library
 - Estimated Time: 2 hours (icon/name change), ongoing (feature additions)
 
-#### **8. Retry Supabase User Confirmation** (Medium Priority)
+#### **11. Retry Supabase User Confirmation** (Medium Priority)
 - **Context:** Previous issues with Supabase email confirmation may have been temporary
 - **Action:** Test current email confirmation flow
 - **If Still Broken:**
@@ -3112,7 +3233,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **Note:** May be resolved by AWS migration (Task 2.5) using Amazon Cognito
 - Estimated Time: 1 hour (testing), 2-3 hours (fixes if needed)
 
-#### **9. Advanced Delivery Modes - Audio & Visual** (Medium Priority)
+#### **12. Advanced Delivery Modes - Audio & Visual** (Medium Priority)
 - **9.1 Audio Narration (Priority):**
   - TTS integration (ElevenLabs, OpenAI TTS, or Google Cloud TTS)
   - Pre-generate and cache common narratives (Redis 24-hour TTL)
@@ -3143,7 +3264,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 - Estimated Time: 20-30 hours (audio), 60+ hours (video if pursued)
 
-#### **9.5 Rigorous Review of Supabase Pilates Content** (Medium Priority)
+#### **13. Rigorous Review of Supabase Pilates Content** (Medium Priority)
 - **Goal:** Cross-compare database content with source Excel files
 - **Tasks:**
   1. Export all movements from Supabase `movements` table
@@ -3169,7 +3290,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **Deliverable:** Content audit report + SQL fix scripts
 - Estimated Time: 6-8 hours
 
-#### **9.75 Infrastructure Roadmap: Audio/Video Scaling Strategy** (High Priority - Strategic Planning)
+#### **14. Infrastructure Roadmap: Audio/Video Scaling Strategy** (High Priority - Strategic Planning)
 - **Context:** $1,000 AWS Activate credits + mobile users need audio/video
 - **User Question:** "Will my web app work for mobile end users or will they struggle?"
 - **4-Phase Implementation Plan:**
@@ -3217,7 +3338,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Phase 4: Infrastructure cost <2% of monthly revenue at scale
 - Estimated Time: Documentation complete (now), implementation 40+ hours over 12 months
 
-#### **10. EU AI Act Compliance Dashboard & Testing** (Low Priority - Future Session)
+#### **15. EU AI Act Compliance Dashboard & Testing** (Low Priority - Future Session)
 - **Decision Transparency View:** Display all AI agent decisions for user
 - **Bias Monitoring Dashboard:** Track model drift, fairness metrics, alerts
 - **Audit Trail Interface:** Complete decision history with export (CSV, JSON)
@@ -3226,7 +3347,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - **GDPR Data Export Fix:** Resolve HTTP 500 error on `/api/compliance/my-data`
 - Estimated Time: 12-15 hours
 
-#### **11. Security Testing** (Medium Priority - Pre-Production)
+#### **16. Security Testing** (Medium Priority - Pre-Production)
 - **Penetration Testing:**
   - API endpoint security testing
   - Authentication/authorization bypass attempts
@@ -3261,7 +3382,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 - Estimated Time: 8-10 hours initial audit, ongoing monitoring
 
-#### **12. Privacy Policy & Legal Documentation** (Medium Priority - Pre-Production)
+#### **17. Privacy Policy & Legal Documentation** (Medium Priority - Pre-Production)
 - **Privacy Policy Page:**
   - GDPR-compliant privacy policy
   - Clear data collection disclosure
