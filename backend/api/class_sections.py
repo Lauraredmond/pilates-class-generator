@@ -41,6 +41,7 @@ class PreparationScript(BaseModel):
     voiceover_url: Optional[str] = None
     voiceover_duration: Optional[int] = None
     voiceover_enabled: Optional[bool] = False
+    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
     created_at: datetime
     updated_at: datetime
 
@@ -58,6 +59,7 @@ class WarmupRoutine(BaseModel):
     voiceover_url: Optional[str] = None
     voiceover_duration: Optional[int] = None
     voiceover_enabled: Optional[bool] = False
+    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
     created_at: datetime
     updated_at: datetime
 
@@ -74,6 +76,7 @@ class CooldownSequence(BaseModel):
     voiceover_url: Optional[str] = None
     voiceover_duration: Optional[int] = None
     voiceover_enabled: Optional[bool] = False
+    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
     created_at: datetime
     updated_at: datetime
 
@@ -89,6 +92,7 @@ class ClosingMeditationScript(BaseModel):
     voiceover_url: Optional[str] = None
     voiceover_duration: Optional[int] = None
     voiceover_enabled: Optional[bool] = False
+    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
     created_at: datetime
     updated_at: datetime
 
@@ -104,6 +108,7 @@ class ClosingHomecareAdvice(BaseModel):
     voiceover_url: Optional[str] = None
     voiceover_duration: Optional[int] = None
     voiceover_enabled: Optional[bool] = False
+    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
     created_at: datetime
     updated_at: datetime
 
