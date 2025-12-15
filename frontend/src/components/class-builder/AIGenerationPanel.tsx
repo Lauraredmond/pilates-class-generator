@@ -101,6 +101,8 @@ export function AIGenerationPanel() {
             voiceover_url: m.voiceover_url,
             voiceover_duration_seconds: m.voiceover_duration_seconds,
             voiceover_enabled: m.voiceover_enabled,
+            // Video demonstration (AWS Phase 1) - PRESERVE from backend!
+            video_url: m.video_url,
           })),
           movement_count: sequenceResponse.data.movement_count || 0,
           transition_count: sequenceResponse.data.transition_count || 0,
@@ -318,6 +320,8 @@ export function AIGenerationPanel() {
             voiceover_url: (m as any).voiceover_url,
             voiceover_duration_seconds: (m as any).voiceover_duration_seconds,
             voiceover_enabled: (m as any).voiceover_enabled || false,
+            // Video demonstration (AWS Phase 1)
+            video_url: (m as any).video_url,
           };
         }),
         // Section 4: Cool-down (null-safe: cooldown may be missing if backend fails)
