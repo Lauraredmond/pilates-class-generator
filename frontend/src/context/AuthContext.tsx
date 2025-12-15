@@ -69,9 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('refresh_token');
   };
 
-  // Configure axios interceptor for auth
+  // Configure axios interceptors for auth
   useEffect(() => {
-    const interceptor = axios.interceptors.request.use(
+    // REQUEST INTERCEPTOR: Add access token to all requests
+    const requestInterceptor = axios.interceptors.request.use(
       (config) => {
         const token = getAccessToken();
         if (token) {
@@ -82,8 +83,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (error) => Promise.reject(error)
     );
 
+    // RESPONSE INTERCEPTOR: Auto-refresh token on 401 errors
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response, // Success - pass through
+      async (error) => {
+        const originalRequest = error.config;
+
+        // Check if error is 401 Unauthorized and we haven't already retried
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true; // Mark as retried to avoid infinite loop
+
+          logger.info('[Auth] Access token expired (401), attempting refresh...');
+
+          try {
+            // Attempt to refresh the token
+            const refresh = getRefreshToken();
+            if (!refresh) {
+              logger.warn('[Auth] No refresh token available, logging out');
+              clearTokens();
+              setUser(null);
+              return Promise.reject(error);
+            }
+
+            const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+              refresh_token: refresh
+            });
+
+            const { access_token, refresh_token } = response.data;
+            setTokens(access_token, refresh_token);
+
+            logger.info('[Auth] Token refreshed successfully, retrying original request');
+
+            // Update the original request with new token
+            originalRequest.headers.Authorization = `Bearer ${access_token}`;
+
+            // Retry the original request with new token
+            return axios(originalRequest);
+          } catch (refreshError) {
+            // Token refresh failed - log out user
+            logger.error('[Auth] Token refresh failed, logging out user', refreshError);
+            clearTokens();
+            setUser(null);
+
+            // Show user-friendly error message
+            return Promise.reject({
+              ...error,
+              message: 'Your session has expired. Please log in again.',
+              userFriendly: true
+            });
+          }
+        }
+
+        // Not a 401 or already retried - pass through the error
+        return Promise.reject(error);
+      }
+    );
+
     return () => {
-      axios.interceptors.request.eject(interceptor);
+      axios.interceptors.request.eject(requestInterceptor);
+      axios.interceptors.response.eject(responseInterceptor);
     };
   }, []);
 

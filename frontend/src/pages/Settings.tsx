@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare, FileText, Wrench } from 'lucide-react';
 import { logger } from '../utils/logger';
 import { RecordingModeManager } from '../components/recording-mode/RecordingModeManager';
+import { DebugPanel } from '../components/DebugPanel';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -927,7 +928,10 @@ export function Settings() {
             <p className="text-cream/60 text-sm mb-6">
               Tools for content creators and developers
             </p>
-            <RecordingModeManager />
+            <DebugPanel />
+            <div className="mt-6">
+              <RecordingModeManager />
+            </div>
           </div>
         )}
       </div>

@@ -156,9 +156,27 @@ export function AIGenerationPanel() {
       showToast('Complete 6-section class generated successfully!', 'success');
     } catch (error: any) {
       logger.error('Failed to generate complete class:', error);
-      const errorMessage =
-        error.response?.data?.detail || error.message || 'Failed to generate complete class';
-      showToast(errorMessage, 'error');
+
+      // Check if this is a token expiration error (from auth interceptor)
+      if (error.userFriendly) {
+        // User-friendly message from auth interceptor
+        showToast(error.message, 'error');
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+      } else if (error.response?.status === 401) {
+        // 401 but not caught by interceptor (shouldn't happen, but safety net)
+        showToast('Your session has expired. Please log in again.', 'error');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+      } else {
+        // Other errors
+        const errorMessage =
+          error.response?.data?.detail || error.message || 'Failed to generate complete class';
+        showToast(errorMessage, 'error');
+      }
     } finally {
       setIsGenerating(false);
     }
