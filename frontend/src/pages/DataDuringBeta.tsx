@@ -90,6 +90,12 @@ export function DataDuringBeta() {
                   <strong>Resend</strong> – Sends emails through EU infrastructure; limited metadata may be processed in the US under GDPR Standard Contractual Clauses (SCCs)
                 </div>
               </div>
+              <div className="flex items-start gap-3">
+                <span className="text-burgundy font-bold">•</span>
+                <div>
+                  <strong>AWS S3 & CloudFront</strong> – Stores educational video content in United States. These videos contain zero user data — only Bassline-created Pilates demonstrations
+                </div>
+              </div>
             </div>
           </section>
 
