@@ -3,9 +3,7 @@
 Re-record prep phase at slower speed
 
 Security:
-- Check JWT
 
-- Wireshark
 - ChatGPT run book
 Can you create a runbook for yourself to reperform all of the security checks that we have performed this evening (which are documented in the XXX security audit reports in the 1. Security testing folder) so taht we can re-run just before I release the beta veresion
 Review movements table for accuracy of data - e.g. are beginner, intermed, advanced allocated correctly etc
@@ -37,9 +35,36 @@ Analytics page:
 11. Security testing
 
 12. Privacy policy
+#Can you commit that plan to claude.md so that it is acknowledge to be done before 2025 is complete? Please ensure that you bring this up in our all of our next sessions for this project so that we are sure to complete it.
+
+#Further, please log the below if beta testers report same issue of "Failed to load background music" when they run class play
+
+#ARCHIVE.ORG Quota limit. Potential fix:
+
+ # Permanent Fix: Self-Host on Supabase Storage
+
+  #Would take ~30 minutes to implement:
+
+  #1. Download 14 tracks from Internet Archive (one-time, legal - they're public domain)
+  #2. Upload to Supabase Storage (~40 MB total for 14 tracks)
+  #3. Update database with new Supabase URLs
+  #4. Cost: $0.15/month (vs $0 now, but with rate limit headaches)
+
+
+**DATA ANALYTICS IDEA**
+- Group movements by strength, mobility, other (?) and produce a count in a stacked graph, including a totals bar
+- Group movements by Movement Family Distribution : movement_family: 'rolling' | 'side_lying' | 'supine_abdominal' | 'back_extension' | 'hip_extensor' | 'inversion' | 'other'
+- Group movements by Breath Pattern Consistency (implied from the movements chosen)
+
 
 
 ****DONE****
+
+
+Security:
+- Check JWT
+
+- Wireshark
 
 8. Try Supabase user confirmation again, as prior issues may have been down to temporary issue on supabase side
 

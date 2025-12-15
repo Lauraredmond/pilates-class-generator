@@ -273,6 +273,8 @@ export function AIGenerationPanel() {
           voiceover_url: (results as any).completeClass.preparation?.voiceover_url,
           voiceover_duration: (results as any).completeClass.preparation?.voiceover_duration,
           voiceover_enabled: (results as any).completeClass.preparation?.voiceover_enabled || false,
+          // Video demonstration (AWS Phase 1)
+          video_url: (results as any).completeClass.preparation?.video_url,
         },
         // Section 2: Warm-up (null-safe: warmup may be missing if backend fails)
         {
@@ -286,6 +288,8 @@ export function AIGenerationPanel() {
           voiceover_url: (results as any).completeClass.warmup?.voiceover_url,
           voiceover_duration: (results as any).completeClass.warmup?.voiceover_duration,
           voiceover_enabled: (results as any).completeClass.warmup?.voiceover_enabled || false,
+          // Video demonstration (AWS Phase 1)
+          video_url: (results as any).completeClass.warmup?.video_url,
         },
         // Section 3: Main movements (AI-generated, includes movements + transitions)
         // Use results.sequence.movements which contains BOTH movements and transitions from AI
@@ -337,6 +341,8 @@ export function AIGenerationPanel() {
           voiceover_url: (results as any).completeClass.cooldown?.voiceover_url,
           voiceover_duration: (results as any).completeClass.cooldown?.voiceover_duration,
           voiceover_enabled: (results as any).completeClass.cooldown?.voiceover_enabled || false,
+          // Video demonstration (AWS Phase 1)
+          video_url: (results as any).completeClass.cooldown?.video_url,
         },
         // Section 5: Closing Meditation (null-safe: meditation may be missing if backend fails)
         {
@@ -350,6 +356,8 @@ export function AIGenerationPanel() {
           voiceover_url: (results as any).completeClass.meditation?.voiceover_url,
           voiceover_duration: (results as any).completeClass.meditation?.voiceover_duration,
           voiceover_enabled: (results as any).completeClass.meditation?.voiceover_enabled || false,
+          // Video demonstration (AWS Phase 1)
+          video_url: (results as any).completeClass.meditation?.video_url,
         },
         // Section 6: HomeCare Advice (null-safe: homecare may be missing if backend fails)
         {
@@ -363,6 +371,8 @@ export function AIGenerationPanel() {
           voiceover_url: (results as any).completeClass.homecare?.voiceover_url,
           voiceover_duration: (results as any).completeClass.homecare?.voiceover_duration,
           voiceover_enabled: (results as any).completeClass.homecare?.voiceover_enabled || false,
+          // Video demonstration (AWS Phase 1)
+          video_url: (results as any).completeClass.homecare?.video_url,
         },
       ]
     : [];
