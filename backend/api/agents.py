@@ -732,6 +732,10 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
             preparation = prep_response.data[0] if prep_response.data else None
             logger.info(f"Selected preparation: {preparation.get('script_name') if preparation else 'None'}")
+            # DEBUG: Check if video_url is present in database response
+            if preparation:
+                logger.info(f"🎥 DEBUG: Preparation has video_url: {preparation.get('video_url')}")
+                logger.info(f"🎥 DEBUG: Preparation fields: {list(preparation.keys())}")
         except Exception as e:
             logger.error(f"Failed to fetch preparation script: {e}")
             preparation = None
@@ -748,6 +752,10 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
             warmup = warmup_response.data[0] if warmup_response.data else None
             logger.info(f"Selected warmup: {warmup.get('routine_name') if warmup else 'None'}")
+            # DEBUG: Check if video_url is present in database response
+            if warmup:
+                logger.info(f"🎥 DEBUG: Warmup has video_url: {warmup.get('video_url')}")
+                logger.info(f"🎥 DEBUG: Warmup fields: {list(warmup.keys())}")
         except Exception as e:
             logger.error(f"Failed to fetch warmup routine: {e}")
             warmup = None
@@ -834,6 +842,14 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
         # Calculate total processing time
         total_time_ms = (time.time() - start_time) * 1000
+
+        # DEBUG: Verify what's being sent to frontend
+        logger.info("=" * 80)
+        logger.info("🎥 DEBUG: FINAL RESPONSE CHECK")
+        logger.info("=" * 80)
+        logger.info(f"🎥 Preparation video_url in response: {preparation.get('video_url') if preparation else 'None (preparation is None)'}")
+        logger.info(f"🎥 Warmup video_url in response: {warmup.get('video_url') if warmup else 'None (warmup is None)'}")
+        logger.info("=" * 80)
 
         # Assemble complete class response with all 6 sections
         return {
