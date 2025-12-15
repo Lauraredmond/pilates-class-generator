@@ -295,6 +295,63 @@ export function useAudioDucking({
   }, [isPaused]);
 
   /**
+   * Voiceover playback on section change (FIX: Natural transitions)
+   *
+   * When sections change naturally (timer countdown), the voiceover URL changes
+   * but the play/pause useEffect doesn't run (isPaused hasn't changed).
+   * This effect ensures voiceover plays on both manual skips AND natural transitions.
+   */
+  useEffect(() => {
+    // Only play if:
+    // 1. Voiceover exists for this section
+    // 2. Player is not paused (active playback)
+    // 3. Voiceover element has been created
+    if (!voiceoverUrl || isPaused || !voiceoverElementRef.current) {
+      return;
+    }
+
+    const voiceoverAudio = voiceoverElementRef.current;
+
+    // Wait for voiceover to be ready before playing
+    // (handles race condition where section changes before 'canplaythrough' fires)
+    const playWhenReady = () => {
+      if (voiceoverAudio.readyState >= 3) {
+        // HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
+        logger.debug('Playing voiceover on section change (natural transition fix)');
+        voiceoverAudio.play().catch(err => {
+          logger.error('Failed to play voiceover on section change:', err);
+        });
+      } else {
+        // Not ready yet, wait for canplaythrough
+        logger.debug('Voiceover not ready yet, waiting for canplaythrough event');
+        const readyHandler = () => {
+          logger.debug('Voiceover ready, playing now');
+          voiceoverAudio.play().catch(err => {
+            logger.error('Failed to play voiceover after ready:', err);
+          });
+          voiceoverAudio.removeEventListener('canplaythrough', readyHandler);
+        };
+        voiceoverAudio.addEventListener('canplaythrough', readyHandler);
+      }
+    };
+
+    // Small delay to ensure AudioContext is resumed and element is initialized
+    const timeoutId = setTimeout(() => {
+      // Resume AudioContext if needed (browser autoplay policy)
+      if (audioContextRef.current?.state === 'suspended') {
+        audioContextRef.current.resume().then(() => {
+          logger.debug('AudioContext resumed for voiceover');
+          playWhenReady();
+        });
+      } else {
+        playWhenReady();
+      }
+    }, 50); // 50ms delay to avoid race conditions
+
+    return () => clearTimeout(timeoutId);
+  }, [voiceoverUrl, isPaused]);
+
+  /**
    * Manual play trigger (for user gesture to bypass autoplay blocking)
    */
   const manualPlay = () => {
