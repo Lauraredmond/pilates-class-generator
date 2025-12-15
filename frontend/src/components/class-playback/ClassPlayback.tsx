@@ -99,6 +99,8 @@ export interface PlaybackMovement {
   voiceover_url?: string; // Supabase Storage URL for pre-recorded voiceover
   voiceover_duration_seconds?: number; // Duration in seconds (for music ducking timing)
   voiceover_enabled?: boolean; // Whether to play voiceover during this movement
+  // Video demonstration (AWS Phase 1 - December 2025)
+  video_url?: string; // CloudFront CDN URL for movement demonstration video (picture-in-picture, 375px wide)
   // Legacy fields (for backwards compatibility)
   setup_instructions?: string;
   breathing_pattern?: string;
