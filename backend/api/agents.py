@@ -779,18 +779,25 @@ Return all 6 sections with complete details (narrative, timing, instructions).
             cooldown = None
 
         # Step 6: Select meditation (Section 5)
-        try:
-            meditation_response = supabase.table('closing_meditation_scripts') \
-                .select('*') \
-                .eq('post_intensity', 'moderate') \
-                .limit(1) \
-                .execute()
+        # For 30-min classes: skip meditation to allow more movements
+        include_meditation = request.class_plan.target_duration_minutes > 30
+        meditation = None
 
-            meditation = meditation_response.data[0] if meditation_response.data else None
-            logger.info(f"Selected meditation: {meditation.get('script_name') if meditation else 'None'}")
-        except Exception as e:
-            logger.error(f"Failed to fetch meditation script: {e}")
-            meditation = None
+        if include_meditation:
+            try:
+                meditation_response = supabase.table('closing_meditation_scripts') \
+                    .select('*') \
+                    .eq('post_intensity', 'moderate') \
+                    .limit(1) \
+                    .execute()
+
+                meditation = meditation_response.data[0] if meditation_response.data else None
+                logger.info(f"Selected meditation: {meditation.get('script_name') if meditation else 'None'}")
+            except Exception as e:
+                logger.error(f"Failed to fetch meditation script: {e}")
+                meditation = None
+        else:
+            logger.info(f"⏭️  Skipping meditation for {request.class_plan.target_duration_minutes}-min class (meditation only for classes > 30 min)")
 
         # Step 7: Select homecare advice (Section 6)
         try:
