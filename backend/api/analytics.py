@@ -469,7 +469,12 @@ async def get_difficulty_progression(
     user_id: str,
     period: TimePeriod = Query(default=TimePeriod.WEEK)
 ):
-    """Get difficulty progression data for bar chart"""
+    """
+    Get difficulty progression data for bar chart
+
+    Counts INDIVIDUAL MOVEMENTS by their difficulty rating (not classes by overall difficulty)
+    Example: 10 classes with ~9 movements each = ~90 movements counted
+    """
     try:
         user_uuid = _convert_to_uuid(user_id)
 
@@ -481,17 +486,39 @@ async def get_difficulty_progression(
         intermediate_counts = [0] * len(date_ranges)
         advanced_counts = [0] * len(date_ranges)
 
-        # Fetch class history with difficulty info
+        # Fetch class history with movements_snapshot
         earliest_date = date_ranges[0][0]
         classes_response = supabase.table('class_history') \
-            .select('taught_date, instructor_notes') \
+            .select('taught_date, movements_snapshot') \
             .eq('user_id', user_uuid) \
             .gte('taught_date', earliest_date.isoformat()) \
             .execute()
 
         classes = classes_response.data or []
 
-        # Count classes by difficulty per period
+        # Build cache of movement names to difficulty ratings
+        # First, collect all unique movement names from all classes
+        unique_movement_names = set()
+        for class_item in classes:
+            movements_snapshot = class_item.get('movements_snapshot', [])
+            for movement in movements_snapshot:
+                if movement.get('type') == 'movement':
+                    movement_name = movement.get('name')
+                    if movement_name:
+                        unique_movement_names.add(movement_name)
+
+        # Fetch difficulty ratings for all movements in one query
+        movement_difficulty_cache = {}
+        if unique_movement_names:
+            movements_response = supabase.table('movements') \
+                .select('name, difficulty') \
+                .in_('name', list(unique_movement_names)) \
+                .execute()
+
+            for movement in movements_response.data:
+                movement_difficulty_cache[movement['name']] = movement.get('difficulty', 'Beginner')
+
+        # Count MOVEMENTS (not classes) by difficulty per period
         for class_item in classes:
             taught_date_str = class_item.get('taught_date')
             if not taught_date_str:
@@ -502,26 +529,26 @@ async def get_difficulty_progression(
             except (ValueError, TypeError):
                 logger.warning(f"Invalid taught_date in difficulty_progression: {taught_date_str}")
                 continue
-            notes = class_item.get('instructor_notes', '')
 
-            # Determine difficulty from instructor notes
-            difficulty = 'Beginner'  # default
-            if 'Intermediate' in notes:
-                difficulty = 'Intermediate'
-            elif 'Advanced' in notes:
-                difficulty = 'Advanced'
-            elif 'Beginner' in notes:
-                difficulty = 'Beginner'
+            movements_snapshot = class_item.get('movements_snapshot', [])
 
             # Find which period this class belongs to
             for period_idx, (start_date, end_date) in enumerate(date_ranges):
                 if start_date <= class_date <= end_date:
-                    if difficulty == 'Beginner':
-                        beginner_counts[period_idx] += 1
-                    elif difficulty == 'Intermediate':
-                        intermediate_counts[period_idx] += 1
-                    elif difficulty == 'Advanced':
-                        advanced_counts[period_idx] += 1
+                    # Count each movement individually by its difficulty
+                    for movement in movements_snapshot:
+                        if movement.get('type') == 'movement':
+                            movement_name = movement.get('name')
+                            if movement_name:
+                                # Lookup difficulty from cache
+                                difficulty = movement_difficulty_cache.get(movement_name, 'Beginner')
+
+                                if difficulty == 'Beginner':
+                                    beginner_counts[period_idx] += 1
+                                elif difficulty == 'Intermediate':
+                                    intermediate_counts[period_idx] += 1
+                                elif difficulty == 'Advanced':
+                                    advanced_counts[period_idx] += 1
                     break
 
         return DifficultyProgressionData(
