@@ -4,7 +4,7 @@
  * Includes comprehensive form and results display
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../context/AuthContext';
@@ -33,9 +33,17 @@ export function AIGenerationPanel() {
     try {
       // Use authenticated user ID
       if (!user) {
+        logger.error('[AIGenerationPanel] User not authenticated - cannot generate class');
         throw new Error('You must be logged in to generate a class');
       }
-      logger.debug('[AIGenerationPanel] Class generation started');
+      logger.info('[AIGenerationPanel] Class generation started', {
+        userId: user.id,
+        formData: {
+          duration: formData.duration,
+          difficulty: formData.difficulty,
+          focusAreas: formData.focusAreas,
+        },
+      });
 
       // SESSION 11.5: Use StandardAgent orchestration for ALL 6 sections
       // JENTIC STANDARDAGENT: Single orchestrated call for complete class
@@ -138,6 +146,13 @@ export function AIGenerationPanel() {
 
       setResults(completeResults);
       setShowResultsModal(true); // Show the modal
+
+      logger.info('[AIGenerationPanel] Setting modal state', {
+        resultsSet: !!completeResults,
+        showResultsModal: true,
+        movementCount: completeResults.sequence.movement_count,
+      });
+
       showToast('Complete 6-section class generated successfully!', 'success');
     } catch (error: any) {
       logger.error('Failed to generate complete class:', error);
@@ -329,6 +344,16 @@ export function AIGenerationPanel() {
         },
       ]
     : [];
+
+  // PWA DEBUG: Log modal rendering conditions
+  useEffect(() => {
+    logger.debug('[AIGenerationPanel] Modal rendering check', {
+      showResultsModal,
+      hasResults: !!results,
+      isPlayingClass,
+      willRenderModal: showResultsModal && results && !isPlayingClass,
+    });
+  }, [showResultsModal, results, isPlayingClass]);
 
   return (
     <>

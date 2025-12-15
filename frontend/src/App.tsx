@@ -22,10 +22,22 @@ import { BetaAgreement } from './pages/BetaAgreement';
 import { SecurityDisclosure } from './pages/SecurityDisclosure';
 import { DataDuringBeta } from './pages/DataDuringBeta';
 import { HealthSafety } from './pages/HealthSafety';
+// PWA version management
+import { checkAppVersion, logPWAStatus } from './utils/pwaVersion';
 
 function App() {
   const [disclaimerAccepted, setDisclaimerAccepted] = useState<boolean>(false);
   const [disclaimerRejected, setDisclaimerRejected] = useState<boolean>(false);
+
+  // PWA Version Check: Bust cache on app updates (iOS "Add to Home Screen" fix)
+  useEffect(() => {
+    // Check if app version changed → clear localStorage & reload
+    // This fixes the intermittent bug where modal doesn't appear on PWA
+    checkAppVersion();
+
+    // Log PWA status for debugging
+    logPWAStatus();
+  }, []);
 
   // Check localStorage for previous disclaimer acceptance
   useEffect(() => {
