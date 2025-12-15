@@ -183,6 +183,68 @@ export function HealthSafety() {
           </section>
 
           <section>
+            <h2 className="text-2xl font-semibold text-burgundy mb-3">CRITICAL WARNING: Postnatal Abdominal Separation (Diastasis Recti)</h2>
+            <div className="bg-red-50 p-6 rounded border-2 border-red-400">
+              <h3 className="text-xl font-bold text-red-900 mb-4 flex items-center gap-2">
+                <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Postnatal Women with Abdominal Separation Should NOT Use This App
+              </h3>
+              <div className="space-y-4 text-red-900">
+                <p className="font-bold text-lg">
+                  DO NOT use this application if you are a postnatal woman with abdominal separation (diastasis recti) without explicit written approval from your GP or women's health physiotherapist.
+                </p>
+                <p>
+                  <strong>What is Diastasis Recti?</strong>
+                </p>
+                <p>
+                  Diastasis recti is a separation of the abdominal muscles (rectus abdominis) that commonly occurs during pregnancy. The connective tissue (linea alba) between your abdominal muscles stretches and thins, creating a gap. This condition affects approximately 60% of women during pregnancy and the early postpartum period.
+                </p>
+                <p>
+                  <strong>Why is this app unsafe for those with diastasis recti?</strong>
+                </p>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li><strong>Inappropriate core exercises</strong> – Many classical Pilates movements involve deep abdominal work that can worsen abdominal separation if performed incorrectly or before proper healing</li>
+                  <li><strong>Risk of further damage</strong> – Exercises that create excessive intra-abdominal pressure can prevent the abdominal muscles from healing and may increase the separation</li>
+                  <li><strong>Pelvic floor complications</strong> – Improper exercise can lead to pelvic organ prolapse, urinary incontinence, and pelvic floor dysfunction</li>
+                  <li><strong>Chronic pain and instability</strong> – Without proper rehabilitation, you may develop chronic lower back pain, poor posture, and core instability</li>
+                  <li><strong>Hernia risk</strong> – Severe or improperly managed diastasis recti can increase the risk of developing an abdominal hernia</li>
+                </ul>
+                <div className="bg-red-100 p-4 rounded border-2 border-red-300">
+                  <p className="font-bold text-lg mb-2">
+                    REQUIRED ACTION: Consult Your GP for Advice
+                  </p>
+                  <p className="mb-3">
+                    If you are postnatal and suspect you may have abdominal separation, you MUST:
+                  </p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li><strong>Get a professional assessment</strong> from your GP or a women's health physiotherapist to determine the severity of your diastasis recti</li>
+                    <li><strong>Do NOT attempt any Pilates exercises</strong> from this application until you have been medically cleared and provided with personalized exercise guidelines</li>
+                    <li><strong>Follow a specialized postnatal rehabilitation program</strong> designed specifically for diastasis recti recovery</li>
+                    <li><strong>Work with a qualified postnatal Pilates instructor</strong> who understands diastasis recti and can provide appropriate modifications</li>
+                    <li><strong>Avoid exercises that increase intra-abdominal pressure</strong> such as crunches, planks, and many traditional core exercises until cleared by a healthcare professional</li>
+                  </ul>
+                </div>
+                <p className="font-bold">
+                  Signs you may have diastasis recti:
+                </p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>A visible bulge or "doming" in your abdomen when engaging your core</li>
+                  <li>Lower back pain or pelvic pain</li>
+                  <li>Feeling of weakness in your abdominal area</li>
+                  <li>A gap you can feel between your abdominal muscles (you can self-check by lying on your back with knees bent and gently pressing along the midline of your abdomen while lifting your head)</li>
+                  <li>Poor posture or difficulty standing upright</li>
+                  <li>Urinary leakage or pelvic floor issues</li>
+                </ul>
+                <p className="mt-4">
+                  <strong>Remember:</strong> Diastasis recti is a medical condition that requires proper assessment and specialized rehabilitation. This application is not designed for postnatal recovery and cannot provide the individualized guidance you need.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section>
             <h2 className="text-2xl font-semibold text-burgundy mb-3">Modifications & Assistance</h2>
             <p>
               Bassline Pilates provides general class plans. You are responsible for:
