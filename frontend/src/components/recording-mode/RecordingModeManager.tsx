@@ -83,6 +83,8 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
         voiceover_url: preparation.voiceover_url,
         voiceover_duration: preparation.voiceover_duration,
         voiceover_enabled: preparation.voiceover_enabled || false,
+        // Video demonstration (AWS Phase 1) - CRITICAL: Must map from backend
+        video_url: preparation.video_url,
       });
 
       // Section 2: Warmup
@@ -96,6 +98,8 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
         voiceover_url: warmup.voiceover_url,
         voiceover_duration: warmup.voiceover_duration,
         voiceover_enabled: warmup.voiceover_enabled || false,
+        // Video demonstration (AWS Phase 1) - CRITICAL: Must map from backend
+        video_url: warmup.video_url,
       });
 
       // Section 3: All 34 movements with transitions
@@ -148,6 +152,8 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
         voiceover_url: cooldown.voiceover_url,
         voiceover_duration: cooldown.voiceover_duration,
         voiceover_enabled: cooldown.voiceover_enabled || false,
+        // Video demonstration (AWS Phase 1)
+        video_url: cooldown.video_url,
       });
 
       // Section 5: Closing Meditation
@@ -161,6 +167,8 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
         voiceover_url: meditation.voiceover_url,
         voiceover_duration: meditation.voiceover_duration,
         voiceover_enabled: meditation.voiceover_enabled || false,
+        // Video demonstration (AWS Phase 1)
+        video_url: meditation.video_url,
       });
 
       // Section 6: HomeCare Advice
@@ -174,6 +182,8 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
         voiceover_url: homecare.voiceover_url,
         voiceover_duration: homecare.voiceover_duration,
         voiceover_enabled: homecare.voiceover_enabled || false,
+        // Video demonstration (AWS Phase 1)
+        video_url: homecare.video_url,
       });
 
       logger.debug(`[RecordingMode] Generated ${items.length} playback items`);
