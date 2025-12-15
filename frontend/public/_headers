@@ -80,3 +80,4 @@
 # Cache Control for Robots.txt
 /robots.txt
   Cache-Control: public, max-age=86400
+# Force rebuild Mon 15 Dec 2025 19:48:27 GMT
