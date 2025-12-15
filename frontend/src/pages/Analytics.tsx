@@ -480,13 +480,15 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
               No movement history yet. Generate some classes to see your usage patterns!
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[600px] relative">
               <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-cream/30">
-                    <th className="text-left py-3 px-4 text-cream font-semibold">Movement</th>
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-cream/30 bg-burgundy-dark">
+                    <th className="sticky left-0 z-20 text-left py-3 px-4 text-cream font-semibold bg-burgundy-dark border-r border-cream/20">
+                      Movement
+                    </th>
                     {movementHistory[0]?.period_labels.map((label, idx) => (
-                      <th key={idx} className="text-center py-3 px-4 text-cream font-semibold">
+                      <th key={idx} className="text-center py-3 px-4 text-cream font-semibold bg-burgundy-dark">
                         {label}
                       </th>
                     ))}
@@ -503,7 +505,9 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
                         index % 2 === 0 ? 'bg-burgundy/5' : ''
                       }`}
                     >
-                      <td className="py-3 px-4 text-cream">{row.label}</td>
+                      <td className="sticky left-0 z-5 py-3 px-4 text-cream border-r border-cream/20 bg-inherit">
+                        {row.label}
+                      </td>
                       {row.periods.map((count, idx) => (
                         <td key={idx} className="py-3 px-4 text-center text-cream/80">
                           {count || '-'}
@@ -539,15 +543,15 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
               No muscle group history yet. Generate some classes to see your muscle group distribution!
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[600px] relative">
               <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-cream/30">
-                    <th className="text-left py-3 px-4 text-cream font-semibold">
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-cream/30 bg-burgundy-dark">
+                    <th className="sticky left-0 z-20 text-left py-3 px-4 text-cream font-semibold bg-burgundy-dark border-r border-cream/20">
                       Muscle Group / Goal
                     </th>
                     {muscleGroupHistory[0]?.period_labels.map((label, idx) => (
-                      <th key={idx} className="text-center py-3 px-4 text-cream font-semibold">
+                      <th key={idx} className="text-center py-3 px-4 text-cream font-semibold bg-burgundy-dark">
                         {label}
                       </th>
                     ))}
@@ -564,7 +568,9 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
                         index % 2 === 0 ? 'bg-burgundy/5' : ''
                       }`}
                     >
-                      <td className="py-3 px-4 text-cream">{row.label}</td>
+                      <td className="sticky left-0 z-5 py-3 px-4 text-cream border-r border-cream/20 bg-inherit">
+                        {row.label}
+                      </td>
                       {row.periods.map((count, idx) => (
                         <td key={idx} className="py-3 px-4 text-center text-cream/80">
                           {count || '-'}
