@@ -275,10 +275,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
         </div>
       )}
 
-      {/* DEBUG: Show message if video_url is missing */}
+      {/* DEBUG: Show message if video_url is missing - hidden on mobile, small on desktop */}
       {!item.video_url && item.type === 'movement' && (
-        <div className="absolute top-4 right-4 z-50 bg-red-500 text-white p-4 rounded">
-          ⚠️ NO VIDEO_URL for {item.name}
+        <div className="hidden md:block absolute top-4 right-4 z-50 bg-red-500 text-white px-2 py-1 rounded text-xs">
+          ⚠️ NO VIDEO_URL
         </div>
       )}
 
