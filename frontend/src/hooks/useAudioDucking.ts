@@ -160,6 +160,9 @@ export function useAudioDucking({
    * Load and connect voiceover audio (if provided)
    */
   useEffect(() => {
+    // Clear any previous error state when loading new voiceover
+    setState(prev => ({ ...prev, error: null }));
+
     // AGGRESSIVE CLEANUP: Stop any existing voiceover immediately
     // This prevents overlapping voiceovers when rapidly skipping sections
     if (voiceoverElementRef.current) {
@@ -170,7 +173,7 @@ export function useAudioDucking({
       oldAudio.pause();
       oldAudio.currentTime = 0;
 
-      // Remove src to free resources
+      // Remove src to free resources (may trigger error event, but we cleared error state above)
       oldAudio.src = '';
       oldAudio.load(); // Force unload
 
@@ -206,7 +209,8 @@ export function useAudioDucking({
       // Mark voiceover as ready when loaded
       audio.addEventListener('canplaythrough', () => {
         logger.debug('Voiceover ready');
-        setState(prev => ({ ...prev, voiceoverReady: true }));
+        // Clear error state now that voiceover loaded successfully
+        setState(prev => ({ ...prev, voiceoverReady: true, error: null }));
 
         // AUTO-PLAY: Start voiceover immediately if not paused
         if (!isPausedRef.current && audioContextRef.current?.state !== 'suspended') {
