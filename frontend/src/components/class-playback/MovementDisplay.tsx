@@ -14,6 +14,12 @@ interface MovementDisplayProps {
 export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // DEBUG: Check if video_url exists when rendering movements
+  if (item.type === 'movement') {
+    console.log('🎥 DEBUG: MovementDisplay received item:', item);
+    console.log('🎥 DEBUG: MovementDisplay video_url:', (item as any).video_url);
+  }
+
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
   useEffect(() => {
     const container = scrollContainerRef.current;
