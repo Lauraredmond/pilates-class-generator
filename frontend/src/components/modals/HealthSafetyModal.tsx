@@ -73,6 +73,33 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
             </div>
           </div>
 
+          {/* Postnatal Abdominal Separation Warning - CRITICAL */}
+          <div className="bg-red-50 p-5 rounded border-2 border-red-400">
+            <h3 className="font-bold text-red-900 mb-3 text-lg flex items-center gap-2">
+              <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              CRITICAL WARNING: Postnatal Abdominal Separation (Diastasis Recti)
+            </h3>
+            <div className="space-y-3 text-sm text-red-900">
+              <p className="font-bold">
+                If you are a postnatal woman with abdominal separation (diastasis recti), DO NOT use this application without explicit written approval from your GP or women's health physiotherapist.
+              </p>
+              <p>
+                Abdominal separation (diastasis recti) is common after pregnancy and requires specialized rehabilitation. Using this application without proper medical clearance and professional guidance may:
+              </p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Worsen abdominal separation and prevent healing</li>
+                <li>Cause pelvic floor dysfunction</li>
+                <li>Lead to chronic back pain and core instability</li>
+                <li>Increase risk of hernia formation</li>
+              </ul>
+              <p className="font-bold bg-red-100 p-3 rounded border border-red-300">
+                REQUIRED ACTION: You must consult your GP or a women's health physiotherapist for proper assessment and personalized postnatal exercise guidance. Many movements in this app require intact abdominal wall function and may be unsafe for those with diastasis recti.
+              </p>
+            </div>
+          </div>
+
           {/* Key Points */}
           <div className="bg-burgundy/5 p-4 rounded border border-burgundy/20">
             <h3 className="font-semibold text-burgundy mb-3">You acknowledge that:</h3>
