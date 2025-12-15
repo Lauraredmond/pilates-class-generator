@@ -364,6 +364,26 @@ export function Register() {
             </div>
           </div>
 
+          {/* Critical Health Warning */}
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+            <h3 className="font-bold text-red-800 mb-2 flex items-center gap-2">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Critical Safety Warning
+            </h3>
+            <p className="text-sm text-red-900 font-medium mb-2">
+              This application is NOT safe for:
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-sm text-red-900">
+              <li><strong>Pregnant individuals</strong> after the first trimester without written approval from an obstetrician or midwife</li>
+              <li><strong>Postnatal women with abdominal separation (diastasis recti)</strong> without written approval from their GP or women's health physiotherapist</li>
+            </ul>
+            <p className="text-sm text-red-900 mt-2 font-bold">
+              If either condition applies to you, DO NOT use this app without consulting your healthcare provider. Doing so may cause serious harm.
+            </p>
+          </div>
+
           {/* Legal Agreements - Required */}
           <div className="space-y-3 pt-4 border-t border-charcoal/20">
             <h2 className="text-lg font-semibold text-burgundy">
