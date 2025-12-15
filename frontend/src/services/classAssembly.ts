@@ -15,7 +15,8 @@ export const SECTION_DURATIONS = {
   COOLDOWN: 3 * 60,         // 3 minutes
   MEDITATION: 4 * 60,       // 4 minutes
   HOMECARE: 1 * 60,         // 1 minute
-  TOTAL_OVERHEAD: 15 * 60   // Total: 15 minutes
+  TOTAL_OVERHEAD: 15 * 60,  // Total: 15 minutes (with meditation)
+  OVERHEAD_NO_MEDITATION: 11 * 60 // 11 minutes (without meditation for 30-min classes)
 };
 
 // TypeScript interfaces
@@ -103,12 +104,21 @@ export interface CompleteClass {
 /**
  * Calculate how many movements fit in a class given total duration
  * Formula: (total_minutes - section_overhead) / avg_movement_duration
+ *
+ * For 30-min classes: excludes meditation (11 min overhead) to allow more movements
+ * For longer classes: includes meditation (15 min overhead)
  */
 export function calculateMovementCount(totalMinutes: number, avgMovementMinutes: number = 3): number {
-  const availableMinutes = totalMinutes - (SECTION_DURATIONS.TOTAL_OVERHEAD / 60);
+  // For 30-min classes, exclude meditation to maximize movement time
+  const overheadSeconds = totalMinutes <= 30
+    ? SECTION_DURATIONS.OVERHEAD_NO_MEDITATION
+    : SECTION_DURATIONS.TOTAL_OVERHEAD;
+
+  const overheadMinutes = overheadSeconds / 60;
+  const availableMinutes = totalMinutes - overheadMinutes;
 
   if (availableMinutes <= 0) {
-    throw new Error(`Class duration too short. Minimum ${SECTION_DURATIONS.TOTAL_OVERHEAD / 60} minutes required for all sections.`);
+    throw new Error(`Class duration too short. Minimum ${overheadMinutes} minutes required for all sections.`);
   }
 
   return Math.floor(availableMinutes / avgMovementMinutes);
@@ -116,6 +126,7 @@ export function calculateMovementCount(totalMinutes: number, avgMovementMinutes:
 
 /**
  * Fetch all 6 sections for a complete Pilates class
+ * For 30-min classes: skips meditation to allow more movements
  */
 export async function assembleCompleteClass(
   difficulty: string,
@@ -129,15 +140,11 @@ export async function assembleCompleteClass(
     // Calculate how many movements we need
     const movementCount = calculateMovementCount(totalDurationMinutes);
 
-    // Fetch all sections in parallel
-    const [
-      preparationRes,
-      warmupRes,
-      movementsRes,
-      cooldownRes,
-      meditationRes,
-      homecareRes
-    ] = await Promise.all([
+    // Determine if we should include meditation (only for classes > 30 min)
+    const includeMeditation = totalDurationMinutes > 30;
+
+    // Fetch sections conditionally
+    const sectionsToFetch = [
       // Section 1: Preparation (no difficulty filter - works for all levels)
       axios.get(`${API_BASE_URL}/api/class-sections/preparation`, {
         headers,
@@ -162,18 +169,29 @@ export async function assembleCompleteClass(
         params: { intensity: 'moderate' }
       }),
 
-      // Section 5: Closing Meditation (no filters - generic meditation)
-      axios.get(`${API_BASE_URL}/api/class-sections/closing-meditation`, {
-        headers,
-        params: { post_intensity: 'moderate', theme: 'body_scan' }
-      }),
+      // Section 5: Closing Meditation (only for classes > 30 min)
+      includeMeditation
+        ? axios.get(`${API_BASE_URL}/api/class-sections/closing-meditation`, {
+            headers,
+            params: { post_intensity: 'moderate', theme: 'body_scan' }
+          })
+        : Promise.resolve({ data: [] }), // Empty response for 30-min classes
 
       // Section 6: HomeCare Advice (no filters - generic advice)
       axios.get(`${API_BASE_URL}/api/class-sections/closing-homecare`, {
         headers,
         params: { focus_area: 'spine_care' }
       })
-    ]);
+    ];
+
+    const [
+      preparationRes,
+      warmupRes,
+      movementsRes,
+      cooldownRes,
+      meditationRes,
+      homecareRes
+    ] = await Promise.all(sectionsToFetch);
 
     // Validate that we got data for all sections
     const missingDataErrors: string[] = [];
@@ -190,7 +208,8 @@ export async function assembleCompleteClass(
     if (!cooldownRes.data || cooldownRes.data.length === 0) {
       missingDataErrors.push('Cooldown sequences table is empty');
     }
-    if (!meditationRes.data || meditationRes.data.length === 0) {
+    // Only validate meditation if class is > 30 min
+    if (includeMeditation && (!meditationRes.data || meditationRes.data.length === 0)) {
       missingDataErrors.push('Closing meditation scripts table is empty');
     }
     if (!homecareRes.data || homecareRes.data.length === 0) {
@@ -203,18 +222,20 @@ export async function assembleCompleteClass(
       throw new Error(errorMessage);
     }
 
-    // Assemble complete class
+    // Assemble complete class (conditionally include meditation for classes > 30 min)
     const completeClass: CompleteClass = {
       preparation: preparationRes.data[0],
       warmup: warmupRes.data[0],
       movements: movementsRes.data,
       transitions: [], // TODO: Generate transitions in future
       cooldown: cooldownRes.data[0],
-      meditation: meditationRes.data[0],
+      meditation: includeMeditation ? meditationRes.data[0] : null as any, // Null for 30-min classes
       homecare: homecareRes.data[0],
       difficulty,
       total_duration_minutes: totalDurationMinutes
     };
+
+    logger.info(`[ClassAssembly] Assembled ${totalDurationMinutes}-min class with ${movementCount} movements (meditation ${includeMeditation ? 'included' : 'excluded'})`);
 
     return completeClass;
 
