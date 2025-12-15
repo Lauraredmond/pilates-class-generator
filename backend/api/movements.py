@@ -54,6 +54,9 @@ class Movement(BaseModel):
     voiceover_duration_seconds: Optional[int] = None
     voiceover_enabled: Optional[bool] = None
 
+    # Video demonstration (AWS Phase 1 - December 2025)
+    video_url: Optional[str] = None
+
     class Config:
         from_attributes = True
 
