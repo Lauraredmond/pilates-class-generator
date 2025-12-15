@@ -54,6 +54,8 @@ export interface PlaybackPreparation {
   voiceover_url?: string;
   voiceover_duration?: number;
   voiceover_enabled?: boolean;
+  // Video demonstration (AWS Phase 1 - December 2025)
+  video_url?: string; // CloudFront CDN URL for preparation demonstration video (picture-in-picture, 375px wide)
 }
 
 export interface PlaybackWarmup {
@@ -67,6 +69,8 @@ export interface PlaybackWarmup {
   voiceover_url?: string;
   voiceover_duration?: number;
   voiceover_enabled?: boolean;
+  // Video demonstration (AWS Phase 1 - December 2025)
+  video_url?: string; // CloudFront CDN URL for warmup demonstration video (picture-in-picture, 375px wide)
 }
 
 export interface PlaybackMovement {
@@ -132,6 +136,8 @@ export interface PlaybackCooldown {
   voiceover_url?: string;
   voiceover_duration?: number;
   voiceover_enabled?: boolean;
+  // Video demonstration (AWS Phase 1 - December 2025)
+  video_url?: string; // CloudFront CDN URL for cooldown demonstration video (picture-in-picture, 375px wide)
 }
 
 export interface PlaybackMeditation {
@@ -145,6 +151,8 @@ export interface PlaybackMeditation {
   voiceover_url?: string;
   voiceover_duration?: number;
   voiceover_enabled?: boolean;
+  // Video demonstration (AWS Phase 1 - December 2025)
+  video_url?: string; // CloudFront CDN URL for meditation demonstration video (picture-in-picture, 375px wide)
 }
 
 export interface PlaybackHomeCare {
@@ -158,6 +166,8 @@ export interface PlaybackHomeCare {
   voiceover_url?: string;
   voiceover_duration?: number;
   voiceover_enabled?: boolean;
+  // Video demonstration (AWS Phase 1 - December 2025)
+  video_url?: string; // CloudFront CDN URL for homecare demonstration video (picture-in-picture, 375px wide)
 }
 
 export type PlaybackItem =
