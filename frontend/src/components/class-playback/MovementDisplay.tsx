@@ -327,15 +327,35 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
   // Movement display - True teleprompter with auto-scrolling narrative
   return (
-    <div
-      ref={scrollContainerRef}
-      // Mobile: px-4 py-8 (wider, less vertical padding), Desktop: px-8 py-16 (unchanged)
-      className="h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
-      style={{ scrollBehavior: 'auto' }}
-    >
-      <div className="max-w-4xl w-full">
-        {/* Mobile: space-y-2 (very tight), Desktop: space-y-8 */}
-        <div className="text-center space-y-2 md:space-y-8">
+    <div className="relative h-full">
+      {/* Picture-in-picture video (AWS CloudFront) - only for movements with video_url */}
+      {item.video_url && (
+        <div className="absolute top-4 right-4 z-50 w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+          <video
+            src={item.video_url}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-auto"
+            onError={(e) => {
+              console.error('Video failed to load:', item.video_url, e);
+              // Hide video element on error
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+
+      <div
+        ref={scrollContainerRef}
+        // Mobile: px-4 py-8 (wider, less vertical padding), Desktop: px-8 py-16 (unchanged)
+        className="h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
+        style={{ scrollBehavior: 'auto' }}
+      >
+        <div className="max-w-4xl w-full">
+          {/* Mobile: space-y-2 (very tight), Desktop: space-y-8 */}
+          <div className="text-center space-y-2 md:space-y-8">
           {narrative.split('\n').map((line, index) => {
             // Skip pause marker lines (don't display them)
             if (line.match(/\[Pause:\s*\d+s\]/i)) {
@@ -381,6 +401,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
           <div className="h-96" />
         </div>
       </div>
+    </div>
     </div>
   );
 }
