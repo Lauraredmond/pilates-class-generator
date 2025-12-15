@@ -157,8 +157,33 @@ export function useAudioDucking({
    * Load and connect voiceover audio (if provided)
    */
   useEffect(() => {
+    // AGGRESSIVE CLEANUP: Stop any existing voiceover immediately
+    // This prevents overlapping voiceovers when rapidly skipping sections
+    if (voiceoverElementRef.current) {
+      const oldAudio = voiceoverElementRef.current;
+      logger.debug('Cleaning up old voiceover before loading new one');
+
+      // Stop playback immediately
+      oldAudio.pause();
+      oldAudio.currentTime = 0;
+
+      // Remove src to free resources
+      oldAudio.src = '';
+      oldAudio.load(); // Force unload
+
+      // Clear ref
+      voiceoverElementRef.current = null;
+    }
+
+    // If no voiceover for this section, mark as ready and exit
     if (!voiceoverUrl || !audioContextRef.current || !voiceoverGainRef.current) {
       setState(prev => ({ ...prev, voiceoverReady: true })); // No voiceover = ready
+
+      // Restore music volume when no voiceover
+      if (voiceoverUrl === undefined) {
+        duckMusic(musicVolume);
+      }
+
       return;
     }
 
@@ -170,6 +195,7 @@ export function useAudioDucking({
       voiceoverElementRef.current = audio;
 
       // Create source node and connect to gain
+      // NOTE: Can only create source once per element (Web Audio API limitation)
       const source = audioContextRef.current.createMediaElementSource(audio);
       source.connect(voiceoverGainRef.current);
       voiceoverSourceRef.current = source;
@@ -218,10 +244,20 @@ export function useAudioDucking({
       }));
     }
 
-    // Cleanup
+    // Cleanup when component unmounts or voiceover changes
     return () => {
       if (voiceoverElementRef.current) {
-        voiceoverElementRef.current.pause();
+        const audio = voiceoverElementRef.current;
+
+        // Stop playback
+        audio.pause();
+        audio.currentTime = 0;
+
+        // Remove src to free resources
+        audio.src = '';
+        audio.load();
+
+        // Clear ref
         voiceoverElementRef.current = null;
       }
     };
@@ -312,9 +348,19 @@ export function useAudioDucking({
 
     const voiceoverAudio = voiceoverElementRef.current;
 
+    // Track cleanup state to prevent playing stale audio
+    let isCancelled = false;
+    let readyHandler: (() => void) | null = null;
+
     // Wait for voiceover to be ready before playing
     // (handles race condition where section changes before 'canplaythrough' fires)
     const playWhenReady = () => {
+      // Verify element still exists and matches current voiceover URL
+      if (isCancelled || voiceoverElementRef.current !== voiceoverAudio) {
+        logger.debug('Voiceover playback cancelled (section changed)');
+        return;
+      }
+
       if (voiceoverAudio.readyState >= 3) {
         // HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
         logger.debug('Playing voiceover on section change (natural transition fix)');
@@ -324,12 +370,15 @@ export function useAudioDucking({
       } else {
         // Not ready yet, wait for canplaythrough
         logger.debug('Voiceover not ready yet, waiting for canplaythrough event');
-        const readyHandler = () => {
+        readyHandler = () => {
+          if (isCancelled || voiceoverElementRef.current !== voiceoverAudio) {
+            logger.debug('Voiceover playback cancelled after ready (section changed)');
+            return;
+          }
           logger.debug('Voiceover ready, playing now');
           voiceoverAudio.play().catch(err => {
             logger.error('Failed to play voiceover after ready:', err);
           });
-          voiceoverAudio.removeEventListener('canplaythrough', readyHandler);
         };
         voiceoverAudio.addEventListener('canplaythrough', readyHandler);
       }
@@ -337,18 +386,32 @@ export function useAudioDucking({
 
     // Small delay to ensure AudioContext is resumed and element is initialized
     const timeoutId = setTimeout(() => {
+      if (isCancelled) {
+        logger.debug('Voiceover playback cancelled before timeout (rapid skip)');
+        return;
+      }
+
       // Resume AudioContext if needed (browser autoplay policy)
       if (audioContextRef.current?.state === 'suspended') {
         audioContextRef.current.resume().then(() => {
           logger.debug('AudioContext resumed for voiceover');
-          playWhenReady();
+          if (!isCancelled) {
+            playWhenReady();
+          }
         });
       } else {
         playWhenReady();
       }
     }, 50); // 50ms delay to avoid race conditions
 
-    return () => clearTimeout(timeoutId);
+    // Cleanup: Cancel any pending operations
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+      if (readyHandler) {
+        voiceoverAudio.removeEventListener('canplaythrough', readyHandler);
+      }
+    };
   }, [voiceoverUrl, isPaused]);
 
   /**
