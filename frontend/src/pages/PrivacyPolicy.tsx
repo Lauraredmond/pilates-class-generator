@@ -151,8 +151,9 @@ export function PrivacyPolicy() {
               <li><strong>Render (Backend Services):</strong> Backend API services are deployed in Frankfurt, Germany (eu-central-1). Data exchanged between Supabase and Render remains within the EU.</li>
               <li><strong>Netlify (Frontend Hosting):</strong> The application's frontend is served globally via CDN, but no personal data is stored or processed by Netlify. User data flows directly from the user's browser to Supabase in Ireland.</li>
               <li><strong>Resend (Transactional Email):</strong> Bassline Pilates uses Resend's EU email infrastructure (eu-west-1, Ireland) for sending verification and password-reset emails. Limited account-level metadata (e.g., delivery status logs) may be processed by Resend in the United States under Standard Contractual Clauses (SCCs).</li>
+              <li><strong>AWS S3 & CloudFront (Video Content Delivery):</strong> Pre-recorded Pilates demonstration videos (educational content created by Bassline) are stored in AWS S3 (United States) and delivered via CloudFront CDN. These videos contain no user data or personal information — only instructional movement demonstrations.</li>
             </ul>
-            <p className="italic text-sm">Overall, all core user data (identity, workout usage, preferences, history, and logs) is stored and processed exclusively within the EU, with only minimal email-delivery metadata potentially processed outside the EU using GDPR-approved safeguards.</p>
+            <p className="italic text-sm">Overall, all core user data (identity, workout usage, preferences, history, and logs) is stored and processed exclusively within the EU. Video content stored in the US contains no personal data and is GDPR-compliant as it consists solely of Bassline-created educational material. Only minimal email-delivery metadata is potentially processed outside the EU using GDPR-approved safeguards.</p>
           </section>
 
           <section>

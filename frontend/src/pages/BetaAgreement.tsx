@@ -68,6 +68,9 @@ export function BetaAgreement() {
               <li>App interactions and analytics events</li>
               <li>Device metadata (browser type, timestamp)</li>
             </ul>
+            <p className="text-sm italic mt-3">
+              Note: Educational video content is delivered from AWS S3 (United States) via CloudFront CDN. These videos contain no user data — only Bassline-created Pilates demonstrations.
+            </p>
           </section>
 
           <section>
