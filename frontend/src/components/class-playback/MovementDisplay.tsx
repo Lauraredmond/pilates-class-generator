@@ -107,7 +107,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       }
       return parts.join('');
     };
-    return renderTeleprompter(buildPreparationNarrative());
+    return renderTeleprompter(buildPreparationNarrative(), item.video_url);
   }
 
   if (item.type === 'warmup') {
@@ -124,7 +124,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       }
       return parts.join('');
     };
-    return renderTeleprompter(buildWarmupNarrative());
+    return renderTeleprompter(buildWarmupNarrative(), item.video_url);
   }
 
   if (item.type === 'cooldown') {
@@ -144,7 +144,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       }
       return parts.join('');
     };
-    return renderTeleprompter(buildCooldownNarrative());
+    return renderTeleprompter(buildCooldownNarrative(), item.video_url);
   }
 
   if (item.type === 'meditation') {
@@ -156,7 +156,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       if (item.script_text) parts.push(`${item.script_text}\n\n`);
       return parts.join('');
     };
-    return renderTeleprompter(buildMeditationNarrative());
+    return renderTeleprompter(buildMeditationNarrative(), item.video_url);
   }
 
   if (item.type === 'homecare') {
@@ -173,55 +173,75 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       }
       return parts.join('');
     };
-    return renderTeleprompter(buildHomecareNarrative());
+    return renderTeleprompter(buildHomecareNarrative(), item.video_url);
   }
 
   // Helper function to render teleprompter-style content
-  function renderTeleprompter(narrative: string) {
+  function renderTeleprompter(narrative: string, video_url?: string) {
     return (
-      <div
-        ref={scrollContainerRef}
-        // Mobile: px-4 py-8 (wider, less vertical padding), Desktop: px-8 py-16 (unchanged)
-        className="h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
-        style={{ scrollBehavior: 'auto' }}
-      >
-        <div className="max-w-4xl w-full">
-          {/* Mobile: space-y-2 (very tight), Desktop: space-y-8 */}
-          <div className="text-center space-y-2 md:space-y-8">
-            {narrative.split('\n').map((line, index) => {
-              // Skip pause marker lines (don't display them)
-              if (line.match(/\[Pause:\s*\d+s\]/i)) {
-                return null;
-              }
+      <div className="relative h-full">
+        {/* Picture-in-picture video (AWS CloudFront) - for all sections with video_url */}
+        {video_url && (
+          <div className="absolute top-4 right-4 z-50 w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+            <video
+              src={video_url}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-auto"
+              onError={(e) => {
+                console.error('🎥 DEBUG: Video onError - failed to load:', video_url, e);
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
+        )}
 
-              if (index === 0 || line.includes(':')) {
-                return (
-                  // Mobile: mb-2, Desktop: mb-8
-                  <h1 key={index} className="text-5xl font-bold text-cream mb-2 md:mb-8 tracking-wide">
-                    {line}
-                  </h1>
-                );
-              }
-              if (line.trim() === '') {
-                // Mobile: h-2, Desktop: h-8
-                return <div key={index} className="h-2 md:h-8" />;
-              }
-              if (line.startsWith('•')) {
+        <div
+          ref={scrollContainerRef}
+          // Mobile: px-4 py-8 (wider, less vertical padding), Desktop: px-8 py-16 (unchanged)
+          className="h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
+          style={{ scrollBehavior: 'auto' }}
+        >
+          <div className="max-w-4xl w-full">
+            {/* Mobile: space-y-2 (very tight), Desktop: space-y-8 */}
+            <div className="text-center space-y-2 md:space-y-8">
+              {narrative.split('\n').map((line, index) => {
+                // Skip pause marker lines (don't display them)
+                if (line.match(/\[Pause:\s*\d+s\]/i)) {
+                  return null;
+                }
+
+                if (index === 0 || line.includes(':')) {
+                  return (
+                    // Mobile: mb-2, Desktop: mb-8
+                    <h1 key={index} className="text-5xl font-bold text-cream mb-2 md:mb-8 tracking-wide">
+                      {line}
+                    </h1>
+                  );
+                }
+                if (line.trim() === '') {
+                  // Mobile: h-2, Desktop: h-8
+                  return <div key={index} className="h-2 md:h-8" />;
+                }
+                if (line.startsWith('•')) {
+                  return (
+                    // Mobile: leading-snug px-2 (tighter, wider), Desktop: leading-loose px-8
+                    <p key={index} className="text-3xl text-cream/90 leading-snug md:leading-loose font-light px-2 md:px-8 text-left">
+                      {line}
+                    </p>
+                  );
+                }
                 return (
                   // Mobile: leading-snug px-2 (tighter, wider), Desktop: leading-loose px-8
-                  <p key={index} className="text-3xl text-cream/90 leading-snug md:leading-loose font-light px-2 md:px-8 text-left">
+                  <p key={index} className="text-4xl text-cream/90 leading-snug md:leading-loose font-light px-2 md:px-8">
                     {line}
                   </p>
                 );
-              }
-              return (
-                // Mobile: leading-snug px-2 (tighter, wider), Desktop: leading-loose px-8
-                <p key={index} className="text-4xl text-cream/90 leading-snug md:leading-loose font-light px-2 md:px-8">
-                  {line}
-                </p>
-              );
-            })}
-            <div className="h-96" />
+              })}
+              <div className="h-96" />
+            </div>
           </div>
         </div>
       </div>
