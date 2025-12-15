@@ -764,11 +764,11 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         # The sequence_result contains the main movements
 
         # Step 5: Select cool-down sequence (Section 4)
-        # Use "Full Body Recovery and Integration" as default cooldown
+        # Use "Full Body Recovery" as default cooldown (actual name in database)
         try:
             cooldown_response = supabase.table('cooldown_sequences') \
                 .select('*') \
-                .eq('sequence_name', 'Full Body Recovery and Integration') \
+                .eq('sequence_name', 'Full Body Recovery') \
                 .limit(1) \
                 .execute()
 
