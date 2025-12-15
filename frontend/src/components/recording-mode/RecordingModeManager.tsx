@@ -35,6 +35,11 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
 
       logger.debug(`[RecordingMode] Fetched ${allMovements.length} movements`);
 
+      // DEBUG: Check if video_url exists in API response
+      const hundredMovement = allMovements.find((m: any) => m.name === 'The Hundred');
+      console.log('🎥 DEBUG: The Hundred from API:', hundredMovement);
+      console.log('🎥 DEBUG: The Hundred video_url:', hundredMovement?.video_url);
+
       // Order movements: The Hundred, Open Leg Rocker, then the rest
       const theHundred = allMovements.find((m: any) => m.name === 'The Hundred');
       const openLegRocker = allMovements.find((m: any) => m.name === 'Open Leg Rocker');
@@ -172,6 +177,11 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
       });
 
       logger.debug(`[RecordingMode] Generated ${items.length} playback items`);
+
+      // DEBUG: Check if video_url made it into PlaybackItems
+      const hundredPlaybackItem = items.find((item: any) => item.type === 'movement' && item.name === 'The Hundred');
+      console.log('🎥 DEBUG: The Hundred PlaybackItem:', hundredPlaybackItem);
+      console.log('🎥 DEBUG: The Hundred PlaybackItem.video_url:', (hundredPlaybackItem as any)?.video_url);
 
       setPlaybackItems(items);
       setIsPlaying(true);
