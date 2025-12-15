@@ -43,6 +43,9 @@ class Movement(MovementBase):
     voiceover_duration_seconds: Optional[int] = Field(None, description="Duration of voiceover audio in seconds")
     voiceover_enabled: Optional[bool] = Field(False, description="Whether to play voiceover audio during this movement")
 
+    # Video demonstration (AWS Phase 1 - December 2025)
+    video_url: Optional[str] = Field(None, description="CloudFront CDN URL for movement demonstration video (375px wide, picture-in-picture)")
+
     class Config:
         from_attributes = True
 
