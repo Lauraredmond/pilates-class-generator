@@ -332,24 +332,53 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   const narrative = buildNarrative();
 
   // Movement display - True teleprompter with auto-scrolling narrative
+
+  // DEBUG: Check conditional rendering
+  console.log('🎥 DEBUG: About to check if video_url exists...');
+  console.log('🎥 DEBUG: item.video_url value:', item.video_url);
+  console.log('🎥 DEBUG: item.video_url type:', typeof item.video_url);
+  console.log('🎥 DEBUG: Is video_url truthy?:', !!item.video_url);
+
   return (
     <div className="relative h-full">
       {/* Picture-in-picture video (AWS CloudFront) - only for movements with video_url */}
       {item.video_url && (
         <div className="absolute top-4 right-4 z-50 w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
           <video
+            ref={(videoEl) => {
+              if (videoEl) {
+                console.log('🎥 DEBUG: Video element created!');
+                console.log('🎥 DEBUG: Video src attribute:', videoEl.src);
+                console.log('🎥 DEBUG: Video currentSrc:', videoEl.currentSrc);
+              }
+            }}
             src={item.video_url}
             autoPlay
             muted
             loop
             playsInline
             className="w-full h-auto"
+            onLoadStart={() => {
+              console.log('🎥 DEBUG: Video onLoadStart - browser is attempting to load');
+            }}
+            onLoadedData={() => {
+              console.log('🎥 DEBUG: Video onLoadedData - video loaded successfully!');
+            }}
             onError={(e) => {
-              console.error('Video failed to load:', item.video_url, e);
+              console.error('🎥 DEBUG: Video onError - failed to load:', item.video_url, e);
+              console.error('🎥 DEBUG: Error target:', e.currentTarget);
+              console.error('🎥 DEBUG: Error details:', e.nativeEvent);
               // Hide video element on error
               e.currentTarget.style.display = 'none';
             }}
           />
+        </div>
+      )}
+
+      {/* DEBUG: Show message if video_url is missing */}
+      {!item.video_url && item.type === 'movement' && (
+        <div className="absolute top-4 right-4 z-50 bg-red-500 text-white p-4 rounded">
+          ⚠️ NO VIDEO_URL for {item.name}
         </div>
       )}
 
