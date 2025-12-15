@@ -511,12 +511,12 @@ async def get_difficulty_progression(
         movement_difficulty_cache = {}
         if unique_movement_names:
             movements_response = supabase.table('movements') \
-                .select('name, difficulty') \
+                .select('name, difficulty_level') \
                 .in_('name', list(unique_movement_names)) \
                 .execute()
 
             for movement in movements_response.data:
-                movement_difficulty_cache[movement['name']] = movement.get('difficulty', 'Beginner')
+                movement_difficulty_cache[movement['name']] = movement.get('difficulty_level', 'Beginner')
 
         # Count MOVEMENTS (not classes) by difficulty per period
         for class_item in classes:
