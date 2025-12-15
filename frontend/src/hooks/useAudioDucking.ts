@@ -61,6 +61,9 @@ export function useAudioDucking({
   const isPausedRef = useRef(isPaused);
   isPausedRef.current = isPaused;
 
+  // Track which voiceover has been played (prevent replaying same voiceover in same section)
+  const playedVoiceoverRef = useRef<string | undefined>(undefined);
+
   /**
    * Initialize Web Audio API context and gain nodes
    */
@@ -338,11 +341,26 @@ export function useAudioDucking({
    * This effect ensures voiceover plays on both manual skips AND natural transitions.
    */
   useEffect(() => {
+    // Reset played tracking when no voiceover (allows next section to play)
+    if (!voiceoverUrl) {
+      if (playedVoiceoverRef.current !== undefined) {
+        logger.debug('No voiceover for this section, resetting tracking');
+        playedVoiceoverRef.current = undefined;
+      }
+      return;
+    }
+
     // Only play if:
-    // 1. Voiceover exists for this section
-    // 2. Player is not paused (active playback)
-    // 3. Voiceover element has been created
-    if (!voiceoverUrl || isPaused || !voiceoverElementRef.current) {
+    // 1. Player is not paused (active playback)
+    // 2. Voiceover element has been created
+    if (isPaused || !voiceoverElementRef.current) {
+      return;
+    }
+
+    // IMPORTANT: Check if we've already played this voiceover
+    // Prevents replaying within same section (e.g., 30s voiceover in 4min section)
+    if (playedVoiceoverRef.current === voiceoverUrl) {
+      logger.debug('Voiceover already played for this section, skipping replay');
       return;
     }
 
@@ -364,9 +382,15 @@ export function useAudioDucking({
       if (voiceoverAudio.readyState >= 3) {
         // HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
         logger.debug('Playing voiceover on section change (natural transition fix)');
-        voiceoverAudio.play().catch(err => {
-          logger.error('Failed to play voiceover on section change:', err);
-        });
+        voiceoverAudio.play()
+          .then(() => {
+            // Mark this voiceover as played to prevent replays within same section
+            playedVoiceoverRef.current = voiceoverUrl;
+            logger.debug(`Voiceover marked as played: ${voiceoverUrl}`);
+          })
+          .catch(err => {
+            logger.error('Failed to play voiceover on section change:', err);
+          });
       } else {
         // Not ready yet, wait for canplaythrough
         logger.debug('Voiceover not ready yet, waiting for canplaythrough event');
@@ -376,9 +400,15 @@ export function useAudioDucking({
             return;
           }
           logger.debug('Voiceover ready, playing now');
-          voiceoverAudio.play().catch(err => {
-            logger.error('Failed to play voiceover after ready:', err);
-          });
+          voiceoverAudio.play()
+            .then(() => {
+              // Mark this voiceover as played to prevent replays within same section
+              playedVoiceoverRef.current = voiceoverUrl;
+              logger.debug(`Voiceover marked as played: ${voiceoverUrl}`);
+            })
+            .catch(err => {
+              logger.error('Failed to play voiceover after ready:', err);
+            });
         };
         voiceoverAudio.addEventListener('canplaythrough', readyHandler);
       }
