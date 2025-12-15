@@ -139,7 +139,7 @@ export function SecurityDisclosure() {
 
           <section>
             <h2 className="text-2xl font-semibold text-burgundy mb-3">5. How Your Data Is Stored</h2>
-            <p>All core data is stored in the EU:</p>
+            <p>All core user data is stored in the EU:</p>
             <ul className="list-disc pl-6">
               <li>Supabase (Ireland – eu-west-1)</li>
               <li>Render Backend (Germany – eu-central-1)</li>
@@ -147,6 +147,14 @@ export function SecurityDisclosure() {
             </ul>
             <p className="text-sm italic mt-2">
               Netlify serves the static frontend globally but does not store user data.
+            </p>
+            <p className="mt-3">Educational video content is delivered from AWS:</p>
+            <ul className="list-disc pl-6">
+              <li>AWS S3 (United States) – Pre-recorded Pilates demonstration videos only (no user data)</li>
+              <li>AWS CloudFront CDN – Global delivery of educational content</li>
+            </ul>
+            <p className="text-sm italic mt-2">
+              Video content stored in the US contains zero personal information — only Bassline-created instructional material.
             </p>
           </section>
 
