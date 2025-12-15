@@ -113,6 +113,7 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
           voiceover_url: movement.voiceover_url,
           voiceover_duration_seconds: movement.voiceover_duration_seconds,
           voiceover_enabled: movement.voiceover_enabled || false,
+          video_url: movement.video_url, // AWS Phase 1 - CloudFront video demonstration
         });
 
         // Add transition after each movement (except last)
