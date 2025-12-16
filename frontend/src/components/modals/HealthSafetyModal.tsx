@@ -86,7 +86,7 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
             </h3>
             <div className="space-y-3 text-sm text-red-900">
               <p className="font-bold">
-                If you are a postnatal woman (>12 weeks postpartum) with abdominal separation (diastasis recti), DO NOT use this application without explicit written approval from your GP or women's health physiotherapist.
+                If you are a postnatal woman (&gt;12 weeks postpartum) with abdominal separation (diastasis recti), DO NOT use this application without explicit written approval from your GP or women's health physiotherapist.
               </p>
               <p>
                 Abdominal separation (diastasis recti) is common after pregnancy and requires specialized rehabilitation. Using this application without proper medical clearance and professional guidance may:
