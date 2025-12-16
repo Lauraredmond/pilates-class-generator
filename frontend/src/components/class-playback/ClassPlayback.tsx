@@ -313,6 +313,15 @@ export function ClassPlayback({
     });
   }, [currentPlaylist]);
 
+  // DEBUG: Log voiceover URL before passing to audio hook
+  useEffect(() => {
+    logger.debug('[ClassPlayback] Passing to useAudioDucking:', {
+      currentVoiceover,
+      musicUrl: currentMusicUrl,
+      isPaused,
+    });
+  }, [currentVoiceover, currentMusicUrl, isPaused]);
+
   // Use dual audio hook for music + voiceover with automatic ducking
   const audioState = useAudioDucking({
     musicUrl: currentMusicUrl,
