@@ -63,7 +63,7 @@ export function HealthSafety() {
               </p>
               <ul className="list-disc pl-6 text-yellow-900 space-y-1">
                 <li>Have any medical conditions or injuries</li>
-                <li>Are pregnant or planning to become pregnant</li>
+                <li>Are pregnant, planning to become pregnant, or have given birth within the last 12 weeks</li>
                 <li>Have cardiovascular disease, high blood pressure, or diabetes</li>
                 <li>Have joint, muscle, or bone problems</li>
                 <li>Experience chronic pain or mobility limitations</li>
@@ -131,17 +131,17 @@ export function HealthSafety() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-burgundy mb-3">CRITICAL WARNING: Pregnancy & Postpartum</h2>
+            <h2 className="text-2xl font-semibold text-burgundy mb-3">CRITICAL WARNING: Pregnancy & Early Postnatal Period</h2>
             <div className="bg-red-50 p-6 rounded border-2 border-red-400">
               <h3 className="text-xl font-bold text-red-900 mb-4 flex items-center gap-2">
                 <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                This Application is NOT SAFE for Pregnant Individuals After the First Trimester
+                This Application is NOT SAFE for Pregnant Individuals After the First Trimester OR for Women in Early Postnatal Period (0-12 weeks)
               </h3>
               <div className="space-y-4 text-red-900">
                 <p className="font-bold text-lg">
-                  DO NOT use this application if you are pregnant (beyond first trimester) or suspect you may be pregnant without explicit written approval from your obstetrician or midwife.
+                  DO NOT use this application if you are pregnant (beyond first trimester), suspect you may be pregnant, OR have given birth within the last 12 weeks without explicit written approval from your obstetrician, midwife, or women's health physiotherapist.
                 </p>
                 <p>
                   Many Pilates movements and setup positions included in this application can be harmful to pregnant individuals, particularly after the first trimester. These movements may involve:
@@ -169,14 +169,23 @@ export function HealthSafety() {
                   </ul>
                 </div>
                 <p className="font-bold">
-                  Postpartum Exercise (within 12 months of delivery):
+                  Early Postnatal Period (0-12 weeks after giving birth):
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
-                  <li>You <strong>must</strong> obtain medical clearance from your healthcare provider before exercising</li>
-                  <li>Wait at least 6 weeks postpartum (longer for C-section recovery) before attempting any Pilates exercises</li>
+                  <li><strong>DO NOT use this application</strong> until you have waited a minimum of 12 weeks postpartum AND have completed your 12-week postnatal check with your doctor or midwife</li>
+                  <li>Your body needs time to heal after giving birth - the pelvic floor, abdominal muscles, and connective tissues require recovery time</li>
+                  <li>Earlier return to exercise requires specialized postnatal rehabilitation from a women's health physiotherapist</li>
+                  <li>Using this app during the early postnatal period could result in serious harm, including pelvic floor damage, abdominal separation (diastasis recti), or other complications</li>
+                </ul>
+                <p className="font-bold mt-4">
+                  Later Postnatal Period (>12 weeks after giving birth):
+                </p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>You <strong>must</strong> have completed your 12-week postnatal check and obtained medical clearance from your healthcare provider before using this application</li>
+                  <li>If you had a C-section, additional recovery time may be required</li>
+                  <li>Pelvic floor assessment is highly recommended before resuming Pilates to check for any dysfunction</li>
+                  <li>Consider working with a certified postnatal Pilates instructor who can provide appropriate modifications</li>
                   <li>Postpartum exercise should be introduced gradually under professional guidance</li>
-                  <li>Pelvic floor assessment is highly recommended before resuming Pilates</li>
-                  <li>Consider working with a certified postnatal Pilates instructor</li>
                 </ul>
               </div>
             </div>

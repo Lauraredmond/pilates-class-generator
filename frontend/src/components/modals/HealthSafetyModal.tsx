@@ -52,14 +52,14 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
               <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              CRITICAL WARNING: Pregnancy
+              CRITICAL WARNING: Pregnancy & Early Postnatal Period
             </h3>
             <div className="space-y-3 text-sm text-red-900">
               <p className="font-bold">
-                This application is NOT SAFE for pregnant individuals after the first trimester of pregnancy.
+                This application is NOT SAFE for pregnant individuals after the first trimester OR for women in early postnatal period (first 12 weeks after giving birth).
               </p>
               <p>
-                Many Pilates movements and setup positions included in this application can be harmful to pregnant individuals, particularly after the first trimester. These movements may involve:
+                <strong>Pregnancy:</strong> Many Pilates movements and setup positions can be harmful to pregnant individuals, particularly after the first trimester. These movements may involve:
               </p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>Lying flat on your back (supine position) - can restrict blood flow to the foetus</li>
@@ -67,8 +67,11 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
                 <li>Twisting movements - can strain the abdomen and pelvis</li>
                 <li>Prone (face-down) positions - unsafe for developing foetus</li>
               </ul>
+              <p>
+                <strong>Early Postnatal (0-12 weeks):</strong> Your body needs time to heal after giving birth. You must wait a minimum of 12 weeks postpartum AND have completed your 12-week postnatal check with your doctor or midwife before using this application.
+              </p>
               <p className="font-bold bg-red-100 p-3 rounded border border-red-300">
-                If you are pregnant or suspect you may be pregnant, DO NOT use this application without explicit written approval from your obstetrician or midwife. Specialized prenatal Pilates instruction from a qualified prenatal Pilates instructor is required.
+                If you are pregnant, suspect you may be pregnant, OR have given birth within the last 12 weeks, DO NOT use this application without explicit written approval from your obstetrician, midwife, or women's health physiotherapist. Specialized prenatal/postnatal Pilates instruction is required.
               </p>
             </div>
           </div>
@@ -83,7 +86,7 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
             </h3>
             <div className="space-y-3 text-sm text-red-900">
               <p className="font-bold">
-                If you are a postnatal woman with abdominal separation (diastasis recti), DO NOT use this application without explicit written approval from your GP or women's health physiotherapist.
+                If you are a postnatal woman (>12 weeks postpartum) with abdominal separation (diastasis recti), DO NOT use this application without explicit written approval from your GP or women's health physiotherapist.
               </p>
               <p>
                 Abdominal separation (diastasis recti) is common after pregnancy and requires specialized rehabilitation. Using this application without proper medical clearance and professional guidance may:
@@ -108,7 +111,7 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
                 <svg className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>You have consulted a doctor if you have any medical conditions or are pregnant</span>
+                <span>You have consulted a doctor if you have any medical conditions, are pregnant, or in early postnatal period</span>
               </li>
               <li className="flex items-start gap-2">
                 <svg className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

@@ -1,6 +1,6 @@
 /**
  * Medical Disclaimer Component
- * CRITICAL SAFETY: Hard stop for pregnant users
+ * CRITICAL SAFETY: Hard stop for pregnant and early postnatal users
  * Must be accepted before ANY app usage
  */
 
@@ -45,11 +45,11 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
           <div className="bg-red-50 border-2 border-red-600 rounded-lg p-3 md:p-6">
             <h3 className="text-base md:text-lg font-bold text-red-900 mb-2 md:mb-3 flex items-center gap-2">
               <XCircle className="w-5 h-5 md:w-6 md:h-6" />
-              PREGNANCY EXCLUSION - MANDATORY
+              PREGNANCY & POSTNATAL EXCLUSION - MANDATORY
             </h3>
 
             <p className="text-sm md:text-base text-red-900 font-semibold mb-3 md:mb-4">
-              Are you currently pregnant or could you be pregnant?
+              Are you currently pregnant, could you be pregnant, OR have you given birth within the last 12 weeks?
             </p>
 
             {isPregnant === null && (
@@ -58,13 +58,13 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                   onClick={() => handlePregnancyResponse(true)}
                   className="bg-red-600 hover:bg-red-700 text-white flex-1 text-sm md:text-base py-3"
                 >
-                  Yes, I am pregnant
+                  Yes - Pregnant or <12 weeks postnatal
                 </Button>
                 <Button
                   onClick={() => handlePregnancyResponse(false)}
                   className="bg-green-600 hover:bg-green-700 text-white flex-1 text-sm md:text-base py-3"
                 >
-                  No, I am not pregnant
+                  No - Not pregnant and >12 weeks postnatal
                 </Button>
               </div>
             )}
@@ -75,15 +75,18 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                   APP ACCESS DENIED
                 </h4>
                 <p className="text-red-800 mb-3">
-                  This application <strong>CANNOT</strong> be used during pregnancy.
+                  This application <strong>CANNOT</strong> be used during pregnancy or in the early postnatal period (first 12 weeks after giving birth).
                 </p>
                 <p className="text-red-800 mb-3">
-                  Pilates movements during pregnancy require professional, in-person supervision
+                  <strong>Pregnancy:</strong> Pilates movements during pregnancy require professional, in-person supervision
                   from a qualified prenatal Pilates instructor who can assess your specific condition
                   and provide appropriate modifications.
                 </p>
+                <p className="text-red-800 mb-3">
+                  <strong>Postnatal (0-12 weeks):</strong> Your body needs time to heal after giving birth. You must wait a minimum of 12 weeks postpartum AND have completed your 12-week postnatal check with your doctor or midwife before using this application. Earlier return to exercise requires specialized postnatal rehabilitation from a women's health physiotherapist.
+                </p>
                 <p className="text-red-800 font-semibold">
-                  Using this app during pregnancy could result in serious harm to you or your baby.
+                  Using this app during pregnancy or early postnatal period could result in serious harm, including pelvic floor damage, abdominal separation (diastasis recti), or other complications.
                 </p>
                 <Button
                   onClick={onReject}
@@ -97,7 +100,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
             {isPregnant === false && (
               <div className="bg-green-50 border border-green-600 rounded p-3 mt-4">
                 <p className="text-green-900 text-sm">
-                  ✓ Pregnancy exclusion confirmed. You may proceed with the disclaimer.
+                  ✓ Pregnancy and postnatal exclusion confirmed. You may proceed with the disclaimer.
                 </p>
               </div>
             )}
@@ -121,7 +124,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                     DO NOT USE THIS APP IF:
                   </p>
                   <ul className="list-disc list-inside space-y-1 pl-4">
-                    <li>You are pregnant or could be pregnant (ABSOLUTE EXCLUSION)</li>
+                    <li>You are pregnant, could be pregnant, OR have given birth within the last 12 weeks (ABSOLUTE EXCLUSION)</li>
                     <li>You have any untreated injuries or medical conditions</li>
                     <li>You have not consulted with a physician before beginning exercise</li>
                     <li>You are not a certified Pilates instructor or experienced practitioner</li>
@@ -131,7 +134,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                   </p>
                   <ul className="list-disc list-inside space-y-1 pl-4">
                     <li>
-                      You are NOT pregnant and will immediately discontinue use if you become pregnant
+                      You are NOT pregnant, NOT in early postnatal period (<12 weeks), and will immediately discontinue use if you become pregnant or enter early postnatal period
                     </li>
                     <li>
                       You have consulted with a physician and have clearance for Pilates exercise
@@ -175,8 +178,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                     className="mt-1 w-5 h-5 text-burgundy accent-burgundy"
                   />
                   <span className="text-sm text-cream font-semibold">
-                    I confirm that I am NOT pregnant and accept all risks and liability associated
-                    with using this application
+                    I confirm that I am NOT pregnant, NOT in early postnatal period (<12 weeks postpartum), and have completed my 12-week postnatal check if applicable. I accept all risks and liability associated with using this application.
                   </span>
                 </label>
               </div>
