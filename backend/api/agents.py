@@ -732,10 +732,13 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
             preparation = prep_response.data[0] if prep_response.data else None
             logger.info(f"Selected preparation: {preparation.get('script_name') if preparation else 'None'}")
-            # DEBUG: Check if video_url is present in database response
+            # DEBUG: Check voiceover and video data in database response
             if preparation:
-                logger.info(f"🎥 DEBUG: Preparation has video_url: {preparation.get('video_url')}")
-                logger.info(f"🎥 DEBUG: Preparation fields: {list(preparation.keys())}")
+                logger.info(f"🎙️ DEBUG: Preparation voiceover_enabled: {preparation.get('voiceover_enabled')}")
+                logger.info(f"🎙️ DEBUG: Preparation voiceover_url: {preparation.get('voiceover_url')}")
+                logger.info(f"🎙️ DEBUG: Preparation voiceover_duration: {preparation.get('voiceover_duration')}")
+                logger.info(f"🎥 DEBUG: Preparation video_url: {preparation.get('video_url')}")
+                logger.info(f"🔍 DEBUG: Preparation fields: {list(preparation.keys())}")
         except Exception as e:
             logger.error(f"Failed to fetch preparation script: {e}")
             preparation = None
@@ -752,10 +755,13 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
             warmup = warmup_response.data[0] if warmup_response.data else None
             logger.info(f"Selected warmup: {warmup.get('routine_name') if warmup else 'None'}")
-            # DEBUG: Check if video_url is present in database response
+            # DEBUG: Check voiceover and video data in database response
             if warmup:
-                logger.info(f"🎥 DEBUG: Warmup has video_url: {warmup.get('video_url')}")
-                logger.info(f"🎥 DEBUG: Warmup fields: {list(warmup.keys())}")
+                logger.info(f"🎙️ DEBUG: Warmup voiceover_enabled: {warmup.get('voiceover_enabled')}")
+                logger.info(f"🎙️ DEBUG: Warmup voiceover_url: {warmup.get('voiceover_url')}")
+                logger.info(f"🎙️ DEBUG: Warmup voiceover_duration: {warmup.get('voiceover_duration')}")
+                logger.info(f"🎥 DEBUG: Warmup video_url: {warmup.get('video_url')}")
+                logger.info(f"🔍 DEBUG: Warmup fields: {list(warmup.keys())}")
         except Exception as e:
             logger.error(f"Failed to fetch warmup routine: {e}")
             warmup = None
@@ -852,10 +858,20 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
         # DEBUG: Verify what's being sent to frontend
         logger.info("=" * 80)
-        logger.info("🎥 DEBUG: FINAL RESPONSE CHECK")
+        logger.info("🎙️🎥 DEBUG: FINAL RESPONSE CHECK")
         logger.info("=" * 80)
-        logger.info(f"🎥 Preparation video_url in response: {preparation.get('video_url') if preparation else 'None (preparation is None)'}")
-        logger.info(f"🎥 Warmup video_url in response: {warmup.get('video_url') if warmup else 'None (warmup is None)'}")
+        if preparation:
+            logger.info(f"🎙️ Preparation voiceover_enabled: {preparation.get('voiceover_enabled')}")
+            logger.info(f"🎙️ Preparation voiceover_url: {preparation.get('voiceover_url')}")
+            logger.info(f"🎥 Preparation video_url: {preparation.get('video_url')}")
+        else:
+            logger.info("❌ Preparation is None")
+        if warmup:
+            logger.info(f"🎙️ Warmup voiceover_enabled: {warmup.get('voiceover_enabled')}")
+            logger.info(f"🎙️ Warmup voiceover_url: {warmup.get('voiceover_url')}")
+            logger.info(f"🎥 Warmup video_url: {warmup.get('video_url')}")
+        else:
+            logger.info("❌ Warmup is None")
         logger.info("=" * 80)
 
         # Assemble complete class response with all 6 sections
