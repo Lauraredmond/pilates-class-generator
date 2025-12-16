@@ -140,15 +140,16 @@ class SequenceTools:
         movements_only = [item for item in sequence_with_transitions if item.get("type") == "movement"]
         transitions_only = [item for item in sequence_with_transitions if item.get("type") == "transition"]
 
-        # Calculate total duration (movements + transitions)
-        total_duration_seconds = sum(item.get("duration_seconds") or 60 for item in sequence_with_transitions)
+        # Calculate sequence duration (movements + transitions only, NOT including 6 class sections)
+        sequence_duration_seconds = sum(item.get("duration_seconds") or 60 for item in sequence_with_transitions)
 
         return {
             "sequence": sequence_with_transitions,
             "movement_count": len(movements_only),
             "transition_count": len(transitions_only),
             "total_items": len(sequence_with_transitions),
-            "total_duration_minutes": total_duration_seconds // 60,
+            "total_duration_minutes": target_duration_minutes,  # FULL class duration (includes all 6 sections)
+            "sequence_duration_minutes": sequence_duration_seconds // 60,  # Just movements + transitions
             "muscle_balance": muscle_balance,
             "validation": validation
         }
@@ -306,6 +307,14 @@ class SequenceTools:
 
         # Calculate: (available_minutes) = (num_movements * time_per_movement) + ((num_movements - 1) * transition_time)
         max_movements = int((available_minutes + transition_time) / (minutes_per_movement + transition_time))
+
+        # ENFORCE MINIMUM 4 MOVEMENTS FOR 30-MIN CLASSES
+        # User requirement: "We will have to go a little past the 30 minute threshold and insist on at least 4 movements for the 30 min class"
+        if target_duration == 30 and max_movements < 4:
+            logger.warning(
+                f"30-min class calculated only {max_movements} movements. Enforcing minimum 4 movements (class will run slightly over 30 min)."
+            )
+            max_movements = 4
 
         logger.info(
             f"Building sequence: {target_duration} min total - {overhead_minutes} min overhead = {available_minutes} min available / "
