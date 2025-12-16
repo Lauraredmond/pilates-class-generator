@@ -258,7 +258,7 @@ ffmpeg -i input-video.mov \
 1. **Construct CloudFront URL:**
    - CloudFront domain: `d1234abcd.cloudfront.net` (from Step 3)
    - Video filename: `the-hundred-720p.mp4`
-   - **Full URL:** `https://d1chkg8zq1g5j8.cloudfront.net/The_Hundred_Placeholder.mp4
+   - **Full URL:** `https://d1chkg8zq1g5j8.cloudfront.net/The_Hundred_Placeholder.mp4, https://d1chkg8zq1g5j8.cloudfront.net/Generic_Placeholder.mp4
 
 2. **Run SQL Migration:**
 

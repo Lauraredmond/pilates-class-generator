@@ -222,7 +222,17 @@ export function useAudioDucking({
     return () => {
       if (musicElementRef.current) {
         musicElementRef.current.pause();
+        musicElementRef.current.src = ''; // Clear source to free resources
         musicElementRef.current = null;
+      }
+      // Disconnect source node (can't reuse after disconnect, will create new one)
+      if (musicSourceRef.current) {
+        try {
+          musicSourceRef.current.disconnect();
+        } catch (e) {
+          // Already disconnected, ignore
+        }
+        musicSourceRef.current = null;
       }
     };
   }, [musicUrl, onMusicEnded]);
@@ -493,30 +503,25 @@ export function useAudioDucking({
       }
     };
 
-    // Small delay to ensure AudioContext is resumed and element is initialized
-    const timeoutId = setTimeout(() => {
-      if (isCancelled) {
-        logger.debug('Voiceover playback cancelled before timeout (rapid skip)');
-        return;
-      }
-
-      // Resume AudioContext if needed (browser autoplay policy)
-      if (audioContextRef.current?.state === 'suspended') {
-        audioContextRef.current.resume().then(() => {
-          logger.debug('AudioContext resumed for voiceover');
-          if (!isCancelled) {
-            playWhenReady();
-          }
-        });
-      } else {
-        playWhenReady();
-      }
-    }, 50); // 50ms delay to avoid race conditions
+    // FIX: Mobile browsers reject AudioContext.resume() if not in direct user gesture context
+    // Removed setTimeout() to maintain user gesture chain for mobile autoplay policy
+    // Resume AudioContext if needed (browser autoplay policy)
+    if (audioContextRef.current?.state === 'suspended') {
+      // CRITICAL: No setTimeout here - must be synchronous for mobile autoplay
+      audioContextRef.current.resume().then(() => {
+        logger.debug('AudioContext resumed for voiceover (mobile-safe)');
+        if (!isCancelled) {
+          playWhenReady();
+        }
+      });
+    } else {
+      // AudioContext already running, play immediately
+      playWhenReady();
+    }
 
     // Cleanup: Cancel any pending operations
     return () => {
       isCancelled = true;
-      clearTimeout(timeoutId);
       if (readyHandler) {
         voiceoverAudio.removeEventListener('canplaythrough', readyHandler);
       }
