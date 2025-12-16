@@ -66,6 +66,9 @@ export function useAudioDucking({
   // Track which voiceover has been played (prevent replaying same voiceover in same section)
   const playedVoiceoverRef = useRef<string | undefined>(undefined);
 
+  // Track if we need user interaction to unblock audio (mobile autoplay blocking)
+  const needsUserInteraction = useRef(false);
+
   /**
    * Initialize Web Audio API context and gain nodes
    */
@@ -239,6 +242,9 @@ export function useAudioDucking({
 
   /**
    * Load and connect voiceover audio (if provided)
+   *
+   * MOBILE FIX: Pre-load audio early so it's ready before play() is called
+   * This prevents NotAllowedError on mobile where audio loading takes time
    */
   useEffect(() => {
     // DEBUG: Log voiceover URL changes
@@ -281,10 +287,12 @@ export function useAudioDucking({
     logger.debug('[useAudioDucking] Loading voiceover:', voiceoverUrl);
 
     try {
-      // Create audio element
-      const audio = new Audio(voiceoverUrl);
+      // Create audio element with PRELOAD="auto" to start downloading immediately
+      const audio = new Audio();
       audio.crossOrigin = 'anonymous'; // Required for CORS
       audio.loop = false;
+      audio.preload = 'auto'; // MOBILE FIX: Start downloading immediately
+      audio.src = voiceoverUrl; // Set src AFTER preload attribute
       voiceoverElementRef.current = audio;
 
       // Create source node and connect to gain
@@ -295,7 +303,7 @@ export function useAudioDucking({
 
       // Mark voiceover as ready when loaded
       audio.addEventListener('canplaythrough', () => {
-        logger.debug('Voiceover ready');
+        logger.debug('Voiceover ready (canplaythrough)');
         // Clear error state now that voiceover loaded successfully
         setState(prev => ({ ...prev, voiceoverReady: true, error: null }));
 
@@ -326,7 +334,7 @@ export function useAudioDucking({
         duckMusic(musicVolume);
       });
 
-      // Preload audio
+      // MOBILE FIX: Trigger load() to start download immediately
       audio.load();
     } catch (error) {
       logger.error('Failed to setup voiceover audio:', error);
