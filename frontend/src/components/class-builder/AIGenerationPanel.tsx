@@ -277,20 +277,29 @@ export function AIGenerationPanel() {
           video_url: (results as any).completeClass.preparation?.video_url,
         },
         // Section 2: Warm-up (null-safe: warmup may be missing if backend fails)
-        {
-          type: 'warmup' as const,
-          routine_name: (results as any).completeClass.warmup?.routine_name || 'Full Body Warm-up',
-          narrative: (results as any).completeClass.warmup?.narrative || 'No warmup narrative available.',
-          movements: (results as any).completeClass.warmup?.movements || [],
-          duration_seconds: (results as any).completeClass.warmup?.duration_seconds || 180,
-          focus_area: (results as any).completeClass.warmup?.focus_area || 'full_body',
-          // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.warmup?.voiceover_url,
-          voiceover_duration: (results as any).completeClass.warmup?.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.warmup?.voiceover_enabled || false,
-          // Video demonstration (AWS Phase 1)
-          video_url: (results as any).completeClass.warmup?.video_url,
-        },
+        (() => {
+          const warmup = (results as any).completeClass.warmup;
+          logger.debug('[AIGenerationPanel] Warmup playback item:', {
+            hasWarmup: !!warmup,
+            voiceover_url: warmup?.voiceover_url,
+            voiceover_enabled: warmup?.voiceover_enabled,
+            voiceover_duration: warmup?.voiceover_duration,
+          });
+          return {
+            type: 'warmup' as const,
+            routine_name: warmup?.routine_name || 'Full Body Warm-up',
+            narrative: warmup?.narrative || 'No warmup narrative available.',
+            movements: warmup?.movements || [],
+            duration_seconds: warmup?.duration_seconds || 180,
+            focus_area: warmup?.focus_area || 'full_body',
+            // Voiceover audio fields
+            voiceover_url: warmup?.voiceover_url,
+            voiceover_duration: warmup?.voiceover_duration,
+            voiceover_enabled: warmup?.voiceover_enabled || false,
+            // Video demonstration (AWS Phase 1)
+            video_url: warmup?.video_url,
+          };
+        })(),
         // Section 3: Main movements (AI-generated, includes movements + transitions)
         // Use results.sequence.movements which contains BOTH movements and transitions from AI
         ...results.sequence.movements.map((m) => {

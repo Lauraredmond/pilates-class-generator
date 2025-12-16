@@ -279,6 +279,20 @@ export function ClassPlayback({
       ? currentItem.voiceover_url
       : undefined;
 
+  // DEBUG: Log voiceover detection
+  useEffect(() => {
+    if (currentItem) {
+      logger.debug('[ClassPlayback] Current section:', {
+        type: currentItem.type,
+        name: (currentItem as any).name || (currentItem as any).script_name || (currentItem as any).routine_name,
+        hasVoiceoverEnabled: 'voiceover_enabled' in currentItem,
+        voiceover_enabled: (currentItem as any).voiceover_enabled,
+        voiceover_url: (currentItem as any).voiceover_url,
+        currentVoiceover,
+      });
+    }
+  }, [currentIndex, currentItem]);
+
   // Get current track URL from playlist
   const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
 
