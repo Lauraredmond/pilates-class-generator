@@ -510,18 +510,29 @@ class SequenceTools:
         sequence_with_transitions = []
 
         try:
-            # Get all transitions from database if available (including duration_seconds)
+            # Get all transitions from database if available
             transitions_map = {}
             if self.supabase:
-                transitions_response = self.supabase.table('transitions') \
-                    .select('from_position, to_position, narrative, duration_seconds') \
-                    .execute()
+                # Try to SELECT with duration_seconds first (Migration 021)
+                # If column doesn't exist yet, fall back to SELECT without it
+                try:
+                    transitions_response = self.supabase.table('transitions') \
+                        .select('from_position, to_position, narrative, duration_seconds') \
+                        .execute()
+
+                    logger.info("✅ Successfully fetched transitions WITH duration_seconds from database")
+                except Exception as db_error:
+                    # Column doesn't exist yet - fall back to SELECT without duration_seconds
+                    logger.warning(f"⚠️ duration_seconds column not found in transitions table (migration 021 not run yet). Falling back to hardcoded 60s. Error: {db_error}")
+                    transitions_response = self.supabase.table('transitions') \
+                        .select('from_position, to_position, narrative') \
+                        .execute()
 
                 # Store both narrative AND duration_seconds in map
                 transitions_map = {
                     (t['from_position'], t['to_position']): {
                         'narrative': t['narrative'],
-                        'duration_seconds': t.get('duration_seconds', 60)  # Fallback to 60s if missing
+                        'duration_seconds': t.get('duration_seconds', 60)  # Fallback to 60s if column missing
                     }
                     for t in transitions_response.data
                 }
