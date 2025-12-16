@@ -220,6 +220,7 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
       <ClassPlayback
         items={playbackItems}
         movementMusicStyle="Classical" // Default music style for recording
+        coolDownMusicStyle="Classical" // Same style for both phases in recording mode
         onComplete={handleCompletePlayback}
         onExit={handleExitPlayback}
       />
