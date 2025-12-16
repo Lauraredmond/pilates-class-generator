@@ -510,15 +510,19 @@ class SequenceTools:
         sequence_with_transitions = []
 
         try:
-            # Get all transitions from database if available
+            # Get all transitions from database if available (including duration_seconds)
             transitions_map = {}
             if self.supabase:
                 transitions_response = self.supabase.table('transitions') \
-                    .select('from_position, to_position, narrative') \
+                    .select('from_position, to_position, narrative, duration_seconds') \
                     .execute()
 
+                # Store both narrative AND duration_seconds in map
                 transitions_map = {
-                    (t['from_position'], t['to_position']): t['narrative']
+                    (t['from_position'], t['to_position']): {
+                        'narrative': t['narrative'],
+                        'duration_seconds': t.get('duration_seconds', 60)  # Fallback to 60s if missing
+                    }
                     for t in transitions_response.data
                 }
 
@@ -531,20 +535,23 @@ class SequenceTools:
                     from_position = movement.get('setup_position', 'Unknown')
                     to_position = sequence[i + 1].get('setup_position', 'Unknown')
 
-                    # Get transition narrative from database
+                    # Get transition data (narrative + duration) from database
                     transition_key = (from_position, to_position)
-                    narrative = transitions_map.get(
+                    transition_data = transitions_map.get(
                         transition_key,
-                        f"Transition from {from_position} to {to_position} position with control."
+                        {
+                            'narrative': f"Transition from {from_position} to {to_position} position with control.",
+                            'duration_seconds': 60  # Fallback if transition not in database
+                        }
                     )
 
-                    # Add transition item to sequence
+                    # Add transition item to sequence (using database duration)
                     transition_item = {
                         "type": "transition",
                         "from_position": from_position,
                         "to_position": to_position,
-                        "narrative": narrative,
-                        "duration_seconds": 60,  # 1 minute transition time
+                        "narrative": transition_data['narrative'],
+                        "duration_seconds": transition_data['duration_seconds'],  # FROM DATABASE
                         "name": f"Transition: {from_position} → {to_position}"
                     }
 
