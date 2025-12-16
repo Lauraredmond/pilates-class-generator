@@ -283,26 +283,11 @@ export function useAudioDucking({
         // Clear error state now that voiceover loaded successfully
         setState(prev => ({ ...prev, voiceoverReady: true, error: null }));
 
-        // AUTO-PLAY: Start voiceover immediately if not paused (FIX: Always resume AudioContext first)
-        if (!isPausedRef.current) {
-          // Resume AudioContext if suspended (fixes natural transition bug)
-          if (audioContextRef.current?.state === 'suspended') {
-            logger.debug('AudioContext suspended, resuming before auto-play');
-            audioContextRef.current.resume().then(() => {
-              logger.debug('AudioContext resumed, auto-playing voiceover');
-              audio.play().catch(err => {
-                logger.error('Voiceover auto-play error after resume:', err);
-              });
-            }).catch(err => {
-              logger.error('Failed to resume AudioContext for auto-play:', err);
-            });
-          } else {
-            logger.debug('Auto-playing voiceover (AudioContext active)');
-            audio.play().catch(err => {
-              logger.error('Voiceover auto-play error:', err);
-            });
-          }
-        }
+        // NOTE: Removed auto-play from canplaythrough event
+        // Voiceover playback is now handled exclusively by:
+        // 1. Manual play/pause control (isPaused useEffect)
+        // 2. Natural section transitions (voiceoverUrl change useEffect)
+        // This prevents race conditions where voiceover plays twice or gets marked as "already played"
       });
 
       audio.addEventListener('error', (e) => {

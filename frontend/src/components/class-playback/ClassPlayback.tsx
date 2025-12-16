@@ -4,7 +4,7 @@
  * Integrated with music database (Internet Archive streaming)
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { MovementDisplay } from './MovementDisplay';
 import { PlaybackControls } from './PlaybackControls';
@@ -204,6 +204,9 @@ export function ClassPlayback({
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0); // Track index in playlist
   const [musicError, setMusicError] = useState<string | null>(null);
 
+  // Wake Lock to prevent screen from turning off during class
+  const wakeLockRef = useRef<any>(null);
+
   // Check if user needs to accept Health & Safety disclaimer
   useEffect(() => {
     if (user && !user.accepted_safety_at) {
@@ -213,6 +216,59 @@ export function ClassPlayback({
       setIsPaused(false); // Start playback if already accepted
     }
   }, [user]);
+
+  /**
+   * Wake Lock API - Keep screen on during class playback
+   *
+   * When class is playing (not paused), acquire a screen wake lock to prevent
+   * the phone screen from turning off. When paused or component unmounts,
+   * release the wake lock to save battery.
+   *
+   * Supported on most modern mobile browsers (iOS Safari 16.4+, Chrome/Edge Android)
+   */
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      // Check if Wake Lock API is supported
+      if (!('wakeLock' in navigator)) {
+        logger.debug('Wake Lock API not supported on this device');
+        return;
+      }
+
+      try {
+        if (!isPaused && !wakeLockRef.current) {
+          // Acquire wake lock when playback starts
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+          logger.debug('Screen wake lock acquired - screen will stay on during class');
+
+          // Listen for wake lock release (can happen if user switches tabs)
+          wakeLockRef.current.addEventListener('release', () => {
+            logger.debug('Screen wake lock released');
+            wakeLockRef.current = null;
+          });
+        } else if (isPaused && wakeLockRef.current) {
+          // Release wake lock when playback pauses
+          await wakeLockRef.current.release();
+          wakeLockRef.current = null;
+          logger.debug('Screen wake lock released - screen can now sleep');
+        }
+      } catch (err: any) {
+        logger.error(`Failed to acquire wake lock: ${err.message}`);
+        // Don't show error to user - this is a nice-to-have feature
+      }
+    };
+
+    requestWakeLock();
+
+    // Cleanup: Release wake lock when component unmounts
+    return () => {
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().catch((err: any) => {
+          logger.error('Failed to release wake lock on cleanup:', err);
+        });
+        wakeLockRef.current = null;
+      }
+    };
+  }, [isPaused]);
 
   const currentItem = items[currentIndex];
   const totalItems = items.length;
