@@ -64,7 +64,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                   onClick={() => handlePregnancyResponse(false)}
                   className="bg-green-600 hover:bg-green-700 text-white flex-1 text-sm md:text-base py-3"
                 >
-                  No - Not pregnant and &gt;12 weeks postnatal
+                  No - Not pregnant and/ or greater than 12 weeks postnatal
                 </Button>
               </div>
             )}
