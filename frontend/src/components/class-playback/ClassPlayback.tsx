@@ -182,6 +182,7 @@ export type PlaybackItem =
 interface ClassPlaybackProps {
   items: PlaybackItem[];
   movementMusicStyle: string;
+  coolDownMusicStyle: string;
   className?: string;
   onComplete?: () => void;
   onExit?: () => void;
@@ -190,6 +191,7 @@ interface ClassPlaybackProps {
 export function ClassPlayback({
   items,
   movementMusicStyle,
+  coolDownMusicStyle,
   className = '',
   onComplete,
   onExit,
@@ -200,7 +202,8 @@ export function ClassPlayback({
   const [timeRemaining, setTimeRemaining] = useState(items[0]?.duration_seconds || 0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
-  const [currentPlaylist, setCurrentPlaylist] = useState<MusicPlaylist | null>(null);
+  const [movementPlaylist, setMovementPlaylist] = useState<MusicPlaylist | null>(null);
+  const [cooldownPlaylist, setCooldownPlaylist] = useState<MusicPlaylist | null>(null);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0); // Track index in playlist
   const [musicError, setMusicError] = useState<string | null>(null);
 
@@ -293,7 +296,17 @@ export function ClassPlayback({
     }
   }, [currentIndex, currentItem]);
 
-  // Get current track URL from playlist
+  // Determine which playlist to use based on section type
+  // Sections 1-3 (preparation, warmup, movements/transitions) → Movement music
+  // Sections 4-6 (cooldown, meditation, homecare) → Cooldown music
+  const currentPlaylist =
+    currentItem?.type === 'cooldown' ||
+    currentItem?.type === 'meditation' ||
+    currentItem?.type === 'homecare'
+      ? cooldownPlaylist
+      : movementPlaylist;
+
+  // Get current track URL from appropriate playlist
   const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
 
   // Handle music track advancement when current track ends
@@ -333,15 +346,20 @@ export function ClassPlayback({
     onMusicEnded: handleMusicEnded  // Advance to next track when current ends
   });
 
-  // Fetch music playlist from database
+  // Reset track index when switching between playlists (movement → cooldown or vice versa)
   useEffect(() => {
-    const fetchPlaylist = async () => {
-      try {
-        setMusicError(null);
+    // Reset to track 0 when playlist changes (e.g., moving from movements to cooldown)
+    setCurrentTrackIndex(0);
+    logger.debug(`Playlist switched to ${currentItem?.type === 'cooldown' || currentItem?.type === 'meditation' || currentItem?.type === 'homecare' ? 'cooldown' : 'movement'} music - resetting to track 1`);
+  }, [currentPlaylist]);
 
-        // Map movement music style to stylistic period
-        // movementMusicStyle could be: "Baroque", "Classical", "Romantic", "Impressionist", etc.
-        const stylisticPeriod = movementMusicStyle.toUpperCase().replace(/\s+/g, '_');
+  // Fetch BOTH music playlists from database (movement + cooldown)
+  useEffect(() => {
+    const fetchPlaylistByStyle = async (musicStyle: string): Promise<MusicPlaylist | null> => {
+      try {
+        // Map music style to stylistic period
+        // musicStyle could be: "Baroque", "Classical", "Romantic", "Impressionist", etc.
+        const stylisticPeriod = musicStyle.toUpperCase().replace(/\s+/g, '_');
 
         // Get playlists for this stylistic period
         const response = await axios.get(`${API_BASE_URL}/api/music/playlists`, {
@@ -360,9 +378,7 @@ export function ClassPlayback({
             `${API_BASE_URL}/api/music/playlists/${playlistSummary.id}`
           );
 
-          const playlist = fullPlaylistResponse.data;
-          setCurrentPlaylist(playlist);
-          setCurrentTrackIndex(0); // Reset to first track when playlist changes
+          return fullPlaylistResponse.data;
         } else {
           // Fallback: get any featured playlist
           const fallbackResponse = await axios.get(`${API_BASE_URL}/api/music/playlists`, {
@@ -374,21 +390,54 @@ export function ClassPlayback({
             const fullPlaylistResponse = await axios.get(
               `${API_BASE_URL}/api/music/playlists/${playlistSummary.id}`
             );
-            const playlist = fullPlaylistResponse.data;
-            setCurrentPlaylist(playlist);
-            setCurrentTrackIndex(0); // Reset to first track when playlist changes
-          } else {
-            setMusicError('No music playlists available.');
+            return fullPlaylistResponse.data;
           }
         }
+
+        return null;
       } catch (error: any) {
-        logger.error('Error fetching music playlist:', error);
+        logger.error(`Error fetching music playlist for ${musicStyle}:`, error);
+        return null;
+      }
+    };
+
+    const fetchBothPlaylists = async () => {
+      try {
+        setMusicError(null);
+
+        // Fetch both playlists in parallel
+        const [movementPl, cooldownPl] = await Promise.all([
+          fetchPlaylistByStyle(movementMusicStyle),
+          fetchPlaylistByStyle(coolDownMusicStyle),
+        ]);
+
+        if (movementPl) {
+          setMovementPlaylist(movementPl);
+          logger.debug(`Movement playlist loaded: ${movementPl.name} (${movementPl.tracks?.length || 0} tracks)`);
+        } else {
+          logger.warn('No movement music playlist available');
+        }
+
+        if (cooldownPl) {
+          setCooldownPlaylist(cooldownPl);
+          logger.debug(`Cooldown playlist loaded: ${cooldownPl.name} (${cooldownPl.tracks?.length || 0} tracks)`);
+        } else {
+          logger.warn('No cooldown music playlist available');
+        }
+
+        if (!movementPl && !cooldownPl) {
+          setMusicError('No music playlists available.');
+        }
+
+        setCurrentTrackIndex(0); // Reset to first track when playlists load
+      } catch (error: any) {
+        logger.error('Error fetching music playlists:', error);
         setMusicError('Failed to load music. Class will continue without audio.');
       }
     };
 
-    fetchPlaylist();
-  }, [movementMusicStyle]);
+    fetchBothPlaylists();
+  }, [movementMusicStyle, coolDownMusicStyle]);
 
   // Timer countdown logic
   useEffect(() => {
