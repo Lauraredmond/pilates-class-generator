@@ -157,6 +157,66 @@ class SequenceTools:
     # DATABASE OPERATIONS
     # ==========================================================================
 
+    def _get_section_overhead_minutes(self, target_duration: int) -> int:
+        """
+        Fetch actual section durations from database to calculate overhead
+
+        For 30-min classes: prep + warmup + cooldown + homecare (no meditation)
+        For longer classes: prep + warmup + cooldown + homecare + meditation
+
+        Returns:
+            Total overhead in minutes (read from database duration_seconds fields)
+        """
+        if not self.supabase:
+            # Fallback estimates if database unavailable
+            # prep (4min) + warmup (3min) + cooldown (3min) + homecare (1min) = 11min
+            # + meditation (4min) = 15min total
+            return 15 if target_duration > 30 else 11
+
+        try:
+            include_meditation = target_duration > 30
+
+            # Fetch one sample of each section to get actual durations
+            prep_response = self.supabase.table('preparation_scripts').select('duration_seconds').limit(1).execute()
+            warmup_response = self.supabase.table('warmup_routines').select('duration_seconds').limit(1).execute()
+            cooldown_response = self.supabase.table('cooldown_sequences').select('duration_seconds').limit(1).execute()
+            homecare_response = self.supabase.table('closing_homecare_advice').select('duration_seconds').limit(1).execute()
+
+            # Only fetch meditation if including it
+            if include_meditation:
+                meditation_response = self.supabase.table('closing_meditation_scripts').select('duration_seconds').limit(1).execute()
+            else:
+                meditation_response = None
+
+            # Sum up actual durations from database
+            total_overhead_seconds = 0
+
+            if prep_response.data and len(prep_response.data) > 0:
+                total_overhead_seconds += prep_response.data[0].get('duration_seconds', 240)  # Default 4min
+            if warmup_response.data and len(warmup_response.data) > 0:
+                total_overhead_seconds += warmup_response.data[0].get('duration_seconds', 180)  # Default 3min
+            if cooldown_response.data and len(cooldown_response.data) > 0:
+                total_overhead_seconds += cooldown_response.data[0].get('duration_seconds', 180)  # Default 3min
+            if homecare_response.data and len(homecare_response.data) > 0:
+                total_overhead_seconds += homecare_response.data[0].get('duration_seconds', 60)  # Default 1min
+            if include_meditation and meditation_response and meditation_response.data and len(meditation_response.data) > 0:
+                total_overhead_seconds += meditation_response.data[0].get('duration_seconds', 240)  # Default 4min
+
+            # Convert to minutes (round up)
+            total_overhead_minutes = (total_overhead_seconds + 59) // 60  # Round up
+
+            logger.info(
+                f"Calculated section overhead from database: {total_overhead_minutes} min "
+                f"({total_overhead_seconds}s) - meditation {'included' if include_meditation else 'excluded'}"
+            )
+
+            return total_overhead_minutes
+
+        except Exception as e:
+            logger.error(f"Error fetching section overhead from database: {e}")
+            # Fallback to estimates
+            return 15 if target_duration > 30 else 11
+
     def _get_available_movements(
         self,
         difficulty: str,
@@ -227,19 +287,29 @@ class SequenceTools:
         """Build sequence following safety rules"""
         sequence = []
 
-        # Calculate max movements based on teaching time + transitions
+        # STEP 1: Get overhead from 6 class sections (preparation, warmup, cooldown, meditation, homecare)
+        overhead_minutes = self._get_section_overhead_minutes(target_duration)
+
+        # STEP 2: Calculate available time for movements after overhead
+        available_minutes = target_duration - overhead_minutes
+
+        if available_minutes <= 0:
+            logger.error(f"No time for movements! Target: {target_duration} min, Overhead: {overhead_minutes} min")
+            raise ValueError(f"Class duration too short. Need at least {overhead_minutes} minutes for required sections.")
+
+        # STEP 3: Calculate max movements based on teaching time + transitions
         minutes_per_movement = self.MINUTES_PER_MOVEMENT.get(difficulty, 4)
         transition_time = self.TRANSITION_TIME_MINUTES
 
         # Store teaching time for use when setting movement durations
         teaching_time_seconds = minutes_per_movement * 60
 
-        # Calculate: (target_duration) = (num_movements * time_per_movement) + ((num_movements - 1) * transition_time)
-        max_movements = int((target_duration + transition_time) / (minutes_per_movement + transition_time))
+        # Calculate: (available_minutes) = (num_movements * time_per_movement) + ((num_movements - 1) * transition_time)
+        max_movements = int((available_minutes + transition_time) / (minutes_per_movement + transition_time))
 
         logger.info(
-            f"Building sequence: {target_duration} min / ({minutes_per_movement} min/movement + {transition_time} min/transition) "
-            f"= max {max_movements} movements"
+            f"Building sequence: {target_duration} min total - {overhead_minutes} min overhead = {available_minutes} min available / "
+            f"({minutes_per_movement} min/movement + {transition_time} min/transition) = max {max_movements} movements"
         )
 
         # SESSION 13: Get movement usage weights for variety enforcement + The Hundred boosting
