@@ -151,7 +151,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
           <div className="absolute top-4 right-4 z-50 w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
             <video
               src={video_url}
-              autoPlay
+              controls
               muted
               loop
               playsInline
@@ -253,7 +253,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
               }
             }}
             src={item.video_url}
-            autoPlay
+            controls
             muted
             loop
             playsInline
