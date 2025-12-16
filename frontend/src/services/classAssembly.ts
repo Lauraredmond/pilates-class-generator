@@ -8,17 +8,6 @@ import { logger } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// Section timing constants (in seconds)
-export const SECTION_DURATIONS = {
-  PREPARATION: 4 * 60,      // 4 minutes
-  WARMUP: 3 * 60,           // 3 minutes
-  COOLDOWN: 3 * 60,         // 3 minutes
-  MEDITATION: 4 * 60,       // 4 minutes
-  HOMECARE: 1 * 60,         // 1 minute
-  TOTAL_OVERHEAD: 15 * 60,  // Total: 15 minutes (with meditation)
-  OVERHEAD_NO_MEDITATION: 11 * 60 // 11 minutes (without meditation for 30-min classes)
-};
-
 // TypeScript interfaces
 export interface PreparationScript {
   id: string;
@@ -102,23 +91,93 @@ export interface CompleteClass {
 }
 
 /**
+ * Fetch sample sections to calculate actual overhead duration
+ * Reads duration_seconds from Supabase instead of using hardcoded constants
+ */
+async function getSectionOverheadDurations(
+  token: string,
+  includeMeditation: boolean
+): Promise<number> {
+  try {
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // Fetch one sample of each section type to get actual durations
+    const [prepRes, warmupRes, cooldownRes, homecareRes, meditationRes] = await Promise.all([
+      axios.get(`${API_BASE_URL}/api/class-sections/preparation`, {
+        headers,
+        params: { script_type: 'centering', limit: 1 }
+      }),
+      axios.get(`${API_BASE_URL}/api/class-sections/warmup`, {
+        headers,
+        params: { focus_area: 'full_body', limit: 1 }
+      }),
+      axios.get(`${API_BASE_URL}/api/class-sections/cooldown`, {
+        headers,
+        params: { intensity: 'moderate', limit: 1 }
+      }),
+      axios.get(`${API_BASE_URL}/api/class-sections/closing-homecare`, {
+        headers,
+        params: { focus_area: 'spine_care', limit: 1 }
+      }),
+      // Only fetch meditation if including it
+      includeMeditation
+        ? axios.get(`${API_BASE_URL}/api/class-sections/closing-meditation`, {
+            headers,
+            params: { post_intensity: 'moderate', theme: 'body_scan', limit: 1 }
+          })
+        : Promise.resolve({ data: [] })
+    ]);
+
+    // Sum up actual durations from database
+    let totalOverhead = 0;
+
+    if (prepRes.data?.[0]?.duration_seconds) {
+      totalOverhead += prepRes.data[0].duration_seconds;
+    }
+    if (warmupRes.data?.[0]?.duration_seconds) {
+      totalOverhead += warmupRes.data[0].duration_seconds;
+    }
+    if (cooldownRes.data?.[0]?.duration_seconds) {
+      totalOverhead += cooldownRes.data[0].duration_seconds;
+    }
+    if (homecareRes.data?.[0]?.duration_seconds) {
+      totalOverhead += homecareRes.data[0].duration_seconds;
+    }
+    if (includeMeditation && meditationRes.data?.[0]?.duration_seconds) {
+      totalOverhead += meditationRes.data[0].duration_seconds;
+    }
+
+    logger.info(`[ClassAssembly] Calculated overhead from database: ${totalOverhead}s (${Math.round(totalOverhead / 60)} min) - meditation ${includeMeditation ? 'included' : 'excluded'}`);
+
+    return totalOverhead;
+  } catch (error) {
+    logger.error('[ClassAssembly] Failed to fetch section durations, using fallback estimates', error);
+    // Fallback to reasonable estimates if database fetch fails
+    // prep (4min) + warmup (3min) + cooldown (3min) + homecare (1min) = 11min
+    // + meditation (4min) = 15min total
+    return includeMeditation ? 15 * 60 : 11 * 60;
+  }
+}
+
+/**
  * Calculate how many movements fit in a class given total duration
  * Formula: (total_minutes - section_overhead) / avg_movement_duration
  *
- * For 30-min classes: excludes meditation (11 min overhead) to allow more movements
- * For longer classes: includes meditation (15 min overhead)
+ * For 30-min classes: excludes meditation to allow more movements
+ * For longer classes: includes meditation
+ *
+ * CRITICAL: Movements are 5 minutes (300 seconds) each in Recording Mode
  */
-export function calculateMovementCount(totalMinutes: number, avgMovementMinutes: number = 3): number {
-  // For 30-min classes, exclude meditation to maximize movement time
-  const overheadSeconds = totalMinutes <= 30
-    ? SECTION_DURATIONS.OVERHEAD_NO_MEDITATION
-    : SECTION_DURATIONS.TOTAL_OVERHEAD;
-
+export function calculateMovementCount(
+  totalMinutes: number,
+  overheadSeconds: number,
+  avgMovementMinutes: number = 5
+): number {
   const overheadMinutes = overheadSeconds / 60;
   const availableMinutes = totalMinutes - overheadMinutes;
 
   if (availableMinutes <= 0) {
-    throw new Error(`Class duration too short. Minimum ${overheadMinutes} minutes required for all sections.`);
+    throw new Error(`Class duration too short. Minimum ${Math.ceil(overheadMinutes)} minutes required for all sections.`);
   }
 
   return Math.floor(availableMinutes / avgMovementMinutes);
@@ -135,13 +194,19 @@ export async function assembleCompleteClass(
 ): Promise<CompleteClass> {
   try {
     const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Authentication required');
+    }
     const headers = { Authorization: `Bearer ${token}` };
-
-    // Calculate how many movements we need
-    const movementCount = calculateMovementCount(totalDurationMinutes);
 
     // Determine if we should include meditation (only for classes > 30 min)
     const includeMeditation = totalDurationMinutes > 30;
+
+    // STEP 1: Fetch section durations from database
+    const overheadSeconds = await getSectionOverheadDurations(token, includeMeditation);
+
+    // STEP 2: Calculate how many movements we need based on actual section durations
+    const movementCount = calculateMovementCount(totalDurationMinutes, overheadSeconds);
 
     // Fetch sections conditionally
     const sectionsToFetch = [
