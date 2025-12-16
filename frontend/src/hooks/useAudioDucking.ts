@@ -231,6 +231,9 @@ export function useAudioDucking({
    * Load and connect voiceover audio (if provided)
    */
   useEffect(() => {
+    // DEBUG: Log voiceover URL changes
+    logger.debug(`[useAudioDucking] Voiceover URL changed: ${voiceoverUrl || 'none'}`);
+
     // Clear any previous error state when loading new voiceover
     setState(prev => ({ ...prev, error: null }));
 
@@ -254,6 +257,7 @@ export function useAudioDucking({
 
     // If no voiceover for this section, mark as ready and exit
     if (!voiceoverUrl || !audioContextRef.current || !voiceoverGainRef.current) {
+      logger.debug(`[useAudioDucking] No voiceover for this section (url=${voiceoverUrl})`);
       setState(prev => ({ ...prev, voiceoverReady: true })); // No voiceover = ready
 
       // Restore music volume when no voiceover
@@ -263,6 +267,8 @@ export function useAudioDucking({
 
       return;
     }
+
+    logger.debug('[useAudioDucking] Loading voiceover:', voiceoverUrl);
 
     try {
       // Create audio element
