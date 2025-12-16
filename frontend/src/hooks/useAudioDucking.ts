@@ -268,6 +268,18 @@ export function useAudioDucking({
     audio.load(); // Start downloading immediately
 
     logger.debug('Music src updated, downloading...');
+
+    // Auto-play if player is not paused (resume playback after track change)
+    if (!isPausedRef.current) {
+      logger.debug('Player not paused - auto-playing new music track');
+      audio.play().catch(err => {
+        logger.error('Failed to auto-play music after src change:', err);
+        setState(prev => ({
+          ...prev,
+          error: 'Failed to play background music. Click to enable audio.'
+        }));
+      });
+    }
   }, [musicUrl]);
 
   /**
@@ -426,16 +438,21 @@ export function useAudioDucking({
         });
       }
 
-      // Play both audio streams (voiceover will auto-duck music)
-      musicAudio.play().catch(err => {
-        logger.error('Music play error:', err);
-        setState(prev => ({
-          ...prev,
-          error: 'Failed to play background music. Click to enable audio.'
-        }));
-      });
+      // Play music ONLY if src has been set (prevents race condition)
+      if (musicAudio.src) {
+        musicAudio.play().catch(err => {
+          logger.error('Music play error:', err);
+          setState(prev => ({
+            ...prev,
+            error: 'Failed to play background music. Click to enable audio.'
+          }));
+        });
+      } else {
+        logger.debug('Music element has no src yet - skipping play (src will be set shortly)');
+      }
 
-      if (voiceoverAudio) {
+      // Play voiceover ONLY if src has been set (prevents race condition)
+      if (voiceoverAudio && voiceoverAudio.src) {
         voiceoverAudio.play().catch(err => {
           logger.error('Voiceover play error:', err);
           setState(prev => ({
