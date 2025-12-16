@@ -377,7 +377,7 @@ export function Register() {
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-red-900">
               <li><strong>Pregnant individuals</strong> after the first trimester, OR <strong>women who have given birth within the last 12 weeks</strong> without written approval from an obstetrician, midwife, or women's health physiotherapist</li>
-              <li><strong>Postnatal women (>12 weeks postpartum) with abdominal separation (diastasis recti)</strong> without written approval from their GP or women's health physiotherapist</li>
+              <li><strong>Postnatal women (&gt;12 weeks postpartum) with abdominal separation (diastasis recti)</strong> without written approval from their GP or women's health physiotherapist</li>
             </ul>
             <p className="text-sm text-red-900 mt-2 font-bold">
               If any of these conditions apply to you, DO NOT use this app without consulting your healthcare provider. You must wait a minimum of 12 weeks postpartum AND complete your 12-week postnatal check before using this application. Doing so prematurely may cause serious harm including pelvic floor damage or abdominal separation.
