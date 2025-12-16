@@ -378,31 +378,6 @@ export function useAudioDucking({
   };
 
   /**
-   * AudioContext keepalive - Prevent mobile suspension during playback
-   *
-   * Mobile browsers may suspend AudioContext during idle periods,
-   * causing "hit and miss" voiceover playback on natural transitions.
-   * This effect keeps AudioContext alive throughout the entire class.
-   */
-  useEffect(() => {
-    if (isPaused || !audioContextRef.current) return;
-
-    // Check and resume AudioContext every 5 seconds during playback
-    const keepaliveInterval = setInterval(() => {
-      if (audioContextRef.current?.state === 'suspended' && !isPausedRef.current) {
-        logger.debug('[Keepalive] AudioContext suspended during playback, resuming...');
-        audioContextRef.current.resume().then(() => {
-          logger.debug('[Keepalive] AudioContext resumed successfully');
-        }).catch(err => {
-          logger.error('[Keepalive] Failed to resume AudioContext:', err);
-        });
-      }
-    }, 5000); // Check every 5 seconds
-
-    return () => clearInterval(keepaliveInterval);
-  }, [isPaused]);
-
-  /**
    * Play/pause control
    */
   useEffect(() => {
