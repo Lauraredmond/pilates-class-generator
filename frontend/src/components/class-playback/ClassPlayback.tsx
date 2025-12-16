@@ -201,7 +201,7 @@ export function ClassPlayback({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
   const [currentPlaylist, setCurrentPlaylist] = useState<MusicPlaylist | null>(null);
-  const [currentTrackIndex] = useState(0); // TODO: Add track advancement when useAudioDucking supports onMusicEnded callback
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0); // Track index in playlist
   const [musicError, setMusicError] = useState<string | null>(null);
 
   // Check if user needs to accept Health & Safety disclaimer
@@ -226,6 +226,23 @@ export function ClassPlayback({
   // Get current track URL from playlist
   const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
 
+  // Handle music track advancement when current track ends
+  const handleMusicEnded = useCallback(() => {
+    if (!currentPlaylist || !currentPlaylist.tracks) return;
+
+    // Advance to next track in playlist (loop back to start if at end)
+    setCurrentTrackIndex((prevIndex) => {
+      const nextIndex = prevIndex + 1;
+      if (nextIndex >= currentPlaylist.tracks.length) {
+        logger.debug('Reached end of playlist, looping back to first track');
+        return 0; // Loop back to first track
+      } else {
+        logger.debug(`Advancing to track ${nextIndex + 1} of ${currentPlaylist.tracks.length}`);
+        return nextIndex;
+      }
+    });
+  }, [currentPlaylist]);
+
   // Use dual audio hook for music + voiceover with automatic ducking
   const audioState = useAudioDucking({
     musicUrl: currentMusicUrl,
@@ -233,7 +250,8 @@ export function ClassPlayback({
     isPaused: isPaused,
     musicVolume: 1.0,      // 100% when no voiceover
     duckedVolume: 0.10,    // 10% during voiceover (90% reduction - user feedback: music was drowning out voice)
-    fadeTime: 0.5          // 0.5s smooth fade
+    fadeTime: 0.5,         // 0.5s smooth fade
+    onMusicEnded: handleMusicEnded  // Advance to next track when current ends
   });
 
   // Fetch music playlist from database
@@ -265,6 +283,7 @@ export function ClassPlayback({
 
           const playlist = fullPlaylistResponse.data;
           setCurrentPlaylist(playlist);
+          setCurrentTrackIndex(0); // Reset to first track when playlist changes
         } else {
           // Fallback: get any featured playlist
           const fallbackResponse = await axios.get(`${API_BASE_URL}/api/music/playlists`, {
@@ -278,6 +297,7 @@ export function ClassPlayback({
             );
             const playlist = fullPlaylistResponse.data;
             setCurrentPlaylist(playlist);
+            setCurrentTrackIndex(0); // Reset to first track when playlist changes
           } else {
             setMusicError('No music playlists available.');
           }
