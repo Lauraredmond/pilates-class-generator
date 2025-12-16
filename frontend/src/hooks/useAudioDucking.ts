@@ -19,6 +19,7 @@ interface AudioDuckingConfig {
   musicVolume?: number;      // 0.0 to 1.0 (default: 1.0)
   duckedVolume?: number;     // 0.0 to 1.0 (default: 0.35)
   fadeTime?: number;         // Fade duration in seconds (default: 0.5)
+  onMusicEnded?: () => void; // Callback when music track finishes
 }
 
 interface AudioDuckingState {
@@ -35,7 +36,8 @@ export function useAudioDucking({
   isPaused,
   musicVolume = 1.0,
   duckedVolume = 0.35,
-  fadeTime = 0.5
+  fadeTime = 0.5,
+  onMusicEnded
 }: AudioDuckingConfig) {
   // Audio state
   const [state, setState] = useState<AudioDuckingState>({
@@ -115,7 +117,7 @@ export function useAudioDucking({
       // Create audio element
       const audio = new Audio(musicUrl);
       audio.crossOrigin = 'anonymous'; // Required for CORS
-      audio.loop = false; // Music plays once per class
+      audio.loop = false; // Music plays once per track (then advances to next)
       musicElementRef.current = audio;
 
       // Create source node and connect to gain
@@ -137,6 +139,14 @@ export function useAudioDucking({
         }));
       });
 
+      // Call onMusicEnded callback when track finishes (for playlist advancement)
+      audio.addEventListener('ended', () => {
+        logger.debug('Music track ended - calling onMusicEnded callback');
+        if (onMusicEnded) {
+          onMusicEnded();
+        }
+      });
+
       // Preload audio
       audio.load();
     } catch (error) {
@@ -154,7 +164,7 @@ export function useAudioDucking({
         musicElementRef.current = null;
       }
     };
-  }, [musicUrl]);
+  }, [musicUrl, onMusicEnded]);
 
   /**
    * Load and connect voiceover audio (if provided)
