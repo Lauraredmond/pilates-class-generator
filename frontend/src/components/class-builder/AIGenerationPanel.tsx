@@ -83,6 +83,26 @@ export function AIGenerationPanel() {
         transitionCount: sequenceResponse.data.transition_count,
       });
 
+      // Calculate ACTUAL total duration from all 6 sections (not user input)
+      const actualDuration =
+        (preparationData?.duration_seconds || 240) +  // Section 1
+        (warmupData?.duration_seconds || 180) +       // Section 2
+        sequenceResponse.data.sequence.reduce((sum: number, item: any) => sum + (item.duration_seconds || 60), 0) + // Section 3 (movements + transitions)
+        (cooldownData?.duration_seconds || 180) +     // Section 4
+        (meditationData?.duration_seconds || 0) +     // Section 5 (0 if excluded for <30min classes)
+        (homecareData?.duration_seconds || 60);       // Section 6
+
+      logger.info('[AIGenerationPanel] Calculated actual duration', {
+        preparation: preparationData?.duration_seconds || 240,
+        warmup: warmupData?.duration_seconds || 180,
+        movementsAndTransitions: sequenceResponse.data.sequence.reduce((sum: number, item: any) => sum + (item.duration_seconds || 60), 0),
+        cooldown: cooldownData?.duration_seconds || 180,
+        meditation: meditationData?.duration_seconds || 0,
+        homecare: homecareData?.duration_seconds || 60,
+        totalSeconds: actualDuration,
+        totalMinutes: Math.round(actualDuration / 60),
+      });
+
       // COMBINED RESULTS: AI sequence for modal, 6-section structure for playback
       const completeResults: GeneratedClassResults = {
         sequence: {
@@ -106,9 +126,7 @@ export function AIGenerationPanel() {
           })),
           movement_count: sequenceResponse.data.movement_count || 0,
           transition_count: sequenceResponse.data.transition_count || 0,
-          total_duration: sequenceResponse.data.total_duration_minutes
-            ? sequenceResponse.data.total_duration_minutes * 60
-            : formData.duration * 60,
+          total_duration: actualDuration, // Use CALCULATED duration from all 6 sections
           muscle_balance: sequenceResponse.data.muscle_balance || {},
         },
         music: {
