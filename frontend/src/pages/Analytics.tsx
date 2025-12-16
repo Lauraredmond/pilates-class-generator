@@ -484,16 +484,16 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
               <table className="w-full border-collapse">
                 <thead className="sticky top-0 z-10">
                   <tr className="border-b border-cream/30 bg-burgundy-dark">
-                    <th className="sticky left-0 z-20 text-left py-3 px-4 text-cream font-semibold bg-burgundy-dark border-r border-cream/20">
+                    <th className="sticky left-0 z-20 text-left py-3 px-2 md:px-4 text-cream font-semibold bg-burgundy-dark border-r border-cream/20 min-w-[140px] md:min-w-[180px]">
                       Movement
                     </th>
                     {movementHistory[0]?.period_labels.map((label, idx) => (
-                      <th key={idx} className="text-center py-3 px-4 text-cream font-semibold bg-burgundy-dark">
+                      <th key={idx} className="text-center py-3 px-2 md:px-4 text-cream font-semibold bg-burgundy-dark whitespace-nowrap min-w-[60px] md:min-w-[80px]">
                         {label}
                       </th>
                     ))}
-                    <th className="text-center py-3 px-4 text-cream font-semibold bg-burgundy/30">
-                      Grand Total
+                    <th className="text-center py-3 px-2 md:px-4 text-cream font-semibold bg-burgundy/30 whitespace-nowrap min-w-[60px] md:min-w-[80px]">
+                      Total
                     </th>
                   </tr>
                 </thead>
@@ -505,15 +505,15 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
                         index % 2 === 0 ? 'bg-burgundy/5' : ''
                       }`}
                     >
-                      <td className="sticky left-0 z-5 py-3 px-4 text-cream border-r border-cream/20 bg-inherit">
+                      <td className="sticky left-0 z-5 py-3 px-2 md:px-4 text-cream text-sm border-r border-cream/20 bg-inherit min-w-[140px] md:min-w-[180px]">
                         {row.label}
                       </td>
                       {row.periods.map((count, idx) => (
-                        <td key={idx} className="py-3 px-4 text-center text-cream/80">
+                        <td key={idx} className="py-3 px-2 md:px-4 text-center text-cream/80 min-w-[60px] md:min-w-[80px]">
                           {count || '-'}
                         </td>
                       ))}
-                      <td className="py-3 px-4 text-center text-cream font-semibold bg-burgundy/20">
+                      <td className="py-3 px-2 md:px-4 text-center text-cream font-semibold bg-burgundy/20 min-w-[60px] md:min-w-[80px]">
                         {row.total}
                       </td>
                     </tr>
@@ -547,16 +547,16 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
               <table className="w-full border-collapse">
                 <thead className="sticky top-0 z-10">
                   <tr className="border-b border-cream/30 bg-burgundy-dark">
-                    <th className="sticky left-0 z-20 text-left py-3 px-4 text-cream font-semibold bg-burgundy-dark border-r border-cream/20">
-                      Muscle Group / Goal
+                    <th className="sticky left-0 z-20 text-left py-3 px-2 md:px-4 text-cream font-semibold bg-burgundy-dark border-r border-cream/20 min-w-[140px] md:min-w-[180px]">
+                      Muscle Group
                     </th>
                     {muscleGroupHistory[0]?.period_labels.map((label, idx) => (
-                      <th key={idx} className="text-center py-3 px-4 text-cream font-semibold bg-burgundy-dark">
+                      <th key={idx} className="text-center py-3 px-2 md:px-4 text-cream font-semibold bg-burgundy-dark whitespace-nowrap min-w-[60px] md:min-w-[80px]">
                         {label}
                       </th>
                     ))}
-                    <th className="text-center py-3 px-4 text-cream font-semibold bg-burgundy/30">
-                      Grand Total
+                    <th className="text-center py-3 px-2 md:px-4 text-cream font-semibold bg-burgundy/30 whitespace-nowrap min-w-[60px] md:min-w-[80px]">
+                      Total
                     </th>
                   </tr>
                 </thead>
@@ -568,15 +568,15 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
                         index % 2 === 0 ? 'bg-burgundy/5' : ''
                       }`}
                     >
-                      <td className="sticky left-0 z-5 py-3 px-4 text-cream border-r border-cream/20 bg-inherit">
+                      <td className="sticky left-0 z-5 py-3 px-2 md:px-4 text-cream text-sm border-r border-cream/20 bg-inherit min-w-[140px] md:min-w-[180px]">
                         {row.label}
                       </td>
                       {row.periods.map((count, idx) => (
-                        <td key={idx} className="py-3 px-4 text-center text-cream/80">
+                        <td key={idx} className="py-3 px-2 md:px-4 text-center text-cream/80 min-w-[60px] md:min-w-[80px]">
                           {count || '-'}
                         </td>
                       ))}
-                      <td className="py-3 px-4 text-center text-cream font-semibold bg-burgundy/20">
+                      <td className="py-3 px-2 md:px-4 text-center text-cream font-semibold bg-burgundy/20 min-w-[60px] md:min-w-[80px]">
                         {row.total}
                       </td>
                     </tr>
