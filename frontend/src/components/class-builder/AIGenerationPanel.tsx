@@ -77,6 +77,35 @@ export function AIGenerationPanel() {
       const meditationData = backendData.meditation;
       const homecareData = backendData.homecare;
 
+      // DEBUG: Check what backend is actually returning for duration_seconds
+      logger.debug('[AIGenerationPanel] Backend section data received:', {
+        preparation: {
+          has_duration: 'duration_seconds' in (preparationData || {}),
+          duration_seconds: preparationData?.duration_seconds,
+          script_name: preparationData?.script_name,
+        },
+        warmup: {
+          has_duration: 'duration_seconds' in (warmupData || {}),
+          duration_seconds: warmupData?.duration_seconds,
+          routine_name: warmupData?.routine_name,
+        },
+        cooldown: {
+          has_duration: 'duration_seconds' in (cooldownData || {}),
+          duration_seconds: cooldownData?.duration_seconds,
+          sequence_name: cooldownData?.sequence_name,
+        },
+        meditation: {
+          has_duration: 'duration_seconds' in (meditationData || {}),
+          duration_seconds: meditationData?.duration_seconds,
+          script_name: meditationData?.script_name,
+        },
+        homecare: {
+          has_duration: 'duration_seconds' in (homecareData || {}),
+          duration_seconds: homecareData?.duration_seconds,
+          advice_name: homecareData?.advice_name,
+        },
+      });
+
       logger.debug('[AIGenerationPanel] Class generation complete', {
         mode: backendData.ai_reasoning ? 'AI AGENT' : 'DEFAULT',
         movementCount: sequenceResponse.data.movement_count,
