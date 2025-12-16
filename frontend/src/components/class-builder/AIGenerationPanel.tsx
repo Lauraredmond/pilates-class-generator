@@ -258,6 +258,7 @@ export function AIGenerationPanel() {
 
   // SESSION 11: Transform complete class to playback format with all 6 sections
   // Uses AI-generated movements (9 movements + 8 transitions) with framing sections
+  // FILTER: Exclude meditation for <30 min classes (backend returns null)
   const playbackItems: PlaybackItem[] = results && (results as any).completeClass
     ? [
         // Section 1: Preparation (null-safe: preparation may be missing if backend fails)
@@ -364,21 +365,22 @@ export function AIGenerationPanel() {
           // Video demonstration (AWS Phase 1)
           video_url: (results as any).completeClass.cooldown?.video_url,
         },
-        // Section 5: Closing Meditation (null-safe: meditation may be missing if backend fails)
-        {
+        // Section 5: Closing Meditation (CONDITIONALLY INCLUDED - only for >30 min classes)
+        // Backend returns null for <=30 min classes - filter it out instead of showing "No meditation script available"
+        ...((results as any).completeClass.meditation ? [{
           type: 'meditation' as const,
-          script_name: (results as any).completeClass.meditation?.script_name || 'Body Scan & Gratitude',
-          script_text: (results as any).completeClass.meditation?.script_text || 'No meditation script available.',
-          duration_seconds: (results as any).completeClass.meditation?.duration_seconds || 300,
-          breathing_guidance: (results as any).completeClass.meditation?.breathing_guidance || '',
-          meditation_theme: (results as any).completeClass.meditation?.meditation_theme || 'body_scan',
+          script_name: (results as any).completeClass.meditation.script_name || 'Body Scan & Gratitude',
+          script_text: (results as any).completeClass.meditation.script_text || 'No meditation script available.',
+          duration_seconds: (results as any).completeClass.meditation.duration_seconds || 300,
+          breathing_guidance: (results as any).completeClass.meditation.breathing_guidance || '',
+          meditation_theme: (results as any).completeClass.meditation.meditation_theme || 'body_scan',
           // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.meditation?.voiceover_url,
-          voiceover_duration: (results as any).completeClass.meditation?.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.meditation?.voiceover_enabled || false,
+          voiceover_url: (results as any).completeClass.meditation.voiceover_url,
+          voiceover_duration: (results as any).completeClass.meditation.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.meditation.voiceover_enabled || false,
           // Video demonstration (AWS Phase 1)
-          video_url: (results as any).completeClass.meditation?.video_url,
-        },
+          video_url: (results as any).completeClass.meditation.video_url,
+        }] : []),
         // Section 6: HomeCare Advice (null-safe: homecare may be missing if backend fails)
         {
           type: 'homecare' as const,
