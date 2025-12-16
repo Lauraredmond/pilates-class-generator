@@ -108,6 +108,67 @@ export function useAudioDucking({
   }, [musicVolume]);
 
   /**
+   * Handle page visibility changes (FIX: Phone sleep/wake bug)
+   *
+   * When the phone screen locks, the AudioContext becomes suspended.
+   * When the user unlocks the phone and returns to the app, we need to:
+   * 1. Resume the AudioContext
+   * 2. Resume playing music and voiceover
+   *
+   * This fixes two bugs:
+   * - Music stops when phone screen locks
+   * - Voiceover doesn't play on natural section transitions after phone wake
+   */
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page hidden (phone locked or tab switched)
+        logger.debug('Page hidden - AudioContext may suspend');
+      } else {
+        // Page visible again (phone unlocked or tab focused)
+        logger.debug('Page visible - checking AudioContext state');
+
+        // Resume AudioContext if suspended
+        if (audioContextRef.current?.state === 'suspended') {
+          logger.debug('AudioContext suspended, resuming...');
+          audioContextRef.current.resume().then(() => {
+            logger.debug('AudioContext resumed after visibility change');
+
+            // Only resume playback if not manually paused
+            if (!isPausedRef.current) {
+              // Resume music if it was playing
+              if (musicElementRef.current && musicElementRef.current.paused) {
+                logger.debug('Resuming music after visibility change');
+                musicElementRef.current.play().catch(err => {
+                  logger.error('Failed to resume music:', err);
+                });
+              }
+
+              // Resume voiceover if it was playing
+              if (voiceoverElementRef.current && voiceoverElementRef.current.paused) {
+                logger.debug('Resuming voiceover after visibility change');
+                voiceoverElementRef.current.play().catch(err => {
+                  logger.error('Failed to resume voiceover:', err);
+                });
+              }
+            }
+          }).catch(err => {
+            logger.error('Failed to resume AudioContext:', err);
+          });
+        }
+      }
+    };
+
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  /**
    * Load and connect music audio
    */
   useEffect(() => {
@@ -222,12 +283,25 @@ export function useAudioDucking({
         // Clear error state now that voiceover loaded successfully
         setState(prev => ({ ...prev, voiceoverReady: true, error: null }));
 
-        // AUTO-PLAY: Start voiceover immediately if not paused
-        if (!isPausedRef.current && audioContextRef.current?.state !== 'suspended') {
-          logger.debug('Auto-playing voiceover');
-          audio.play().catch(err => {
-            logger.error('Voiceover auto-play error:', err);
-          });
+        // AUTO-PLAY: Start voiceover immediately if not paused (FIX: Always resume AudioContext first)
+        if (!isPausedRef.current) {
+          // Resume AudioContext if suspended (fixes natural transition bug)
+          if (audioContextRef.current?.state === 'suspended') {
+            logger.debug('AudioContext suspended, resuming before auto-play');
+            audioContextRef.current.resume().then(() => {
+              logger.debug('AudioContext resumed, auto-playing voiceover');
+              audio.play().catch(err => {
+                logger.error('Voiceover auto-play error after resume:', err);
+              });
+            }).catch(err => {
+              logger.error('Failed to resume AudioContext for auto-play:', err);
+            });
+          } else {
+            logger.debug('Auto-playing voiceover (AudioContext active)');
+            audio.play().catch(err => {
+              logger.error('Voiceover auto-play error:', err);
+            });
+          }
         }
       });
 
