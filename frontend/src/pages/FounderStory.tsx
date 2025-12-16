@@ -89,9 +89,13 @@ export function FounderStory() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-              This is the Minimum Viable Product to prove product market fit. I'm working on enhancing existing features as well as building new ones such as 
-              a centralised network of instructors, a tracker to help better manage nutrition and 
-              exercise planning and monitoring to help you integrate achievable goals into your routine. 
+              This is the Minimum Viable Product to prove product market fit. I'm working on enhancing the platform to include
+              further instruction such as varied and/ or more intelligent movement modifications, warm ups, cool downs, 
+              cueing visualisations and watch points for movements.
+            </p>
+            <p>
+              I also envisage adding a centralised network of instructors, a tracker to help better record your nutrition and 
+              exercise routines to help you track achievment of your goals. 
             </p>
   
           </div>
