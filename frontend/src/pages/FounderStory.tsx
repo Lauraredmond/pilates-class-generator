@@ -90,8 +90,8 @@ export function FounderStory() {
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
               This is the Minimum Viable Product to prove product market fit. I'm working on enhancing the platform to include
-              further instruction such as varied and/ or more intelligent movement modifications, warm ups, cool downs, 
-              cueing visualisations and watch points for movements.
+              further instruction such as varied and/ or more intelligent movement modifications, warm-ups, cool-downs, 
+              cueing visualisations and movement watch points.
             </p>
             <p>
               I also envisage adding a centralised network of instructors, a tracker to help better record your nutrition and 

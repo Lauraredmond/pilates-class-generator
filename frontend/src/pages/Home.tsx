@@ -40,7 +40,7 @@ export function Home() {
           onClick={() => navigate('/classes')}
           variant="primary"
         >
-          Create my baseline wellness routine
+          Create my baseline wellness routine (TBC)
         </Button>
 
         {/* Existing Pilates Class Button - Same styling as above */}
