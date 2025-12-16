@@ -510,32 +510,23 @@ class SequenceTools:
         sequence_with_transitions = []
 
         try:
-            # Get all transitions from database if available
+            # Get all transitions from database (duration_seconds required - Migration 021)
             transitions_map = {}
             if self.supabase:
-                # Try to SELECT with duration_seconds first (Migration 021)
-                # If column doesn't exist yet, fall back to SELECT without it
-                try:
-                    transitions_response = self.supabase.table('transitions') \
-                        .select('from_position, to_position, narrative, duration_seconds') \
-                        .execute()
+                transitions_response = self.supabase.table('transitions') \
+                    .select('from_position, to_position, narrative, duration_seconds') \
+                    .execute()
 
-                    logger.info("✅ Successfully fetched transitions WITH duration_seconds from database")
-                except Exception as db_error:
-                    # Column doesn't exist yet - fall back to SELECT without duration_seconds
-                    logger.warning(f"⚠️ duration_seconds column not found in transitions table (migration 021 not run yet). Falling back to hardcoded 60s. Error: {db_error}")
-                    transitions_response = self.supabase.table('transitions') \
-                        .select('from_position, to_position, narrative') \
-                        .execute()
-
-                # Store both narrative AND duration_seconds in map
+                # Store both narrative AND duration_seconds from database
                 transitions_map = {
                     (t['from_position'], t['to_position']): {
                         'narrative': t['narrative'],
-                        'duration_seconds': t.get('duration_seconds', 60)  # Fallback to 60s if column missing
+                        'duration_seconds': t['duration_seconds']  # MUST come from database
                     }
                     for t in transitions_response.data
                 }
+
+                logger.info(f"✅ Fetched {len(transitions_map)} transitions with duration_seconds from database")
 
             for i, movement in enumerate(sequence):
                 # Add the movement
