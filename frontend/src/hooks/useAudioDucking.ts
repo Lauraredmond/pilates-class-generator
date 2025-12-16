@@ -430,6 +430,15 @@ export function useAudioDucking({
    * This effect ensures voiceover plays on both manual skips AND natural transitions.
    */
   useEffect(() => {
+    // FIX: Reset played tracking when voiceover URL changes to a NEW URL
+    // This was causing "hit and miss" behavior on mobile - when transitioning
+    // from prep → warmup → movement, the ref would hold the previous URL and
+    // incorrectly block playback of the new section's voiceover.
+    if (voiceoverUrl && playedVoiceoverRef.current && playedVoiceoverRef.current !== voiceoverUrl) {
+      logger.debug(`New voiceover URL detected (${voiceoverUrl}), resetting played tracking (was: ${playedVoiceoverRef.current})`);
+      playedVoiceoverRef.current = undefined;
+    }
+
     // Reset played tracking when no voiceover (allows next section to play)
     if (!voiceoverUrl) {
       if (playedVoiceoverRef.current !== undefined) {
@@ -457,74 +466,47 @@ export function useAudioDucking({
 
     // Track cleanup state to prevent playing stale audio
     let isCancelled = false;
-    let readyHandler: (() => void) | null = null;
 
-    // Wait for voiceover to be ready before playing
-    // (handles race condition where section changes before 'canplaythrough' fires)
-    const playWhenReady = () => {
-      // Verify element still exists and matches current voiceover URL
-      if (isCancelled || voiceoverElementRef.current !== voiceoverAudio) {
-        logger.debug('Voiceover playback cancelled (section changed)');
-        return;
-      }
+    // FIX: Mobile autoplay policy (NotAllowedError)
+    // Call play() IMMEDIATELY to capture user gesture context,
+    // even if audio isn't ready yet. Browser will start playing when ready.
+    logger.debug('Calling play() immediately to capture user gesture context');
 
-      if (voiceoverAudio.readyState >= 3) {
-        // HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
-        logger.debug('Playing voiceover on section change (natural transition fix)');
-        voiceoverAudio.play()
-          .then(() => {
-            // Mark this voiceover as played to prevent replays within same section
-            playedVoiceoverRef.current = voiceoverUrl;
-            logger.debug(`Voiceover marked as played: ${voiceoverUrl}`);
-          })
-          .catch(err => {
-            logger.error('Failed to play voiceover on section change:', err);
-          });
-      } else {
-        // Not ready yet, wait for canplaythrough
-        logger.debug('Voiceover not ready yet, waiting for canplaythrough event');
-        readyHandler = () => {
-          if (isCancelled || voiceoverElementRef.current !== voiceoverAudio) {
-            logger.debug('Voiceover playback cancelled after ready (section changed)');
-            return;
-          }
-          logger.debug('Voiceover ready, playing now');
-          voiceoverAudio.play()
-            .then(() => {
-              // Mark this voiceover as played to prevent replays within same section
-              playedVoiceoverRef.current = voiceoverUrl;
-              logger.debug(`Voiceover marked as played: ${voiceoverUrl}`);
-            })
-            .catch(err => {
-              logger.error('Failed to play voiceover after ready:', err);
+    const playPromise = voiceoverAudio.play();
+
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          // Mark this voiceover as played to prevent replays within same section
+          playedVoiceoverRef.current = voiceoverUrl;
+          logger.debug(`Voiceover started playing successfully: ${voiceoverUrl}`);
+        })
+        .catch(err => {
+          logger.error('Failed to play voiceover:', err);
+
+          // If play() failed, try resuming AudioContext first
+          if (audioContextRef.current?.state === 'suspended') {
+            logger.debug('AudioContext suspended, attempting resume...');
+            audioContextRef.current.resume().then(() => {
+              logger.debug('AudioContext resumed, retrying play...');
+              if (!isCancelled) {
+                voiceoverAudio.play()
+                  .then(() => {
+                    playedVoiceoverRef.current = voiceoverUrl;
+                    logger.debug(`Voiceover started after AudioContext resume: ${voiceoverUrl}`);
+                  })
+                  .catch(retryErr => {
+                    logger.error('Failed to play voiceover after resume:', retryErr);
+                  });
+              }
             });
-        };
-        voiceoverAudio.addEventListener('canplaythrough', readyHandler);
-      }
-    };
-
-    // FIX: Mobile browsers reject AudioContext.resume() if not in direct user gesture context
-    // Removed setTimeout() to maintain user gesture chain for mobile autoplay policy
-    // Resume AudioContext if needed (browser autoplay policy)
-    if (audioContextRef.current?.state === 'suspended') {
-      // CRITICAL: No setTimeout here - must be synchronous for mobile autoplay
-      audioContextRef.current.resume().then(() => {
-        logger.debug('AudioContext resumed for voiceover (mobile-safe)');
-        if (!isCancelled) {
-          playWhenReady();
-        }
-      });
-    } else {
-      // AudioContext already running, play immediately
-      playWhenReady();
+          }
+        });
     }
 
     // Cleanup: Cancel any pending operations
     return () => {
       isCancelled = true;
-      if (readyHandler) {
-        voiceoverAudio.removeEventListener('canplaythrough', readyHandler);
-      }
     };
   }, [voiceoverUrl, isPaused]);
 
