@@ -66,6 +66,10 @@ export function useAudioDucking({
   // Track which voiceover has been played (prevent replaying same voiceover in same section)
   const playedVoiceoverRef = useRef<string | undefined>(undefined);
 
+  // Track onMusicEnded callback in ref (avoid stale closure in event listener)
+  const onMusicEndedRef = useRef(onMusicEnded);
+  onMusicEndedRef.current = onMusicEnded;
+
   /**
    * Initialize Web Audio API context and gain nodes
    */
@@ -169,31 +173,37 @@ export function useAudioDucking({
   }, []);
 
   /**
-   * Load and connect music audio
+   * Create music audio element ONCE on mount (same pattern as voiceover)
+   *
+   * IMPORTANT: Reuse same element for all tracks in playlist.
+   * Creating new audio element + source node for each track breaks Web Audio API connection.
    */
   useEffect(() => {
-    if (!musicUrl || !audioContextRef.current || !musicGainRef.current) return;
+    if (!audioContextRef.current || !musicGainRef.current) return;
+
+    logger.debug('[useAudioDucking] Creating SINGLE music audio element (will reuse for all tracks)');
 
     try {
-      // Create audio element
-      const audio = new Audio(musicUrl);
-      audio.crossOrigin = 'anonymous'; // Required for CORS
-      audio.loop = false; // Music plays once per track (then advances to next)
+      // Create ONE music element that we'll reuse for entire playlist
+      const audio = new Audio();
+      audio.crossOrigin = 'anonymous';
+      audio.loop = false;
+      audio.preload = 'auto';
       musicElementRef.current = audio;
 
-      // Create source node and connect to gain
+      // Create source node ONCE and connect to gain
       const source = audioContextRef.current.createMediaElementSource(audio);
       source.connect(musicGainRef.current);
       musicSourceRef.current = source;
 
-      // Mark music as ready when loaded
+      // Event listeners (attached once, work for all tracks)
       audio.addEventListener('canplaythrough', () => {
-        logger.debug('Music ready');
+        logger.debug('Music track ready (canplaythrough)');
         setState(prev => ({ ...prev, musicReady: true }));
       });
 
       audio.addEventListener('error', (e) => {
-        logger.error('Music load error:', e);
+        logger.error('Music load error:', e, audio.error);
         setState(prev => ({
           ...prev,
           error: 'Failed to load background music'
@@ -203,39 +213,62 @@ export function useAudioDucking({
       // Call onMusicEnded callback when track finishes (for playlist advancement)
       audio.addEventListener('ended', () => {
         logger.debug('Music track ended - calling onMusicEnded callback');
-        if (onMusicEnded) {
-          onMusicEnded();
+        if (onMusicEndedRef.current) {
+          onMusicEndedRef.current();
         }
       });
 
-      // Preload audio
-      audio.load();
+      logger.debug('Music element created successfully (reusable)');
     } catch (error) {
-      logger.error('Failed to setup music audio:', error);
+      logger.error('Failed to setup music audio element:', error);
       setState(prev => ({
         ...prev,
         error: 'Failed to setup background music'
       }));
     }
 
-    // Cleanup
+    // Cleanup only on component unmount
     return () => {
       if (musicElementRef.current) {
+        logger.debug('Unmounting: cleaning up music element');
         musicElementRef.current.pause();
-        musicElementRef.current.src = ''; // Clear source to free resources
+        musicElementRef.current.src = '';
         musicElementRef.current = null;
       }
-      // Disconnect source node (can't reuse after disconnect, will create new one)
-      if (musicSourceRef.current) {
-        try {
-          musicSourceRef.current.disconnect();
-        } catch (e) {
-          // Already disconnected, ignore
-        }
-        musicSourceRef.current = null;
-      }
     };
-  }, [musicUrl, onMusicEnded]);
+  }, []); // Run ONCE on mount
+
+  /**
+   * Update music src when URL changes (reuse same element)
+   *
+   * When track advances in playlist, just change src - don't recreate element.
+   * This prevents breaking the Web Audio API connection.
+   */
+  useEffect(() => {
+    logger.debug(`[useAudioDucking] Music URL changed: ${musicUrl || 'none'}`);
+
+    const audio = musicElementRef.current;
+    if (!audio) {
+      logger.debug('No music element yet (still initializing)');
+      return;
+    }
+
+    if (!musicUrl) {
+      logger.debug('No music URL provided');
+      return;
+    }
+
+    // Stop current track and load new one
+    logger.debug(`[useAudioDucking] Switching music track to: ${musicUrl}`);
+    audio.pause();
+    audio.currentTime = 0;
+
+    // REUSE same element, just change src (prevents Web Audio API disconnect)
+    audio.src = musicUrl;
+    audio.load(); // Start downloading immediately
+
+    logger.debug('Music src updated, downloading...');
+  }, [musicUrl]);
 
   /**
    * Create voiceover audio element ONCE on mount (YouTube/Spotify pattern)
