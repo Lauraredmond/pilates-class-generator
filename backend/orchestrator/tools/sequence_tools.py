@@ -237,7 +237,7 @@ class SequenceTools:
         difficulty: str,
         excluded_ids: List[str]
     ) -> List[Dict[str, Any]]:
-        """Fetch available movements from database with all teaching data"""
+        """Fetch available movements from database with all teaching data + muscle groups"""
         if not self.supabase:
             logger.warning("Supabase client not available - returning mock data")
             return self._get_mock_movements(difficulty)
@@ -256,11 +256,35 @@ class SequenceTools:
 
             movements = response.data
 
+            # CRITICAL FIX: Fetch muscle groups for each movement (for consecutive overlap filter)
+            if movements:
+                movement_ids = [m['id'] for m in movements]
+
+                muscles_response = self.supabase.table('movement_muscles') \
+                    .select('movement_id, muscle_group_name') \
+                    .in_('movement_id', movement_ids) \
+                    .execute()
+
+                # Group muscles by movement_id
+                muscles_by_movement = {}
+                for mm in muscles_response.data:
+                    mov_id = mm['movement_id']
+                    if mov_id not in muscles_by_movement:
+                        muscles_by_movement[mov_id] = []
+                    muscles_by_movement[mov_id].append({'name': mm['muscle_group_name']})
+
+                # Attach muscle_groups to each movement
+                for movement in movements:
+                    movement['muscle_groups'] = muscles_by_movement.get(movement['id'], [])
+
+                logger.info(f"✅ Attached muscle groups to {len(movements)} movements")
+
             # DEBUG: Log voiceover fields from first 3 movements
             logger.info("=" * 80)
             logger.info("🔍 DEBUG: Movements from database (first 3):")
             for i, m in enumerate(movements[:3]):
                 logger.info(f"  Movement {i+1}: {m.get('name')}")
+                logger.info(f"    muscle_groups: {[mg['name'] for mg in m.get('muscle_groups', [])]}")
                 logger.info(f"    voiceover_enabled: {m.get('voiceover_enabled')}")
                 logger.info(f"    voiceover_url: {m.get('voiceover_url', 'NOT PRESENT')[:80] if m.get('voiceover_url') else 'NONE'}")
                 logger.info(f"    voiceover_duration_seconds: {m.get('voiceover_duration_seconds')}")
