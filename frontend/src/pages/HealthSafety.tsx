@@ -178,7 +178,7 @@ export function HealthSafety() {
                   <li>Using this app during the early postnatal period could result in serious harm, including pelvic floor damage, abdominal separation (diastasis recti), or other complications</li>
                 </ul>
                 <p className="font-bold mt-4">
-                  Later Postnatal Period (>12 weeks after giving birth):
+                  Later Postnatal Period (&gt;12 weeks after giving birth):
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>You <strong>must</strong> have completed your 12-week postnatal check and obtained medical clearance from your healthcare provider before using this application</li>

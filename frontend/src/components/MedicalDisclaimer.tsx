@@ -58,13 +58,13 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                   onClick={() => handlePregnancyResponse(true)}
                   className="bg-red-600 hover:bg-red-700 text-white flex-1 text-sm md:text-base py-3"
                 >
-                  Yes - Pregnant or <12 weeks postnatal
+                  Yes - Pregnant or &lt;12 weeks postnatal
                 </Button>
                 <Button
                   onClick={() => handlePregnancyResponse(false)}
                   className="bg-green-600 hover:bg-green-700 text-white flex-1 text-sm md:text-base py-3"
                 >
-                  No - Not pregnant and >12 weeks postnatal
+                  No - Not pregnant and &gt;12 weeks postnatal
                 </Button>
               </div>
             )}
@@ -134,7 +134,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                   </p>
                   <ul className="list-disc list-inside space-y-1 pl-4">
                     <li>
-                      You are NOT pregnant, NOT in early postnatal period (<12 weeks), and will immediately discontinue use if you become pregnant or enter early postnatal period
+                      You are NOT pregnant, NOT in early postnatal period (&lt;12 weeks), and will immediately discontinue use if you become pregnant or enter early postnatal period
                     </li>
                     <li>
                       You have consulted with a physician and have clearance for Pilates exercise
@@ -178,7 +178,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                     className="mt-1 w-5 h-5 text-burgundy accent-burgundy"
                   />
                   <span className="text-sm text-cream font-semibold">
-                    I confirm that I am NOT pregnant, NOT in early postnatal period (<12 weeks postpartum), and have completed my 12-week postnatal check if applicable. I accept all risks and liability associated with using this application.
+                    I confirm that I am NOT pregnant, NOT in early postnatal period (&lt;12 weeks postpartum), and have completed my 12-week postnatal check if applicable. I accept all risks and liability associated with using this application.
                   </span>
                 </label>
               </div>
