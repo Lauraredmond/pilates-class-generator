@@ -77,7 +77,7 @@ function App() {
     localStorage.removeItem('medical_disclaimer_accepted_date');
   };
 
-  // If disclaimer rejected (user is pregnant or declined terms), show exclusion screen
+  // If disclaimer rejected (user is pregnant, in early postnatal period, or declined terms), show exclusion screen
   if (disclaimerRejected) {
     return (
       <div className="min-h-screen bg-burgundy flex items-center justify-center p-4">
