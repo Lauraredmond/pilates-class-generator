@@ -168,10 +168,14 @@ class SequenceTools:
         Returns:
             Total overhead in minutes (read from database duration_seconds fields)
         """
+        # DIAGNOSTIC: Check if Supabase client is available
+        logger.warning(f"🔍 DIAGNOSTIC: self.supabase is {'AVAILABLE' if self.supabase else 'NONE (using fallback)'}")
+
         if not self.supabase:
             # Fallback estimates if database unavailable
             # prep (4min) + warmup (3min) + cooldown (3min) + homecare (1min) = 11min
             # + meditation (4min) = 15min total
+            logger.warning(f"⚠️  USING FALLBACK OVERHEAD: {15 if target_duration > 30 else 11} min (Supabase client not available)")
             return 15 if target_duration > 30 else 11
 
         try:
@@ -205,6 +209,16 @@ class SequenceTools:
 
             # Convert to minutes (round up)
             total_overhead_minutes = (total_overhead_seconds + 59) // 60  # Round up
+
+            # DIAGNOSTIC: Log individual section durations
+            logger.warning("🔍 DIAGNOSTIC: Section durations from database:")
+            logger.warning(f"   Preparation: {prep_response.data[0].get('duration_seconds', 'N/A') if prep_response.data else 'NO DATA'}s")
+            logger.warning(f"   Warmup: {warmup_response.data[0].get('duration_seconds', 'N/A') if warmup_response.data else 'NO DATA'}s")
+            logger.warning(f"   Cooldown: {cooldown_response.data[0].get('duration_seconds', 'N/A') if cooldown_response.data else 'NO DATA'}s")
+            logger.warning(f"   HomeCare: {homecare_response.data[0].get('duration_seconds', 'N/A') if homecare_response.data else 'NO DATA'}s")
+            if include_meditation and meditation_response:
+                logger.warning(f"   Meditation: {meditation_response.data[0].get('duration_seconds', 'N/A') if meditation_response.data else 'NO DATA'}s")
+            logger.warning(f"   TOTAL: {total_overhead_seconds}s = {total_overhead_minutes} min")
 
             logger.info(
                 f"Calculated section overhead from database: {total_overhead_minutes} min "

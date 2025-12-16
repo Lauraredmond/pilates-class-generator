@@ -1,9 +1,17 @@
 #Yes, Git Production: main@3c0b4f1 is finally working for AI-powered mode. Can we make a note of this in Git comments, claude.md, as a milestone Git repo version? Further, can we add each of the below into future plans, they are ordered by priority
 
+- CLASS DURATION
+Not being calced off Supabase values. See if you can reduce length of some "other" sections
+
+- MUSIC CONtinues?
+Check next song plays after first ends
+
+Add to Baroque:
+https://archive.org/download/QuintetInEMajorG.275Minuet/Quintet%20in%20E%20major%2C%20G.275%20-%20Minuet.mp3
+
 Re-record prep phase at slower speed
 
-Security:
-
+11. Security testing
 - ChatGPT run book
 Can you create a runbook for yourself to reperform all of the security checks that we have performed this evening (which are documented in the XXX security audit reports in the 1. Security testing folder) so taht we can re-run just before I release the beta veresion
 Review movements table for accuracy of data - e.g. are beginner, intermed, advanced allocated correctly etc
@@ -32,10 +40,9 @@ Analytics page:
 10. EU AI Act Compliance Dashboard & Testing
 2.5 Can you tell me how easily it would be to migrate or even copy MVP2 and Supabase contents to AWS environment, given the 1,000 USD credits that I've just received from Amazon. Detail in email content below. Can you tell me would it be a cost saving for me to do this and also solve my user authentication problem with Supabase
 
-11. Security testing
 
-12. Privacy policy
-#Can you commit that plan to claude.md so that it is acknowledge to be done before 2025 is complete? Please ensure that you bring this up in our all of our next sessions for this project so that we are sure to complete it.
+
+
 
 #Further, please log the below if beta testers report same issue of "Failed to load background music" when they run class play
 
@@ -60,6 +67,8 @@ Analytics page:
 
 ****DONE****
 
+12. Privacy policy
+#Can you commit that plan to claude.md so that it is acknowledge to be done before 2025 is complete? Please ensure that you bring this up in our all of our next sessions for this project so that we are sure to complete it.
 
 Security:
 - Check JWT
