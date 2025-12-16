@@ -66,9 +66,6 @@ export function useAudioDucking({
   // Track which voiceover has been played (prevent replaying same voiceover in same section)
   const playedVoiceoverRef = useRef<string | undefined>(undefined);
 
-  // Track if we need user interaction to unblock audio (mobile autoplay blocking)
-  const needsUserInteraction = useRef(false);
-
   /**
    * Initialize Web Audio API context and gain nodes
    */
