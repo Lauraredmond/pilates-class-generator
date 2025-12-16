@@ -302,7 +302,7 @@ export function AIGenerationPanel() {
         })(),
         // Section 3: Main movements (AI-generated, includes movements + transitions)
         // Use results.sequence.movements which contains BOTH movements and transitions from AI
-        ...results.sequence.movements.map((m) => {
+        ...results.sequence.movements.map((m, index) => {
           if (m.type === 'transition') {
             return {
               type: 'transition' as const,
@@ -317,6 +317,17 @@ export function AIGenerationPanel() {
               voiceover_enabled: (m as any).voiceover_enabled || false,
             };
           }
+
+          // DEBUG: Log movement voiceover data (especially for first movement)
+          if (index === 0 || m.name === 'The Hundred') {
+            logger.debug(`[AIGenerationPanel] Movement "${m.name}" playback item:`, {
+              hasMovement: !!m,
+              voiceover_url: (m as any).voiceover_url,
+              voiceover_enabled: (m as any).voiceover_enabled,
+              voiceover_duration_seconds: (m as any).voiceover_duration_seconds,
+            });
+          }
+
           return {
             type: 'movement' as const,
             id: m.id || 'unknown',
