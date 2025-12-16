@@ -13,12 +13,35 @@ interface MovementDisplayProps {
 
 export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // DEBUG: Check if video_url exists when rendering movements
   if (item.type === 'movement') {
     console.log('🎥 DEBUG: MovementDisplay received item:', item);
     console.log('🎥 DEBUG: MovementDisplay video_url:', (item as any).video_url);
   }
+
+  /**
+   * Auto-play video AFTER voiceover starts (iOS fix)
+   *
+   * IMPORTANT: Video must start AFTER voiceover to avoid stealing media session.
+   * Wait 1.5 seconds to give voiceover time to claim the media session first.
+   */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || isPaused) return;
+
+    // Wait for voiceover to start playing (1.5 seconds), then start video
+    const timer = setTimeout(() => {
+      console.log('🎥 DEBUG: Auto-playing video after voiceover start');
+      video.play().catch(err => {
+        console.error('🎥 DEBUG: Video autoplay failed:', err);
+        // Silently fail - video will have controls for manual play
+      });
+    }, 1500); // 1.5 second delay - voiceover plays first
+
+    return () => clearTimeout(timer);
+  }, [item, isPaused]);
 
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
   useEffect(() => {
@@ -150,6 +173,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
         {video_url && (
           <div className="absolute top-4 right-4 z-50 w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
             <video
+              ref={videoRef}
               src={video_url}
               controls
               muted
@@ -246,6 +270,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
         <div className="absolute top-4 right-4 z-50 w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
           <video
             ref={(videoEl) => {
+              videoRef.current = videoEl;
               if (videoEl) {
                 console.log('🎥 DEBUG: Video element created!');
                 console.log('🎥 DEBUG: Video src attribute:', videoEl.src);
