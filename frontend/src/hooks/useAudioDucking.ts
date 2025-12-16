@@ -238,81 +238,38 @@ export function useAudioDucking({
   }, [musicUrl, onMusicEnded]);
 
   /**
-   * Load and connect voiceover audio (if provided)
+   * Create voiceover audio element ONCE on mount (YouTube/Spotify pattern)
    *
-   * MOBILE FIX: Pre-load audio early so it's ready before play() is called
-   * This prevents NotAllowedError on mobile where audio loading takes time
+   * MOBILE iOS FIX: Reusing the same audio element for all voiceovers
+   * prevents iOS from treating each new section as requiring a new user gesture.
+   * This is how YouTube, Spotify, and other successful web apps handle it.
    */
   useEffect(() => {
-    // DEBUG: Log voiceover URL changes
-    logger.debug(`[useAudioDucking] Voiceover URL changed: ${voiceoverUrl || 'none'}`);
+    if (!audioContextRef.current || !voiceoverGainRef.current) return;
 
-    // Clear any previous error state when loading new voiceover
-    setState(prev => ({ ...prev, error: null }));
-
-    // AGGRESSIVE CLEANUP: Stop any existing voiceover immediately
-    // This prevents overlapping voiceovers when rapidly skipping sections
-    if (voiceoverElementRef.current) {
-      const oldAudio = voiceoverElementRef.current;
-      logger.debug('Cleaning up old voiceover before loading new one');
-
-      // Stop playback immediately
-      oldAudio.pause();
-      oldAudio.currentTime = 0;
-
-      // Remove src to free resources (may trigger error event, but we cleared error state above)
-      oldAudio.src = '';
-      oldAudio.load(); // Force unload
-
-      // Clear ref
-      voiceoverElementRef.current = null;
-    }
-
-    // If no voiceover for this section, mark as ready and exit
-    if (!voiceoverUrl || !audioContextRef.current || !voiceoverGainRef.current) {
-      logger.debug(`[useAudioDucking] No voiceover for this section (url=${voiceoverUrl})`);
-      setState(prev => ({ ...prev, voiceoverReady: true })); // No voiceover = ready
-
-      // Restore music volume when no voiceover
-      if (voiceoverUrl === undefined) {
-        duckMusic(musicVolume);
-      }
-
-      return;
-    }
-
-    logger.debug('[useAudioDucking] Loading voiceover:', voiceoverUrl);
+    logger.debug('[useAudioDucking] Creating SINGLE voiceover audio element (will reuse for all sections)');
 
     try {
-      // Create audio element with PRELOAD="auto" to start downloading immediately
+      // Create ONE audio element that we'll reuse for the entire session
       const audio = new Audio();
-      audio.crossOrigin = 'anonymous'; // Required for CORS
+      audio.crossOrigin = 'anonymous';
       audio.loop = false;
-      audio.preload = 'auto'; // MOBILE FIX: Start downloading immediately
-      audio.src = voiceoverUrl; // Set src AFTER preload attribute
+      audio.preload = 'auto';
       voiceoverElementRef.current = audio;
 
-      // Create source node and connect to gain
-      // NOTE: Can only create source once per element (Web Audio API limitation)
+      // Create source node ONCE and connect to gain
       const source = audioContextRef.current.createMediaElementSource(audio);
       source.connect(voiceoverGainRef.current);
       voiceoverSourceRef.current = source;
 
-      // Mark voiceover as ready when loaded
+      // Event listeners (attached once, work for all voiceovers)
       audio.addEventListener('canplaythrough', () => {
         logger.debug('Voiceover ready (canplaythrough)');
-        // Clear error state now that voiceover loaded successfully
         setState(prev => ({ ...prev, voiceoverReady: true, error: null }));
-
-        // NOTE: Removed auto-play from canplaythrough event
-        // Voiceover playback is now handled exclusively by:
-        // 1. Manual play/pause control (isPaused useEffect)
-        // 2. Natural section transitions (voiceoverUrl change useEffect)
-        // This prevents race conditions where voiceover plays twice or gets marked as "already played"
       });
 
       audio.addEventListener('error', (e) => {
-        logger.error('Voiceover load error:', e);
+        logger.error('Voiceover load error:', e, audio.error);
         setState(prev => ({
           ...prev,
           error: 'Failed to load voiceover audio'
@@ -331,34 +288,66 @@ export function useAudioDucking({
         duckMusic(musicVolume);
       });
 
-      // MOBILE FIX: Trigger load() to start download immediately
-      audio.load();
+      logger.debug('Voiceover element created successfully (reusable)');
     } catch (error) {
-      logger.error('Failed to setup voiceover audio:', error);
+      logger.error('Failed to setup voiceover audio element:', error);
       setState(prev => ({
         ...prev,
         error: 'Failed to setup voiceover audio'
       }));
     }
 
-    // Cleanup when component unmounts or voiceover changes
+    // Cleanup only on component unmount
     return () => {
       if (voiceoverElementRef.current) {
-        const audio = voiceoverElementRef.current;
-
-        // Stop playback
-        audio.pause();
-        audio.currentTime = 0;
-
-        // Remove src to free resources
-        audio.src = '';
-        audio.load();
-
-        // Clear ref
+        logger.debug('Unmounting: cleaning up voiceover element');
+        voiceoverElementRef.current.pause();
+        voiceoverElementRef.current.src = '';
         voiceoverElementRef.current = null;
       }
     };
-  }, [voiceoverUrl, duckedVolume, musicVolume]);
+  }, []); // Run ONCE on mount
+
+  /**
+   * Update voiceover src when URL changes (reuse same element)
+   *
+   * MOBILE iOS FIX: Just change the src, don't recreate the element.
+   * iOS allows continued playback on the same element after initial user gesture.
+   */
+  useEffect(() => {
+    logger.debug(`[useAudioDucking] Voiceover URL changed: ${voiceoverUrl || 'none'}`);
+
+    const audio = voiceoverElementRef.current;
+    if (!audio) {
+      logger.debug('No voiceover element yet (still initializing)');
+      return;
+    }
+
+    // Clear error state
+    setState(prev => ({ ...prev, error: null }));
+
+    // If no voiceover for this section, pause and clear src
+    if (!voiceoverUrl) {
+      logger.debug('No voiceover for this section - pausing and clearing src');
+      audio.pause();
+      audio.currentTime = 0;
+      audio.src = ''; // Clear src but keep element alive
+      setState(prev => ({ ...prev, voiceoverReady: true }));
+      duckMusic(musicVolume); // Restore music volume
+      return;
+    }
+
+    // Stop current voiceover and load new one
+    logger.debug(`[useAudioDucking] Switching voiceover to: ${voiceoverUrl}`);
+    audio.pause();
+    audio.currentTime = 0;
+
+    // REUSE same element, just change src (YouTube/Spotify pattern)
+    audio.src = voiceoverUrl;
+    audio.load(); // Start downloading immediately
+
+    logger.debug('Voiceover src updated, downloading...');
+  }, [voiceoverUrl, musicVolume]);
 
   /**
    * Duck music volume with smooth fade
