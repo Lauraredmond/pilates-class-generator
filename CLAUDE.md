@@ -3187,6 +3187,60 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
      - Sequence validation and muscle balance
      - Authentication and authorization flows
 
+   - **Performance & Load Testing (Pre-Beta Launch):**
+     - **Goal:** Verify infrastructure can handle 25-50 beta testers before launch
+     - **Tool:** k6 (modern, easy, beautiful reports)
+     - **Test Strategy:**
+       - Phase 1: Smoke test (5 users, 10 min) - identify obvious breaking points
+       - Phase 2: Stress test (25 users, 10 min) - target beta tester count
+       - Phase 3: Breaking point (50-100 users, 20 min) - find infrastructure limits
+       - Phase 4: Endurance test (10 users, 1 hour) - check for memory leaks
+     - **Critical Bottlenecks to Test:**
+       - AI generation load: 50 users × $0.25/class, OpenAI rate limits (60 req/min)
+       - Music streaming: 50 users × 30 min × 2.86 MB/track = ~4 GB bandwidth
+       - Database connections: Supabase free tier connection pool limits
+       - Render backend: 512MB RAM capacity under concurrent load
+     - **k6 Script Example:**
+       ```javascript
+       import http from 'k6/http';
+       import { check, sleep } from 'k6';
+
+       export let options = {
+         stages: [
+           { duration: '2m', target: 10 },  // Ramp up to 10 users
+           { duration: '5m', target: 25 },  // Ramp up to 25 users
+           { duration: '5m', target: 50 },  // Ramp up to 50 users
+           { duration: '2m', target: 0 },   // Ramp down
+         ],
+       };
+
+       export default function () {
+         let res = http.post('https://pilates-class-generator-api3.onrender.com/api/agents/generate-complete-class',
+           JSON.stringify({
+             difficulty: 'Beginner',
+             duration: 30,
+             focus_areas: ['core', 'flexibility']
+           }),
+           { headers: { 'Content-Type': 'application/json' }}
+         );
+
+         check(res, {
+           'status is 200': (r) => r.status === 200,
+           'response time < 60s': (r) => r.timings.duration < 60000,
+         });
+
+         sleep(30); // User waits 30s between actions
+       }
+       ```
+     - **What Load Testing Reveals:**
+       - Will Render's 512MB RAM handle 50 concurrent AI requests?
+       - Does Supabase connection pool have enough capacity?
+       - Will music streaming bandwidth exceed limits?
+       - OpenAI rate limits hit? (60 requests/minute on free tier)
+       - Where does it break? (20 users? 40 users? 100 users?)
+     - **Estimated Time:** 2-3 hours (write scripts + run tests + analyze + fix)
+     - **Run Before Beta Launch:** Prevents backend crashes, music failures, slow response times
+
    **Phase 3: CI/CD Integration (Post-MVP)**
    - Automated regression test suite
    - Pre-commit hooks for code quality
