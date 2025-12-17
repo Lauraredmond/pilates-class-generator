@@ -112,24 +112,46 @@ export function AIGenerationPanel() {
         transitionCount: sequenceResponse.data.transition_count,
       });
 
-      // Calculate ACTUAL total duration from all 6 sections (not user input)
-      const actualDuration =
-        (preparationData?.duration_seconds || 240) +  // Section 1
-        (warmupData?.duration_seconds || 180) +       // Section 2
-        sequenceResponse.data.sequence.reduce((sum: number, item: any) => sum + (item.duration_seconds || 60), 0) + // Section 3 (movements + transitions)
-        (cooldownData?.duration_seconds || 180) +     // Section 4
-        (meditationData?.duration_seconds || 0) +     // Section 5 (0 if excluded for <30min classes)
-        (homecareData?.duration_seconds || 60);       // Section 6
+      // Calculate ACTUAL total duration from all 6 sections from Supabase (NO hardcoded fallbacks)
+      // WARNING: If any section is missing duration_seconds, it will log an error
+      const sectionDurations = {
+        preparation: preparationData?.duration_seconds || 0,
+        warmup: warmupData?.duration_seconds || 0,
+        movementsAndTransitions: sequenceResponse.data.sequence.reduce(
+          (sum: number, item: any) => sum + (item.duration_seconds || 0),
+          0
+        ),
+        cooldown: cooldownData?.duration_seconds || 0,
+        meditation: meditationData?.duration_seconds || 0, // 0 is correct for <30min classes
+        homecare: homecareData?.duration_seconds || 0,
+      };
 
-      logger.info('[AIGenerationPanel] Calculated actual duration', {
-        preparation: preparationData?.duration_seconds || 240,
-        warmup: warmupData?.duration_seconds || 180,
-        movementsAndTransitions: sequenceResponse.data.sequence.reduce((sum: number, item: any) => sum + (item.duration_seconds || 60), 0),
-        cooldown: cooldownData?.duration_seconds || 180,
-        meditation: meditationData?.duration_seconds || 0,
-        homecare: homecareData?.duration_seconds || 60,
+      // Log warnings if any required section is missing duration_seconds
+      if (!preparationData?.duration_seconds) {
+        logger.warn('[AIGenerationPanel] ⚠️ Preparation missing duration_seconds from Supabase!');
+      }
+      if (!warmupData?.duration_seconds) {
+        logger.warn('[AIGenerationPanel] ⚠️ Warmup missing duration_seconds from Supabase!');
+      }
+      if (!cooldownData?.duration_seconds) {
+        logger.warn('[AIGenerationPanel] ⚠️ Cooldown missing duration_seconds from Supabase!');
+      }
+      if (!homecareData?.duration_seconds) {
+        logger.warn('[AIGenerationPanel] ⚠️ HomeCare missing duration_seconds from Supabase!');
+      }
+      // Check if any movement/transition is missing duration_seconds
+      const missingDurations = sequenceResponse.data.sequence.filter((item: any) => !item.duration_seconds);
+      if (missingDurations.length > 0) {
+        logger.warn(`[AIGenerationPanel] ⚠️ ${missingDurations.length} movements/transitions missing duration_seconds from backend!`);
+      }
+
+      const actualDuration = Object.values(sectionDurations).reduce((sum, val) => sum + val, 0);
+
+      logger.info('[AIGenerationPanel] Calculated actual duration from Supabase', {
+        ...sectionDurations,
         totalSeconds: actualDuration,
         totalMinutes: Math.round(actualDuration / 60),
+        allSectionsPresent: actualDuration > 0,
       });
 
       // COMBINED RESULTS: AI sequence for modal, 6-section structure for playback
