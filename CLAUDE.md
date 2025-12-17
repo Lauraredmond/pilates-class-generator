@@ -2407,7 +2407,7 @@ Created `/docs/JENTIC_MASTER.md` with comprehensive table of contents:
 
 **Goal:** Complete end-to-end AI-powered class generation with ReWOO reasoning
 
-**Summary:** Successfully implemented AI-powered class generation using SimplifiedReWOOReasoner. Classes generate successfully with unique AI-generated content (preparation scripts, homecare advice), save to database, and music plays. However, a playback crash was discovered when trying to render the generated class.
+**Summary:** Successfully implemented AI-powered class generation using SimplifiedReWOOReasoner. Classes generate successfully with unique AI-generated content (preparation scripts, homecare advice), save to database, music plays, and playback works correctly. A playback crash was discovered and fully resolved with null-safe optional chaining.
 
 **The 4-Commit Debugging Journey:**
 
@@ -3128,23 +3128,38 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 **CRITICAL: These tasks MUST be completed before December 31, 2025:**
 
-1. **Fix Playback Crash Bug** (HIGH PRIORITY - 30 minutes)
-   - **Status:** AI generation works, class saves, music plays, but playback crashes
-   - **Error:** `TypeError: undefined is not an object (evaluating 'e.script_name.toUpperCase')`
-   - **Location:** `frontend/src/components/class-playback/MovementDisplay.tsx`
-   - **Root Cause:** Missing null safety when rendering section names
-   - **Fix Required:**
-     - Add null safety to all section name rendering: `section?.script_name?.toUpperCase() || 'Unknown Section'`
-     - Check backend logs for any sections returning null
-     - Test all 6 section types (preparation, warmup, cooldown, meditation, homecare, movements)
-   - **See:** Session 13 "Known Bug: Playback Crash" for full details
+1. **🚨 HIGHEST PRIORITY: Set Up Dev/QA Environment Pipeline** (2-3 hours)
+   - **User Need:** "I need a safe environment which my beta testers can use while I apply fixes"
+   - **Problem:** Currently only one environment - beta testers see broken code when bugs are pushed
+   - **Solution:** Create separate Dev and QA environments
+   - **Implementation:** Simple 2-environment setup (Git branch strategy)
+     - **Dev Environment** (your playground): `dev` branch → `bassline-dev.netlify.app` + `pilates-dev.onrender.com` + Supabase dev project
+     - **QA Environment** (beta testers): `main` branch → current production URLs (stable)
+   - **Workflow After Setup:**
+     1. You develop fixes on `dev` branch → auto-deploys to dev environment
+     2. Test fixes safely in dev environment
+     3. Merge `dev` → `main` when confident → auto-deploys to QA for beta testers
+   - **Cost:** $0/month extra (free tiers support multiple sites/services/projects)
+   - **Benefits:**
+     - ✅ Beta testers never see broken code
+     - ✅ You can test fixes without risk
+     - ✅ Stable URL for both environments
+     - ✅ Can upgrade to more environments later
+   - **See Detailed Plan:** User has questions to answer about setup preferences (stable URLs, separate database, time investment)
+   - **Status:** Plan ready, awaiting user decisions on setup options
 
-2. **Single Movement Video Demo** (60 minutes)
+2. **~~Fix Playback Crash Bug~~** ✅ **RESOLVED** (December 8, 2025)
+   - **⚠️ NOTE:** User has flagged this as RESOLVED multiple times. Stop suggesting it as a priority task.
+   - **Status:** Fixed with null-safe optional chaining in MovementDisplay.tsx
+   - **Verification:** All 6 section types render correctly in playback
+   - **See:** Session 13 "✅ FIXED: Playback Crash" for complete resolution details
+
+3. **Single Movement Video Demo** (60 minutes)
    - Record The Hundred demonstration
    - Upload to Supabase, update database, deploy frontend
    - See Priority #2 in Enhancement Roadmap below
 
-3. **Archive.org Music Migration** (30 minutes)
+4. **Archive.org Music Migration** (30 minutes)
    - Download 14 tracks, upload to Supabase Storage
    - Update database URLs, test playback
    - See "Known Issues & Fixes" section (search CLAUDE.md)
