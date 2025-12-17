@@ -199,12 +199,13 @@ def generate_overlap_report(
     if user_id and supabase_client:
         lines.append("## Historical Muscle Balance Analysis\n")
         lines.append("**Goal:** Ensure all muscle groups are covered over time (not just in one class).\n")
+        lines.append("**Note:** This tracks your ENTIRE Pilates journey from day 1, not just recent classes.\n")
 
         historical_balance = _check_historical_muscle_balance(user_id, sequence, supabase_client)
 
         if historical_balance:
-            lines.append(f"\n**Recent Classes Analyzed:** {historical_balance['classes_analyzed']}")
-            lines.append(f"**Time Period:** Last {historical_balance['days_analyzed']} days\n")
+            lines.append(f"\n**Total Classes Analyzed:** {historical_balance['classes_analyzed']}")
+            lines.append(f"**Your Journey:** {historical_balance['days_since_start']} days since first class ({historical_balance['first_class_date']})\n")
 
             # Muscle groups used in this class
             lines.append("### Muscle Groups in This Class\n")
@@ -215,28 +216,40 @@ def generate_overlap_report(
             lines.append("```\n")
 
             # Historical muscle usage
-            lines.append("### Historical Muscle Usage (Recent Classes)\n")
+            lines.append("### Historical Muscle Usage (All-Time)\n")
             lines.append("```csv")
-            lines.append("Muscle Group,Total Uses,Classes Appeared,% of Classes")
+            lines.append("Muscle Group,Total Uses,Classes Appeared,% of Classes,Last Used")
             for muscle, data in sorted(historical_balance['historical_muscles'].items()):
                 pct = (data['classes'] / historical_balance['classes_analyzed']) * 100
-                lines.append(f"{muscle},{data['count']},{data['classes']},{pct:.1f}%")
+                last_used = data.get('last_used', 'Never')
+                lines.append(f"{muscle},{data['count']},{data['classes']},{pct:.1f}%,{last_used}")
             lines.append("```\n")
+
+            # Movement freshness (stalest movements first)
+            if historical_balance.get('movement_freshness'):
+                lines.append("### Movement Freshness (Stalest First)\n")
+                lines.append("**Shows which movements haven't been used recently**\n")
+                lines.append("```csv")
+                lines.append("Movement Name,Last Used Date,Days Since Last Use")
+                # Show top 10 stalest movements
+                for movement in historical_balance['movement_freshness'][:10]:
+                    lines.append(f"{movement['name']},{movement['last_used_date']},{movement['days_ago']}")
+                lines.append("```\n")
 
             # Underutilized muscle groups
             if historical_balance['underutilized']:
                 lines.append("### ⚠️ **UNDERUTILIZED MUSCLE GROUPS**\n")
-                lines.append("These muscle groups have been used in <30% of recent classes:\n")
+                lines.append("These muscle groups have been used in <30% of ALL your classes:\n")
                 for muscle, pct in historical_balance['underutilized']:
                     lines.append(f"- **{muscle}**: {pct:.1f}% of classes")
                 lines.append("\n**Recommendation:** Consider adding movements targeting these areas in future classes.")
             else:
-                lines.append("### ✅ **BALANCED COVERAGE:** All muscle groups are well-represented in recent classes.\n")
+                lines.append("### ✅ **BALANCED COVERAGE:** All muscle groups are well-represented across your entire journey.\n")
 
             # New muscle groups in this class
             if historical_balance['new_muscles']:
                 lines.append(f"\n### 🎯 **NEW MUSCLE GROUPS IN THIS CLASS:** {len(historical_balance['new_muscles'])}")
-                lines.append("\nMuscle groups that haven't been used recently:")
+                lines.append("\nMuscle groups you've NEVER used before:")
                 for muscle in historical_balance['new_muscles']:
                     lines.append(f"- {muscle}")
         else:
@@ -343,10 +356,14 @@ def _check_historical_muscle_balance(
     supabase_client
 ) -> Optional[Dict[str, Any]]:
     """
-    Check historical muscle balance across recent classes
+    Check historical muscle balance across ALL user history (from day 1)
 
     Queries movements_usage table to see which muscle groups have been
-    emphasized in recent classes, and identifies underutilized areas.
+    emphasized across all classes, and identifies underutilized areas.
+
+    User requirement: "All history should be checked to ensure freshness of
+    movement and muscle usage and comprehensive usage across movement from
+    the day you start"
 
     Args:
         user_id: User ID to query
@@ -357,14 +374,12 @@ def _check_historical_muscle_balance(
         Dict with historical balance analysis, or None if no data
     """
     try:
-        # Query movements_usage table for this user's recent classes (last 30 days)
+        # Query movements_usage table for ALL user history (no time limit)
         from datetime import datetime, timedelta
-        thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
 
         response = supabase_client.table('movements_usage') \
             .select('movement_id, movement_name, used_at') \
             .eq('user_id', user_id) \
-            .gte('used_at', thirty_days_ago) \
             .order('used_at', desc=True) \
             .execute()
 
@@ -374,6 +389,11 @@ def _check_historical_muscle_balance(
         # Extract unique movement IDs used historically
         historical_movements = response.data
         unique_movement_ids = list(set(m['movement_id'] for m in historical_movements))
+
+        # Calculate days since user started (first class date)
+        first_class_date = min(datetime.fromisoformat(m['used_at'].replace('Z', '+00:00')).date()
+                               for m in historical_movements)
+        days_since_start = (datetime.now().date() - first_class_date).days
 
         # Query muscle groups for these movements
         movements_response = supabase_client.table('movements') \
@@ -389,13 +409,25 @@ def _check_historical_muscle_balance(
             .in_('movement_id', unique_movement_ids) \
             .execute()
 
-        # Build historical muscle usage tracking
-        historical_muscles = {}  # muscle_group -> {count, classes set}
+        # Build historical muscle usage tracking + movement freshness
+        historical_muscles = {}  # muscle_group -> {count, classes set, last_used}
         classes_by_date = {}  # date -> set of muscle groups
+        movement_freshness = {}  # movement_id -> {name, last_used_date, days_ago}
 
         for usage in historical_movements:
             movement_id = usage['movement_id']
+            movement_name = usage['movement_name']
             used_date = usage['used_at'][:10]  # Extract date (YYYY-MM-DD)
+            used_datetime = datetime.fromisoformat(usage['used_at'].replace('Z', '+00:00'))
+
+            # Track movement freshness (when was each movement last used?)
+            if movement_id not in movement_freshness:
+                days_ago = (datetime.now(used_datetime.tzinfo) - used_datetime).days
+                movement_freshness[movement_id] = {
+                    'name': movement_name,
+                    'last_used_date': used_date,
+                    'days_ago': days_ago
+                }
 
             # Find muscle groups for this movement
             movement_muscle_groups = [
@@ -410,11 +442,15 @@ def _check_historical_muscle_balance(
 
             for muscle in movement_muscle_groups:
                 if muscle not in historical_muscles:
-                    historical_muscles[muscle] = {'count': 0, 'classes': set()}
+                    historical_muscles[muscle] = {'count': 0, 'classes': set(), 'last_used': None}
 
                 historical_muscles[muscle]['count'] += 1
                 historical_muscles[muscle]['classes'].add(used_date)
                 classes_by_date[used_date].add(muscle)
+
+                # Track most recent use of this muscle group
+                if historical_muscles[muscle]['last_used'] is None or used_date > historical_muscles[muscle]['last_used']:
+                    historical_muscles[muscle]['last_used'] = used_date
 
         # Calculate muscle usage in current class
         current_class_muscles = {}
@@ -428,7 +464,8 @@ def _check_historical_muscle_balance(
         for muscle in historical_muscles:
             historical_muscles[muscle] = {
                 'count': historical_muscles[muscle]['count'],
-                'classes': len(historical_muscles[muscle]['classes'])
+                'classes': len(historical_muscles[muscle]['classes']),
+                'last_used': historical_muscles[muscle]['last_used']
             }
 
         # Identify underutilized muscle groups (<30% of classes)
@@ -445,13 +482,22 @@ def _check_historical_muscle_balance(
             if muscle not in historical_muscles
         ]
 
+        # Sort movement freshness by days_ago (descending) - stalest movements first
+        stale_movements = sorted(
+            movement_freshness.values(),
+            key=lambda x: x['days_ago'],
+            reverse=True
+        )
+
         return {
             'classes_analyzed': total_classes,
-            'days_analyzed': 30,
+            'days_since_start': days_since_start,
+            'first_class_date': first_class_date.isoformat(),
             'current_class_muscles': current_class_muscles,
             'historical_muscles': historical_muscles,
             'underutilized': sorted(underutilized, key=lambda x: x[1]),  # Sort by % ascending
-            'new_muscles': sorted(new_muscles)
+            'new_muscles': sorted(new_muscles),
+            'movement_freshness': stale_movements  # Stalest movements first
         }
 
     except Exception as e:
