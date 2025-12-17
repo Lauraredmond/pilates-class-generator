@@ -703,9 +703,13 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         logger.info("=" * 80)
 
         # Step 1: Generate main sequence (existing behavior)
+        # CRITICAL: Add user_id to parameters for admin check (QA reports)
+        sequence_params = request.class_plan.dict()
+        sequence_params['user_id'] = user_id
+
         sequence_result = call_agent_tool(
             tool_id="generate_sequence",
-            parameters=request.class_plan.dict(),
+            parameters=sequence_params,
             user_id=user_id,
             agent=agent
         )
