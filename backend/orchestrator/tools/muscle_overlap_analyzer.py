@@ -8,25 +8,23 @@ from datetime import datetime
 import os
 
 
-def generate_overlap_report(sequence: List[Dict[str, Any]], output_dir: str = None) -> str:
+def generate_overlap_report(sequence: List[Dict[str, Any]], output_dir: str = None) -> dict:
     """
     Generate a detailed muscle overlap analysis report
 
     Args:
         sequence: List of movement dicts with muscle_groups
-        output_dir: Directory to save report (default: analytics/)
+        output_dir: Directory to save report (optional - only saves if provided)
 
     Returns:
-        Path to generated report file
+        Dict with report content and metadata:
+        {
+            "content": "markdown report content",
+            "timestamp": "YYYYMMDD_HHMMSS",
+            "file_path": "path/to/file" (only if output_dir provided)
+        }
     """
-    if not output_dir:
-        output_dir = "/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"
-
-    # Create analytics directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_path = os.path.join(output_dir, f"muscle_overlap_report_{timestamp}.md")
 
     # Build report content
     lines = []
@@ -147,9 +145,23 @@ def generate_overlap_report(sequence: List[Dict[str, Any]], output_dir: str = No
                 else:
                     lines.append(f"- Overlap with next ({next_name}): None (0.0%)")
 
-    # Write report to file
+    # Build full report content
     report_content = '\n'.join(lines)
-    with open(report_path, 'w') as f:
-        f.write(report_content)
 
-    return report_path
+    result = {
+        "content": report_content,
+        "timestamp": timestamp,
+    }
+
+    # Optionally save to file (only if output_dir provided)
+    if output_dir:
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            report_path = os.path.join(output_dir, f"muscle_overlap_report_{timestamp}.md")
+            with open(report_path, 'w') as f:
+                f.write(report_content)
+            result["file_path"] = report_path
+        except Exception as e:
+            result["file_error"] = str(e)
+
+    return result
