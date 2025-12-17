@@ -39,8 +39,29 @@ For each consecutive pair of movements:
 ### 4. Detailed Breakdown
 Movement-by-movement analysis with overlap calculations
 
-## Quality Rule
+### 5. Movement Pattern Proximity Check (NEW)
+Detects movements with similar patterns that appear too close together:
+- The Crab + The Seal issue: Both are rolling movements with identical muscle groups
+- Checks within 3-movement proximity (not just consecutive)
+- Similarity score >70% triggers warning
+- Flags: Identical muscle groups + Same movement category
 
+**Why This Matters:**
+Even if consecutive movements pass the 50% overlap rule, having very similar movements (like The Crab at position 5 and The Seal at position 7) creates a repetitive experience.
+
+### 6. Historical Muscle Balance Analysis (NEW)
+Tracks muscle group coverage across recent classes:
+- Analyzes last 30 days of user's movements (from `movements_usage` table)
+- Shows which muscle groups are underutilized (<30% of classes)
+- Identifies new muscle groups in current class
+- Recommends targeting underutilized areas in future classes
+
+**Why This Matters:**
+Over multiple classes, we should ensure balanced coverage of all muscle groups, not just within a single class.
+
+## Quality Rules
+
+### Rule 1: Consecutive Muscle Overlap
 **Critical Pilates Teaching Rule:**
 Consecutive movements must NOT share more than 50% of their muscle groups.
 
@@ -48,6 +69,27 @@ This ensures:
 - Proper muscle variety and balance
 - Adequate recovery between similar movements
 - Safe, effective class progression
+
+### Rule 2: Movement Pattern Proximity (NEW)
+Movements with >70% muscle similarity should NOT appear within 3 positions of each other.
+
+**Example Violation:**
+- Position 5: The Crab (4 muscles: Spinal stability, Core strength, Sequential control, Balance)
+- Position 7: The Seal (4 muscles: Spinal stability, Core strength, Sequential control, Balance)
+- **Result:** 100% similar, only 2 movements apart → ⚠️ PROXIMITY WARNING
+
+This ensures:
+- Variety in movement patterns (not just muscle groups)
+- Avoids repetitive experience
+- Better engagement and progression
+
+### Rule 3: Historical Muscle Balance (NEW)
+All muscle groups should appear in at least 30% of user's recent classes (last 30 days).
+
+This ensures:
+- Balanced development across all muscle groups
+- No neglected areas over time
+- Comprehensive fitness progression
 
 ## Usage
 

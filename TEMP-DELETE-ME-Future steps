@@ -3,13 +3,7 @@
 - CLASS DURATION
 Not being calced off Supabase values. See if you can reduce length of some "other" sections
 
-- MUSIC CONtinues?
-Check next song plays after first ends
 
-Add to Baroque:
-https://archive.org/download/QuintetInEMajorG.275Minuet/Quintet%20in%20E%20major%2C%20G.275%20-%20Minuet.mp3
-
-Re-record prep phase at slower speed
 
 11. Security testing
 - ChatGPT run book
@@ -19,6 +13,7 @@ Review movements table for accuracy of data - e.g. are beginner, intermed, advan
 
 
 Data Privacy/ Compliance stuff
+- Ensure all health acknowledgements are saved and user can see record of their own answers
 
 Analytics page:
 - Review charts, clear data and check all are correct. I can see that difficulty progression is not correct.
@@ -66,6 +61,14 @@ Analytics page:
 
 
 ****DONE****
+
+- MUSIC CONtinues?
+Check next song plays after first ends
+
+Add to Baroque:
+https://archive.org/download/QuintetInEMajorG.275Minuet/Quintet%20in%20E%20major%2C%20G.275%20-%20Minuet.mp3
+
+Re-record prep phase at slower speed
 
 12. Privacy policy
 #Can you commit that plan to claude.md so that it is acknowledge to be done before 2025 is complete? Please ensure that you bring this up in our all of our next sessions for this project so that we are sure to complete it.
