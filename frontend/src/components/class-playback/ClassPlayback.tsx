@@ -361,42 +361,34 @@ export function ClassPlayback({
         // musicStyle could be: "Baroque", "Classical", "Romantic", "Impressionist", etc.
         const stylisticPeriod = musicStyle.toUpperCase().replace(/\s+/g, '_');
 
-        // Get playlists for this stylistic period
-        const response = await axios.get(`${API_BASE_URL}/api/music/playlists`, {
+        // SIMPLIFIED: Query tracks directly from music_tracks table (no playlists)
+        const response = await axios.get(`${API_BASE_URL}/api/music/tracks`, {
           params: {
             stylistic_period: stylisticPeriod,
-            is_featured: true
+            limit: 100  // Get all tracks for this period
           }
         });
 
         if (response.data && response.data.length > 0) {
-          // Get the first featured playlist
-          const playlistSummary = response.data[0];
+          // Format as a simple playlist object
+          const tracks = response.data;
+          const totalDuration = tracks.reduce((sum: number, t: MusicTrack) => sum + t.duration_seconds, 0);
 
-          // Fetch full playlist with tracks
-          const fullPlaylistResponse = await axios.get(
-            `${API_BASE_URL}/api/music/playlists/${playlistSummary.id}`
-          );
-
-          return fullPlaylistResponse.data;
-        } else {
-          // Fallback: get any featured playlist
-          const fallbackResponse = await axios.get(`${API_BASE_URL}/api/music/playlists`, {
-            params: { is_featured: true, limit: 1 }
-          });
-
-          if (fallbackResponse.data && fallbackResponse.data.length > 0) {
-            const playlistSummary = fallbackResponse.data[0];
-            const fullPlaylistResponse = await axios.get(
-              `${API_BASE_URL}/api/music/playlists/${playlistSummary.id}`
-            );
-            return fullPlaylistResponse.data;
-          }
+          return {
+            id: `${stylisticPeriod}_AUTO`, // Auto-generated ID
+            name: `${musicStyle} Music`,
+            description: `All ${musicStyle} tracks`,
+            stylistic_period: stylisticPeriod,
+            intended_intensity: 'MEDIUM',
+            intended_use: 'PILATES',
+            duration_minutes_target: Math.round(totalDuration / 60),
+            tracks: tracks,
+          };
         }
 
         return null;
       } catch (error: any) {
-        logger.error(`Error fetching music playlist for ${musicStyle}:`, error);
+        logger.error(`Error fetching music tracks for ${musicStyle}:`, error);
         return null;
       }
     };
