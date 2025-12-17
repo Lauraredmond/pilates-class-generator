@@ -564,16 +564,12 @@ class SequenceTools:
                     available = filtered_available
                     logger.info(f"Cooldown: Filtered to {len(available)} movements with <50% consecutive muscle overlap")
 
-        # Prefer gentle stretching/breathing movements for cooldown (removed "seal" - it's an active rolling movement)
-        cooldown_keywords = ["breathing", "stretch", "rest"]
-        cooldown_movements = [
-            m for m in available
-            if any(kw in m["name"].lower() for kw in cooldown_keywords)
-        ]
-
-        # Return first cooldown match, or last available movement if no match
-        selected = cooldown_movements[0] if cooldown_movements else available[-1]
-        logger.info(f"Selected cooldown: '{selected['name']}'")
+        # No keyword matching - muscle_groups are the ONLY sequencing criteria
+        # Just pick any available movement that passes the overlap filter
+        # (User requirement: "You should only use muscle_groups for considering sequence appropriateness, nothing else")
+        selected = available[0] if available else None
+        if selected:
+            logger.info(f"Selected cooldown: '{selected['name']}'")
         return selected
 
     # ==========================================================================
