@@ -51,11 +51,31 @@ This ensures:
 
 ## Usage
 
-1. **Generate a class** - Report automatically created
-2. **Check analytics/ folder** - Find latest report
-3. **Review Summary Statistics** - Quick pass/fail check
-4. **Investigate Failures** - If any pairs exceed 50%
-5. **Copy CSV data** - Paste into Excel/Sheets for custom analysis
+### How to Access Reports
+
+**Reports are now returned in the API response** (not saved to server filesystem):
+
+1. **Generate a class** - Report automatically generated
+2. **Check API response** - Report included in `qa_report` field
+3. **Download from frontend** - (Coming soon: Download button in UI)
+4. **Or save manually** - Copy report content from browser Network tab
+
+**To save reports locally** (for testing):
+```javascript
+// In browser console after generating class:
+const report = response.data.qa_report;
+const blob = new Blob([report.content], { type: 'text/markdown' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `muscle_overlap_report_${report.timestamp}.md`;
+a.click();
+```
+
+**Review Process:**
+1. **Review Summary Statistics** - Quick pass/fail check
+2. **Investigate Failures** - If any pairs exceed 50%
+3. **Copy CSV data** - Paste into Excel/Sheets for custom analysis
 
 ## Excel Formula Example
 
@@ -69,16 +89,26 @@ Where column C contains semicolon-separated muscle groups.
 
 ## Troubleshooting
 
-**No reports appearing:**
-- Check backend logs for "📊 Muscle overlap QA report generated"
-- Verify analytics/ directory exists
-- Check file permissions
+**How to view report content:**
+1. Generate a class in the app
+2. Open browser DevTools (F12)
+3. Go to Network tab
+4. Find `/api/agents/generate-sequence` or `/api/agents/generate-complete-class` request
+5. Click on the request → Response tab
+6. Look for `qa_report` field → `content` contains full markdown report
+7. Copy content to text editor and save as .md file
+
+**Alternative: Check backend logs**
+- Look for "📊 Muscle overlap QA report generated: [timestamp]"
+- Confirms report was generated successfully
 
 **Missing muscle group data:**
 - Movements should have muscle_groups attached
 - Check movement_muscles junction table in Supabase
 - Verify muscle groups were fetched during sequence generation
+- Backend logs should show: "✅ Attached muscle groups to N movements"
 
 **All overlaps show 0%:**
 - Indicates muscle_groups field is empty
-- Run: Check backend logs for "✅ Attached muscle groups to N movements"
+- Check backend logs for muscle group attachment
+- Verify movement_muscles table has data for movements in sequence
