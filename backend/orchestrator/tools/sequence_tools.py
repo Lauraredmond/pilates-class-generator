@@ -144,15 +144,18 @@ class SequenceTools:
         # Calculate sequence duration (movements + transitions only, NOT including 6 class sections)
         sequence_duration_seconds = sum(item.get("duration_seconds") or 60 for item in sequence_with_transitions)
 
-        # QA: Generate muscle overlap analysis report (movements only, not transitions)
+        # QA: Generate muscle overlap analysis report (admin-only feature)
         qa_report = None
-        try:
-            # Generate report (content returned directly, no file save)
-            report_data = generate_overlap_report(sequence)
-            logger.info(f"📊 Muscle overlap QA report generated: {report_data.get('timestamp')}")
-            qa_report = report_data  # Include in API response
-        except Exception as e:
-            logger.warning(f"Failed to generate muscle overlap report: {e}")
+        if user_id and self._check_if_admin(user_id):
+            try:
+                # Generate report (content returned directly, no file save)
+                report_data = generate_overlap_report(sequence)
+                logger.info(f"📊 Muscle overlap QA report generated for admin user: {report_data.get('timestamp')}")
+                qa_report = report_data  # Include in API response
+            except Exception as e:
+                logger.warning(f"Failed to generate muscle overlap report: {e}")
+        else:
+            logger.info("ℹ️  QA report skipped (admin-only feature)")
 
         return {
             "sequence": sequence_with_transitions,
@@ -751,6 +754,38 @@ class SequenceTools:
         except Exception as e:
             logger.warning(f"Error getting movement usage weights: {e}")
             return {m['id']: 1.0 for m in movements}
+
+    def _check_if_admin(self, user_id: str) -> bool:
+        """
+        Check if user is an admin
+
+        Used to gate QA/diagnostic features like muscle overlap reports.
+        Only admins need detailed analytics - regular users just use the classes.
+
+        Returns:
+            True if admin, False otherwise
+        """
+        if not self.supabase:
+            return False
+
+        try:
+            # Check user_profiles table for is_admin flag
+            response = self.supabase.table('user_profiles') \
+                .select('is_admin') \
+                .eq('user_id', user_id) \
+                .single() \
+                .execute()
+
+            if response.data:
+                is_admin = response.data.get('is_admin', False)
+                logger.info(f"User {user_id[:8]}... is_admin: {is_admin}")
+                return is_admin
+
+            return False
+
+        except Exception as e:
+            logger.warning(f"Error checking admin status: {e}")
+            return False  # Default to not admin if check fails
 
     def _check_if_beginner(self, user_id: str) -> bool:
         """
