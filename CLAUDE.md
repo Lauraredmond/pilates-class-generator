@@ -3148,18 +3148,84 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
    - **See Detailed Plan:** User has questions to answer about setup preferences (stable URLs, separate database, time investment)
    - **Status:** Plan ready, awaiting user decisions on setup options
 
-2. **~~Fix Playback Crash Bug~~** ✅ **RESOLVED** (December 8, 2025)
+2. **🤖 Test Automation Implementation Plan** (4-6 hours setup, ongoing benefits)
+   - **User Need:** "Can you always check render logs and Supabase content before asking me to do so?"
+   - **Goal:** Reduce manual QA time by 50-70% through proactive automated testing
+   - **Implementation:** Multi-phase automation strategy
+
+   **Phase 1: Proactive Remote Diagnostics (Immediate - This Session)**
+   - ✅ Claude proactively requests Render logs before asking for manual tests
+   - ✅ Claude provides specific SQL queries for Supabase data verification
+   - ✅ Claude provides curl commands for API endpoint testing
+   - ✅ User shares results, Claude analyzes and suggests fixes
+   - **Expected Impact:** 50% reduction in manual QA requests
+
+   **Phase 2: MCP + Multi-Model Testing (After Dev-QA Pipeline)**
+   - **MCP Playwright Integration:**
+     - Automated E2E browser testing (navigation, form filling, assertions)
+     - Screenshot capture on failures
+     - Parallel test execution across browsers
+   - **Multi-Model Test Ensemble:**
+     - **Claude:** Logic and data integrity testing
+     - **ChatGPT:** Accessibility testing (screen reader simulation)
+     - **Gemini:** Mobile responsiveness (Android perspective)
+   - **Architecture:**
+     ```
+     Dev Environment → MCP Playwright → Automated Tests
+                    ↓
+     Test Results → Aggregated Report → Claude Reviews
+                    ↓
+     Claude Suggests Fixes → Commits to Dev Branch
+                    ↓
+     Merge to Main (QA) → Human Beta Testers (Final Validation)
+     ```
+   - **Test Coverage:**
+     - AI class generation end-to-end flow
+     - Music playback and track advancement
+     - Voiceover playback on all transitions
+     - Mobile screen wake lock functionality
+     - Sequence validation and muscle balance
+     - Authentication and authorization flows
+
+   **Phase 3: CI/CD Integration (Post-MVP)**
+   - Automated regression test suite
+   - Pre-commit hooks for code quality
+   - Automated performance testing
+   - AI-powered bug triage system
+
+   **Tools to Implement:**
+   - MCP Playwright Server (automated E2E testing)
+   - MCP Fetch (API endpoint testing)
+   - Custom MCP Server (Supabase query automation)
+   - Monitoring dashboard (Sentry or LogRocket)
+
+   **Expected Benefits:**
+   - ✅ Catch bugs before human testing
+   - ✅ 50-70% reduction in manual QA time
+   - ✅ Faster iteration cycles (test in minutes, not hours)
+   - ✅ Diverse testing perspectives (3 AI models + human)
+   - ✅ Automated regression testing prevents old bugs from returning
+   - ✅ Continuous monitoring of production issues
+
+   **Success Metrics:**
+   - Phase 1: <5 manual test requests per bug fix (down from 10+)
+   - Phase 2: 80%+ of bugs caught by automated tests before human QA
+   - Phase 3: <1% production bugs escape to users
+
+   **Status:** Phase 1 protocol active immediately, Phase 2 planned post-dev-QA pipeline
+
+3. **~~Fix Playback Crash Bug~~** ✅ **RESOLVED** (December 8, 2025)
    - **⚠️ NOTE:** User has flagged this as RESOLVED multiple times. Stop suggesting it as a priority task.
    - **Status:** Fixed with null-safe optional chaining in MovementDisplay.tsx
    - **Verification:** All 6 section types render correctly in playback
    - **See:** Session 13 "✅ FIXED: Playback Crash" for complete resolution details
 
-3. **Single Movement Video Demo** (60 minutes)
+4. **Single Movement Video Demo** (60 minutes)
    - Record The Hundred demonstration
    - Upload to Supabase, update database, deploy frontend
    - See Priority #2 in Enhancement Roadmap below
 
-4. **Archive.org Music Migration** (30 minutes)
+5. **Archive.org Music Migration** (30 minutes)
    - Download 14 tracks, upload to Supabase Storage
    - Update database URLs, test playback
    - See "Known Issues & Fixes" section (search CLAUDE.md)
