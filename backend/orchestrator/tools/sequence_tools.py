@@ -148,9 +148,15 @@ class SequenceTools:
         qa_report = None
         if user_id and self._check_if_admin(user_id):
             try:
-                # Generate report (content returned directly, no file save)
-                report_data = generate_overlap_report(sequence)
-                logger.info(f"📊 Muscle overlap QA report generated for admin user: {report_data.get('timestamp')}")
+                # Generate report with enhanced checks:
+                # - Movement pattern proximity (Crab + Seal issue)
+                # - Historical muscle balance (underutilized muscle groups)
+                report_data = generate_overlap_report(
+                    sequence=sequence,
+                    user_id=user_id,
+                    supabase_client=self.supabase
+                )
+                logger.info(f"📊 Enhanced QA report generated for admin user: {report_data.get('timestamp')}")
                 qa_report = report_data  # Include in API response
             except Exception as e:
                 logger.warning(f"Failed to generate muscle overlap report: {e}")

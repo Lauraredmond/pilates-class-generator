@@ -1,20 +1,34 @@
 """
 Muscle Overlap Analyzer
 Generates QA reports for consecutive muscle overlap validation
+
+Enhanced with:
+- Movement pattern proximity detection (similar movements too close together)
+- Historical muscle balance tracking (underutilized muscle groups)
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-def generate_overlap_report(sequence: List[Dict[str, Any]], output_dir: str = None) -> dict:
+def generate_overlap_report(
+    sequence: List[Dict[str, Any]],
+    output_dir: str = None,
+    user_id: Optional[str] = None,
+    supabase_client = None
+) -> dict:
     """
     Generate a detailed muscle overlap analysis report
 
     Args:
         sequence: List of movement dicts with muscle_groups
         output_dir: Directory to save report (optional - only saves if provided)
+        user_id: User ID for historical analysis (optional)
+        supabase_client: Supabase client for historical queries (optional)
 
     Returns:
         Dict with report content and metadata:
@@ -145,6 +159,94 @@ def generate_overlap_report(sequence: List[Dict[str, Any]], output_dir: str = No
                 else:
                     lines.append(f"- Overlap with next ({next_name}): None (0.0%)")
 
+    lines.append("\n---\n")
+
+    # Section 5: Movement Pattern Proximity Check (NEW - addresses Crab/Seal issue)
+    lines.append("## Movement Pattern Proximity Check\n")
+    lines.append("**Rule:** Similar movement patterns should not appear within 3 positions of each other.\n")
+
+    proximity_warnings = _detect_pattern_proximity(sequence, proximity_range=3)
+
+    if proximity_warnings:
+        lines.append(f"### ⚠️ **PROXIMITY WARNINGS:** {len(proximity_warnings)} similar movement pair(s) detected\n")
+        lines.append("```csv")
+        lines.append("Movement A,Position A,Movement B,Position B,Distance,Similarity Score,Warning")
+
+        for warning in proximity_warnings:
+            lines.append(
+                f"{warning['movement_a']},{warning['pos_a']},"
+                f"{warning['movement_b']},{warning['pos_b']},"
+                f"{warning['distance']},{warning['similarity_score']:.1f}%,"
+                f"{warning['warning_msg']}"
+            )
+
+        lines.append("```\n")
+
+        lines.append("**Details:**")
+        for warning in proximity_warnings:
+            lines.append(
+                f"- **{warning['movement_a']}** (pos {warning['pos_a']}) → "
+                f"**{warning['movement_b']}** (pos {warning['pos_b']}): "
+                f"{warning['similarity_score']:.1f}% similar, {warning['distance']} movements apart"
+            )
+            lines.append(f"  - Reason: {warning['reason']}")
+    else:
+        lines.append("### ✅ **NO PROXIMITY ISSUES:** All movement patterns are well-spaced\n")
+
+    lines.append("\n---\n")
+
+    # Section 6: Historical Muscle Balance Check (NEW - track muscle coverage over time)
+    if user_id and supabase_client:
+        lines.append("## Historical Muscle Balance Analysis\n")
+        lines.append("**Goal:** Ensure all muscle groups are covered over time (not just in one class).\n")
+
+        historical_balance = _check_historical_muscle_balance(user_id, sequence, supabase_client)
+
+        if historical_balance:
+            lines.append(f"\n**Recent Classes Analyzed:** {historical_balance['classes_analyzed']}")
+            lines.append(f"**Time Period:** Last {historical_balance['days_analyzed']} days\n")
+
+            # Muscle groups used in this class
+            lines.append("### Muscle Groups in This Class\n")
+            lines.append("```csv")
+            lines.append("Muscle Group,Times Used")
+            for muscle, count in sorted(historical_balance['current_class_muscles'].items()):
+                lines.append(f"{muscle},{count}")
+            lines.append("```\n")
+
+            # Historical muscle usage
+            lines.append("### Historical Muscle Usage (Recent Classes)\n")
+            lines.append("```csv")
+            lines.append("Muscle Group,Total Uses,Classes Appeared,% of Classes")
+            for muscle, data in sorted(historical_balance['historical_muscles'].items()):
+                pct = (data['classes'] / historical_balance['classes_analyzed']) * 100
+                lines.append(f"{muscle},{data['count']},{data['classes']},{pct:.1f}%")
+            lines.append("```\n")
+
+            # Underutilized muscle groups
+            if historical_balance['underutilized']:
+                lines.append("### ⚠️ **UNDERUTILIZED MUSCLE GROUPS**\n")
+                lines.append("These muscle groups have been used in <30% of recent classes:\n")
+                for muscle, pct in historical_balance['underutilized']:
+                    lines.append(f"- **{muscle}**: {pct:.1f}% of classes")
+                lines.append("\n**Recommendation:** Consider adding movements targeting these areas in future classes.")
+            else:
+                lines.append("### ✅ **BALANCED COVERAGE:** All muscle groups are well-represented in recent classes.\n")
+
+            # New muscle groups in this class
+            if historical_balance['new_muscles']:
+                lines.append(f"\n### 🎯 **NEW MUSCLE GROUPS IN THIS CLASS:** {len(historical_balance['new_muscles'])}")
+                lines.append("\nMuscle groups that haven't been used recently:")
+                for muscle in historical_balance['new_muscles']:
+                    lines.append(f"- {muscle}")
+        else:
+            lines.append("⚠️ No historical data available (this may be the first class)")
+    else:
+        lines.append("## Historical Muscle Balance Analysis\n")
+        lines.append("⚠️ **Skipped:** Historical analysis requires user_id and database connection")
+
+    lines.append("\n---\n")
+
     # Build full report content
     report_content = '\n'.join(lines)
 
@@ -165,3 +267,193 @@ def generate_overlap_report(sequence: List[Dict[str, Any]], output_dir: str = No
             result["file_error"] = str(e)
 
     return result
+
+
+def _detect_pattern_proximity(sequence: List[Dict[str, Any]], proximity_range: int = 3) -> List[Dict[str, Any]]:
+    """
+    Detect similar movements that appear too close together
+
+    This addresses the "Crab + Seal" issue: movements with identical or very similar
+    muscle groups should not appear within N positions of each other.
+
+    Args:
+        sequence: List of movement dicts
+        proximity_range: How many positions to check (default 3)
+
+    Returns:
+        List of warning dicts with similarity details
+    """
+    warnings = []
+
+    for i in range(len(sequence)):
+        current = sequence[i]
+        current_name = current.get('name', 'Unknown')
+        current_muscles = set(mg.get('name', '') for mg in current.get('muscle_groups', []))
+
+        # Check movements within proximity_range
+        for j in range(i + 1, min(i + proximity_range + 1, len(sequence))):
+            other = sequence[j]
+            other_name = other.get('name', 'Unknown')
+            other_muscles = set(mg.get('name', '') for mg in other.get('muscle_groups', []))
+
+            if not current_muscles or not other_muscles:
+                continue
+
+            # Calculate similarity score (how many muscles overlap as % of total unique muscles)
+            all_muscles = current_muscles | other_muscles
+            shared_muscles = current_muscles & other_muscles
+            similarity_score = (len(shared_muscles) / len(all_muscles)) * 100 if all_muscles else 0
+
+            # Flag if >70% similar (very high overlap across all muscles, not just consecutive)
+            if similarity_score >= 70:
+                distance = j - i
+                reason_parts = []
+
+                # Check if ALL muscles are identical (100% similarity)
+                if similarity_score == 100:
+                    reason_parts.append("Identical muscle groups")
+                else:
+                    reason_parts.append(f"Share {len(shared_muscles)}/{len(all_muscles)} muscle groups")
+
+                # Check if same movement family (both rolling, both stretches, etc.)
+                # Note: This would require movement_family field in database (future enhancement)
+                current_category = current.get('category', '').lower()
+                other_category = other.get('category', '').lower()
+                if current_category and current_category == other_category:
+                    reason_parts.append(f"Same category ({current_category})")
+
+                warnings.append({
+                    'movement_a': current_name,
+                    'pos_a': i + 1,
+                    'movement_b': other_name,
+                    'pos_b': j + 1,
+                    'distance': distance,
+                    'similarity_score': similarity_score,
+                    'shared_muscles': shared_muscles,
+                    'warning_msg': f"⚠️ {similarity_score:.0f}% similar",
+                    'reason': '; '.join(reason_parts)
+                })
+
+    return warnings
+
+
+def _check_historical_muscle_balance(
+    user_id: str,
+    current_sequence: List[Dict[str, Any]],
+    supabase_client
+) -> Optional[Dict[str, Any]]:
+    """
+    Check historical muscle balance across recent classes
+
+    Queries movements_usage table to see which muscle groups have been
+    emphasized in recent classes, and identifies underutilized areas.
+
+    Args:
+        user_id: User ID to query
+        current_sequence: Current class movements
+        supabase_client: Supabase client for database queries
+
+    Returns:
+        Dict with historical balance analysis, or None if no data
+    """
+    try:
+        # Query movements_usage table for this user's recent classes (last 30 days)
+        from datetime import datetime, timedelta
+        thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
+
+        response = supabase_client.table('movements_usage') \
+            .select('movement_id, movement_name, used_at') \
+            .eq('user_id', user_id) \
+            .gte('used_at', thirty_days_ago) \
+            .order('used_at', desc=True) \
+            .execute()
+
+        if not response.data:
+            return None
+
+        # Extract unique movement IDs used historically
+        historical_movements = response.data
+        unique_movement_ids = list(set(m['movement_id'] for m in historical_movements))
+
+        # Query muscle groups for these movements
+        movements_response = supabase_client.table('movements') \
+            .select('id, name') \
+            .in_('id', unique_movement_ids) \
+            .execute()
+
+        movement_id_to_name = {m['id']: m['name'] for m in movements_response.data}
+
+        # Query movement_muscles to get muscle groups for historical movements
+        muscles_response = supabase_client.table('movement_muscles') \
+            .select('movement_id, muscle_group_name') \
+            .in_('movement_id', unique_movement_ids) \
+            .execute()
+
+        # Build historical muscle usage tracking
+        historical_muscles = {}  # muscle_group -> {count, classes set}
+        classes_by_date = {}  # date -> set of muscle groups
+
+        for usage in historical_movements:
+            movement_id = usage['movement_id']
+            used_date = usage['used_at'][:10]  # Extract date (YYYY-MM-DD)
+
+            # Find muscle groups for this movement
+            movement_muscle_groups = [
+                m['muscle_group_name']
+                for m in muscles_response.data
+                if m['movement_id'] == movement_id
+            ]
+
+            # Track muscle usage
+            if used_date not in classes_by_date:
+                classes_by_date[used_date] = set()
+
+            for muscle in movement_muscle_groups:
+                if muscle not in historical_muscles:
+                    historical_muscles[muscle] = {'count': 0, 'classes': set()}
+
+                historical_muscles[muscle]['count'] += 1
+                historical_muscles[muscle]['classes'].add(used_date)
+                classes_by_date[used_date].add(muscle)
+
+        # Calculate muscle usage in current class
+        current_class_muscles = {}
+        for movement in current_sequence:
+            for mg in movement.get('muscle_groups', []):
+                muscle_name = mg.get('name', '')
+                if muscle_name:
+                    current_class_muscles[muscle_name] = current_class_muscles.get(muscle_name, 0) + 1
+
+        # Convert historical_muscles['classes'] from set to count
+        for muscle in historical_muscles:
+            historical_muscles[muscle] = {
+                'count': historical_muscles[muscle]['count'],
+                'classes': len(historical_muscles[muscle]['classes'])
+            }
+
+        # Identify underutilized muscle groups (<30% of classes)
+        total_classes = len(classes_by_date)
+        underutilized = []
+        for muscle, data in historical_muscles.items():
+            pct = (data['classes'] / total_classes) * 100 if total_classes > 0 else 0
+            if pct < 30:
+                underutilized.append((muscle, pct))
+
+        # Identify new muscle groups in this class (not in recent history)
+        new_muscles = [
+            muscle for muscle in current_class_muscles.keys()
+            if muscle not in historical_muscles
+        ]
+
+        return {
+            'classes_analyzed': total_classes,
+            'days_analyzed': 30,
+            'current_class_muscles': current_class_muscles,
+            'historical_muscles': historical_muscles,
+            'underutilized': sorted(underutilized, key=lambda x: x[1]),  # Sort by % ascending
+            'new_muscles': sorted(new_muscles)
+        }
+
+    except Exception as e:
+        logger.warning(f"Historical balance check failed: {e}")
+        return None
