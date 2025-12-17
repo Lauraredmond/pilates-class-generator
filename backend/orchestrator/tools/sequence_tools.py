@@ -770,17 +770,19 @@ class SequenceTools:
 
         try:
             # Check user_profiles table for is_admin flag
+            # NOTE: Query by 'id' column (matches auth.uid()), not 'user_id'
             response = self.supabase.table('user_profiles') \
                 .select('is_admin') \
-                .eq('user_id', user_id) \
+                .eq('id', user_id) \
                 .single() \
                 .execute()
 
             if response.data:
                 is_admin = response.data.get('is_admin', False)
-                logger.info(f"User {user_id[:8]}... is_admin: {is_admin}")
+                logger.info(f"✅ User {user_id[:8]}... is_admin: {is_admin}")
                 return is_admin
 
+            logger.warning(f"❌ No user_profile found for user {user_id[:8]}...")
             return False
 
         except Exception as e:
