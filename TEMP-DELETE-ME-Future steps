@@ -1,7 +1,5 @@
 #Yes, Git Production: main@3c0b4f1 is finally working for AI-powered mode. Can we make a note of this in Git comments, claude.md, as a milestone Git repo version? Further, can we add each of the below into future plans, they are ordered by priority
 
-- CLASS DURATION
-Not being calced off Supabase values. See if you can reduce length of some "other" sections
 
 
 
@@ -58,9 +56,15 @@ Analytics page:
 - Group movements by Movement Family Distribution : movement_family: 'rolling' | 'side_lying' | 'supine_abdominal' | 'back_extension' | 'hip_extensor' | 'inversion' | 'other'
 - Group movements by Breath Pattern Consistency (implied from the movements chosen)
 
+/api/agents/generate-complete-class.... QA report for muscle usage rule testing
+
 
 
 ****DONE****
+
+- CLASS DURATION
+Not being calced off Supabase values. See if you can reduce length of some "other" sections
+
 
 - MUSIC CONtinues?
 Check next song plays after first ends
