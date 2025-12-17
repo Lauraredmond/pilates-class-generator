@@ -24,6 +24,7 @@ import random
 from typing import Dict, Any, List, Optional
 from loguru import logger
 from datetime import date, datetime
+from .muscle_overlap_analyzer import generate_overlap_report
 
 
 class SequenceTools:
@@ -142,6 +143,13 @@ class SequenceTools:
 
         # Calculate sequence duration (movements + transitions only, NOT including 6 class sections)
         sequence_duration_seconds = sum(item.get("duration_seconds") or 60 for item in sequence_with_transitions)
+
+        # QA: Generate muscle overlap analysis report (movements only, not transitions)
+        try:
+            report_path = generate_overlap_report(sequence)
+            logger.info(f"📊 Muscle overlap QA report generated: {report_path}")
+        except Exception as e:
+            logger.warning(f"Failed to generate muscle overlap report: {e}")
 
         return {
             "sequence": sequence_with_transitions,
