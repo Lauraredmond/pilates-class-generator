@@ -13,12 +13,6 @@ Review movements table for accuracy of data - e.g. are beginner, intermed, advan
 Data Privacy/ Compliance stuff
 - Ensure all health acknowledgements are saved and user can see record of their own answers
 
-Analytics page:
-- Review charts, clear data and check all are correct. I can see that difficulty progression is not correct.
-
-
-
-
 
 
 
@@ -38,13 +32,8 @@ Analytics page:
 
 
 #Further, please log the below if beta testers report same issue of "Failed to load background music" when they run class play
-
 #ARCHIVE.ORG Quota limit. Potential fix:
-
  # Permanent Fix: Self-Host on Supabase Storage
-
-  #Would take ~30 minutes to implement:
-
   #1. Download 14 tracks from Internet Archive (one-time, legal - they're public domain)
   #2. Upload to Supabase Storage (~40 MB total for 14 tracks)
   #3. Update database with new Supabase URLs
@@ -57,10 +46,20 @@ Analytics page:
 - Group movements by Breath Pattern Consistency (implied from the movements chosen)
 
 /api/agents/generate-complete-class.... QA report for muscle usage rule testing
+Option 1: You Generate, I'll Save (Easiest)
+  1. Generate a class in your browser (you know how to do this)
+  2. Open DevTools (F12) → Network tab
+  3. Find the request to /api/agents/generate-complete-class
+  4. Take a screenshot showing the Response tab (with the JSON visible)
+  5. Save screenshot to Desktop with any name
+  6. Tell me the filename - I'll extract the qa_report and save it to analytics folder 
 
 
 
 ****DONE****
+
+Analytics page:
+- Review charts, clear data and check all are correct. I can see that difficulty progression is not correct.
 
 - CLASS DURATION
 Not being calced off Supabase values. See if you can reduce length of some "other" sections

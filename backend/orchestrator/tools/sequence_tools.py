@@ -524,7 +524,12 @@ class SequenceTools:
         return random.choice(available) if available else None
 
     def _get_cooldown_movement(self, movements: List[Dict[str, Any]], current_sequence: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-        """Get appropriate cooldown movement"""
+        """
+        Get appropriate cooldown movement with consecutive overlap check
+
+        CRITICAL FIX: Apply same <50% overlap filter as regular movement selection
+        to prevent Crab + Seal regression (both share 100% muscle groups)
+        """
         if not movements:
             return None
 
@@ -536,12 +541,40 @@ class SequenceTools:
         if not available:
             return None
 
-        cooldown_keywords = ["seal", "breathing", "stretch"]
+        # CRITICAL FIX: Apply consecutive overlap filter (same as _select_next_movement)
+        if current_sequence:
+            prev_movement = current_sequence[-1]
+            prev_muscles = set(mg.get('name', '') for mg in prev_movement.get('muscle_groups', []))
+
+            if prev_muscles:
+                filtered_available = []
+                for candidate in available:
+                    candidate_muscles = set(mg.get('name', '') for mg in candidate.get('muscle_groups', []))
+
+                    if candidate_muscles:
+                        overlap = prev_muscles & candidate_muscles
+                        overlap_pct = (len(overlap) / len(candidate_muscles)) * 100 if candidate_muscles else 0
+
+                        # Only keep candidates with <50% overlap
+                        if overlap_pct < 50:
+                            filtered_available.append(candidate)
+
+                # If we filtered out everything, fall back to original available list
+                if filtered_available:
+                    available = filtered_available
+                    logger.info(f"Cooldown: Filtered to {len(available)} movements with <50% consecutive muscle overlap")
+
+        # Prefer gentle stretching/breathing movements for cooldown (removed "seal" - it's an active rolling movement)
+        cooldown_keywords = ["breathing", "stretch", "rest"]
         cooldown_movements = [
             m for m in available
             if any(kw in m["name"].lower() for kw in cooldown_keywords)
         ]
-        return cooldown_movements[0] if cooldown_movements else available[-1]
+
+        # Return first cooldown match, or last available movement if no match
+        selected = cooldown_movements[0] if cooldown_movements else available[-1]
+        logger.info(f"Selected cooldown: '{selected['name']}'")
+        return selected
 
     # ==========================================================================
     # TRANSITIONS
