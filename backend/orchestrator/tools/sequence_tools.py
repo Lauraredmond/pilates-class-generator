@@ -145,9 +145,12 @@ class SequenceTools:
         sequence_duration_seconds = sum(item.get("duration_seconds") or 60 for item in sequence_with_transitions)
 
         # QA: Generate muscle overlap analysis report (movements only, not transitions)
+        qa_report = None
         try:
-            report_path = generate_overlap_report(sequence)
-            logger.info(f"📊 Muscle overlap QA report generated: {report_path}")
+            # Generate report (content returned directly, no file save)
+            report_data = generate_overlap_report(sequence)
+            logger.info(f"📊 Muscle overlap QA report generated: {report_data.get('timestamp')}")
+            qa_report = report_data  # Include in API response
         except Exception as e:
             logger.warning(f"Failed to generate muscle overlap report: {e}")
 
@@ -159,7 +162,8 @@ class SequenceTools:
             "total_duration_minutes": target_duration_minutes,  # FULL class duration (includes all 6 sections)
             "sequence_duration_minutes": sequence_duration_seconds // 60,  # Just movements + transitions
             "muscle_balance": muscle_balance,
-            "validation": validation
+            "validation": validation,
+            "qa_report": qa_report  # Include QA analytics report in response
         }
 
     # ==========================================================================
