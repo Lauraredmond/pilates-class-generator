@@ -50,14 +50,15 @@ Detects movements with similar patterns that appear too close together:
 Even if consecutive movements pass the 50% overlap rule, having very similar movements (like The Crab at position 5 and The Seal at position 7) creates a repetitive experience.
 
 ### 6. Historical Muscle Balance Analysis (NEW)
-Tracks muscle group coverage across recent classes:
-- Analyzes last 30 days of user's movements (from `movements_usage` table)
-- Shows which muscle groups are underutilized (<30% of classes)
-- Identifies new muscle groups in current class
-- Recommends targeting underutilized areas in future classes
+Tracks muscle group coverage across your ENTIRE Pilates journey (from day 1):
+- Analyzes ALL classes from `movements_usage` table (not just recent)
+- Shows which muscle groups are underutilized (<30% of all classes)
+- Identifies muscle groups you've NEVER used before
+- Shows movement freshness (which movements haven't been used recently)
+- Tracks days since your first class
 
 **Why This Matters:**
-Over multiple classes, we should ensure balanced coverage of all muscle groups, not just within a single class.
+Ensures comprehensive muscle coverage from the day you start, not just recent classes. Guarantees freshness of movements and balanced progression across your entire journey.
 
 ## Quality Rules
 
@@ -84,12 +85,13 @@ This ensures:
 - Better engagement and progression
 
 ### Rule 3: Historical Muscle Balance (NEW)
-All muscle groups should appear in at least 30% of user's recent classes (last 30 days).
+All muscle groups should appear in at least 30% of ALL user's classes (from day 1).
 
 This ensures:
-- Balanced development across all muscle groups
+- Balanced development across all muscle groups throughout your entire journey
 - No neglected areas over time
-- Comprehensive fitness progression
+- Movement freshness (tracking which movements are stale)
+- Comprehensive fitness progression from day one
 
 ## Usage
 
