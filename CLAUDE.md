@@ -3128,12 +3128,23 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 **CRITICAL: These tasks MUST be completed before December 31, 2025:**
 
-1. **Single Movement Video Demo** (60 minutes)
+1. **Fix Playback Crash Bug** (HIGH PRIORITY - 30 minutes)
+   - **Status:** AI generation works, class saves, music plays, but playback crashes
+   - **Error:** `TypeError: undefined is not an object (evaluating 'e.script_name.toUpperCase')`
+   - **Location:** `frontend/src/components/class-playback/MovementDisplay.tsx`
+   - **Root Cause:** Missing null safety when rendering section names
+   - **Fix Required:**
+     - Add null safety to all section name rendering: `section?.script_name?.toUpperCase() || 'Unknown Section'`
+     - Check backend logs for any sections returning null
+     - Test all 6 section types (preparation, warmup, cooldown, meditation, homecare, movements)
+   - **See:** Session 13 "Known Bug: Playback Crash" for full details
+
+2. **Single Movement Video Demo** (60 minutes)
    - Record The Hundred demonstration
    - Upload to Supabase, update database, deploy frontend
-   - See Priority #1 in Enhancement Roadmap below
+   - See Priority #2 in Enhancement Roadmap below
 
-2. **Archive.org Music Migration** (30 minutes)
+3. **Archive.org Music Migration** (30 minutes)
    - Download 14 tracks, upload to Supabase Storage
    - Update database URLs, test playback
    - See "Known Issues & Fixes" section (search CLAUDE.md)
