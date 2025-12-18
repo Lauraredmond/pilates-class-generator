@@ -3165,25 +3165,28 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 **🎯 REMAINING PRIORITY TASKS:**
 
-2. **🚨 HIGHEST PRIORITY: Set Up Dev/QA Environment Pipeline** (2-3 hours)
-   - **User Need:** "I need a safe environment which my beta testers can use while I apply fixes"
-   - **Problem:** Currently only one environment - beta testers see broken code when bugs are pushed
-   - **Solution:** Create separate Dev and QA environments
-   - **Implementation:** Simple 2-environment setup (Git branch strategy)
-     - **Dev Environment** (your playground): `dev` branch → `bassline-dev.netlify.app` + `pilates-dev.onrender.com` + Supabase dev project
-     - **QA Environment** (beta testers): `main` branch → current production URLs (stable)
-   - **Workflow After Setup:**
-     1. You develop fixes on `dev` branch → auto-deploys to dev environment
+2. **~~Set Up Dev/QA Environment Pipeline~~** ✅ **COMPLETED** (December 18, 2025)
+   - **Status:** Fully operational and tested with successful TEST marker workflow verification
+   - **What Was Completed:**
+     - ✅ Created `dev` branch with auto-deploy to Netlify dev site
+     - ✅ Set up separate Render backend service (`pilates-dev.onrender.com`)
+     - ✅ Created separate Supabase dev project with reference data
+     - ✅ Fixed CSP to allow dev backend connections
+     - ✅ Configured all environment variables correctly
+     - ✅ Tested complete dev→QA workflow (TEST marker propagated successfully)
+     - ✅ Documented workflow in `/docs/DEV_QA_WORKFLOW.md`
+   - **Environments:**
+     - **Dev:** `dev` branch → https://bassline-dev.netlify.app + https://pilates-dev-i0jb.onrender.com
+     - **Production/QA:** `main` branch → https://basslinemvp.netlify.app + https://pilates-class-generator-api3.onrender.com
+   - **Cost:** $0/month (dev uses free tiers)
+   - **Workflow Verified:**
+     1. Make changes in `dev` branch → auto-deploys to dev
      2. Test fixes safely in dev environment
-     3. Merge `dev` → `main` when confident → auto-deploys to QA for beta testers
-   - **Cost:** $0/month extra (free tiers support multiple sites/services/projects)
-   - **Benefits:**
-     - ✅ Beta testers never see broken code
-     - ✅ You can test fixes without risk
-     - ✅ Stable URL for both environments
-     - ✅ Can upgrade to more environments later
-   - **See Detailed Plan:** User has questions to answer about setup preferences (stable URLs, separate database, time investment)
-   - **Status:** Plan ready, awaiting user decisions on setup options
+     3. Merge `dev` → `main` → auto-deploys to production for beta testers
+   - **Documentation:**
+     - `/docs/DEV_QA_ENVIRONMENT_SETUP.md` - Detailed setup guide
+     - `/docs/DEV_QA_SETUP_CHECKLIST.md` - Step-by-step checklist
+     - `/docs/DEV_QA_WORKFLOW.md` - Quick reference for daily workflow
 
 2. **🤖 Test Automation Implementation Plan** (4-6 hours setup, ongoing benefits)
    - **User Need:** "Can you always check render logs and Supabase content before asking me to do so?"
