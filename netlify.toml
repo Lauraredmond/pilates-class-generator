@@ -20,12 +20,13 @@
   to = "/index.html"
   status = 200
 
-# Headers for security and caching (Updated December 8, 2025 - OWASP ZAP security fixes)
+# Headers for security and caching (Updated December 18, 2025 - Environment-specific CSP)
+# Production headers (main branch) - Only production URLs
 [[headers]]
   for = "/*"
   [headers.values]
-    # Content Security Policy (CSP) - Comprehensive policy to prevent XSS, clickjacking, and other attacks
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://pilates-dev-i0jb.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co https://archive.org https://*.archive.org; media-src 'self' https://archive.org https://*.archive.org https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co https://*.cloudfront.net blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self' blob:; manifest-src 'self'; child-src 'none'; upgrade-insecure-requests"
+    # Content Security Policy (CSP) - Production URLs only
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lixvcebtwusmaipodcpc.supabase.co; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://archive.org https://*.archive.org; media-src 'self' https://archive.org https://*.archive.org https://lixvcebtwusmaipodcpc.supabase.co https://*.cloudfront.net blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self' blob:; manifest-src 'self'; child-src 'none'; upgrade-insecure-requests"
 
     # Clickjacking protection
     X-Frame-Options = "DENY"
@@ -43,6 +44,21 @@
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
 
     # Strict Transport Security (HSTS)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+# Dev environment headers (dev branch) - Includes dev URLs
+[context.branch-deploy.headers]
+  for = "/*"
+  [context.branch-deploy.headers.values]
+    # Content Security Policy (CSP) - Includes both production AND dev URLs
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://pilates-dev-i0jb.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co https://archive.org https://*.archive.org; media-src 'self' https://archive.org https://*.archive.org https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co https://*.cloudfront.net blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self' blob:; manifest-src 'self'; child-src 'none'; upgrade-insecure-requests"
+
+    # Same security headers as production
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
 # Cache control for HTML (always revalidate to get latest app version)
