@@ -3128,7 +3128,44 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 **CRITICAL: These tasks MUST be completed before December 31, 2025:**
 
-1. **🚨 HIGHEST PRIORITY: Set Up Dev/QA Environment Pipeline** (2-3 hours)
+**✅ COMPLETED DECEMBER 18, 2025:**
+
+0. **Music Track Advancement Fix** ✅ **COMPLETED** (December 18, 2025)
+   - **Issue:** Background music played first track correctly but didn't advance to next track
+   - **Root Cause:** Audio source node not being properly disconnected when switching tracks
+   - **Fix Applied:** Added proper cleanup in `useAudioDucking.ts` lines 222-237
+     - Clear source URL before switching tracks
+     - Disconnect old source node
+     - Allow new source node creation
+   - **Testing:** Verified on mobile (iOS Safari + Android Chrome)
+     - Started 30-minute class
+     - Let first track finish completely
+     - Second track started automatically
+     - Console logs confirmed "Music track ended - calling onMusicEnded callback"
+   - **Status:** Production verified working
+
+1. **Complete Voiceover Implementation (All 6 Sections)** ✅ **COMPLETED** (December 18, 2025)
+   - **Goal:** Enable voiceover playback for all 6 class section types
+   - **Sections Completed:**
+     1. ✅ Preparation Scripts (completed December 8, 2025)
+     2. ✅ Warmup Routines (completed December 18, 2025)
+     3. ✅ Cooldown Sequences (completed December 18, 2025)
+     4. ✅ Closing Meditation Scripts (completed December 18, 2025)
+     5. ✅ Closing HomeCare Advice (completed December 18, 2025)
+     6. ✅ Transitions (completed December 18, 2025)
+   - **What Was Completed:**
+     - All voiceover audio recorded (MP3, 22050 Hz, 145 kbps, Mono)
+     - All audio uploaded to Supabase Storage `voiceovers/` bucket
+     - All database records updated with URLs + durations
+     - All sections tested: music ducks to 20%, returns to 100% after voiceover
+     - Migration 019 executed (warmup narrative update)
+   - **Status:** All 6 sections fully functional in production
+
+---
+
+**🎯 REMAINING PRIORITY TASKS:**
+
+2. **🚨 HIGHEST PRIORITY: Set Up Dev/QA Environment Pipeline** (2-3 hours)
    - **User Need:** "I need a safe environment which my beta testers can use while I apply fixes"
    - **Problem:** Currently only one environment - beta testers see broken code when bugs are pushed
    - **Solution:** Create separate Dev and QA environments
