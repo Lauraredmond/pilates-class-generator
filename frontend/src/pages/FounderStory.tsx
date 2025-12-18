@@ -24,7 +24,7 @@ export function FounderStory() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-            TEST: I created this two step fitness app to help people discover the reward and accessibility of fitness. 
+            I created this two step fitness app to help people discover the reward and accessibility of fitness. 
             By combining human support, dynamic exercise planning, and music as an enhancer, the platform is built to make fitness more enjoyable 
             — and ultimately, more sustainable.
             </p>
