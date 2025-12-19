@@ -310,14 +310,14 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           {
             data: movementFamilyDistribution.percentages,
             backgroundColor: [
-              '#8b2635',  // Primary burgundy - rolling
-              '#cd8b76',  // Terracotta - supine_abdominal
-              '#5c1a26',  // Dark burgundy - inversion
-              '#e3a57a',  // Light peach - back_extension
-              '#b8927d',  // Medium beige - hip_extensor
-              '#d94d5c',  // Bright coral red - side_lying
-              '#9e7762',  // Warm brown - seated_spinal_articulation
-              '#f5f1e8',  // Cream - other
+              '#8b2635',  // Primary burgundy (dark red) - rolling
+              '#f5f1e8',  // Cream (very light) - supine_abdominal
+              '#3d1118',  // Very dark burgundy (almost black) - inversion
+              '#e3a57a',  // Light peach (light orange) - back_extension
+              '#5c1a26',  // Dark burgundy - hip_extensor
+              '#cd8b76',  // Terracotta (medium orange) - side_lying
+              '#2a0d12',  // Deepest burgundy (near black) - seated_spinal_articulation
+              '#d94d5c',  // Bright coral red (vibrant) - other
             ],
           },
         ],
