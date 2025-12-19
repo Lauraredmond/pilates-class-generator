@@ -1034,9 +1034,24 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         now = datetime.now()
         today = now.date().isoformat()
 
+        # CRITICAL FIX: Enrich movements_snapshot with muscle_groups from database
+        # Frontend doesn't always send muscle_groups, so we fetch them here
+        enriched_movements_snapshot = []
+        for item in request.movements_snapshot:
+            enriched_item = item.copy()
+
+            if item.get('type') == 'movement':
+                # Fetch muscle groups from junction table
+                movement_id = item.get('id')
+                if movement_id:
+                    muscle_groups = get_movement_muscle_groups(movement_id)
+                    enriched_item['muscle_groups'] = muscle_groups
+
+            enriched_movements_snapshot.append(enriched_item)
+
         # Extract movement IDs from snapshot (movements only, not transitions)
         movements_only = [
-            m for m in request.movements_snapshot
+            m for m in enriched_movements_snapshot
             if m.get('type') == 'movement'
         ]
 
