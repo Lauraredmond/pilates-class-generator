@@ -207,8 +207,6 @@ async def register(user_data: UserCreate, request: Request):
             "accepted_beta_terms_at": user_data.accepted_beta_terms_at
         }
 
-        supabase.table("user_profiles").insert(profile_data).execute()
-
         # Create user record in users table (for class_history foreign key)
         # This table is separate from user_profiles and used for GDPR/PII tokenization
         # NOTE: Using simple tokenization for now (prefix with 'token_')
@@ -223,7 +221,6 @@ async def register(user_data: UserCreate, request: Request):
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat()
         }
-        supabase.table("users").insert(user_record).execute()
 
         # Create default preferences
         preferences_data = {
@@ -244,7 +241,44 @@ async def register(user_data: UserCreate, request: Request):
             "data_sharing_enabled": False
         }
 
-        supabase.table("user_preferences").insert(preferences_data).execute()
+        # ATOMIC REGISTRATION: All 3 inserts in try-except with rollback
+        # Prevents partial registration if any insert fails
+        try:
+            supabase.table("user_profiles").insert(profile_data).execute()
+            supabase.table("users").insert(user_record).execute()
+            supabase.table("user_preferences").insert(preferences_data).execute()
+        except Exception as db_error:
+            # Rollback: Clean up any partial inserts
+            logger.error(f"Database insert failed during registration for {user_data.email}: {str(db_error)}")
+
+            try:
+                # Clean up user_preferences if it was created
+                supabase.table("user_preferences").delete().eq("user_id", user_id).execute()
+            except:
+                pass
+
+            try:
+                # Clean up users table if it was created
+                supabase.table("users").delete().eq("id", user_id).execute()
+            except:
+                pass
+
+            try:
+                # Clean up user_profiles if it was created
+                supabase.table("user_profiles").delete().eq("id", user_id).execute()
+            except:
+                pass
+
+            try:
+                # Clean up Supabase Auth user
+                supabase.auth.admin.delete_user(user_id)
+            except:
+                pass
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Registration failed during database setup. Please try again. Error: {str(db_error)}"
+            )
 
         # Log PII transaction for GDPR compliance
         await PIILogger.log_registration(user_id, request, profile_data)
