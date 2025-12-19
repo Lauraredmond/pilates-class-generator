@@ -406,7 +406,10 @@ class SequenceTools:
                 movement = next((m for m in movements if m["id"] == movement_id), None)
                 if movement and len(sequence) < max_movements - 1:  # Save room for cooldown
                     movement_copy = movement.copy()
-                    movement_copy["duration_seconds"] = teaching_time_seconds
+                    # PRESERVE database duration_seconds instead of overwriting with teaching_time
+                    # (Database duration is user-configurable, teaching_time is just for calculating max_movements)
+                    if "duration_seconds" not in movement_copy or not movement_copy["duration_seconds"]:
+                        movement_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
                     movement_copy["type"] = "movement"
                     sequence.append(movement_copy)
 
@@ -428,7 +431,9 @@ class SequenceTools:
                 break
 
             selected_copy = selected.copy()
-            selected_copy["duration_seconds"] = teaching_time_seconds
+            # PRESERVE database duration_seconds instead of overwriting with teaching_time
+            if "duration_seconds" not in selected_copy or not selected_copy["duration_seconds"]:
+                selected_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
             selected_copy["type"] = "movement"
             sequence.append(selected_copy)
 
@@ -436,7 +441,9 @@ class SequenceTools:
         cooldown = self._get_cooldown_movement(movements, sequence)
         if cooldown:
             cooldown_copy = cooldown.copy()
-            cooldown_copy["duration_seconds"] = teaching_time_seconds
+            # PRESERVE database duration_seconds instead of overwriting with teaching_time
+            if "duration_seconds" not in cooldown_copy or not cooldown_copy["duration_seconds"]:
+                cooldown_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
             cooldown_copy["type"] = "movement"
             sequence.append(cooldown_copy)
 
