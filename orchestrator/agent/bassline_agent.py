@@ -60,7 +60,7 @@ from agents.tools.base import JustInTimeToolingBase  # ← JENTIC: Tool interfac
 # ==============================================================================
 # BASSLINE CUSTOM IMPORTS
 # ==============================================================================
-from .tools import BasslinePilatesTools  # ← BASSLINE: Our custom tools
+from .tool_wrapper import BasslinePilatesTools  # ← BASSLINE: Our custom tools
 
 # ==============================================================================
 # BASSLINE PILATES COACH AGENT
