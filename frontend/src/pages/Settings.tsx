@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare, FileText, Wrench } from 'lucide-react';
+import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare, FileText, Wrench } from 'lucide-react';
 import { logger } from '../utils/logger';
 import { RecordingModeManager } from '../components/recording-mode/RecordingModeManager';
 import { DebugPanel } from '../components/DebugPanel';
@@ -18,7 +18,6 @@ export function Settings() {
     security: true,
     notifications: false,
     ai: false,
-    music: false,
     compliance: false,
     developer: false,
     danger: false
@@ -49,8 +48,7 @@ export function Settings() {
     class_reminders: true,
     weekly_summary: false,
     analytics_enabled: true,
-    data_sharing_enabled: false,
-    music_preferences: {} as Record<string, any>
+    data_sharing_enabled: false
   });
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [preferencesSaving, setPreferencesSaving] = useState(false);
@@ -600,58 +598,6 @@ export function Settings() {
                     className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                   />
                 </label>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Music Preferences */}
-      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
-        <button
-          onClick={() => toggleSection('music')}
-          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Music className="w-6 h-6 text-burgundy" />
-            <h2 className="text-xl font-semibold text-cream">Music Preferences</h2>
-          </div>
-          {expandedSections.music ? (
-            <ChevronUp className="w-5 h-5 text-cream/60" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-cream/60" />
-          )}
-        </button>
-
-        {expandedSections.music && (
-          <div className="px-6 pb-6">
-            <p className="text-cream/60 text-sm mb-4">
-              Choose your preferred classical music styles
-            </p>
-            {preferencesLoading ? (
-              <p className="text-cream/50">Loading preferences...</p>
-            ) : (
-              <div className="space-y-4">
-                <div className="bg-burgundy/10 rounded p-4">
-                  <p className="text-cream font-medium mb-2">Classical Music Styles</p>
-                  <p className="text-cream/60 text-sm mb-3">
-                    Music integration with Musopen and FreePD will be available in Session 10.
-                    Choose your preferred classical music periods for class accompaniment.
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {['Baroque', 'Classical', 'Romantic', 'Impressionist', 'Modern', 'Contemporary', 'Celtic'].map((style) => (
-                      <label key={style} className="flex items-center space-x-2 p-2 bg-burgundy/20 rounded cursor-pointer hover:bg-burgundy/30 transition-colors">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-burgundy focus:ring-burgundy border-cream/30 rounded"
-                          disabled={true}
-                        />
-                        <span className="text-cream text-sm">{style}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <p className="text-cream/50 text-xs mt-3 italic">Music preferences will be functional in Session 10</p>
-                </div>
               </div>
             )}
           </div>
