@@ -1,10 +1,22 @@
-[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – je {stack: "Rg@https://basslinemvp.netlify.app/assets/index-CM…emvp.netlify.app/assets/index-CMansCqb.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", …}
-je {stack: "Rg@https://basslinemvp.netlify.app/assets/index-CM…emvp.netlify.app/assets/index-CMansCqb.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}jecode: "ERR_BAD_RESPONSE"config: {transitional: {silentJSONParsing: true, forcedJSONParsing: true, clarifyTimeoutError: false}, adapter: ["xhr", "http", "fetch"], transformRequest: Array, transformResponse: Array, timeout: 0, …}Objectmessage: "Request failed with status code 500"name: "AxiosError"request: XMLHttpRequest {listeners: Object, onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, …}XMLHttpRequestresponse: {data: {detail: "Unable to complete operation. Please try again later"}, status: 500, statusText: "", headers: At, config: Object, …}Objectstack: "Rg@https://basslinemvp.netlify.app/assets/index-CMansCqb.js:10:1089↵N@https://basslinemvp.netlify.app/assets/index-CMansCqb.js:10:582…"status: 500je Prototype
-	error (index-CMansCqb.js:13:5450)
-	(anonymous function) (index-CMansCqb.js:54:19147)
-[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – je {stack: "Rg@https://basslinemvp.netlify.app/assets/index-CM…emvp.netlify.app/assets/index-CMansCqb.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", …}
-je {stack: "Rg@https://basslinemvp.netlify.app/assets/index-CM…emvp.netlify.app/assets/index-CMansCqb.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}je
-	error (index-CMansCqb.js:13:5450)
-	(anonymous function) (index-CMansCqb.js:54:19147)
+[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Log] 🎥 DEBUG: The Hundred from API: – Object (index-wKdYNR2h.js, line 54)
+Object
+[Log] 🎥 DEBUG: The Hundred video_url: – "https://d1chkg8zq1g5j8.cloudfront.net/The_Hundred_Placeholder.mp4" (index-wKdYNR2h.js, line 54)
+[Log] 🎥 DEBUG: The Hundred PlaybackItem: – Object (index-wKdYNR2h.js, line 54)
+Object
+[Log] 🎥 DEBUG: The Hundred PlaybackItem.video_url: – "https://d1chkg8zq1g5j8.cloudfront.net/The_Hundred_Placeholder.mp4" (index-wKdYNR2h.js, line 54)
+[Error] Failed to load resource: the server responded with a status of 400 () (1-preparation-phase.mp3, line 0)
+[Error] Voiceover play error: – NotSupportedError: The operation is not supported.
+NotSupportedError: The operation is not supported.
+	error (index-wKdYNR2h.js:13:5450)
+	(anonymous function) (index-wKdYNR2h.js:46:16651)
+[Error] Failed to play voiceover: – NotSupportedError: The operation is not supported.
+NotSupportedError: The operation is not supported.
+	error (index-wKdYNR2h.js:13:5450)
+	(anonymous function) (index-wKdYNR2h.js:46:17146)
+[Error] Voiceover load error: (2)
+Event
+MediaError
+	error (index-wKdYNR2h.js:13:5450)
+	(anonymous function) (index-wKdYNR2h.js:46:15337)
+[Log] 🎥 DEBUG: Auto-playing video after voiceover start (index-wKdYNR2h.js, line 16)
