@@ -21,6 +21,7 @@ CHECK (movement_family IN (
     'back_extension',
     'hip_extensor',
     'side_lying',
+    'seated_spinal_articulation',
     'other'
 ) OR movement_family IS NULL);
 

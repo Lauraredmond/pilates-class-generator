@@ -57,12 +57,16 @@ UPDATE movements SET movement_family = 'side_lying' WHERE code IN (
     'side_bend'
 );
 
--- OTHER: Rotational, seated, transitional, or mixed patterns
-UPDATE movements SET movement_family = 'other' WHERE code IN (
-    'push_up',
+-- SEATED_SPINAL_ARTICULATION: Seated spinal flexion, rotation, and articulation work
+UPDATE movements SET movement_family = 'seated_spinal_articulation' WHERE code IN (
     'the_saw',
     'spine_stretch',
-    'spine_twist',
+    'spine_twist'
+);
+
+-- OTHER: Rotational, transitional, or mixed patterns
+UPDATE movements SET movement_family = 'other' WHERE code IN (
+    'push_up',
     'hip_twist'
 );
 

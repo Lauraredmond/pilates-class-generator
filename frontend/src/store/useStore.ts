@@ -33,7 +33,7 @@ interface Movement {
   // Teaching metadata (Session: Movement Families - December 2025)
   modifications?: string; // Free-form modification suggestions for different levels
   tips?: string; // Teaching tips and cues for instructors
-  movement_family?: string; // Movement family classification: rolling, supine_abdominal, inversion, back_extension, hip_extensor, side_lying, other
+  movement_family?: string; // Movement family classification: rolling, supine_abdominal, inversion, back_extension, hip_extensor, side_lying, seated_spinal_articulation, other
 }
 
 interface SequenceMovement extends Movement {
