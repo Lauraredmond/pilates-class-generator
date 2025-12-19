@@ -742,7 +742,9 @@ async def delete_account(
 
         # ATOMIC DELETION: All deletes in try-except with rollback
         # Prevents orphaned records if any delete fails
+        # Deletion order respects foreign key constraints (child tables before parent)
         deleted_from_auth = False
+        deleted_compliance_tables = False
         deleted_preferences = False
         deleted_users_table = False
         deleted_profile = False
@@ -756,24 +758,45 @@ async def delete_account(
                 # Log but don't fail - user might not exist in Auth
                 logger.warn(f"Could not delete from Supabase Auth (may not exist): {str(e)}")
 
-            # Step 2: Delete user preferences
+            # Step 2: Delete from compliance tables (these have NO FK constraints - must delete explicitly)
+            # CRITICAL: ropa_audit_log and ai_decision_log have user_id but NO REFERENCES clause
+            # Without explicit deletion, these become orphaned records
+            try:
+                supabase.table("ropa_audit_log").delete().eq("user_id", user_id).execute()
+                logger.info(f"Deleted ropa_audit_log records for user_id {user_id}")
+            except Exception as e:
+                logger.warn(f"Could not delete ropa_audit_log (table may not exist): {str(e)}")
+
+            try:
+                supabase.table("ai_decision_log").delete().eq("user_id", user_id).execute()
+                logger.info(f"Deleted ai_decision_log records for user_id {user_id}")
+            except Exception as e:
+                logger.warn(f"Could not delete ai_decision_log (table may not exist): {str(e)}")
+
+            deleted_compliance_tables = True
+
+            # Step 3: Delete user preferences
             supabase.table("user_preferences").delete().eq("user_id", user_id).execute()
             deleted_preferences = True
 
-            # Step 3: Delete from users table (tokenized email table)
+            # Step 4: Delete from users table (tokenized email table)
+            # Must be deleted BEFORE user_profiles since some tables reference users(id)
             supabase.table("users").delete().eq("id", user_id).execute()
             deleted_users_table = True
 
-            # Step 4: Delete user profile (main record - do last)
+            # Step 5: Delete user profile (main record - do last)
+            # ON DELETE CASCADE will handle:
+            # - class_plans (user_id → users.id)
+            # - class_history (user_id → users.id)
+            # - movement_usage (user_id → users.id)
+            # - student_profiles (instructor_id → users.id)
+            # - beta_feedback (user_id → user_profiles.id)
             supabase.table("user_profiles").delete().eq("id", user_id).execute()
             deleted_profile = True
 
-            # Step 5: Delete user's saved classes if they exist
-            try:
-                supabase.table("class_plans").delete().eq("user_id", user_id).execute()
-            except Exception as e:
-                # Table might not exist yet - don't fail
-                logger.info(f"Could not delete class_plans (table may not exist): {str(e)}")
+            # Note: beta_errors has ON DELETE SET NULL (intentionally preserves error logs)
+            # Note: class_plans, class_history, movement_usage, student_profiles, beta_feedback
+            #       all have ON DELETE CASCADE and will auto-delete
 
         except Exception as db_error:
             # Rollback: Restore any deleted records
