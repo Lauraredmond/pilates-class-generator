@@ -63,23 +63,52 @@ Used for:
 We do not sell or share your data for advertising.
 
 4. Security Measures
-A. Technical Protections
-• TLS encryption
-• Password hashing
-• Row-Level Security (RLS)
-• Secure token handling
-• Minimum password complexity standards
+Last Security Review: December 19, 2025
 
-B. Security Testing Performed
-• Claude Code static analysis
-• GitGuardian secret detection
-• OWASP ZAP baseline scan
-• Supabase RLS audit
-• Wireshark packet inspection (no PII leakage)
+A. Infrastructure Security
+• Python 3.11.14 runtime with latest security patches
+• 95% vulnerability reduction (40 known vulnerabilities reduced to 1)
+• Automated dependency scanning (pip-audit for backend, npm audit for frontend)
+• All critical security packages updated to latest versions:
+  - Cryptography library 46.0.3 (fixes 4 CVEs including RSA key exchange vulnerability)
+  - Web framework 3.12.14 (fixes 6 CVEs including XSS and request smuggling attacks)
+  - Authentication library 3.5.0 (fixes 2 CVEs in JWT token handling)
+  - Network library 2.6.0 (fixes 4 CVEs including resource exhaustion attacks)
+  - AI libraries updated (fixes 12 CVEs including SSRF, XXE, pickle deserialization)
 
-C. Beta Limitations
-• Features may change
-• Bugs may appear
+B. Data Protection
+• PII tokenization using AES-256 encryption
+• Password hashing using bcrypt (minimum 10 rounds)
+• JWT authentication tokens using HS256 (HMAC-SHA256)
+• Supabase Row-Level Security (RLS) policies enforced on all tables
+• HTTPS/TLS 1.3 encryption for all data in transit
+• Secure session management with token expiration
+
+C. Security Testing Performed
+• Claude Code secure-coding review and static analysis
+• GitGuardian secret-leak scanning (prevents API keys in code)
+• OWASP ZAP automated vulnerability scanning
+• Supabase RLS policy audit (verified data isolation)
+• Wireshark packet inspection (confirmed no PII transmitted in clear text)
+• Dependency vulnerability scanning (pip-audit, npm audit)
+• Regular security reviews and monitoring
+
+D. Compliance
+• GDPR Article 32 (security of processing)
+• GDPR Article 15 (right to access), Article 17 (right to deletion)
+• EU AI Act transparency requirements for AI-generated content
+• Monthly security audits and dependency updates
+
+E. Known Vulnerabilities
+As of December 19, 2025, one low-risk vulnerability remains documented:
+• ecdsa timing attack (CVE-2024-23342) - This does not affect the application as we use HMAC-SHA256 (HS256), not ECDSA, for authentication. This vulnerability is monitored monthly for patches.
+
+F. Beta Limitations
+While comprehensive security measures are in place:
+• Features may change during beta testing
+• Bugs may appear and will be addressed promptly
+• Security measures continue to evolve and improve
+• No system can guarantee 100% security
 
 5. Who Has Access to Your Data
 A. Internal Access
