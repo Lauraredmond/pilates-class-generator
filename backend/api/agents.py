@@ -151,10 +151,10 @@ def get_movement_muscle_groups(movement_id: str) -> list[str]:
     """
     try:
         # Query movement_muscles table (has denormalized muscle_group_name column)
+        # NOTE: Removed .eq('is_primary', True) filter - all rows have is_primary=False by default
         response = supabase.table('movement_muscles') \
             .select('muscle_group_name') \
             .eq('movement_id', movement_id) \
-            .eq('is_primary', True) \
             .execute()
 
         if not response.data:
