@@ -1298,3 +1298,260 @@ async def backfill_muscle_groups_in_class_history(
             status_code=500,
             detail=ErrorMessages.DATABASE_ERROR
         )
+
+
+# ==============================================================================
+# CLASS SEQUENCING REPORT - Developer Tools
+# ==============================================================================
+
+class ClassSequencingReportResponse(BaseModel):
+    """Response for class sequencing report"""
+    report_content: str
+    class_id: str
+    class_date: str
+    total_movements: int
+    pass_status: bool
+
+
+@router.get("/class-sequencing-report/{user_id}", response_model=ClassSequencingReportResponse)
+async def get_class_sequencing_report(user_id: str):
+    """
+    Generate class sequencing validation report for most recent class
+
+    Returns markdown-formatted report showing:
+    - Movement sequence data
+    - Consecutive muscle overlap analysis
+    - Summary statistics
+    - Detailed muscle group breakdown
+    - Movement pattern proximity check
+    - Historical muscle balance analysis
+
+    **Used in Developer Tools section of Settings page**
+    """
+    try:
+        user_uuid = _convert_to_uuid(user_id)
+
+        # Fetch most recent class
+        response = supabase.table('class_history') \
+            .select('*') \
+            .eq('user_id', user_uuid) \
+            .order('taught_date', desc=True) \
+            .limit(1) \
+            .execute()
+
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="No class history found for this user"
+            )
+
+        class_record = response.data[0]
+        class_id = class_record['id']
+        class_date = class_record.get('taught_date', 'Unknown')
+        movements_snapshot = class_record.get('movements_snapshot', [])
+
+        # Filter only movements (exclude transitions)
+        movements = [m for m in movements_snapshot if m.get('type') == 'movement']
+
+        if not movements:
+            raise HTTPException(
+                status_code=404,
+                detail="No movements found in most recent class"
+            )
+
+        # Generate report
+        report_lines = []
+        report_lines.append("# Muscle Overlap Analysis Report")
+        report_lines.append("")
+        report_lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report_lines.append(f"**Class ID:** {class_id}")
+        report_lines.append(f"**Class Date:** {class_date}")
+        report_lines.append(f"**Total Movements:** {len(movements)}")
+        report_lines.append("")
+
+        # Movement Sequence Data (CSV)
+        report_lines.append("## Movement Sequence Data (CSV)")
+        report_lines.append("")
+        report_lines.append("Position,Movement Name,Muscle Groups,Muscle Count")
+
+        for idx, movement in enumerate(movements, start=1):
+            name = movement.get('name', 'Unknown')
+            muscle_groups = movement.get('muscle_groups', [])
+            muscle_str = '; '.join(muscle_groups) if muscle_groups else 'None'
+            muscle_count = len(muscle_groups)
+            report_lines.append(f"{idx},{name},\"{muscle_str}\",{muscle_count}")
+
+        report_lines.append("")
+
+        # Consecutive Muscle Overlap Analysis
+        report_lines.append("## Consecutive Muscle Overlap Analysis (CSV)")
+        report_lines.append("")
+        report_lines.append("Movement A,Movement B,Shared Muscles,Overlap Count,Overlap %,Pass (<50%)?")
+
+        overlaps = []
+        pass_count = 0
+        fail_count = 0
+
+        for i in range(len(movements) - 1):
+            mov_a = movements[i]
+            mov_b = movements[i + 1]
+
+            name_a = mov_a.get('name', 'Unknown')
+            name_b = mov_b.get('name', 'Unknown')
+
+            muscles_a = set(mov_a.get('muscle_groups', []))
+            muscles_b = set(mov_b.get('muscle_groups', []))
+
+            shared = muscles_a.intersection(muscles_b)
+            shared_str = '; '.join(sorted(shared)) if shared else 'None'
+
+            overlap_count = len(shared)
+
+            # Calculate overlap percentage (based on smaller muscle group set)
+            if muscles_a and muscles_b:
+                smaller_set_size = min(len(muscles_a), len(muscles_b))
+                overlap_pct = (overlap_count / smaller_set_size * 100) if smaller_set_size > 0 else 0
+            else:
+                overlap_pct = 0
+
+            overlaps.append(overlap_pct)
+
+            pass_status = "PASS" if overlap_pct < 50 else "FAIL"
+            if overlap_pct < 50:
+                pass_count += 1
+            else:
+                fail_count += 1
+
+            report_lines.append(f"{name_a},{name_b},\"{shared_str}\",{overlap_count},{overlap_pct:.1f}%,{pass_status}")
+
+        report_lines.append("")
+
+        # Summary Statistics
+        report_lines.append("## Summary Statistics")
+        report_lines.append("")
+        total_pairs = len(overlaps)
+        avg_overlap = sum(overlaps) / total_pairs if total_pairs > 0 else 0
+        max_overlap = max(overlaps) if overlaps else 0
+
+        report_lines.append(f"- Total Consecutive Pairs: {total_pairs}")
+        report_lines.append(f"- Passed (<50% overlap): {pass_count} ({pass_count/total_pairs*100:.1f}%)" if total_pairs > 0 else "- Passed: 0")
+        report_lines.append(f"- Failed (≥50% overlap): {fail_count} ({fail_count/total_pairs*100:.1f}%)" if total_pairs > 0 else "- Failed: 0")
+        report_lines.append(f"- Average Overlap: {avg_overlap:.1f}%")
+        report_lines.append(f"- Maximum Overlap: {max_overlap:.1f}%")
+        report_lines.append("")
+
+        if fail_count == 0:
+            report_lines.append("### ✅ **ALL CHECKS PASSED:** No consecutive movements exceed 50% overlap")
+        else:
+            report_lines.append(f"### ❌ **{fail_count} FAILURE(S):** Some consecutive movements exceed 50% overlap")
+
+        report_lines.append("")
+
+        # Detailed Muscle Group Breakdown
+        report_lines.append("## Detailed Muscle Group Breakdown")
+        report_lines.append("")
+
+        for idx, movement in enumerate(movements, start=1):
+            name = movement.get('name', 'Unknown')
+            muscle_groups = movement.get('muscle_groups', [])
+
+            report_lines.append(f"### {idx}. {name}")
+            report_lines.append(f"**Muscle Groups:** {', '.join(muscle_groups) if muscle_groups else 'None'}")
+
+            if idx < len(movements):
+                next_mov = movements[idx]
+                next_muscles = set(next_mov.get('muscle_groups', []))
+                current_muscles = set(muscle_groups)
+                shared = current_muscles.intersection(next_muscles)
+
+                if current_muscles and next_muscles:
+                    smaller_size = min(len(current_muscles), len(next_muscles))
+                    overlap_pct = (len(shared) / smaller_size * 100) if smaller_size > 0 else 0
+                    report_lines.append(f"**Overlap with next:** {overlap_pct:.1f}% ({', '.join(sorted(shared)) if shared else 'None'})")
+
+            report_lines.append("")
+
+        # Movement Pattern Proximity Check
+        report_lines.append("## Movement Pattern Proximity Check")
+        report_lines.append("**Rule:** Similar movement patterns should not appear within 3 positions of each other.")
+        report_lines.append("")
+
+        # Fetch movement patterns from database
+        movement_names = [m.get('name') for m in movements if m.get('name')]
+        pattern_cache = {}
+
+        if movement_names:
+            patterns_response = supabase.table('movements') \
+                .select('name, movement_pattern') \
+                .in_('name', movement_names) \
+                .execute()
+
+            for mov in patterns_response.data:
+                pattern_cache[mov['name']] = mov.get('movement_pattern', 'Unknown')
+
+        # Check for pattern proximity violations
+        proximity_violations = []
+        for i in range(len(movements)):
+            mov_name = movements[i].get('name')
+            pattern = pattern_cache.get(mov_name, 'Unknown')
+
+            # Check next 3 movements
+            for j in range(i + 1, min(i + 4, len(movements))):
+                next_mov_name = movements[j].get('name')
+                next_pattern = pattern_cache.get(next_mov_name, 'Unknown')
+
+                if pattern == next_pattern and pattern != 'Unknown':
+                    distance = j - i
+                    proximity_violations.append(f"- Position {i+1} ({mov_name}) and Position {j+1} ({next_mov_name}): Both {pattern} (distance: {distance})")
+
+        if proximity_violations:
+            report_lines.append(f"### ❌ **{len(proximity_violations)} VIOLATION(S):**")
+            report_lines.extend(proximity_violations)
+        else:
+            report_lines.append("### ✅ **NO VIOLATIONS:** Movement patterns are well distributed")
+
+        report_lines.append("")
+
+        # Historical Muscle Balance Analysis
+        report_lines.append("## Historical Muscle Balance Analysis")
+        report_lines.append("**Goal:** Ensure all muscle groups are covered over time")
+        report_lines.append("")
+
+        # Count muscle groups in this class
+        muscle_totals = defaultdict(int)
+        for movement in movements:
+            for muscle in movement.get('muscle_groups', []):
+                muscle_totals[muscle] += 1
+
+        if muscle_totals:
+            report_lines.append("**This Class:**")
+            sorted_muscles = sorted(muscle_totals.items(), key=lambda x: x[1], reverse=True)
+            for muscle, count in sorted_muscles:
+                report_lines.append(f"- {muscle}: {count} movement(s)")
+        else:
+            report_lines.append("**This Class:** No muscle group data available")
+
+        report_lines.append("")
+        report_lines.append("---")
+        report_lines.append("")
+        report_lines.append("*Generated by Bassline Pilates Class Sequencing Analyzer*")
+
+        # Combine into final report
+        report_content = '\n'.join(report_lines)
+
+        return ClassSequencingReportResponse(
+            report_content=report_content,
+            class_id=class_id,
+            class_date=class_date,
+            total_movements=len(movements),
+            pass_status=(fail_count == 0)
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating class sequencing report for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=ErrorMessages.DATABASE_ERROR
+        )
