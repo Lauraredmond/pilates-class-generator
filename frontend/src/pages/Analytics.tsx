@@ -68,6 +68,7 @@ export function Analytics() {
   const [practiceFrequency, setPracticeFrequency] = useState<any>(null);
   const [difficultyProgression, setDifficultyProgression] = useState<any>(null);
   const [muscleDistribution, setMuscleDistribution] = useState<any>(null);
+  const [movementFamilyDistribution, setMovementFamilyDistribution] = useState<any>(null); // SESSION: Movement Families
 
   // Fetch all analytics data
   useEffect(() => {
@@ -89,6 +90,7 @@ export function Analytics() {
           practiceFreqResponse,
           difficultyProgResponse,
           muscleDistResponse,
+          familyDistResponse, // SESSION: Movement Families
         ] = await Promise.all([
           analyticsApi.getSummary(user.id),
           analyticsApi.getMovementHistory(user.id, timePeriod),
@@ -96,6 +98,7 @@ export function Analytics() {
           analyticsApi.getPracticeFrequency(user.id, timePeriod),
           analyticsApi.getDifficultyProgression(user.id, timePeriod),
           analyticsApi.getMuscleDistribution(user.id, 'total'), // Always show total for doughnut
+          analyticsApi.getMovementFamilyDistribution(user.id, 'total'), // SESSION: Movement Families
         ]);
 
         // Update stats
@@ -116,6 +119,7 @@ export function Analytics() {
         setPracticeFrequency(practiceFreqResponse.data);
         setDifficultyProgression(difficultyProgResponse.data);
         setMuscleDistribution(muscleDistResponse.data);
+        setMovementFamilyDistribution(familyDistResponse.data); // SESSION: Movement Families
       } catch (err: any) {
         logger.error('Failed to fetch analytics:', err);
         setError(err.response?.data?.detail || 'Failed to load analytics data');
@@ -290,6 +294,36 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
       }
     : null;
 
+  // SESSION: Movement Families - December 2025
+  // Helper function to format family names for display (remove underscores, capitalize)
+  const formatFamilyName = (family: string): string => {
+    return family
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const movementFamilyDistributionChartData = movementFamilyDistribution
+    ? {
+        labels: movementFamilyDistribution.families.map(formatFamilyName),
+        datasets: [
+          {
+            data: movementFamilyDistribution.percentages,
+            backgroundColor: [
+              '#8b2635',  // Primary burgundy (dark red) - rolling
+              '#f5f1e8',  // Cream (very light) - supine_abdominal
+              '#3d1118',  // Very dark burgundy (almost black) - inversion
+              '#e3a57a',  // Light peach (light orange) - back_extension
+              '#5c1a26',  // Dark burgundy - hip_extensor
+              '#cd8b76',  // Terracotta (medium orange) - side_lying
+              '#2a0d12',  // Deepest burgundy (near black) - seated_spinal_articulation
+              '#d94d5c',  // Bright coral red (vibrant) - other
+            ],
+          },
+        ],
+      }
+    : null;
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -453,6 +487,25 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           <div className="h-96">
             {muscleDistributionChartData ? (
               <Doughnut data={muscleDistributionChartData} options={doughnutChartOptions} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-cream/60">
+                No data available
+              </div>
+            )}
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* SESSION: Movement Families - December 2025 */}
+      {/* Movement Family Distribution Chart (Full Width) */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Movement Family Distribution</CardTitle>
+        </CardHeader>
+        <CardBody className="p-6">
+          <div className="h-96">
+            {movementFamilyDistributionChartData ? (
+              <Doughnut data={movementFamilyDistributionChartData} options={doughnutChartOptions} />
             ) : (
               <div className="flex items-center justify-center h-full text-cream/60">
                 No data available

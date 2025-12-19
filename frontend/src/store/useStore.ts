@@ -29,6 +29,11 @@ interface Movement {
   voiceover_url?: string; // Supabase Storage URL for pre-recorded voiceover
   voiceover_duration_seconds?: number; // Duration in seconds (for music ducking timing)
   voiceover_enabled?: boolean; // Whether to play voiceover during this movement
+
+  // Teaching metadata (Session: Movement Families - December 2025)
+  modifications?: string; // Free-form modification suggestions for different levels
+  tips?: string; // Teaching tips and cues for instructors
+  movement_family?: string; // Movement family classification: rolling, supine_abdominal, inversion, back_extension, hip_extensor, side_lying, seated_spinal_articulation, other
 }
 
 interface SequenceMovement extends Movement {

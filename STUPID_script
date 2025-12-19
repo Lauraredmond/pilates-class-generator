@@ -1,0 +1,45 @@
+  (function() {
+    console.log('🔍 QA Report Saver activated - waiting for class generation...');
+
+    const originalFetch = window.fetch;
+
+    window.fetch = async function(...args) {
+      const response = await originalFetch(...args);
+      const clonedResponse = response.clone();
+
+      const url = args[0];
+      if (typeof url === 'string' && url.includes('/api/agents/generate-complete-class')) {
+        try {
+          const data = await clonedResponse.json();
+
+          // Navigate to the correct path
+          const qaReport = data?.data?.sequence?.data?.qa_report;
+
+          if (qaReport && qaReport.content) {
+            console.log('✅ QA Report detected!');
+            console.log(`📊 Timestamp: ${qaReport.timestamp}`);
+
+            // Automatically download the report
+            const blob = new Blob([qaReport.content], { type: 'text/markdown' });
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `muscle_overlap_report_${qaReport.timestamp}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(downloadUrl);
+
+            console.log('💾 Report downloaded to your Downloads folder!');
+          } else {
+            console.log('⚠️ No QA report found (are you logged in as admin?)');
+          }
+        } catch (error) {
+          console.error('Error parsing response:', error);
+        }
+      }
+      return response;
+    };
+
+    console.log('✨ Ready! Generate a class and the report will auto-download.');
+  })();

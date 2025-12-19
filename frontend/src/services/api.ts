@@ -107,6 +107,9 @@ export const analyticsApi = {
     api.get(`/api/analytics/difficulty-progression/${userId}`, { params: { period } }),
   getMuscleDistribution: (userId: string, period?: string) =>
     api.get(`/api/analytics/muscle-distribution/${userId}`, { params: { period } }),
+  // SESSION: Movement Families - December 2025
+  getMovementFamilyDistribution: (userId: string, period?: string) =>
+    api.get(`/api/analytics/movement-family-distribution/${userId}`, { params: { period } }),
   // Session 10: Admin LLM Observability
   getLLMLogs: (params: {
     admin_user_id: string;

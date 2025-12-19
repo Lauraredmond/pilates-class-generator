@@ -30,7 +30,14 @@ class Movement(MovementBase):
     duration_seconds: Optional[int] = None
     prerequisites: Optional[List[str]] = Field(default_factory=list)
     contraindications: Optional[List[str]] = Field(default_factory=list)
-    modifications: Optional[dict] = Field(default_factory=dict)
+
+    # Teaching metadata (Session: Movement Families - December 2025)
+    modifications: Optional[str] = Field(None, description="Free-form modification suggestions for different levels")
+    tips: Optional[str] = Field(None, description="Teaching tips and cues for instructors")
+    movement_family: Optional[str] = Field(
+        None,
+        description="Movement family classification: rolling, supine_abdominal, inversion, back_extension, hip_extensor, side_lying, seated_spinal_articulation, other"
+    )
 
     # Level flags (Y/N indicating which levels exist)
     level_1_description: Optional[str] = Field(None, description="Y if Level 1 exists, N otherwise")

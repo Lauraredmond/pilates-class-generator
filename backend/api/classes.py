@@ -1034,9 +1034,31 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         now = datetime.now()
         today = now.date().isoformat()
 
+        # CRITICAL FIX: Enrich movements_snapshot with muscle_groups from database
+        # Frontend doesn't always send muscle_groups, so we fetch them here
+        logger.info(f"🔍 DEBUG: Enriching {len(request.movements_snapshot)} items from movements_snapshot")
+        enriched_movements_snapshot = []
+        for item in request.movements_snapshot:
+            enriched_item = item.copy()
+
+            if item.get('type') == 'movement':
+                # Fetch muscle groups from junction table
+                movement_id = item.get('id')
+                movement_name = item.get('name', 'Unknown')
+                if movement_id:
+                    muscle_groups = get_movement_muscle_groups(movement_id)
+                    enriched_item['muscle_groups'] = muscle_groups
+                    logger.info(f"  ✅ Movement '{movement_name}' (ID: {movement_id}): {len(muscle_groups)} muscle groups fetched: {muscle_groups}")
+                else:
+                    logger.warning(f"  ⚠️ Movement '{movement_name}' has no ID, skipping muscle group enrichment")
+
+            enriched_movements_snapshot.append(enriched_item)
+
+        logger.info(f"✅ Enrichment complete: {len(enriched_movements_snapshot)} items enriched")
+
         # Extract movement IDs from snapshot (movements only, not transitions)
         movements_only = [
-            m for m in request.movements_snapshot
+            m for m in enriched_movements_snapshot
             if m.get('type') == 'movement'
         ]
 
@@ -1087,13 +1109,15 @@ async def save_completed_class(request: SaveCompletedClassRequest):
             'taught_date': today,
             'actual_duration_minutes': request.duration_minutes,
             'attendance_count': 1,  # Self-practice
-            'movements_snapshot': request.movements_snapshot,  # JSONB with full class
+            'movements_snapshot': enriched_movements_snapshot,  # FIXED: Use enriched version with muscle_groups!
             'instructor_notes': f"{request.difficulty} level - {request.duration_minutes} minutes - {len(movements_only)} movements",
             'difficulty_rating': None,
             'muscle_groups_targeted': unique_muscle_groups,
             'total_movements_taught': len(movements_only),
             'created_at': now.isoformat()
         }
+
+        logger.info(f"💾 DEBUG: Saving to class_history with {len(enriched_movements_snapshot)} items in movements_snapshot")
 
         history_response = supabase.table('class_history').insert(class_history_entry).execute()
 
