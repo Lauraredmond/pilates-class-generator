@@ -1331,11 +1331,12 @@ async def get_class_sequencing_report(user_id: str):
     try:
         user_uuid = _convert_to_uuid(user_id)
 
-        # Fetch most recent class
+        # Fetch most recent class (sort by taught_date first, then created_at for same-day classes)
         response = supabase.table('class_history') \
             .select('*') \
             .eq('user_id', user_uuid) \
             .order('taught_date', desc=True) \
+            .order('created_at', desc=True) \
             .limit(1) \
             .execute()
 
