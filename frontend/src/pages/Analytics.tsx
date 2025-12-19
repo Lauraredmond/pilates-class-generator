@@ -295,9 +295,17 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
     : null;
 
   // SESSION: Movement Families - December 2025
+  // Helper function to format family names for display (remove underscores, capitalize)
+  const formatFamilyName = (family: string): string => {
+    return family
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   const movementFamilyDistributionChartData = movementFamilyDistribution
     ? {
-        labels: movementFamilyDistribution.families,
+        labels: movementFamilyDistribution.families.map(formatFamilyName),
         datasets: [
           {
             data: movementFamilyDistribution.percentages,
