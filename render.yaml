@@ -3,7 +3,7 @@ services:
   - type: web
     name: pilates-class-generator-api
     env: python
-    pythonVersion: 3.11.0
+    pythonVersion: 3.11.14
     region: oregon
     plan: free
     branch: main

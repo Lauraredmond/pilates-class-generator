@@ -604,7 +604,8 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
     # Format date
     report_date = datetime.fromisoformat(report_data.get('report_date', datetime.utcnow().isoformat())).strftime('%B %d, %Y at %I:%M %p UTC')
 
-    html = f"""
+    # Build HTML string (renamed from 'html' to avoid shadowing the html module import)
+    html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -794,14 +795,14 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
 
     # Add transaction type stats
     for tx_type, count in summary.get('by_transaction_type', {}).items():
-        html += f"""
+        html_content += f"""
                     <div class="stat-card">
                         <div class="stat-number">{count}</div>
                         <div class="stat-label">{tx_type.upper()}</div>
                     </div>
         """
 
-    html += """
+    html_content += """
                 </div>
 
                 <h3>By Processing System</h3>
@@ -810,7 +811,7 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
 
     # Add system stats
     for system, count in summary.get('by_processing_system', {}).items():
-        html += f"""
+        html_content += f"""
                     <div class="stat-card">
                         <div class="stat-number">{count}</div>
                         <div class="stat-label">{system}</div>
@@ -833,7 +834,7 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
         except:
             pass
 
-    html += f"""
+    html_content += f"""
                 </div>
 
                 <div class="metadata" style="margin-top: 20px;">
@@ -849,7 +850,7 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
     """
 
     if recent_activities:
-        html += """
+        html_content += """
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -895,7 +896,7 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
             # XSS PREVENTION: Escape processing system
             processing_system = html.escape(activity.get('processing_system', 'N/A'))
 
-            html += f"""
+            html_content += f"""
                         <tr>
                             <td style="white-space: nowrap;">{timestamp}</td>
                             <td><span class="badge {badge_class}">{tx_type}</span>{fields_summary}</td>
@@ -904,14 +905,14 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
                         </tr>
             """
 
-        html += """
+        html_content += """
                     </tbody>
                 </table>
         """
     else:
-        html += '<p style="color: #999; font-style: italic;">No processing activities recorded yet</p>'
+        html_content += '<p style="color: #999; font-style: italic;">No processing activities recorded yet</p>'
 
-    html += """
+    html_content += """
             </div>
 
             <!-- THIRD PARTY DATA SHARING -->
@@ -927,7 +928,7 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
                     <tbody>
     """
 
-    html += f"""
+    html_content += f"""
                         <tr>
                             <td><strong>Recipients</strong></td>
                             <td>{', '.join(third_party.get('recipients', []))}</td>
@@ -950,7 +951,7 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
                         </tr>
     """
 
-    html += """
+    html_content += """
                     </tbody>
                 </table>
             </div>
@@ -970,14 +971,14 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
 
     for data_type, retention_period in retention.items():
         formatted_type = data_type.replace('_', ' ').title()
-        html += f"""
+        html_content += f"""
                         <tr>
                             <td><strong>{formatted_type}</strong></td>
                             <td>{retention_period}</td>
                         </tr>
         """
 
-    html += """
+    html_content += """
                     </tbody>
                 </table>
             </div>
@@ -990,7 +991,7 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
 
     for right_key, right_info in rights.items():
         right_name = right_key.replace('_', ' ').title()
-        html += f"""
+        html_content += f"""
                     <li>
                         <strong>{right_name}</strong>
                         <p>{right_info.get('description', '')}</p>
@@ -1000,7 +1001,7 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
                     </li>
         """
 
-    html += f"""
+    html_content += f"""
                 </ul>
             </div>
 
@@ -1033,7 +1034,7 @@ def generate_ropa_html_report(report_data: Dict[str, Any]) -> str:
     </html>
     """
 
-    return html
+    return html_content
 
 
 @router.get("/api/compliance/ropa-report")
@@ -1179,7 +1180,7 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
     # Format date
     report_date = datetime.utcnow().strftime('%B %d, %Y at %I:%M %p UTC')
 
-    html = f"""
+    html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -1381,7 +1382,7 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
     """
 
     if total_decisions == 0:
-        html += """
+        html_content += """
             <div class="section">
                 <div class="empty-state">
                     <div class="empty-state-icon">🤖</div>
@@ -1404,7 +1405,7 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
         override_rate = statistics.get('override_rate_percent', 0)
         decisions_by_agent = statistics.get('decisions_by_agent', {})
 
-        html += f"""
+        html_content += f"""
             <!-- SUMMARY STATISTICS -->
             <div class="section">
                 <h2>📊 Summary Statistics</h2>
@@ -1433,14 +1434,14 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
 
         for agent_type, count in decisions_by_agent.items():
             formatted_agent = agent_type.replace('_', ' ').title()
-            html += f"""
+            html_content += f"""
                     <div class="stat-card">
                         <div class="stat-number">{count}</div>
                         <div class="stat-label">{formatted_agent}</div>
                     </div>
             """
 
-        html += """
+        html_content += """
                 </div>
             </div>
 
@@ -1475,7 +1476,7 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
             else:
                 conf_class = "confidence-low"
 
-            html += f"""
+            html_content += f"""
                 <div class="decision-card">
                     <div class="decision-header">
                         <div class="decision-title">{agent_type_escaped}</div>
@@ -1496,12 +1497,12 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
                 </div>
             """
 
-        html += """
+        html_content += """
             </div>
         """
 
     # EU AI Act Compliance section
-    html += f"""
+    html_content += f"""
             <!-- EU AI ACT COMPLIANCE -->
             <div class="section">
                 <h2>🇪🇺 EU AI Act Compliance</h2>
@@ -1563,7 +1564,7 @@ def generate_ai_decisions_html_report(report_data: Dict[str, Any]) -> str:
     </html>
     """
 
-    return html
+    return html_content
 
 
 @router.get("/api/compliance/ai-decisions")

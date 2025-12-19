@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, Music, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare, FileText, Wrench } from 'lucide-react';
+import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as SettingsIcon, FileDown, Info, Database, Download, ChevronDown, ChevronUp, X, MessageSquare, FileText, Wrench } from 'lucide-react';
 import { logger } from '../utils/logger';
 import { RecordingModeManager } from '../components/recording-mode/RecordingModeManager';
 import { DebugPanel } from '../components/DebugPanel';
@@ -18,7 +18,6 @@ export function Settings() {
     security: true,
     notifications: false,
     ai: false,
-    music: false,
     compliance: false,
     developer: false,
     danger: false
@@ -49,8 +48,7 @@ export function Settings() {
     class_reminders: true,
     weekly_summary: false,
     analytics_enabled: true,
-    data_sharing_enabled: false,
-    music_preferences: {} as Record<string, any>
+    data_sharing_enabled: false
   });
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [preferencesSaving, setPreferencesSaving] = useState(false);
@@ -61,6 +59,11 @@ export function Settings() {
   const [complianceLoading, setComplianceLoading] = useState(false);
   const [complianceError, setComplianceError] = useState('');
   const [complianceSuccess, setComplianceSuccess] = useState('');
+
+  // Class sequencing report state
+  const [sequencingReportLoading, setSequencingReportLoading] = useState(false);
+  const [sequencingReportError, setSequencingReportError] = useState('');
+  const [sequencingReportSuccess, setSequencingReportSuccess] = useState('');
 
   // Report modal state (for mobile-friendly viewing)
   const [showReportModal, setShowReportModal] = useState(false);
@@ -316,6 +319,45 @@ export function Settings() {
       setComplianceError(error.response?.data?.detail || 'Failed to load AI decisions');
     } finally {
       setComplianceLoading(false);
+    }
+  };
+
+  const handleDownloadSequencingReport = async () => {
+    setSequencingReportLoading(true);
+    setSequencingReportError('');
+    setSequencingReportSuccess('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE_URL}/api/analytics/class-sequencing-report/${user?.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Download markdown file
+      const reportData = response.data;
+      const dataBlob = new Blob([reportData.report_content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `class-sequencing-report-${new Date().toISOString().split('T')[0]}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      const passStatus = reportData.pass_status ? 'PASSED' : 'FAILED';
+      setSequencingReportSuccess(`Report downloaded successfully! Sequencing validation: ${passStatus} (${reportData.total_movements} movements)`);
+      setTimeout(() => setSequencingReportSuccess(''), 10000);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        setSequencingReportError('No class history found. Generate a class first to see the sequencing report.');
+      } else {
+        setSequencingReportError(error.response?.data?.detail || 'Failed to generate sequencing report');
+      }
+    } finally {
+      setSequencingReportLoading(false);
     }
   };
 
@@ -606,58 +648,6 @@ export function Settings() {
         )}
       </div>
 
-      {/* Music Preferences */}
-      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
-        <button
-          onClick={() => toggleSection('music')}
-          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Music className="w-6 h-6 text-burgundy" />
-            <h2 className="text-xl font-semibold text-cream">Music Preferences</h2>
-          </div>
-          {expandedSections.music ? (
-            <ChevronUp className="w-5 h-5 text-cream/60" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-cream/60" />
-          )}
-        </button>
-
-        {expandedSections.music && (
-          <div className="px-6 pb-6">
-            <p className="text-cream/60 text-sm mb-4">
-              Choose your preferred classical music styles
-            </p>
-            {preferencesLoading ? (
-              <p className="text-cream/50">Loading preferences...</p>
-            ) : (
-              <div className="space-y-4">
-                <div className="bg-burgundy/10 rounded p-4">
-                  <p className="text-cream font-medium mb-2">Classical Music Styles</p>
-                  <p className="text-cream/60 text-sm mb-3">
-                    Music integration with Musopen and FreePD will be available in Session 10.
-                    Choose your preferred classical music periods for class accompaniment.
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {['Baroque', 'Classical', 'Romantic', 'Impressionist', 'Modern', 'Contemporary', 'Celtic'].map((style) => (
-                      <label key={style} className="flex items-center space-x-2 p-2 bg-burgundy/20 rounded cursor-pointer hover:bg-burgundy/30 transition-colors">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-burgundy focus:ring-burgundy border-cream/30 rounded"
-                          disabled={true}
-                        />
-                        <span className="text-cream text-sm">{style}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <p className="text-cream/50 text-xs mt-3 italic">Music preferences will be functional in Session 10</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* Data, Privacy & General Compliance */}
       <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
         <button
@@ -928,6 +918,48 @@ export function Settings() {
             <p className="text-cream/60 text-sm mb-6">
               Tools for content creators and developers
             </p>
+
+            {/* Sequencing Report Success/Error Messages */}
+            {sequencingReportSuccess && (
+              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-4 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                <p className="text-green-400 text-sm">{sequencingReportSuccess}</p>
+              </div>
+            )}
+
+            {sequencingReportError && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                <p className="text-sm text-red-700">{sequencingReportError}</p>
+              </div>
+            )}
+
+            {/* Class Sequencing Report Download */}
+            <div className="mb-6 p-4 bg-burgundy/10 rounded-lg border border-burgundy/20">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-cream mb-2">Class Sequencing Report</h3>
+                  <p className="text-cream/60 text-sm mb-3">
+                    Download a detailed report analyzing your most recent class for proper sequencing rules:
+                  </p>
+                  <ul className="text-cream/60 text-xs space-y-1 list-disc list-inside mb-3">
+                    <li>Movement sequence data with muscle groups</li>
+                    <li>Consecutive muscle overlap analysis (must be &lt;50%)</li>
+                    <li>Movement pattern proximity checks</li>
+                    <li>Historical muscle balance tracking</li>
+                    <li>Summary statistics with pass/fail status</li>
+                  </ul>
+                </div>
+              </div>
+              <button
+                onClick={handleDownloadSequencingReport}
+                disabled={sequencingReportLoading}
+                className="w-full flex items-center justify-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-3 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-5 h-5" />
+                {sequencingReportLoading ? 'Generating Report...' : 'Download Latest Class Report (.md)'}
+              </button>
+            </div>
+
             <DebugPanel />
             <div className="mt-6">
               <RecordingModeManager />

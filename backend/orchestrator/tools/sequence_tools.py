@@ -41,10 +41,14 @@ class SequenceTools:
     SAFETY_RULES = {
         "spinal_progression": "Flexion movements must precede extension movements",
         "muscle_balance": "No muscle group should exceed 40% of total class load",
+        "movement_family_balance": "No movement family should exceed 40% of total movements",
         "complexity_progression": "Difficulty should progress gradually",
         "must_cooldown": "Classes must end with stretching and breathing",
         "teaching_time": "Students need 3-5 minutes per movement for proper instruction"
     }
+
+    # Movement family distribution threshold
+    MAX_FAMILY_PERCENTAGE = 40  # No single family should exceed 40% of movements
 
     # Teaching time per movement (in minutes) - CRITICAL QUALITY RULE
     MINUTES_PER_MOVEMENT = {
@@ -406,7 +410,10 @@ class SequenceTools:
                 movement = next((m for m in movements if m["id"] == movement_id), None)
                 if movement and len(sequence) < max_movements - 1:  # Save room for cooldown
                     movement_copy = movement.copy()
-                    movement_copy["duration_seconds"] = teaching_time_seconds
+                    # PRESERVE database duration_seconds instead of overwriting with teaching_time
+                    # (Database duration is user-configurable, teaching_time is just for calculating max_movements)
+                    if "duration_seconds" not in movement_copy or not movement_copy["duration_seconds"]:
+                        movement_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
                     movement_copy["type"] = "movement"
                     sequence.append(movement_copy)
 
@@ -428,7 +435,9 @@ class SequenceTools:
                 break
 
             selected_copy = selected.copy()
-            selected_copy["duration_seconds"] = teaching_time_seconds
+            # PRESERVE database duration_seconds instead of overwriting with teaching_time
+            if "duration_seconds" not in selected_copy or not selected_copy["duration_seconds"]:
+                selected_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
             selected_copy["type"] = "movement"
             sequence.append(selected_copy)
 
@@ -436,7 +445,9 @@ class SequenceTools:
         cooldown = self._get_cooldown_movement(movements, sequence)
         if cooldown:
             cooldown_copy = cooldown.copy()
-            cooldown_copy["duration_seconds"] = teaching_time_seconds
+            # PRESERVE database duration_seconds instead of overwriting with teaching_time
+            if "duration_seconds" not in cooldown_copy or not cooldown_copy["duration_seconds"]:
+                cooldown_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
             cooldown_copy["type"] = "movement"
             sequence.append(cooldown_copy)
 
@@ -468,6 +479,7 @@ class SequenceTools:
 
         PHASE 1 FIX: Added consecutive muscle overlap validation
         PHASE 2 FIX: Added weighted random selection based on usage history
+        SESSION: Movement Families - Added family balance filtering
         """
         # Get already used movement IDs
         used_ids = [m["id"] for m in current_sequence]
@@ -500,6 +512,37 @@ class SequenceTools:
                 if filtered_available:
                     available = filtered_available
                     logger.info(f"Filtered to {len(available)} movements with <50% consecutive muscle overlap")
+
+        # SESSION: Movement Families - Filter by family balance (soft enforcement)
+        if current_sequence and len(current_sequence) >= 2:  # Only enforce after 2+ movements
+            # Calculate current family distribution
+            family_balance = self._calculate_family_balance(current_sequence)
+
+            # Find families that are already at/above threshold
+            overrepresented_families = {
+                family for family, pct in family_balance.items()
+                if pct >= self.MAX_FAMILY_PERCENTAGE
+            }
+
+            if overrepresented_families:
+                # Filter out movements from overrepresented families
+                family_filtered = [
+                    m for m in available
+                    if m.get("movement_family") not in overrepresented_families
+                ]
+
+                # SOFT ENFORCEMENT: Only apply filter if it doesn't block ALL options
+                if family_filtered:
+                    available = family_filtered
+                    logger.info(
+                        f"Filtered out families: {overrepresented_families} "
+                        f"({len(available)} movements remaining)"
+                    )
+                else:
+                    logger.warning(
+                        f"⚠️  Family balance filter would block all movements - allowing override. "
+                        f"Overrepresented: {overrepresented_families}"
+                    )
 
         # If focus areas specified, prefer those
         if focus_areas:
@@ -695,6 +738,40 @@ class SequenceTools:
 
         return muscle_load
 
+    def _calculate_family_balance(self, sequence: List[Dict[str, Any]]) -> Dict[str, float]:
+        """
+        Calculate movement family distribution across sequence
+
+        SESSION: Movement Families - December 2025
+        Returns percentage of movements from each family.
+        """
+        family_counts = {}
+        total_movements = len(sequence)
+
+        if total_movements == 0:
+            return {}
+
+        try:
+            # Count movements by family
+            for movement in sequence:
+                family = movement.get("movement_family", "other")
+                if family not in family_counts:
+                    family_counts[family] = 0
+                family_counts[family] += 1
+
+            # Convert to percentages
+            family_percentages = {
+                family: (count / total_movements) * 100
+                for family, count in family_counts.items()
+            }
+
+            logger.info(f"Family distribution: {family_percentages}")
+            return family_percentages
+
+        except Exception as e:
+            logger.error(f"Error calculating family balance: {e}")
+            return {}
+
     def _validate_sequence(
         self,
         sequence: List[Dict[str, Any]],
@@ -709,6 +786,15 @@ class SequenceTools:
             if load > 40:
                 warnings.append(f"{muscle.title()} load high ({load:.1f}%)")
 
+        # SESSION: Movement Families - Check family balance
+        family_balance = self._calculate_family_balance(sequence)
+        for family, percentage in family_balance.items():
+            if percentage > self.MAX_FAMILY_PERCENTAGE:
+                warnings.append(
+                    f"Movement family '{family}' high ({percentage:.1f}% of movements, "
+                    f"threshold {self.MAX_FAMILY_PERCENTAGE}%)"
+                )
+
         # Calculate safety score
         safety_score = 1.0 - (len(violations) * 0.2 + len(warnings) * 0.05)
         safety_score = max(0.0, min(1.0, safety_score))
@@ -717,7 +803,8 @@ class SequenceTools:
             "is_valid": len(violations) == 0,
             "safety_score": safety_score,
             "violations": violations,
-            "warnings": warnings
+            "warnings": warnings,
+            "family_balance": family_balance  # Include family distribution in response
         }
 
     # ==========================================================================
