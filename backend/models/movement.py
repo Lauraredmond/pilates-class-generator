@@ -36,7 +36,7 @@ class Movement(MovementBase):
     tips: Optional[str] = Field(None, description="Teaching tips and cues for instructors")
     movement_family: Optional[str] = Field(
         None,
-        description="Movement family classification: rolling, supine_abdominal, inversion, back_extension, hip_extensor, side_lying, other"
+        description="Movement family classification: rolling, supine_abdominal, inversion, back_extension, hip_extensor, side_lying, seated_spinal_articulation, other"
     )
 
     # Level flags (Y/N indicating which levels exist)
