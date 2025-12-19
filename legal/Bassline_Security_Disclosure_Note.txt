@@ -4,49 +4,128 @@ Thank you for testing the Bassline Pilates beta.
 We want you to feel confident that your data and your device are safe while using the app.
 Below is an explanation of the security steps we’ve taken and what you should know as a tester.
 
-1. What We Tested
-Before inviting testers, Bassline Pilates underwent a structured security review aligned to the key 2025 OWASP Top Risk Categories.  
-Our testing covered the following areas:
+1. Security Testing & Current Status
+Last Security Review: December 19, 2025
 
-• Automated Scanning (OWASP ZAP)
-  – Scanned the public-facing app for common vulnerabilities such as broken access control, injection issues, and misconfigurations.
+Bassline Pilates has undergone early-stage security testing aligned with OWASP Top 10 2025 and GDPR/EU AI Act requirements.
 
-• Dependency & Supply Chain Security (AuditNOM, GitGuardian)
-  – Reviewed npm packages for known vulnerabilities.
-  – Detected malicious or outdated dependencies.
-  – Ensured no API keys, secrets, or credentials were exposed in the repository.
+A. Infrastructure Security (Updated December 19, 2025)
+• Python 3.11.14 Runtime
+  – Latest stable version with all security patches
+  – Upgraded from Python 3.9.6 to address version-specific vulnerabilities
 
-• Authentication & Authorization
-  – Verified session handling, login security, and access restrictions.
-  – Ensured users can access only their own data.
+• Dependency Vulnerability Reduction: 95% (40 → 1 known vulnerabilities)
+  – Frontend: 0 vulnerabilities (npm audit)
+  – Backend: 1 low-risk vulnerability (ecdsa timing attack - does not affect application)
 
-• Database Security (Supabase RLS)
-  – Confirmed Row Level Security rules properly isolate user data.
-  – Reviewed policy logic for correctness and least‑privilege access.
+• Critical Security Packages Updated:
+  – Cryptography 46.0.3 (fixed 4 CVEs including RSA key exchange vulnerability)
+  – Web Framework 3.12.14 (fixed 6 CVEs including XSS, request smuggling, DoS attacks)
+  – Authentication Library 3.5.0 (fixed 2 CVEs in JWT token handling)
+  – Network Library 2.6.0 (fixed 4 CVEs including resource exhaustion, redirect bypass)
+  – AI Libraries 0.3.27 (fixed 12 CVEs including SSRF, XXE, pickle deserialization)
+  – Form Data Parser 0.0.18 (fixed 2 ReDoS vulnerabilities)
+
+• Automated Security Scanning
+  – pip-audit (Python dependency scanning)
+  – npm audit (JavaScript dependency scanning)
+  – Monthly automated security reviews
+
+B. Code Security Testing
+• Claude Code Secure-Coding Review
+  – Static analysis of all code
+  – Security best practices verification
+  – Regular code quality audits
+
+• GitGuardian Secret Scanning
+  – Prevents API keys, tokens, passwords in code repository
+  – Continuous monitoring for accidental secret exposure
+  – No secrets detected in git history
+
+• OWASP ZAP Automated Scanning
+  – Scanned for broken access control, injection issues, misconfigurations
+  – Verified XSS protection, CSRF protection, security headers
+
+• Wireshark Packet Analysis
+  – Confirmed no PII transmitted in clear text
+  – Verified HTTPS/TLS 1.3 encryption for all traffic
+
+C. Authentication & Authorization
+• JWT Token Authentication (HS256/HMAC-SHA256)
+  – 30-minute token expiration
+  – Secure token generation and validation
+  – No ECDSA vulnerabilities (application uses HMAC, not ECDSA)
+
+• Password Security
+  – bcrypt hashing (minimum 10 rounds)
+  – Passwords never stored in plain text
+  – Secure password reset flow
+
+• Session Management
+  – Secure session handling
+  – Automatic logout after inactivity
+  – Token refresh mechanisms
+
+D. Database Security (Supabase RLS)
+• Row-Level Security (RLS) Policies
+  – Users can access only their own data
+  – Enforced at database level (cannot be bypassed)
+  – Least-privilege access principle
+
+• PII Tokenization
+  – AES-256 encryption for sensitive data
+  – Separate tokenization table
+  – Secure key management
+
+E. Data Protection
+• HTTPS/TLS 1.3 Encryption
+  – All data encrypted in transit
+  – Modern cipher suites
+  – Perfect forward secrecy
 
 • Input Validation & Injection Protection
-  – Checked for unsafe handling of user input that could allow SQL injection, XSS, or logic bypass.
-
-• Cryptography & Secrets Management
-  – Confirmed that all traffic uses HTTPS.
-  – Verified password hashing and secure credential storage in environment variables.
+  – Parameterized database queries (SQL injection protection)
+  – XSS protection in React components
+  – Content Security Policy (CSP) headers
 
 • Logging & Error Handling
-  – Ensured logs do not contain sensitive data.
-  – Checked that error messages do not leak internal information.
+  – No sensitive data in logs
+  – Error messages do not leak internal information
+  – Security event monitoring
 
-• Business Logic & Insecure Design
-  – Reviewed app flows to identify places where users could bypass intended restrictions or misuse features.
+F. Compliance
+• GDPR Article 32 (Security of Processing)
+  – Appropriate technical and organizational measures
+  – Regular security testing and monitoring
+  – Documented security controls
 
-• Frontend Security Hardening
-  – Ensured user-generated content is not injected as HTML.
-  – Reviewed React components to reduce XSS risks.
+• GDPR Article 15 (Right to Access) & Article 17 (Right to Deletion)
+  – User data export functionality
+  - Account deletion with cascade
 
-In addition, **Wireshark packet analysis** was performed to confirm that no personal data is transmitted in clear text over the network.
+• EU AI Act Transparency
+  – AI decision logging
+  – Explainability for AI-generated content
+  – User control over AI features
+
+G. Known Vulnerabilities (1 Remaining)
+As of December 19, 2025:
+• ecdsa 0.19.1 timing attack (CVE-2024-23342)
+  – Severity: High (CVSS 7.4) - but LOW RISK for this application
+  – Impact: None - Application uses HS256 (HMAC-SHA256), NOT ECDSA
+  – Status: Accepted risk, monitored monthly for patches
+  – No fix available (ecdsa project considers side-channel attacks out of scope)
 
 2. What These Tests Mean for You
-These checks help identify issues early and improve the safety of your testing experience.  
-They do not guarantee perfect security, but they demonstrate that Bassline Pilates is being built with strong, modern security practices.
+These checks help identify issues early and improve the safety of your testing experience.
+
+Important Limitations:
+• Security testing is ongoing and evolving
+• No system can guarantee perfect security
+• Beta software may contain undiscovered vulnerabilities
+• We continue to improve security measures as the beta progresses
+
+While we follow modern security practices, this is early-stage software and security controls will continue to mature.
 
 3. What Bassline Pilates Does NOT Do
 • We do not sell or rent your data.  

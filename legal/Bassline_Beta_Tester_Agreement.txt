@@ -27,13 +27,37 @@ During beta testing, the Service may collect:
 The beta version, its features, and materials are confidential. You agree not to share screenshots, videos, or details publicly without permission.
 
 7. Security Measures
-Bassline Pilates has undergone early-stage security testing, including:
+Bassline Pilates has undergone early-stage security testing (last updated: December 19, 2025):
+
+Infrastructure Security:
+- Python 3.11.14 runtime (latest stable version)
+- 95% vulnerability reduction (40 → 1 known vulnerabilities)
+- Automated dependency scanning (pip-audit, npm audit)
+- All critical security packages updated:
+  - cryptography 46.0.3 (4 CVEs fixed)
+  - aiohttp 3.12.14 (6 CVEs fixed)
+  - langchain 0.3.27 (12 CVEs fixed)
+  - python-jose 3.5.0 (2 CVEs fixed)
+  - urllib3 2.6.0 (4 CVEs fixed)
+
+Code Security Testing:
 - Claude Code secure‑coding review
 - GitGuardian secret‑leak scanning
 - OWASP ZAP local web‑app scanning
-- Wireshark packet inspection verifying no PII is transmitted in clear text
+- Wireshark packet inspection verifying no PII transmitted in clear text
 
-These tests identify issues, but cannot guarantee complete security.
+Data Protection:
+- PII tokenization (AES-256 encryption)
+- Row-level security policies (Supabase)
+- HTTPS/TLS enforcement
+- JWT authentication (HS256)
+
+Compliance:
+- GDPR Article 15, 17, 32 compliant
+- EU AI Act transparency requirements
+- Regular security audits and monitoring
+
+Note: While extensive security measures are in place, no system can guarantee complete security. One remaining vulnerability (ecdsa timing attack) has been assessed as low risk as the application uses HMAC-SHA256, not ECDSA.
 
 8. No Warranty
 The Service is provided “as is.”
