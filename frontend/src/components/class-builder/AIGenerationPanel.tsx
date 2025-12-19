@@ -114,6 +114,20 @@ export function AIGenerationPanel() {
 
       // Calculate ACTUAL total duration from all 6 sections from Supabase (NO hardcoded fallbacks)
       // WARNING: If any section is missing duration_seconds, it will log an error
+
+      // TEMPORARY DEBUG: Check sequence array
+      console.log('🔍 SEQUENCE DEBUG:', {
+        totalItems: sequenceResponse.data.sequence.length,
+        movements: sequenceResponse.data.sequence.filter((i: any) => i.type === 'movement').length,
+        transitions: sequenceResponse.data.sequence.filter((i: any) => i.type === 'transition').length,
+        firstItem: sequenceResponse.data.sequence[0],
+        durations: sequenceResponse.data.sequence.map((i: any) => ({
+          type: i.type,
+          name: i.name,
+          duration_seconds: i.duration_seconds
+        }))
+      });
+
       const sectionDurations = {
         preparation: preparationData?.duration_seconds || 0,
         warmup: warmupData?.duration_seconds || 0,
