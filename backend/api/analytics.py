@@ -85,6 +85,12 @@ class MuscleDistributionData(BaseModel):
     percentages: List[float]
 
 
+class MovementFamilyDistributionData(BaseModel):
+    """Movement family distribution for pie chart (Session: Movement Families)"""
+    families: List[str]
+    percentages: List[float]
+
+
 # Helper functions
 def _convert_to_uuid(user_id: str) -> str:
     """Convert any user_id string to a valid UUID format"""
@@ -663,6 +669,95 @@ async def get_muscle_distribution(
 
     except Exception as e:
         logger.error(f"Error fetching muscle distribution for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/movement-family-distribution/{user_id}", response_model=MovementFamilyDistributionData)
+async def get_movement_family_distribution(
+    user_id: str,
+    period: TimePeriod = Query(default=TimePeriod.TOTAL)
+):
+    """
+    Get movement family distribution data for pie chart
+
+    SESSION: Movement Families - December 2025
+    Shows cumulative proportion of usage across 8 movement families
+    (rolling, supine_abdominal, inversion, back_extension, hip_extensor,
+     side_lying, seated_spinal_articulation, other)
+
+    OPTIMIZED: Batches movement family queries into 2 database calls
+    """
+    try:
+        user_uuid = _convert_to_uuid(user_id)
+
+        # Get date ranges
+        date_ranges, _ = _get_date_ranges(period)
+        earliest_date = date_ranges[0][0]
+
+        # Fetch class history
+        classes_response = supabase.table('class_history') \
+            .select('*') \
+            .eq('user_id', user_uuid) \
+            .gte('taught_date', earliest_date.isoformat()) \
+            .execute()
+
+        classes = classes_response.data or []
+
+        # Collect all unique movement names
+        unique_movement_names = set()
+        for class_item in classes:
+            movements_snapshot = class_item.get('movements_snapshot', [])
+            for movement in movements_snapshot:
+                if movement.get('type') == 'movement':
+                    movement_name = movement.get('name')
+                    if movement_name:
+                        unique_movement_names.add(movement_name)
+
+        # BATCH QUERY: Get movement_family for ALL movements in ONE query
+        movement_family_cache = {}
+        if unique_movement_names:
+            movements_response = supabase.table('movements') \
+                .select('name, movement_family') \
+                .in_('name', list(unique_movement_names)) \
+                .execute()
+
+            movement_family_cache = {
+                m['name']: m.get('movement_family', 'other')
+                for m in movements_response.data
+            }
+
+        # Count family usage using cached data
+        family_totals = defaultdict(int)
+
+        for class_item in classes:
+            movements_snapshot = class_item.get('movements_snapshot', [])
+            for movement in movements_snapshot:
+                if movement.get('type') == 'movement':
+                    movement_name = movement.get('name')
+                    if movement_name:
+                        # Lookup from cache (no database query!)
+                        family = movement_family_cache.get(movement_name, 'other')
+                        family_totals[family] += 1
+
+        # Calculate percentages
+        total_count = sum(family_totals.values())
+
+        if total_count == 0:
+            return MovementFamilyDistributionData(families=[], percentages=[])
+
+        # Sort by usage (most used first)
+        sorted_families = sorted(family_totals.items(), key=lambda x: x[1], reverse=True)
+
+        families = [f[0] for f in sorted_families]
+        percentages = [(f[1] / total_count) * 100 for f in sorted_families]
+
+        return MovementFamilyDistributionData(
+            families=families,
+            percentages=percentages
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching movement family distribution for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
