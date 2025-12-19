@@ -68,6 +68,7 @@ export function Analytics() {
   const [practiceFrequency, setPracticeFrequency] = useState<any>(null);
   const [difficultyProgression, setDifficultyProgression] = useState<any>(null);
   const [muscleDistribution, setMuscleDistribution] = useState<any>(null);
+  const [movementFamilyDistribution, setMovementFamilyDistribution] = useState<any>(null); // SESSION: Movement Families
 
   // Fetch all analytics data
   useEffect(() => {
@@ -89,6 +90,7 @@ export function Analytics() {
           practiceFreqResponse,
           difficultyProgResponse,
           muscleDistResponse,
+          familyDistResponse, // SESSION: Movement Families
         ] = await Promise.all([
           analyticsApi.getSummary(user.id),
           analyticsApi.getMovementHistory(user.id, timePeriod),
@@ -96,6 +98,7 @@ export function Analytics() {
           analyticsApi.getPracticeFrequency(user.id, timePeriod),
           analyticsApi.getDifficultyProgression(user.id, timePeriod),
           analyticsApi.getMuscleDistribution(user.id, 'total'), // Always show total for doughnut
+          analyticsApi.getMovementFamilyDistribution(user.id, 'total'), // SESSION: Movement Families
         ]);
 
         // Update stats
@@ -116,6 +119,7 @@ export function Analytics() {
         setPracticeFrequency(practiceFreqResponse.data);
         setDifficultyProgression(difficultyProgResponse.data);
         setMuscleDistribution(muscleDistResponse.data);
+        setMovementFamilyDistribution(familyDistResponse.data); // SESSION: Movement Families
       } catch (err: any) {
         logger.error('Failed to fetch analytics:', err);
         setError(err.response?.data?.detail || 'Failed to load analytics data');
@@ -290,6 +294,28 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
       }
     : null;
 
+  // SESSION: Movement Families - December 2025
+  const movementFamilyDistributionChartData = movementFamilyDistribution
+    ? {
+        labels: movementFamilyDistribution.families,
+        datasets: [
+          {
+            data: movementFamilyDistribution.percentages,
+            backgroundColor: [
+              '#8b2635',  // Primary burgundy - rolling
+              '#cd8b76',  // Terracotta - supine_abdominal
+              '#5c1a26',  // Dark burgundy - inversion
+              '#e3a57a',  // Light peach - back_extension
+              '#b8927d',  // Medium beige - hip_extensor
+              '#d94d5c',  // Bright coral red - side_lying
+              '#9e7762',  // Warm brown - seated_spinal_articulation
+              '#f5f1e8',  // Cream - other
+            ],
+          },
+        ],
+      }
+    : null;
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -453,6 +479,25 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           <div className="h-96">
             {muscleDistributionChartData ? (
               <Doughnut data={muscleDistributionChartData} options={doughnutChartOptions} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-cream/60">
+                No data available
+              </div>
+            )}
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* SESSION: Movement Families - December 2025 */}
+      {/* Movement Family Distribution Chart (Full Width) */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Movement Family Distribution</CardTitle>
+        </CardHeader>
+        <CardBody className="p-6">
+          <div className="h-96">
+            {movementFamilyDistributionChartData ? (
+              <Doughnut data={movementFamilyDistributionChartData} options={doughnutChartOptions} />
             ) : (
               <div className="flex items-center justify-center h-full text-cream/60">
                 No data available

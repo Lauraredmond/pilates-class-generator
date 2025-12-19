@@ -23,14 +23,17 @@ UPDATE movements SET movement_family = 'supine_abdominal' WHERE code IN (
     'one_leg_circle',
     'neck_pull',
     'the_corkscrew',
-    'teaser'
+    'teaser',
+    'the_roll_up'
 );
 
 -- INVERSION: Pelvis lifted above shoulders or significant spinal inversion
 UPDATE movements SET movement_family = 'inversion' WHERE code IN (
     'control_balance',
     'jack_knife',
-    'roll_over'  -- Note: roll_over could be 'rolling' or 'inversion'; user said inversion is dominant once overhead
+    'roll_over',  -- Note: roll_over could be 'rolling' or 'inversion'; user said inversion is dominant once overhead
+    'bicycle_scissors_',
+    'the_roll_over'
 );
 
 -- BACK_EXTENSION: Prone or extension-dominant spinal work
@@ -40,14 +43,16 @@ UPDATE movements SET movement_family = 'back_extension' WHERE code IN (
     'swimming_box',
     'rocking',
     'double_leg_kick',
-    'one_leg_kick'
+    'one_leg_kick',
+    'swimming'
 );
 
 -- HIP_EXTENSOR: Posterior-chain-dominant, hips driving the movement
 UPDATE movements SET movement_family = 'hip_extensor' WHERE code IN (
     'shoulder_bridge',
     'leg_pull_prone',
-    'leg_pull_supine'
+    'leg_pull_supine',
+    'hip_twist'
 );
 
 -- SIDE_LYING: Side-oriented work emphasising lateral stability or hip mechanics
@@ -66,8 +71,7 @@ UPDATE movements SET movement_family = 'seated_spinal_articulation' WHERE code I
 
 -- OTHER: Rotational, transitional, or mixed patterns
 UPDATE movements SET movement_family = 'other' WHERE code IN (
-    'push_up',
-    'hip_twist'
+    'push_up'
 );
 
 -- Verification: Show distribution of movement families
