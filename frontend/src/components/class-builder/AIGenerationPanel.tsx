@@ -147,6 +147,18 @@ export function AIGenerationPanel() {
 
       const actualDuration = Object.values(sectionDurations).reduce((sum, val) => sum + val, 0);
 
+      // TEMPORARY DEBUG: Force console output even in production
+      console.log('🔍 DURATION DEBUG:', {
+        preparation: sectionDurations.preparation,
+        warmup: sectionDurations.warmup,
+        movementsAndTransitions: sectionDurations.movementsAndTransitions,
+        cooldown: sectionDurations.cooldown,
+        meditation: sectionDurations.meditation,
+        homecare: sectionDurations.homecare,
+        actualDuration: actualDuration,
+        actualDurationMinutes: Math.round(actualDuration / 60),
+      });
+
       logger.info('[AIGenerationPanel] Calculated actual duration from Supabase', {
         ...sectionDurations,
         totalSeconds: actualDuration,
