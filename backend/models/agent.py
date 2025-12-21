@@ -32,7 +32,7 @@ class AgentDecision(BaseModel):
 
 class SequenceGenerationRequest(BaseModel):
     """Request to generate a movement sequence"""
-    target_duration_minutes: int = Field(default=60, ge=15, le=120)
+    target_duration_minutes: int = Field(default=60, ge=12, le=120)  # Allow 12-min quick practice
     difficulty_level: str = Field(default="Beginner")
     focus_areas: Optional[List[str]] = Field(
         default=None,
