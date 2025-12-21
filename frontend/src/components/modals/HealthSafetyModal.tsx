@@ -83,7 +83,7 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
                 If you have postnatal abdominal separation (diastasis recti), we recommend consulting your GP or a women's health physiotherapist before using this application.
               </p>
               <p>
-                Abdominal separation is common after pregnancy and often benefits from specialized rehabilitation. Many Pilates movements require strong abdominal wall function, and your healthcare provider can help you determine:
+                Many Pilates movements require strong abdominal wall function, and your healthcare provider can help you determine:
               </p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>Whether general Pilates practice is appropriate for you at this time</li>
