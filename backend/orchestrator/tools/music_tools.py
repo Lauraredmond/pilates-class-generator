@@ -74,9 +74,9 @@ class MusicTools:
         Returns:
             Dict with playlist, statistics, and energy match score
         """
-        # Validate inputs
-        if not (15 <= class_duration_minutes <= 120):
-            raise ValueError("Duration must be between 15 and 120 minutes")
+        # Validate inputs (allow 12-min quick practice, though music is skipped for quick practice)
+        if not (12 <= class_duration_minutes <= 120):
+            raise ValueError("Duration must be between 12 and 120 minutes")
 
         logger.info(f"Selecting music for {class_duration_minutes} min class | BPM: {target_bpm_range}")
 

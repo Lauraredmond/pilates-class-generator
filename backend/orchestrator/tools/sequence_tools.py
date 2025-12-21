@@ -101,9 +101,9 @@ class SequenceTools:
         Returns:
             Dict with sequence, muscle balance, validation, and statistics
         """
-        # Validate inputs
-        if not (15 <= target_duration_minutes <= 120):
-            raise ValueError("Duration must be between 15 and 120 minutes")
+        # Validate inputs (allow 12-min quick practice)
+        if not (12 <= target_duration_minutes <= 120):
+            raise ValueError("Duration must be between 12 and 120 minutes")
 
         if difficulty_level not in ["Beginner", "Intermediate", "Advanced"]:
             raise ValueError("Difficulty must be Beginner, Intermediate, or Advanced")
