@@ -171,7 +171,16 @@ export function Analytics() {
     },
   };
 
-  const doughnutChartOptions = {
+  // Separate options for mobile (legend at bottom) vs desktop (legend on right)
+  const doughnutChartOptionsMobile = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' as const, labels: { color: '#f5f1e8', boxWidth: 12 } },
+    },
+  };
+
+  const doughnutChartOptionsDesktop = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -485,10 +494,20 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           <CardHeader>
             <CardTitle>Muscle Group Distribution</CardTitle>
           </CardHeader>
-          <CardBody className="p-6">
-            <div className="h-96">
+          <CardBody className="p-3 sm:p-4 lg:p-6">
+            {/* Mobile: h-64 with bottom legend, Desktop: h-96 with right legend */}
+            <div className="h-64 sm:h-80 lg:h-96">
               {muscleDistributionChartData ? (
-                <Doughnut data={muscleDistributionChartData} options={doughnutChartOptions} />
+                <>
+                  {/* Show on mobile/tablet */}
+                  <div className="lg:hidden">
+                    <Doughnut data={muscleDistributionChartData} options={doughnutChartOptionsMobile} />
+                  </div>
+                  {/* Show on desktop */}
+                  <div className="hidden lg:block">
+                    <Doughnut data={muscleDistributionChartData} options={doughnutChartOptionsDesktop} />
+                  </div>
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full text-cream/60">
                   No data available
@@ -504,10 +523,20 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           <CardHeader>
             <CardTitle>Movement Family Distribution</CardTitle>
           </CardHeader>
-          <CardBody className="p-6">
-            <div className="h-96">
+          <CardBody className="p-3 sm:p-4 lg:p-6">
+            {/* Mobile: h-64 with bottom legend, Desktop: h-96 with right legend */}
+            <div className="h-64 sm:h-80 lg:h-96">
               {movementFamilyDistributionChartData ? (
-                <Doughnut data={movementFamilyDistributionChartData} options={doughnutChartOptions} />
+                <>
+                  {/* Show on mobile/tablet */}
+                  <div className="lg:hidden">
+                    <Doughnut data={movementFamilyDistributionChartData} options={doughnutChartOptionsMobile} />
+                  </div>
+                  {/* Show on desktop */}
+                  <div className="hidden lg:block">
+                    <Doughnut data={movementFamilyDistributionChartData} options={doughnutChartOptionsDesktop} />
+                  </div>
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full text-cream/60">
                   No data available
