@@ -727,6 +727,48 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
         logger.info(f"Target muscles from sequence: {target_muscles}")
 
+        # SPECIAL CASE: 12-minute "Quick movement practice" - Skip all 6 sections
+        # User requirement: "Just 3 movements for daily practice, no warmup/cooldown/prep"
+        is_quick_practice = request.class_plan.target_duration_minutes == 12
+
+        if is_quick_practice:
+            logger.info("✅ 12-minute quick practice: Skipping all 6 sections (movements only)")
+            preparation = None
+            warmup = None
+            cooldown = None
+            meditation = None
+            homecare = None
+            music_result = None  # No music selection for quick practice
+            research_results = []  # No research for quick practice
+
+            # Calculate total processing time
+            total_time_ms = (time.time() - start_time) * 1000
+
+            # Return sequence-only class
+            return {
+                "success": True,
+                "data": {
+                    "preparation": None,
+                    "warmup": None,
+                    "sequence": sequence_result,
+                    "cooldown": None,
+                    "meditation": None,
+                    "homecare": None,
+                    "music_recommendation": None,
+                    "research_enhancements": None,
+                    "total_processing_time_ms": total_time_ms
+                },
+                "metadata": {
+                    "mode": "quick_practice",
+                    "cost": 0.00,
+                    "generated_at": datetime.now().isoformat(),
+                    "user_id": user_id,
+                    "sections_included": 0,  # Only movements, no sections
+                    "agents_used": ["sequence"],
+                    "orchestration": "jentic_standard_agent"
+                }
+            }
+
         # Step 2: Select preparation script (Section 1)
         try:
             prep_response = supabase.table('preparation_scripts') \
