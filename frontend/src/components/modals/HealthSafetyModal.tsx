@@ -46,59 +46,53 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
             </p>
           </div>
 
-          {/* Pregnancy Warning - CRITICAL */}
-          <div className="bg-red-50 p-5 rounded border-2 border-red-400">
-            <h3 className="font-bold text-red-900 mb-3 text-lg flex items-center gap-2">
-              <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          {/* Pregnancy & Early Postnatal Guidance */}
+          <div className="bg-amber-50 p-5 rounded border-2 border-amber-400">
+            <h3 className="font-semibold text-amber-900 mb-3 text-lg flex items-center gap-2">
+              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              CRITICAL WARNING: Pregnancy & Early Postnatal Period
+              Important: Pregnancy & Early Postnatal Guidance
             </h3>
-            <div className="space-y-3 text-sm text-red-900">
-              <p className="font-bold">
-                This application is NOT SAFE for pregnant individuals after the first trimester OR for women in early postnatal period (first 12 weeks after giving birth).
+            <div className="space-y-3 text-sm text-amber-900">
+              <p>
+                This application is designed for general Pilates practice and may not be appropriate during pregnancy or the early postnatal period (first 12 weeks after giving birth).
               </p>
               <p>
-                <strong>Pregnancy:</strong> Many Pilates movements and setup positions can be harmful to pregnant individuals, particularly after the first trimester. These movements may involve:
+                <strong>During pregnancy:</strong> Many Pilates movements require modifications during pregnancy. These movements may involve lying on your back, deep abdominal work, or prone positions that may not be suitable. We recommend seeking guidance from a qualified prenatal Pilates instructor who can provide appropriate modifications for your stage of pregnancy.
               </p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Lying flat on your back (supine position) - can restrict blood flow to the foetus</li>
-                <li>Deep abdominal work - may increase intra-abdominal pressure</li>
-                <li>Twisting movements - can strain the abdomen and pelvis</li>
-                <li>Prone (face-down) positions - unsafe for developing foetus</li>
-              </ul>
               <p>
-                <strong>Early Postnatal (0-12 weeks):</strong> Your body needs time to heal after giving birth. You must wait a minimum of 12 weeks postpartum AND have completed your 12-week postnatal check with your doctor or midwife before using this application.
+                <strong>Early postnatal (0-12 weeks):</strong> Your body needs time to heal after giving birth. We recommend waiting until at least 12 weeks postpartum and completing your postnatal check with your doctor or midwife before beginning Pilates practice.
               </p>
-              <p className="font-bold bg-red-100 p-3 rounded border border-red-300">
-                If you are pregnant, suspect you may be pregnant, OR have given birth within the last 12 weeks, DO NOT use this application without explicit written approval from your obstetrician, midwife, or women's health physiotherapist. Specialized prenatal/postnatal Pilates instruction is required.
+              <p className="bg-amber-100 p-3 rounded border border-amber-300">
+                If you are pregnant or in the early postnatal period, please consult your healthcare provider before using this application. They can advise you on when it's appropriate to begin and whether you need specialized prenatal or postnatal instruction.
               </p>
             </div>
           </div>
 
-          {/* Postnatal Abdominal Separation Warning - CRITICAL */}
-          <div className="bg-red-50 p-5 rounded border-2 border-red-400">
-            <h3 className="font-bold text-red-900 mb-3 text-lg flex items-center gap-2">
-              <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          {/* Postnatal Abdominal Separation Guidance */}
+          <div className="bg-amber-50 p-5 rounded border-2 border-amber-400">
+            <h3 className="font-semibold text-amber-900 mb-3 text-lg flex items-center gap-2">
+              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              CRITICAL WARNING: Postnatal Abdominal Separation (Diastasis Recti)
+              Important: Postnatal Abdominal Separation (Diastasis Recti)
             </h3>
-            <div className="space-y-3 text-sm text-red-900">
-              <p className="font-bold">
-                If you are a postnatal woman with abdominal separation (diastasis recti), DO NOT use this application without explicit written approval from your GP or women's health physiotherapist.
+            <div className="space-y-3 text-sm text-amber-900">
+              <p>
+                If you have postnatal abdominal separation (diastasis recti), we recommend consulting your GP or a women's health physiotherapist before using this application.
               </p>
               <p>
-                Abdominal separation (diastasis recti) is common after pregnancy and requires specialized rehabilitation. Using this application without proper medical clearance and professional guidance may:
+                Abdominal separation is common after pregnancy and often benefits from specialized rehabilitation. Many Pilates movements require strong abdominal wall function, and your healthcare provider can help you determine:
               </p>
               <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Worsen abdominal separation and prevent healing</li>
-                <li>Cause pelvic floor dysfunction</li>
-                <li>Lead to chronic back pain and core instability</li>
-                <li>Increase risk of hernia formation</li>
+                <li>Whether general Pilates practice is appropriate for you at this time</li>
+                <li>Which movements to modify or avoid</li>
+                <li>When it's safe to progress your practice</li>
+                <li>If you would benefit from specialized postnatal rehabilitation first</li>
               </ul>
-              <p className="font-bold bg-red-100 p-3 rounded border border-red-300">
-                REQUIRED ACTION: You must consult your GP or a women's health physiotherapist for proper assessment and personalized postnatal exercise guidance. Many movements in this app require intact abdominal wall function and may be unsafe for those with diastasis recti.
+              <p className="bg-amber-100 p-3 rounded border border-amber-300">
+                We recommend consulting your GP or a women's health physiotherapist for proper assessment and personalized postnatal exercise guidance. They can help ensure your Pilates practice supports your recovery.
               </p>
             </div>
           </div>
@@ -134,27 +128,27 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
             </ul>
           </div>
 
-          {/* Stop If Section */}
-          <div className="bg-red-50 p-4 rounded border-2 border-red-300">
-            <h3 className="font-semibold text-red-900 mb-2">Stop immediately if you experience:</h3>
-            <ul className="grid grid-cols-2 gap-2 text-sm text-red-900">
+          {/* Listen to Your Body */}
+          <div className="bg-amber-50 p-4 rounded border-2 border-amber-300">
+            <h3 className="font-semibold text-amber-900 mb-2">Please stop and rest if you experience:</h3>
+            <ul className="grid grid-cols-2 gap-2 text-sm text-amber-900">
               <li className="flex items-center gap-1">
-                <span className="text-red-500">•</span> Pain or discomfort
+                <span className="text-amber-500">•</span> Pain or discomfort
               </li>
               <li className="flex items-center gap-1">
-                <span className="text-red-500">•</span> Dizziness
+                <span className="text-amber-500">•</span> Dizziness
               </li>
               <li className="flex items-center gap-1">
-                <span className="text-red-500">•</span> Chest pain
+                <span className="text-amber-500">•</span> Chest pain
               </li>
               <li className="flex items-center gap-1">
-                <span className="text-red-500">•</span> Shortness of breath
+                <span className="text-amber-500">•</span> Shortness of breath
               </li>
               <li className="flex items-center gap-1">
-                <span className="text-red-500">•</span> Nausea
+                <span className="text-amber-500">•</span> Nausea
               </li>
               <li className="flex items-center gap-1">
-                <span className="text-red-500">•</span> Joint instability
+                <span className="text-amber-500">•</span> Joint instability
               </li>
             </ul>
           </div>
