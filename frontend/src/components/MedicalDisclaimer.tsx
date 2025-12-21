@@ -41,15 +41,15 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
         </CardHeader>
 
         <CardBody className="p-3 md:p-6 space-y-4 md:space-y-6 overflow-y-auto flex-1">
-          {/* Pregnancy Exclusion - FIRST and MANDATORY */}
-          <div className="bg-red-50 border-2 border-red-600 rounded-lg p-3 md:p-6">
-            <h3 className="text-base md:text-lg font-bold text-red-900 mb-2 md:mb-3 flex items-center gap-2">
-              <XCircle className="w-5 h-5 md:w-6 md:h-6" />
-              PREGNANCY & POSTNATAL EXCLUSION - MANDATORY
+          {/* Pregnancy & Early Postnatal Guidance */}
+          <div className="bg-amber-50 border-2 border-amber-500 rounded-lg p-3 md:p-6">
+            <h3 className="text-base md:text-lg font-semibold text-amber-900 mb-2 md:mb-3 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 md:w-6 md:h-6" />
+              Important: Pregnancy & Early Postnatal Guidance
             </h3>
 
-            <p className="text-sm md:text-base text-red-900 font-semibold mb-3 md:mb-4">
-              Are you currently pregnant, could you be pregnant, OR have you given birth within the last 12 weeks?
+            <p className="text-sm md:text-base text-amber-900 mb-3 md:mb-4">
+              Are you currently pregnant, could you be pregnant, or have you given birth within the last 12 weeks?
             </p>
 
             {isPregnant === null && (
@@ -70,29 +70,27 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
             )}
 
             {isPregnant === true && (
-              <div className="bg-white border-2 border-red-700 rounded p-4 mt-4">
-                <h4 className="font-bold text-red-900 mb-2">
-                  APP ACCESS DENIED
+              <div className="bg-white border-2 border-amber-600 rounded p-4 mt-4">
+                <h4 className="font-semibold text-amber-900 mb-2">
+                  This app is not suitable for you at this time
                 </h4>
-                <p className="text-red-800 mb-3">
-                  This application <strong>CANNOT</strong> be used during pregnancy or in the early postnatal period (first 12 weeks after giving birth).
+                <p className="text-amber-900 mb-3">
+                  This application is designed for general Pilates practice and is not appropriate during pregnancy or the early postnatal period (first 12 weeks after giving birth).
                 </p>
-                <p className="text-red-800 mb-3">
-                  <strong>Pregnancy:</strong> Pilates movements during pregnancy require professional, in-person supervision
-                  from a qualified prenatal Pilates instructor who can assess your specific condition
-                  and provide appropriate modifications.
+                <p className="text-amber-900 mb-3">
+                  <strong>During pregnancy:</strong> Pilates can be wonderfully beneficial, but it requires professional, in-person guidance from a qualified prenatal Pilates instructor who can assess your specific needs and provide appropriate modifications for your stage of pregnancy.
                 </p>
-                <p className="text-red-800 mb-3">
-                  <strong>Postnatal (0-12 weeks):</strong> Your body needs time to heal after giving birth. You must wait a minimum of 12 weeks postpartum AND have completed your 12-week postnatal check with your doctor or midwife before using this application. Earlier return to exercise requires specialized postnatal rehabilitation from a women's health physiotherapist.
+                <p className="text-amber-900 mb-3">
+                  <strong>Early postnatal (0-12 weeks):</strong> Your body needs time to heal after giving birth. We recommend waiting until at least 12 weeks postpartum and completing your postnatal check with your doctor or midwife before beginning Pilates practice. If you'd like to return to exercise earlier, please consult a women's health physiotherapist for specialized postnatal rehabilitation.
                 </p>
-                <p className="text-red-800 font-semibold">
-                  Using this app during pregnancy or early postnatal period could result in serious harm, including pelvic floor damage, abdominal separation (diastasis recti), or other complications.
+                <p className="text-amber-800 text-sm">
+                  We'd love to support your Pilates journey when the time is right. Please consult your healthcare provider about when it's appropriate for you to begin.
                 </p>
                 <Button
                   onClick={onReject}
-                  className="mt-4 w-full bg-red-700 hover:bg-red-800 text-white"
+                  className="mt-4 w-full bg-amber-600 hover:bg-amber-700 text-white"
                 >
-                  I Understand - Exit App
+                  I Understand
                 </Button>
               </div>
             )}
@@ -120,14 +118,14 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                     instructors and experienced practitioners ONLY. It is not a substitute for
                     professional medical advice, diagnosis, or treatment.
                   </p>
-                  <p className="font-semibold text-red-700">
-                    DO NOT USE THIS APP IF:
+                  <p className="font-semibold text-amber-800">
+                    This app may not be suitable if:
                   </p>
                   <ul className="list-disc list-inside space-y-1 pl-4">
-                    <li>You are pregnant, could be pregnant, OR have given birth within the last 12 weeks (ABSOLUTE EXCLUSION)</li>
+                    <li>You are pregnant, could be pregnant, or have given birth within the last 12 weeks</li>
                     <li>You have any untreated injuries or medical conditions</li>
                     <li>You have not consulted with a physician before beginning exercise</li>
-                    <li>You are not a certified Pilates instructor or experienced practitioner</li>
+                    <li>You are new to Pilates and have not received professional instruction</li>
                   </ul>
                   <p className="font-semibold mt-3">
                     By using this application, you acknowledge:
@@ -149,9 +147,9 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                       The app developers assume NO LIABILITY for injuries or medical complications
                     </li>
                   </ul>
-                  <p className="mt-3 font-semibold text-red-700">
-                    If you experience pain, dizziness, or discomfort during any movement, STOP
-                    IMMEDIATELY and consult a medical professional.
+                  <p className="mt-3 font-semibold text-amber-800">
+                    If you experience pain, dizziness, or discomfort during any movement, please stop
+                    and consult a medical professional.
                   </p>
                 </div>
               </div>
@@ -178,7 +176,7 @@ export function MedicalDisclaimer({ onAccept, onReject }: MedicalDisclaimerProps
                     className="mt-1 w-5 h-5 text-burgundy accent-burgundy"
                   />
                   <span className="text-sm text-cream font-semibold">
-                    I confirm that I am NOT pregnant, NOT in early postnatal period (&lt;12 weeks postpartum), and have completed my 12-week postnatal check if applicable. I accept all risks and liability associated with using this application.
+                    I confirm that I am not pregnant or in the early postnatal period (less than 12 weeks postpartum), and have received appropriate medical clearance if applicable. I understand and accept the risks associated with using this application.
                   </span>
                 </label>
               </div>

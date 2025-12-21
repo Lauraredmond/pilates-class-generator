@@ -1,0 +1,4 @@
+ localStorage.clear();
+  window.location.reload();
+
+  #As a rule, can you commit all updates to the dev git branch first. Only upon my say so, after testing, should anything be published to production directly, going forward
