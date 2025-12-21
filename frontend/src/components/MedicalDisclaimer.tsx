@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { AlertTriangle, XCircle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { Card, CardHeader, CardBody, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
 
