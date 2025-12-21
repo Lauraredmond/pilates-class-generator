@@ -628,17 +628,21 @@ class SequenceTools:
 
         try:
             # Get all transitions from database (duration_seconds required - Migration 021)
+            # VOICEOVER SUPPORT: Fetch voiceover fields (Migration 027)
             transitions_map = {}
             if self.supabase:
                 transitions_response = self.supabase.table('transitions') \
-                    .select('from_position, to_position, narrative, duration_seconds') \
+                    .select('from_position, to_position, narrative, duration_seconds, voiceover_url, voiceover_duration, voiceover_enabled') \
                     .execute()
 
-                # Store both narrative AND duration_seconds from database
+                # Store narrative, duration_seconds, AND voiceover fields from database
                 transitions_map = {
                     (t['from_position'], t['to_position']): {
                         'narrative': t['narrative'],
-                        'duration_seconds': t['duration_seconds']  # MUST come from database
+                        'duration_seconds': t['duration_seconds'],  # MUST come from database
+                        'voiceover_url': t.get('voiceover_url'),  # Voiceover audio URL (Migration 027)
+                        'voiceover_duration': t.get('voiceover_duration'),  # Voiceover duration in seconds
+                        'voiceover_enabled': t.get('voiceover_enabled', False)  # Whether to play voiceover
                     }
                     for t in transitions_response.data
                 }
@@ -654,24 +658,31 @@ class SequenceTools:
                     from_position = movement.get('setup_position', 'Unknown')
                     to_position = sequence[i + 1].get('setup_position', 'Unknown')
 
-                    # Get transition data (narrative + duration) from database
+                    # Get transition data (narrative + duration + voiceover) from database
                     transition_key = (from_position, to_position)
                     transition_data = transitions_map.get(
                         transition_key,
                         {
                             'narrative': f"Transition from {from_position} to {to_position} position with control.",
-                            'duration_seconds': 60  # Fallback if transition not in database
+                            'duration_seconds': 60,  # Fallback if transition not in database
+                            'voiceover_url': None,
+                            'voiceover_duration': None,
+                            'voiceover_enabled': False
                         }
                     )
 
-                    # Add transition item to sequence (using database duration)
+                    # Add transition item to sequence (using database duration + voiceover fields)
                     transition_item = {
                         "type": "transition",
                         "from_position": from_position,
                         "to_position": to_position,
                         "narrative": transition_data['narrative'],
                         "duration_seconds": transition_data['duration_seconds'],  # FROM DATABASE
-                        "name": f"Transition: {from_position} → {to_position}"
+                        "name": f"Transition: {from_position} → {to_position}",
+                        # Voiceover fields (Migration 027)
+                        "voiceover_url": transition_data['voiceover_url'],
+                        "voiceover_duration": transition_data['voiceover_duration'],
+                        "voiceover_enabled": transition_data['voiceover_enabled']
                     }
 
                     sequence_with_transitions.append(transition_item)
