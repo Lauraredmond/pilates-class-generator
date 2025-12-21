@@ -40,7 +40,7 @@ export function Home() {
           onClick={() => navigate('/classes')}
           variant="primary"
         >
-          Create my wellness routine - <i>To Be Implemented</i>
+          Create my wellness routine - <i>Coming soon</i>
         </Button>
 
         {/* Existing Pilates Class Button - Same styling as above */}
