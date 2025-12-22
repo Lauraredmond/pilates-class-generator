@@ -490,7 +490,7 @@ export function Register() {
                 className="mt-1 h-4 w-4 text-burgundy focus:ring-burgundy border-gray-300 rounded"
               />
               <span className="text-sm text-charcoal">
-                I confirm that I am <strong>13 years of age or older</strong>, and that none of the above conditions apply to me <strong>(or I have appropriate medical clearance)</strong>.
+                I confirm that I am <strong>16 years of age or older</strong>, and that none of the above conditions apply to me <strong>(or I have appropriate medical clearance)</strong>.
               </span>
             </label>
             {safetyError && (
