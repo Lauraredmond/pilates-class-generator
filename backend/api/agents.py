@@ -1000,30 +1000,48 @@ Return all 6 sections with complete details (narrative, timing, instructions).
             logger.info("❌ Warmup is None")
         logger.info("=" * 80)
 
+        # DEBUG: Log data types before assembly
+        logger.info("🔍 PRE-ASSEMBLY TYPE CHECK:")
+        logger.info(f"  preparation: {type(preparation)}")
+        logger.info(f"  warmup: {type(warmup)}")
+        logger.info(f"  sequence_result: {type(sequence_result)}")
+        logger.info(f"  cooldown: {type(cooldown)}")
+        logger.info(f"  meditation: {type(meditation)}")
+        logger.info(f"  homecare: {type(homecare)}")
+        logger.info(f"  music_result: {type(music_result)}")
+        logger.info(f"  research_results: {type(research_results)}")
+
         # Assemble complete class response with all 6 sections
-        return {
-            "success": True,
-            "data": {
-                "preparation": preparation,
-                "warmup": warmup,
-                "sequence": sequence_result,
-                "cooldown": cooldown,
-                "meditation": meditation,
-                "homecare": homecare,
-                "music_recommendation": music_result,
-                "research_enhancements": research_results if research_results else None,
-                "total_processing_time_ms": total_time_ms
-            },
-            "metadata": {
-                "mode": "default",
-                "cost": 0.00,
-                "generated_at": datetime.now().isoformat(),
-                "user_id": user_id,
-                "sections_included": 6,
-                "agents_used": ["sequence", "music", "meditation", "research"] if request.include_research else ["sequence", "music", "meditation"],
-                "orchestration": "jentic_standard_agent"
+        try:
+            logger.info("🏗️ Building response dict...")
+            response_dict = {
+                "success": True,
+                "data": {
+                    "preparation": preparation,
+                    "warmup": warmup,
+                    "sequence": sequence_result,
+                    "cooldown": cooldown,
+                    "meditation": meditation,
+                    "homecare": homecare,
+                    "music_recommendation": music_result,
+                    "research_enhancements": research_results if research_results else None,
+                    "total_processing_time_ms": total_time_ms
+                },
+                "metadata": {
+                    "mode": "default",
+                    "cost": 0.00,
+                    "generated_at": datetime.now().isoformat(),
+                    "user_id": user_id,
+                    "sections_included": 6,
+                    "agents_used": ["sequence", "music", "meditation", "research"] if request.include_research else ["sequence", "music", "meditation"],
+                    "orchestration": "jentic_standard_agent"
+                }
             }
-        }
+            logger.info("✅ Response dict built successfully")
+            return response_dict
+        except Exception as assembly_error:
+            logger.error(f"❌ Error assembling response dict: {assembly_error}", exc_info=True)
+            raise
 
     except HTTPException:
         raise  # Re-raise HTTPException from call_orchestrator_tool
