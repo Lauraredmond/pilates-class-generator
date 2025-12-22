@@ -3,6 +3,17 @@ import { Link } from 'react-router-dom';
 import { useAuth, type RegistrationData } from '../context/AuthContext';
 import { CountrySelect } from '../components/ui/CountrySelect';
 
+// Password validation helper
+const validatePassword = (password: string) => {
+  return {
+    minLength: password.length >= 8,
+    hasLowercase: /[a-z]/.test(password),
+    hasUppercase: /[A-Z]/.test(password),
+    hasDigit: /\d/.test(password),
+    hasSymbol: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
+};
+
 export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,8 +29,13 @@ export function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
 
   const { register } = useAuth();
+
+  // Check password requirements in real-time
+  const passwordRequirements = validatePassword(password);
+  const isPasswordValid = Object.values(passwordRequirements).every(Boolean);
 
   const handleGoalToggle = (goal: string) => {
     setGoals(prev =>
@@ -40,8 +56,9 @@ export function Register() {
     }
 
     // Validate password strength
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (!isPasswordValid) {
+      setError('Password must meet all security requirements');
+      setShowPasswordRequirements(true);
       return;
     }
 
@@ -187,7 +204,7 @@ export function Register() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-charcoal mb-1">
                   Password <span className="text-red-500">*</span>
@@ -197,12 +214,63 @@ export function Register() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setShowPasswordRequirements(true)}
                   required
-                  minLength={8}
                   className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
                   placeholder="••••••••"
                 />
-                <p className="text-xs text-charcoal/60 mt-1">At least 8 characters</p>
+
+                {/* Password Requirements Checklist */}
+                {(showPasswordRequirements || password.length > 0) && (
+                  <div className="mt-2 p-3 bg-charcoal/5 border border-charcoal/10 rounded text-xs space-y-1.5">
+                    <p className="font-semibold text-charcoal mb-2">Password must contain:</p>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.minLength ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.minLength ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.minLength ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least 8 characters
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.hasLowercase ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.hasLowercase ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.hasLowercase ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least one lowercase letter (a-z)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.hasUppercase ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.hasUppercase ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.hasUppercase ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least one uppercase letter (A-Z)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.hasDigit ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.hasDigit ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.hasDigit ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least one digit (0-9)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.hasSymbol ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.hasSymbol ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.hasSymbol ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least one symbol (!@#$%^&*...)
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -215,10 +283,19 @@ export function Register() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  minLength={8}
                   className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
                   placeholder="••••••••"
                 />
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <span>✗</span> Passwords do not match
+                  </p>
+                )}
+                {confirmPassword && password === confirmPassword && password.length > 0 && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <span>✓</span> Passwords match
+                  </p>
+                )}
               </div>
             </div>
           </div>
