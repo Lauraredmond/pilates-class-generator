@@ -58,7 +58,8 @@ export function AIGenerationPanel() {
         include_music: true,
         include_meditation: true,
         include_research: formData.enableMcpResearch,
-        preferred_music_style: formData.movementMusicStyle,  // Analytics: Track music genre selection
+        preferred_music_style: formData.movementMusicStyle,  // Analytics: Track MOVEMENT music genre (sections 1-3)
+        cooldown_music_style: formData.coolDownMusicStyle,  // Analytics: Track COOLDOWN music genre (sections 4-6)
       });
 
       // Validate StandardAgent response

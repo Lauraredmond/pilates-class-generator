@@ -866,17 +866,21 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
         # Step 8: Select music (if requested)
         music_result = None
-        selected_music_genre = None  # Track for analytics
+        selected_music_genre = None  # Track for analytics (movement music)
+        selected_cooldown_music_genre = None  # Track for analytics (cooldown music)
         if request.include_music:
             music_input = {
                 "class_duration_minutes": request.class_plan.target_duration_minutes,
                 "target_bpm_range": (90, 130)
             }
-            # Add preferred music style if provided (for analytics tracking)
+            # Add preferred music styles if provided (for analytics tracking)
             if request.preferred_music_style:
                 music_input["preferred_genres"] = [request.preferred_music_style]
                 selected_music_genre = request.preferred_music_style  # Save for class_history
-                logger.info(f"Music genre selected by user: {selected_music_genre}")
+                logger.info(f"Movement music genre selected by user: {selected_music_genre}")
+            if request.cooldown_music_style:
+                selected_cooldown_music_genre = request.cooldown_music_style  # Save for class_history
+                logger.info(f"Cooldown music genre selected by user: {selected_cooldown_music_genre}")
 
             music_result = call_agent_tool(
                 tool_id="select_music",
@@ -969,13 +973,14 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                     'actual_duration_minutes': request.class_plan.target_duration_minutes,
                     'attendance_count': 1,
                     'movements_snapshot': movements_for_history,
-                    'instructor_notes': f"Complete class with all 6 sections. Music: {selected_music_genre or 'None'}",
+                    'instructor_notes': f"Complete class with all 6 sections. Movement music: {selected_music_genre or 'None'}, Cooldown music: {selected_cooldown_music_genre or 'None'}",
                     'difficulty_rating': None,
                     # SCHEMA FIX: Use array format
                     'muscle_groups_targeted': muscle_groups_array,
                     'total_movements_taught': len(movements_for_history),
-                    # ANALYTICS: Save music genre! (migration 020 added this column)
-                    'music_genre': selected_music_genre,
+                    # ANALYTICS: Save BOTH music genres! (migration 020 + 023)
+                    'music_genre': selected_music_genre,  # Movement music (sections 1-3)
+                    'cooldown_music_genre': selected_cooldown_music_genre,  # Cooldown music (sections 4-6)
                     'created_at': now
                 }
 
