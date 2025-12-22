@@ -1758,22 +1758,23 @@ async def get_music_genre_distribution(
         # Initialize counts for all genres and periods
         genre_counts = {genre: [0] * len(date_ranges) for genre in all_genres}
 
-        # Fetch class history
+        # Fetch class history (with BOTH music genre fields)
         earliest_date = date_ranges[0][0]
         classes_response = supabase.table('class_history') \
-            .select('taught_date, music_genre') \
+            .select('taught_date, music_genre, cooldown_music_genre') \
             .eq('user_id', user_uuid) \
             .gte('taught_date', earliest_date.isoformat()) \
             .execute()
 
         classes = classes_response.data or []
 
-        # Count genres per period
+        # Count genres per period (count BOTH movement and cooldown music)
         for class_item in classes:
             taught_date_str = class_item.get('taught_date')
-            music_genre = class_item.get('music_genre')
+            movement_music = class_item.get('music_genre')
+            cooldown_music = class_item.get('cooldown_music_genre')
 
-            if not taught_date_str or not music_genre:
+            if not taught_date_str:
                 continue
 
             try:
@@ -1785,9 +1786,13 @@ async def get_music_genre_distribution(
             # Find which period this class belongs to
             for period_idx, (start_date, end_date) in enumerate(date_ranges):
                 if start_date <= class_date <= end_date:
-                    # Increment count for this genre in this period
-                    if music_genre in genre_counts:
-                        genre_counts[music_genre][period_idx] += 1
+                    # Count movement music genre
+                    if movement_music and movement_music in genre_counts:
+                        genre_counts[movement_music][period_idx] += 1
+
+                    # Count cooldown music genre (separate count - 2 selections per class)
+                    if cooldown_music and cooldown_music in genre_counts:
+                        genre_counts[cooldown_music][period_idx] += 1
                     break
 
         return MusicGenreDistributionData(
