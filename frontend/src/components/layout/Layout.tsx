@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BookOpen, BarChart3, User, Settings } from 'lucide-react';
+import { Home, BookOpen, BarChart3, User, Settings, ArrowLeft } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -37,15 +37,33 @@ export function Layout({ children }: LayoutProps) {
       {!isHomePage && (
         <header className="bg-burgundy-dark/80 backdrop-blur-sm border-b border-cream/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-3 flex items-center justify-center">
-            <Link to="/" className="group relative">
+            <Link to="/" className="group relative cursor-pointer">
+              {/* Left arrow indicator on hover */}
+              <div className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:-translate-x-1">
+                <ArrowLeft size={20} className="text-cream drop-shadow-lg" />
+              </div>
+
+              {/* Logo with hover effects */}
               <img
                 src="/assets/Logo4.jpg"
                 alt="Bassline Logo"
-                className="h-12 w-auto rounded-lg shadow-md"
-                title="Logo by Cian Ryan, La Cathedral studios"
+                className="h-12 w-auto rounded-lg shadow-md transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 group-hover:shadow-xl"
+                title="Back to Home"
               />
-              <span className="absolute left-1/2 -translate-x-1/2 -bottom-8 bg-burgundy-dark/95 text-cream text-xs px-3 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                Logo by Cian Ryan, La Cathedral studios
+
+              {/* Right arrow indicator on hover */}
+              <div className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1 rotate-180">
+                <ArrowLeft size={20} className="text-cream drop-shadow-lg" />
+              </div>
+
+              {/* Tooltip */}
+              <span className="absolute left-1/2 -translate-x-1/2 -bottom-10 bg-burgundy-dark/95 text-cream text-xs px-3 py-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                ← Back to Home
+              </span>
+
+              {/* Logo credit - smaller, bottom position */}
+              <span className="absolute left-1/2 -translate-x-1/2 -bottom-16 bg-charcoal/90 text-cream/70 text-[10px] px-2 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity delay-100 whitespace-nowrap pointer-events-none">
+                Logo by Cian Ryan
               </span>
             </Link>
           </div>
