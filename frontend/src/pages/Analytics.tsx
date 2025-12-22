@@ -199,7 +199,7 @@ export function Analytics() {
         beginAtZero: true,
         max: 100,
         ticks: {
-          color: '#FFD700',
+          color: '#D4AF37',
           callback: function(value: any) {
             return value + '%';
           }
@@ -209,9 +209,9 @@ export function Analytics() {
         },
         title: {
           display: true,
-          text: 'Challenging movement as % of total movements performed',
-          color: '#FFD700',
-          font: { size: 12 }
+          text: ['Challenging movement as %', 'of total movements performed'],
+          color: '#D4AF37',
+          font: { size: 11 }
         }
       },
       x: {
@@ -294,6 +294,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             backgroundColor: '#cd8b76', // Light terracotta - warm, approachable
             yAxisID: 'y',
             type: 'bar' as const,
+            order: 1, // Render behind line
           },
           {
             label: 'Intermediate',
@@ -301,6 +302,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             backgroundColor: '#8b2635', // Primary burgundy - brand color
             yAxisID: 'y',
             type: 'bar' as const,
+            order: 1, // Render behind line
           },
           {
             label: 'Advanced',
@@ -308,6 +310,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             backgroundColor: '#5c1a26', // Dark burgundy - intense, challenging
             yAxisID: 'y',
             type: 'bar' as const,
+            order: 1, // Render behind line
           },
           {
             label: 'Challenging movement as % of total movements performed',
@@ -319,17 +322,18 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
               const challenging = intermediate + advanced;
               return total > 0 ? Math.round((challenging / total) * 100) : 0;
             }),
-            borderColor: '#FFD700', // Bright gold
-            backgroundColor: 'rgba(255, 215, 0, 0.2)', // Bright gold with transparency
+            borderColor: '#D4AF37', // Olympic gold
+            backgroundColor: 'rgba(212, 175, 55, 0.2)', // Olympic gold with transparency
             borderWidth: 3,
             yAxisID: 'y1',
             type: 'line' as const,
             tension: 0.4,
             pointRadius: 5,
             pointHoverRadius: 7,
-            pointBackgroundColor: '#FFD700',
+            pointBackgroundColor: '#D4AF37',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
+            order: 0, // Render in front of bars
           },
         ],
       }
