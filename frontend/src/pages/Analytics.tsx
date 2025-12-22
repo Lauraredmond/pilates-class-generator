@@ -166,7 +166,7 @@ export function Analytics() {
           label: function(context: any) {
             const label = context.dataset.label || '';
             const value = context.parsed.y;
-            if (label === 'Challenging %') {
+            if (label === 'Challenging movement as % of total movements performed') {
               return `${label}: ${value}%`;
             }
             return `${label}: ${value}`;
@@ -199,7 +199,7 @@ export function Analytics() {
         beginAtZero: true,
         max: 100,
         ticks: {
-          color: '#90ee90',
+          color: '#FFD700',
           callback: function(value: any) {
             return value + '%';
           }
@@ -209,8 +209,8 @@ export function Analytics() {
         },
         title: {
           display: true,
-          text: 'Challenging Movements %',
-          color: '#90ee90',
+          text: 'Challenging movement as % of total movements performed',
+          color: '#FFD700',
           font: { size: 12 }
         }
       },
@@ -310,7 +310,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             type: 'bar' as const,
           },
           {
-            label: 'Challenging %',
+            label: 'Challenging movement as % of total movements performed',
             data: difficultyProgression.period_labels.map((_: string, idx: number) => {
               const beginner = difficultyProgression.beginner_counts[idx] || 0;
               const intermediate = difficultyProgression.intermediate_counts[idx] || 0;
@@ -319,15 +319,15 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
               const challenging = intermediate + advanced;
               return total > 0 ? Math.round((challenging / total) * 100) : 0;
             }),
-            borderColor: '#90ee90', // Light green
-            backgroundColor: 'rgba(144, 238, 144, 0.2)', // Light green with transparency
+            borderColor: '#FFD700', // Bright gold
+            backgroundColor: 'rgba(255, 215, 0, 0.2)', // Bright gold with transparency
             borderWidth: 3,
             yAxisID: 'y1',
             type: 'line' as const,
             tension: 0.4,
             pointRadius: 5,
             pointHoverRadius: 7,
-            pointBackgroundColor: '#90ee90',
+            pointBackgroundColor: '#FFD700',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
           },
