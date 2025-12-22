@@ -19,7 +19,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import { Line, Doughnut, Bar, Chart } from 'react-chartjs-2';
 import { logger } from '../utils/logger';
 
 // Register Chart.js components
@@ -541,7 +541,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           <CardBody className="p-6">
             <div className="h-64">
               {difficultyProgressionChartData ? (
-                <Bar data={difficultyProgressionChartData} options={barChartOptions} />
+                <Chart type="bar" data={difficultyProgressionChartData} options={barChartOptions} />
               ) : (
                 <div className="flex items-center justify-center h-full text-cream/60">
                   No data available
