@@ -337,7 +337,7 @@ export function AIGenerationPanel() {
 
   const handleVisitStats = () => {
     setShowSessionCompleteModal(false);
-    navigate('/stats');
+    navigate('/analytics');
   };
 
   // SESSION 11: Transform complete class to playback format with all 6 sections
