@@ -3698,7 +3698,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Cookie policy link
 
 - **Age Verification:**
-  - Ensure COPPA compliance (13+ requirement)
+  - Ensure age requirement compliance (16+ requirement)
   - Age gate on signup
 
 - **AI Transparency Statement:**
