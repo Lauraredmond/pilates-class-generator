@@ -381,7 +381,14 @@ Output JSON format:
                     temperature=0.8  # Higher temperature for creative variation
                 )
 
-                generated_script = json.loads(response.choices[0].message.content)
+                # Safe access to response content (handles both dict and object formats)
+                try:
+                    content = response.choices[0].message.content
+                except (KeyError, AttributeError, IndexError) as e:
+                    logger.error(f"Failed to access LLM response: {e}. Response: {response}")
+                    raise ValueError(f"Invalid LLM response structure: {e}")
+
+                generated_script = json.loads(content)
                 logger.info(f"✅ Generated: {generated_script.get('script_name')}")
 
                 return generated_script
@@ -477,7 +484,14 @@ Output JSON format:
                     temperature=0.8  # Creative variation
                 )
 
-                generated_warmup = json.loads(response.choices[0].message.content)
+                # Safe access to response content (handles both dict and object formats)
+                try:
+                    content = response.choices[0].message.content
+                except (KeyError, AttributeError, IndexError) as e:
+                    logger.error(f"Failed to access LLM response: {e}. Response: {response}")
+                    raise ValueError(f"Invalid LLM response structure: {e}")
+
+                generated_warmup = json.loads(content)
                 logger.info(f"✅ Generated: {generated_warmup.get('routine_name')}")
 
                 return generated_warmup
@@ -574,7 +588,14 @@ Output JSON format:
                     temperature=0.8  # Creative variation
                 )
 
-                generated_cooldown = json.loads(response.choices[0].message.content)
+                # Safe access to response content (handles both dict and object formats)
+                try:
+                    content = response.choices[0].message.content
+                except (KeyError, AttributeError, IndexError) as e:
+                    logger.error(f"Failed to access LLM response: {e}. Response: {response}")
+                    raise ValueError(f"Invalid LLM response structure: {e}")
+
+                generated_cooldown = json.loads(content)
                 logger.info(f"✅ Generated: {generated_cooldown.get('sequence_name')}")
 
                 return generated_cooldown
@@ -656,7 +677,14 @@ Output JSON format:
                     temperature=0.8  # Creative variation
                 )
 
-                generated_advice = json.loads(response.choices[0].message.content)
+                # Safe access to response content (handles both dict and object formats)
+                try:
+                    content = response.choices[0].message.content
+                except (KeyError, AttributeError, IndexError) as e:
+                    logger.error(f"Failed to access LLM response: {e}. Response: {response}")
+                    raise ValueError(f"Invalid LLM response structure: {e}")
+
+                generated_advice = json.loads(content)
                 logger.info(f"✅ Generated: {generated_advice.get('advice_name')}")
 
                 return generated_advice
