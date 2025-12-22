@@ -183,6 +183,7 @@ class CompleteClassRequest(BaseModel):
     include_music: bool = True
     include_meditation: bool = True
     include_research: bool = True
+    preferred_music_style: Optional[str] = None  # Analytics: Track music genre selection (Baroque, Classical, Romantic, etc.)
 
 
 class CompleteClassResponse(BaseModel):
