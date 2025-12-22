@@ -13,7 +13,6 @@ export function Home() {
             src="/assets/Logo4.jpg"
             alt="Bassline Logo"
             className="h-24 w-auto rounded-lg shadow-glow"
-            title="Logo by Cian Ryan, La Cathedral studios"
           />
           <span className="absolute left-1/2 -translate-x-1/2 -bottom-8 bg-burgundy-dark/95 text-cream text-xs px-3 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
             Logo by Cian Ryan, La Cathedral studios
