@@ -912,9 +912,82 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         # ============================================================================
         # ANALYTICS: Save complete class to class_history for analytics tracking
         # ============================================================================
-        # TEMPORARY: Disabled analytics save to debug KeyError: "'message'"
-        # TODO: Re-enable after fixing database insert issue
-        logger.info("⚠️  Analytics save DISABLED temporarily - debugging KeyError issue")
+        try:
+            logger.info("📊 ANALYTICS: Starting database save (SCHEMA FIXED)")
+            now = datetime.now().isoformat()
+
+            # Extract movements from sequence for analytics
+            sequence_data = sequence_result.get("data", {})
+            sequence = sequence_data.get("sequence", [])
+
+            movements_for_history = []
+            for idx, movement in enumerate(sequence):
+                if movement.get('type') == 'movement':
+                    # Fetch muscle groups from junction table
+                    muscle_groups = get_movement_muscle_groups(movement.get('id', ''))
+
+                    movements_for_history.append({
+                        "type": "movement",
+                        "name": movement.get('name', ''),
+                        "muscle_groups": muscle_groups,
+                        "duration_seconds": movement.get('duration_seconds', 60),
+                        "order_index": idx,
+                        "voiceover_url": movement.get('voiceover_url'),
+                        "voiceover_duration_seconds": movement.get('voiceover_duration_seconds'),
+                        "voiceover_enabled": movement.get('voiceover_enabled', False)
+                    })
+
+            # Save to class_plans table first (SCHEMA CORRECTED)
+            class_plan_data = {
+                # SCHEMA FIX: Use 'title' not 'name'
+                'title': f"{request.class_plan.difficulty_level} Pilates Class ({request.class_plan.target_duration_minutes} min)",
+                'user_id': user_id,
+                # SCHEMA FIX: Use 'main_sequence' not 'movements'
+                'main_sequence': sequence,
+                'duration_minutes': request.class_plan.target_duration_minutes,
+                'difficulty_level': request.class_plan.difficulty_level,
+                'total_movements': len(movements_for_history),
+                'generated_by_ai': False,  # DEFAULT mode is database-driven
+                'created_at': now,
+                'updated_at': now
+            }
+
+            db_response = supabase.table('class_plans').insert(class_plan_data).execute()
+
+            if db_response.data and len(db_response.data) > 0:
+                class_plan_id = db_response.data[0].get('id')
+                logger.info(f"✅ Saved complete class to class_plans (ID: {class_plan_id})")
+
+                # Save to class_history with music_genre for analytics (SCHEMA CORRECTED)
+                # SCHEMA FIX: muscle_groups_targeted is JSONB array, not object keys
+                muscle_groups_array = list(sequence_data.get('muscle_balance', {}).keys())
+
+                class_history_entry = {
+                    'class_plan_id': class_plan_id,
+                    'user_id': user_id,
+                    'taught_date': datetime.now().date().isoformat(),
+                    'actual_duration_minutes': request.class_plan.target_duration_minutes,
+                    'attendance_count': 1,
+                    'movements_snapshot': movements_for_history,
+                    'instructor_notes': f"Complete class with all 6 sections. Music: {selected_music_genre or 'None'}",
+                    'difficulty_rating': None,
+                    # SCHEMA FIX: Use array format
+                    'muscle_groups_targeted': muscle_groups_array,
+                    'total_movements_taught': len(movements_for_history),
+                    # ANALYTICS: Save music genre! (migration 020 added this column)
+                    'music_genre': selected_music_genre,
+                    'created_at': now
+                }
+
+                supabase.table('class_history').insert(class_history_entry).execute()
+                logger.info(f"✅ Saved to class_history with music_genre: {selected_music_genre}")
+                logger.info("📊 ANALYTICS: Database save completed successfully")
+
+        except Exception as db_error:
+            # Don't fail the request if analytics save fails
+            logger.error(f"❌ ANALYTICS SAVE FAILED: {db_error}", exc_info=True)
+            logger.error(f"❌ Error type: {type(db_error).__name__}")
+            logger.error(f"❌ This is non-critical - class generation will continue")
 
         # DEBUG: Verify what's being sent to frontend
         logger.info("=" * 80)
