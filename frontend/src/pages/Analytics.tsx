@@ -157,12 +157,58 @@ export function Analytics() {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top' as const, labels: { color: '#f5f1e8' } },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const label = context.dataset.label || '';
+            const value = context.parsed.y;
+            if (label === 'Challenging %') {
+              return `${label}: ${value}%`;
+            }
+            return `${label}: ${value}`;
+          }
+        }
+      }
     },
     scales: {
       y: {
+        type: 'linear' as const,
+        position: 'left' as const,
         beginAtZero: true,
-        ticks: { color: '#f5f1e8' },
+        ticks: {
+          color: '#f5f1e8',
+          callback: function(value: any) {
+            return value;
+          }
+        },
         grid: { color: 'rgba(245, 241, 232, 0.1)' },
+        title: {
+          display: true,
+          text: 'Movement Count',
+          color: '#f5f1e8',
+          font: { size: 12 }
+        }
+      },
+      y1: {
+        type: 'linear' as const,
+        position: 'right' as const,
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          color: '#90ee90',
+          callback: function(value: any) {
+            return value + '%';
+          }
+        },
+        grid: {
+          drawOnChartArea: false, // Don't draw grid lines for this axis
+        },
+        title: {
+          display: true,
+          text: 'Challenging Movements %',
+          color: '#90ee90',
+          font: { size: 12 }
+        }
       },
       x: {
         ticks: { color: '#f5f1e8' },
@@ -242,16 +288,44 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             label: 'Beginner',
             data: difficultyProgression.beginner_counts,
             backgroundColor: '#cd8b76', // Light terracotta - warm, approachable
+            yAxisID: 'y',
+            type: 'bar' as const,
           },
           {
             label: 'Intermediate',
             data: difficultyProgression.intermediate_counts,
             backgroundColor: '#8b2635', // Primary burgundy - brand color
+            yAxisID: 'y',
+            type: 'bar' as const,
           },
           {
             label: 'Advanced',
             data: difficultyProgression.advanced_counts,
             backgroundColor: '#5c1a26', // Dark burgundy - intense, challenging
+            yAxisID: 'y',
+            type: 'bar' as const,
+          },
+          {
+            label: 'Challenging %',
+            data: difficultyProgression.period_labels.map((_: string, idx: number) => {
+              const beginner = difficultyProgression.beginner_counts[idx] || 0;
+              const intermediate = difficultyProgression.intermediate_counts[idx] || 0;
+              const advanced = difficultyProgression.advanced_counts[idx] || 0;
+              const total = beginner + intermediate + advanced;
+              const challenging = intermediate + advanced;
+              return total > 0 ? Math.round((challenging / total) * 100) : 0;
+            }),
+            borderColor: '#90ee90', // Light green
+            backgroundColor: 'rgba(144, 238, 144, 0.2)', // Light green with transparency
+            borderWidth: 3,
+            yAxisID: 'y1',
+            type: 'line' as const,
+            tension: 0.4,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: '#90ee90',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
           },
         ],
       }
