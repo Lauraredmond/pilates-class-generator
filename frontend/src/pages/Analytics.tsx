@@ -19,7 +19,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Line, Doughnut, Bar, Chart } from 'react-chartjs-2';
+import { Line, Doughnut, Chart } from 'react-chartjs-2';
 import { logger } from '../utils/logger';
 
 // Register Chart.js components
