@@ -209,9 +209,9 @@ export function Analytics() {
         },
         title: {
           display: true,
-          text: ['Challenging movement as %', 'of total movements performed'],
+          text: 'Challenging %',
           color: '#D4AF37',
-          font: { size: 11 }
+          font: { size: 12 }
         }
       },
       x: {
