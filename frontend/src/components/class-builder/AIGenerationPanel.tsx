@@ -540,13 +540,13 @@ export function AIGenerationPanel() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] px-4">
           <div className="bg-burgundy-dark border-2 border-cream/40 rounded-lg p-8 max-w-md w-full shadow-2xl">
             <div className="text-center space-y-6">
-              {/* Success Icon */}
+              {/* Bassline Logo */}
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-cream/10 rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-cream" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
+                <img
+                  src="/assets/bassline-logo-yellow-transparent.png"
+                  alt="Bassline Logo"
+                  className="h-20 w-auto"
+                />
               </div>
 
               {/* Title */}
