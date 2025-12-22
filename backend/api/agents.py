@@ -913,12 +913,18 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         # ANALYTICS: Save complete class to class_history for analytics tracking
         # ============================================================================
         try:
+            logger.info("🔍 ANALYTICS: Starting database save")
             now = datetime.now().isoformat()
+            logger.info(f"🔍 ANALYTICS: Timestamp created: {now}")
 
             # Extract movements from sequence for analytics
+            logger.info("🔍 ANALYTICS: Extracting sequence data...")
             sequence_data = sequence_result.get("data", {})
+            logger.info(f"🔍 ANALYTICS: sequence_data type: {type(sequence_data)}")
             sequence = sequence_data.get("sequence", [])
+            logger.info(f"🔍 ANALYTICS: sequence length: {len(sequence)}")
 
+            logger.info("🔍 ANALYTICS: Building movements_for_history...")
             movements_for_history = []
             for idx, movement in enumerate(sequence):
                 if movement.get('type') == 'movement':
@@ -935,8 +941,10 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                         "voiceover_duration_seconds": movement.get('voiceover_duration_seconds'),
                         "voiceover_enabled": movement.get('voiceover_enabled', False)
                     })
+            logger.info(f"🔍 ANALYTICS: movements_for_history built ({len(movements_for_history)} movements)")
 
             # Save to class_plans table first
+            logger.info("🔍 ANALYTICS: Preparing class_plan_data...")
             class_plan_data = {
                 'name': f"{request.class_plan.difficulty_level} Pilates Class ({request.class_plan.target_duration_minutes} min)",
                 'user_id': user_id,
@@ -953,14 +961,19 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                 'created_at': now,
                 'updated_at': now
             }
+            logger.info("🔍 ANALYTICS: class_plan_data prepared, inserting into database...")
 
             db_response = supabase.table('class_plans').insert(class_plan_data).execute()
+            logger.info("🔍 ANALYTICS: class_plans insert completed")
+            logger.info(f"🔍 ANALYTICS: db_response type: {type(db_response)}")
+            logger.info(f"🔍 ANALYTICS: db_response.data: {db_response.data is not None}")
 
             if db_response.data and len(db_response.data) > 0:
                 class_plan_id = db_response.data[0].get('id')
                 logger.info(f"✅ Saved complete class to class_plans (ID: {class_plan_id})")
 
                 # Save to class_history with music_genre for analytics
+                logger.info("🔍 ANALYTICS: Preparing class_history_entry...")
                 class_history_entry = {
                     'class_plan_id': class_plan_id,
                     'user_id': user_id,
@@ -975,12 +988,19 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                     'music_genre': selected_music_genre,  # ANALYTICS: Save music genre!
                     'created_at': now
                 }
+                logger.info("🔍 ANALYTICS: class_history_entry prepared, inserting into database...")
 
                 supabase.table('class_history').insert(class_history_entry).execute()
                 logger.info(f"✅ Saved to class_history with music_genre: {selected_music_genre}")
+                logger.info("🔍 ANALYTICS: Database save completed successfully")
 
         except Exception as db_error:
-            logger.error(f"❌ Failed to save complete class to database: {db_error}", exc_info=True)
+            logger.error(f"❌ ANALYTICS SAVE FAILED: {db_error}", exc_info=True)
+            logger.error(f"❌ Error type: {type(db_error).__name__}")
+            logger.error(f"❌ Error message: {str(db_error)}")
+            if hasattr(db_error, 'args'):
+                logger.error(f"❌ Error args: {db_error.args}")
+            # Don't re-raise - let it continue to response building
 
         # DEBUG: Verify what's being sent to frontend
         logger.info("=" * 80)
