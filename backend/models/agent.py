@@ -182,7 +182,7 @@ class CompleteClassRequest(BaseModel):
     class_plan: SequenceGenerationRequest
     include_music: bool = True
     include_meditation: bool = True
-    include_research: bool = True
+    include_research: bool = False  # Disabled by default - MCP not yet fully implemented
     preferred_music_style: Optional[str] = None  # Analytics: Track music genre selection (Baroque, Classical, Romantic, etc.)
 
 
