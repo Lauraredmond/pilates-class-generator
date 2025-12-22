@@ -3,9 +3,9 @@ Analytics API Router V2
 Enhanced with time period filtering and comprehensive data views
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Path
 from typing import Dict, List, Any, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 import os
 import uuid
@@ -1634,30 +1634,109 @@ async def get_class_sequencing_report(user_id: str):
 # ==============================================================================
 
 class MusicGenreDistributionData(BaseModel):
-    """Music genre distribution for stacked bar chart"""
-    period_labels: List[str]
-    genres: List[str]  # All unique genres (Baroque, Classical, Romantic, Jazz, etc.)
-    genre_counts: Dict[str, List[int]]  # {genre: [counts per period]}
+    """
+    Music genre distribution for stacked bar chart
+
+    OpenAPI Schema for music genre analytics over time periods
+    """
+    period_labels: List[str] = Field(
+        ...,
+        description="Time period labels (e.g., 'Mon', 'Week 1', 'Jan 2025')",
+        example=["Week 1", "Week 2", "Week 3", "Week 4"]
+    )
+    genres: List[str] = Field(
+        ...,
+        description="All available music genres (Baroque, Classical, Romantic, Impressionist, Modern, Contemporary/Postmodern, Celtic Traditional, Jazz)",
+        example=["Baroque", "Classical", "Romantic", "Impressionist", "Modern", "Contemporary/Postmodern", "Celtic Traditional", "Jazz"]
+    )
+    genre_counts: Dict[str, List[int]] = Field(
+        ...,
+        description="Count of classes per genre per period. Keys are genre names, values are arrays of counts matching period_labels",
+        example={
+            "Baroque": [2, 1, 0, 1],
+            "Classical": [1, 2, 1, 0],
+            "Jazz": [0, 0, 1, 2]
+        }
+    )
 
 
 class ClassDurationDistributionData(BaseModel):
-    """Class duration distribution for stacked bar chart"""
-    period_labels: List[str]
-    durations: List[int]  # All standard durations (12, 30, 45, 60, 75, 90)
-    duration_counts: Dict[str, List[int]]  # {duration: [counts per period]}
+    """
+    Class duration distribution for stacked bar chart
+
+    OpenAPI Schema for class duration analytics over time periods
+    """
+    period_labels: List[str] = Field(
+        ...,
+        description="Time period labels (e.g., 'Mon', 'Week 1', 'Jan 2025')",
+        example=["Week 1", "Week 2", "Week 3", "Week 4"]
+    )
+    durations: List[int] = Field(
+        ...,
+        description="All standard class durations in minutes (12, 30, 45, 60, 75, 90)",
+        example=[12, 30, 45, 60, 75, 90]
+    )
+    duration_counts: Dict[str, List[int]] = Field(
+        ...,
+        description="Count of classes per duration per period. Keys are duration strings (e.g., '30'), values are arrays of counts matching period_labels",
+        example={
+            "12": [0, 1, 0, 0],
+            "30": [2, 1, 3, 1],
+            "60": [1, 2, 1, 2]
+        }
+    )
 
 
-@router.get("/music-genre-distribution/{user_id}", response_model=MusicGenreDistributionData)
+@router.get(
+    "/music-genre-distribution/{user_id}",
+    response_model=MusicGenreDistributionData,
+    summary="Get music genre selection distribution over time",
+    description="""
+    Retrieve music genre selection analytics for stacked bar chart visualization.
+
+    Returns time-series data showing how often each music genre (Baroque, Classical,
+    Romantic, Impressionist, Modern, Contemporary/Postmodern, Celtic Traditional, Jazz)
+    was selected by the user over the specified time period.
+
+    **Use Cases:**
+    - Understand user music preferences over time
+    - Identify trends in music genre selection
+    - Visualize music variety in class planning
+
+    **Returns:**
+    - Period labels for x-axis (e.g., "Week 1", "Week 2")
+    - All 8 available music genres
+    - Count of classes per genre per period for stacked bar visualization
+    """,
+    tags=["Analytics", "Music"],
+    responses={
+        200: {
+            "description": "Music genre distribution retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "period_labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
+                        "genres": ["Baroque", "Classical", "Romantic", "Impressionist", "Modern", "Contemporary/Postmodern", "Celtic Traditional", "Jazz"],
+                        "genre_counts": {
+                            "Baroque": [2, 1, 0, 1],
+                            "Classical": [1, 2, 1, 0],
+                            "Romantic": [0, 1, 2, 1],
+                            "Jazz": [0, 0, 1, 2]
+                        }
+                    }
+                }
+            }
+        },
+        500: {"description": "Database error"}
+    }
+)
 async def get_music_genre_distribution(
-    user_id: str,
-    period: TimePeriod = Query(default=TimePeriod.WEEK)
+    user_id: str = Path(..., description="User UUID or identifier to fetch analytics for"),
+    period: TimePeriod = Query(
+        default=TimePeriod.WEEK,
+        description="Time period granularity for aggregation. Options: day (last 7 days), week (last 4 weeks), month (last 12 months), total (all time)"
+    )
 ):
-    """
-    Get music genre selection distribution for stacked bar chart
-
-    Shows how often each music genre (Baroque, Classical, Romantic, Impressionist,
-    Modern, Contemporary/Postmodern, Celtic Traditional, Jazz) was selected over time.
-    """
     try:
         user_uuid = _convert_to_uuid(user_id)
 
@@ -1722,17 +1801,60 @@ async def get_music_genre_distribution(
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
-@router.get("/class-duration-distribution/{user_id}", response_model=ClassDurationDistributionData)
-async def get_class_duration_distribution(
-    user_id: str,
-    period: TimePeriod = Query(default=TimePeriod.WEEK)
-):
-    """
-    Get class duration selection distribution for stacked bar chart
+@router.get(
+    "/class-duration-distribution/{user_id}",
+    response_model=ClassDurationDistributionData,
+    summary="Get class duration selection distribution over time",
+    description="""
+    Retrieve class duration selection analytics for stacked bar chart visualization.
 
-    Shows how often each standard class duration (12, 30, 45, 60, 75, 90 minutes)
-    was selected over time.
-    """
+    Returns time-series data showing how often each standard class duration
+    (12, 30, 45, 60, 75, 90 minutes) was selected by the user over the specified time period.
+
+    **Use Cases:**
+    - Understand user scheduling patterns over time
+    - Identify trends in class duration preferences
+    - Visualize duration variety in class planning
+
+    **Returns:**
+    - Period labels for x-axis (e.g., "Week 1", "Week 2")
+    - All 6 standard duration options in minutes
+    - Count of classes per duration per period for stacked bar visualization
+
+    **Note:** Actual class durations are rounded to the nearest standard duration
+    (e.g., 28 minutes → 30 minutes, 58 minutes → 60 minutes)
+    """,
+    tags=["Analytics", "Class Planning"],
+    responses={
+        200: {
+            "description": "Class duration distribution retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "period_labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
+                        "durations": [12, 30, 45, 60, 75, 90],
+                        "duration_counts": {
+                            "12": [0, 1, 0, 0],
+                            "30": [2, 1, 3, 1],
+                            "45": [1, 1, 0, 2],
+                            "60": [1, 2, 1, 2],
+                            "75": [0, 0, 1, 0],
+                            "90": [0, 0, 0, 1]
+                        }
+                    }
+                }
+            }
+        },
+        500: {"description": "Database error"}
+    }
+)
+async def get_class_duration_distribution(
+    user_id: str = Path(..., description="User UUID or identifier to fetch analytics for"),
+    period: TimePeriod = Query(
+        default=TimePeriod.WEEK,
+        description="Time period granularity for aggregation. Options: day (last 7 days), week (last 4 weeks), month (last 12 months), total (all time)"
+    )
+):
     try:
         user_uuid = _convert_to_uuid(user_id)
 
