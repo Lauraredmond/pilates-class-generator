@@ -142,6 +142,41 @@ def call_agent_tool(
         )
 
 
+def normalize_music_genre(frontend_value: str) -> str:
+    """
+    Normalize music genre from frontend format to analytics format
+
+    Frontend sends: UPPERCASE with underscores (e.g., "IMPRESSIONIST", "CELTIC_TRADITIONAL")
+    Analytics expects: Title case with spaces (e.g., "Impressionist", "Celtic Traditional")
+
+    Args:
+        frontend_value: Genre value from frontend form (e.g., "BAROQUE", "CONTEMPORARY")
+
+    Returns:
+        Normalized genre value for analytics (e.g., "Baroque", "Contemporary/Postmodern")
+    """
+    # Mapping from frontend values to analytics values
+    genre_mapping = {
+        'BAROQUE': 'Baroque',
+        'CLASSICAL': 'Classical',
+        'ROMANTIC': 'Romantic',
+        'IMPRESSIONIST': 'Impressionist',
+        'MODERN': 'Modern',
+        'CONTEMPORARY': 'Contemporary/Postmodern',
+        'JAZZ': 'Jazz',
+        'CELTIC_TRADITIONAL': 'Celtic Traditional'
+    }
+
+    normalized = genre_mapping.get(frontend_value)
+
+    if not normalized:
+        # Fallback: convert to title case and replace underscores with spaces
+        logger.warning(f"Unknown music genre '{frontend_value}' - using fallback normalization")
+        normalized = frontend_value.replace('_', ' ').title()
+
+    return normalized
+
+
 def get_movement_muscle_groups(movement_id: str) -> list[str]:
     """
     Fetch muscle groups for a movement from movement_muscles junction table
@@ -876,11 +911,13 @@ Return all 6 sections with complete details (narrative, timing, instructions).
             # Add preferred music styles if provided (for analytics tracking)
             if request.preferred_music_style:
                 music_input["preferred_genres"] = [request.preferred_music_style]
-                selected_music_genre = request.preferred_music_style  # Save for class_history
-                logger.info(f"Movement music genre selected by user: {selected_music_genre}")
+                # ANALYTICS FIX: Normalize frontend format to analytics format
+                selected_music_genre = normalize_music_genre(request.preferred_music_style)
+                logger.info(f"Movement music genre: {request.preferred_music_style} → {selected_music_genre}")
             if request.cooldown_music_style:
-                selected_cooldown_music_genre = request.cooldown_music_style  # Save for class_history
-                logger.info(f"Cooldown music genre selected by user: {selected_cooldown_music_genre}")
+                # ANALYTICS FIX: Normalize frontend format to analytics format
+                selected_cooldown_music_genre = normalize_music_genre(request.cooldown_music_style)
+                logger.info(f"Cooldown music genre: {request.cooldown_music_style} → {selected_cooldown_music_genre}")
 
             music_result = call_agent_tool(
                 tool_id="select_music",
