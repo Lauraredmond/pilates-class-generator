@@ -157,26 +157,40 @@ git push origin main --force
 
 ## 🔄 GIT WORKFLOW POLICY
 
-### Automatic Commits After Code Changes
+### Dev-First Workflow (CRITICAL - Updated December 2025)
 
-**RULE:** After making any code changes, automatically commit and push to GitHub unless the user explicitly says not to.
+**RULE:** After making any code changes, automatically commit and push to **`dev` branch FIRST**, then merge to `main` after testing.
 
-**Process:**
-1. Make code changes as requested
-2. Stage all modified files: `git add .`
-3. Create descriptive commit message with:
+**Standard Workflow:**
+1. **Ensure you're on `dev` branch**: `git checkout dev`
+2. Make code changes as requested
+3. Stage all modified files: `git add .`
+4. Create descriptive commit message with:
    - Summary of changes
    - Files modified
    - Purpose/reason for changes
    - Co-authored-by Claude tag
-4. Push to GitHub: `git push origin main`
-5. Confirm with user that changes are live
+5. **Push to dev branch**: `git push origin dev`
+6. Auto-deploys to dev environment for testing:
+   - Frontend: https://bassline-dev.netlify.app
+   - Backend: https://pilates-dev-i0jb.onrender.com
+7. After user confirms testing successful, merge to main:
+   ```bash
+   git checkout main
+   git merge dev
+   git push origin main
+   ```
+8. Auto-deploys to production for beta testers:
+   - Frontend: https://basslinemvp.netlify.app
+   - Backend: https://pilates-class-generator-api3.onrender.com
 
 **When NOT to commit:**
 - User explicitly says "don't commit" or "wait to commit"
 - Files contain secrets or credentials (check first!)
 - Changes are experimental/incomplete
 - User says they want to review changes first
+
+**NEVER push directly to `main` unless explicitly instructed by user.**
 
 **Commit Message Format:**
 ```
