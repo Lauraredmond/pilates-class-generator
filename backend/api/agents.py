@@ -866,11 +866,18 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
         # Step 8: Select music (if requested)
         music_result = None
+        selected_music_genre = None  # Track for analytics
         if request.include_music:
             music_input = {
                 "class_duration_minutes": request.class_plan.target_duration_minutes,
                 "target_bpm_range": (90, 130)
             }
+            # Add preferred music style if provided (for analytics tracking)
+            if request.preferred_music_style:
+                music_input["preferred_genres"] = [request.preferred_music_style]
+                selected_music_genre = request.preferred_music_style  # Save for class_history
+                logger.info(f"Music genre selected by user: {selected_music_genre}")
+
             music_result = call_agent_tool(
                 tool_id="select_music",
                 parameters=music_input,
@@ -901,6 +908,79 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
         # Calculate total processing time
         total_time_ms = (time.time() - start_time) * 1000
+
+        # ============================================================================
+        # ANALYTICS: Save complete class to class_history for analytics tracking
+        # ============================================================================
+        try:
+            now = datetime.now().isoformat()
+
+            # Extract movements from sequence for analytics
+            sequence_data = sequence_result.get("data", {})
+            sequence = sequence_data.get("sequence", [])
+
+            movements_for_history = []
+            for idx, movement in enumerate(sequence):
+                if movement.get('type') == 'movement':
+                    # Fetch muscle groups from junction table
+                    muscle_groups = get_movement_muscle_groups(movement.get('id', ''))
+
+                    movements_for_history.append({
+                        "type": "movement",
+                        "name": movement.get('name', ''),
+                        "muscle_groups": muscle_groups,
+                        "duration_seconds": movement.get('duration_seconds', 60),
+                        "order_index": idx,
+                        "voiceover_url": movement.get('voiceover_url'),
+                        "voiceover_duration_seconds": movement.get('voiceover_duration_seconds'),
+                        "voiceover_enabled": movement.get('voiceover_enabled', False)
+                    })
+
+            # Save to class_plans table first
+            class_plan_data = {
+                'name': f"{request.class_plan.difficulty_level} Pilates Class ({request.class_plan.target_duration_minutes} min)",
+                'user_id': user_id,
+                'movements': sequence,
+                'duration_minutes': request.class_plan.target_duration_minutes,
+                'difficulty_level': request.class_plan.difficulty_level,
+                'notes': f"Complete class with music: {selected_music_genre or 'N/A'}",
+                'muscle_balance': sequence_data.get('muscle_balance', {}),
+                'validation_status': {
+                    'valid': True,
+                    'safety_score': 1.0,
+                    'warnings': []
+                },
+                'created_at': now,
+                'updated_at': now
+            }
+
+            db_response = supabase.table('class_plans').insert(class_plan_data).execute()
+
+            if db_response.data and len(db_response.data) > 0:
+                class_plan_id = db_response.data[0].get('id')
+                logger.info(f"✅ Saved complete class to class_plans (ID: {class_plan_id})")
+
+                # Save to class_history with music_genre for analytics
+                class_history_entry = {
+                    'class_plan_id': class_plan_id,
+                    'user_id': user_id,
+                    'taught_date': datetime.now().date().isoformat(),
+                    'actual_duration_minutes': request.class_plan.target_duration_minutes,
+                    'attendance_count': 1,
+                    'movements_snapshot': movements_for_history,
+                    'instructor_notes': f"Complete class with all 6 sections",
+                    'difficulty_rating': None,
+                    'muscle_groups_targeted': list(sequence_data.get('muscle_balance', {}).keys()),
+                    'total_movements_taught': len(movements_for_history),
+                    'music_genre': selected_music_genre,  # ANALYTICS: Save music genre!
+                    'created_at': now
+                }
+
+                supabase.table('class_history').insert(class_history_entry).execute()
+                logger.info(f"✅ Saved to class_history with music_genre: {selected_music_genre}")
+
+        except Exception as db_error:
+            logger.error(f"❌ Failed to save complete class to database: {db_error}", exc_info=True)
 
         # DEBUG: Verify what's being sent to frontend
         logger.info("=" * 80)

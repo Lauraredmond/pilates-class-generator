@@ -1,17 +1,21 @@
-[Error] Failed to load resource: the server responded with a status of 404 () (preferences, line 0)
-[Error] Failed to fetch preferences: – je
-je
-	error (index-DUgEJoD0.js:13:5450)
-	(anonymous function) (index-DUgEJoD0.js:54:43485)
-[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – je
-je
-	error (index-DUgEJoD0.js:13:5450)
-	(anonymous function) (index-DUgEJoD0.js:54:19135)
-[Error] Failed to load resource: the server responded with a status of 404 () (preferences, line 0)
-[Error] Failed to fetch preferences: – je
-je
-	error (index-DUgEJoD0.js:13:5450)
-	(anonymous function) (index-DUgEJoD0.js:54:43485)
-[Error] Failed to load resource: the server responded with a status of 500 () (ropa-report, line 0)
-[Error] Failed to load resource: the server responded with a status of 500 () (register, line 0)
+[Error] Error: "bar" is not a registered controller.
+	fc (index-Cij538Fb.js:8:167)
+	(anonymous function) (index-Cij538Fb.js:8:390)
+	Sh (index-Cij538Fb.js:6:15854)
+	Sf (index-Cij538Fb.js:8:32268)
+	kf (index-Cij538Fb.js:8:31675)
+	o0 (index-Cij538Fb.js:8:31220)
+	h0 (index-Cij538Fb.js:8:41242)
+	Is (index-Cij538Fb.js:8:40584)
+	Mf (index-Cij538Fb.js:8:37142)
+	ts (index-Cij538Fb.js:6:3275)
+	wr (index-Cij538Fb.js:8:42940)
+	(anonymous function) (index-Cij538Fb.js:8:41042)
+	S (index-Cij538Fb.js:1:10384)
+	ne (index-Cij538Fb.js:1:10751)
+[Error] Error: "bar" is not a registered controller.
+	ts (index-Cij538Fb.js:6:3366)
+	wr (index-Cij538Fb.js:8:42940)
+	(anonymous function) (index-Cij538Fb.js:8:41042)
+	S (index-Cij538Fb.js:1:10384)
+	ne (index-Cij538Fb.js:1:10751)
