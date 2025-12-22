@@ -478,42 +478,45 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
         </Card>
       </div>
 
-      {/* Muscle Distribution Chart (Full Width) */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Muscle Group Distribution</CardTitle>
-        </CardHeader>
-        <CardBody className="p-6">
-          <div className="h-96">
-            {muscleDistributionChartData ? (
-              <Doughnut data={muscleDistributionChartData} options={doughnutChartOptions} />
-            ) : (
-              <div className="flex items-center justify-center h-full text-cream/60">
-                No data available
-              </div>
-            )}
-          </div>
-        </CardBody>
-      </Card>
+      {/* Distribution Charts Grid - Side by Side on Desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Muscle Distribution Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Muscle Group Distribution</CardTitle>
+          </CardHeader>
+          <CardBody className="p-6">
+            <div className="h-96">
+              {muscleDistributionChartData ? (
+                <Doughnut data={muscleDistributionChartData} options={doughnutChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-cream/60">
+                  No data available
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
 
-      {/* SESSION: Movement Families - December 2025 */}
-      {/* Movement Family Distribution Chart (Full Width) */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Movement Family Distribution</CardTitle>
-        </CardHeader>
-        <CardBody className="p-6">
-          <div className="h-96">
-            {movementFamilyDistributionChartData ? (
-              <Doughnut data={movementFamilyDistributionChartData} options={doughnutChartOptions} />
-            ) : (
-              <div className="flex items-center justify-center h-full text-cream/60">
-                No data available
-              </div>
-            )}
-          </div>
-        </CardBody>
-      </Card>
+        {/* SESSION: Movement Families - December 2025 */}
+        {/* Movement Family Distribution Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Movement Family Distribution</CardTitle>
+          </CardHeader>
+          <CardBody className="p-6">
+            <div className="h-96">
+              {movementFamilyDistributionChartData ? (
+                <Doughnut data={movementFamilyDistributionChartData} options={doughnutChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-cream/60">
+                  No data available
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      </div>
 
       {/* Movement History Table */}
       <Card className="mb-8">

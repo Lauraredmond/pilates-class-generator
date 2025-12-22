@@ -328,26 +328,27 @@ export function AIGenerationPanel() {
   // SESSION 11: Transform complete class to playback format with all 6 sections
   // Uses AI-generated movements (9 movements + 8 transitions) with framing sections
   // FILTER: Exclude meditation for <30 min classes (backend returns null)
+  // FILTER: Exclude ALL framing sections for 12-min quick practice (backend returns null)
   const playbackItems: PlaybackItem[] = results && (results as any).completeClass
     ? [
-        // Section 1: Preparation (null-safe: preparation may be missing if backend fails)
-        {
+        // Section 1: Preparation (SKIP for quick practice - only for full classes)
+        ...((results as any).completeClass.preparation ? [{
           type: 'preparation' as const,
-          script_name: (results as any).completeClass.preparation?.script_name || 'Pilates Principles',
-          narrative: (results as any).completeClass.preparation?.narrative || 'No preparation narrative available.',
-          key_principles: (results as any).completeClass.preparation?.key_principles || [],
-          duration_seconds: (results as any).completeClass.preparation?.duration_seconds || 240,
-          breathing_pattern: (results as any).completeClass.preparation?.breathing_pattern || 'Inhale/Exhale',
-          breathing_focus: (results as any).completeClass.preparation?.breathing_focus || 'Lateral breathing',
+          script_name: (results as any).completeClass.preparation.script_name || 'Pilates Principles',
+          narrative: (results as any).completeClass.preparation.narrative || 'No preparation narrative available.',
+          key_principles: (results as any).completeClass.preparation.key_principles || [],
+          duration_seconds: (results as any).completeClass.preparation.duration_seconds || 240,
+          breathing_pattern: (results as any).completeClass.preparation.breathing_pattern || 'Inhale/Exhale',
+          breathing_focus: (results as any).completeClass.preparation.breathing_focus || 'Lateral breathing',
           // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.preparation?.voiceover_url,
-          voiceover_duration: (results as any).completeClass.preparation?.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.preparation?.voiceover_enabled || false,
+          voiceover_url: (results as any).completeClass.preparation.voiceover_url,
+          voiceover_duration: (results as any).completeClass.preparation.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.preparation.voiceover_enabled || false,
           // Video demonstration (AWS Phase 1)
-          video_url: (results as any).completeClass.preparation?.video_url,
-        },
-        // Section 2: Warm-up (null-safe: warmup may be missing if backend fails)
-        (() => {
+          video_url: (results as any).completeClass.preparation.video_url,
+        }] : []),
+        // Section 2: Warm-up (SKIP for quick practice - only for full classes)
+        ...((results as any).completeClass.warmup ? [(() => {
           const warmup = (results as any).completeClass.warmup;
           logger.debug('[AIGenerationPanel] Warmup playback item:', {
             hasWarmup: !!warmup,
@@ -357,19 +358,19 @@ export function AIGenerationPanel() {
           });
           return {
             type: 'warmup' as const,
-            routine_name: warmup?.routine_name || 'Full Body Warm-up',
-            narrative: warmup?.narrative || 'No warmup narrative available.',
-            movements: warmup?.movements || [],
-            duration_seconds: warmup?.duration_seconds || 180,
-            focus_area: warmup?.focus_area || 'full_body',
+            routine_name: warmup.routine_name || 'Full Body Warm-up',
+            narrative: warmup.narrative || 'No warmup narrative available.',
+            movements: warmup.movements || [],
+            duration_seconds: warmup.duration_seconds || 180,
+            focus_area: warmup.focus_area || 'full_body',
             // Voiceover audio fields
-            voiceover_url: warmup?.voiceover_url,
-            voiceover_duration: warmup?.voiceover_duration,
-            voiceover_enabled: warmup?.voiceover_enabled || false,
+            voiceover_url: warmup.voiceover_url,
+            voiceover_duration: warmup.voiceover_duration,
+            voiceover_enabled: warmup.voiceover_enabled || false,
             // Video demonstration (AWS Phase 1)
-            video_url: warmup?.video_url,
+            video_url: warmup.video_url,
           };
-        })(),
+        })()] : []),
         // Section 3: Main movements (AI-generated, includes movements + transitions)
         // Use results.sequence.movements which contains BOTH movements and transitions from AI
         ...results.sequence.movements.map((m, index) => {
@@ -418,22 +419,22 @@ export function AIGenerationPanel() {
             video_url: (m as any).video_url,
           };
         }),
-        // Section 4: Cool-down (null-safe: cooldown may be missing if backend fails)
-        {
+        // Section 4: Cool-down (SKIP for quick practice - only for full classes)
+        ...((results as any).completeClass.cooldown ? [{
           type: 'cooldown' as const,
-          sequence_name: (results as any).completeClass.cooldown?.sequence_name || 'Full Body Cooldown',
-          narrative: (results as any).completeClass.cooldown?.narrative || 'No cooldown narrative available.',
-          stretches: (results as any).completeClass.cooldown?.stretches || [],
-          duration_seconds: (results as any).completeClass.cooldown?.duration_seconds || 180,
-          target_muscles: (results as any).completeClass.cooldown?.target_muscles || [],
-          recovery_focus: (results as any).completeClass.cooldown?.recovery_focus || 'full_body',
+          sequence_name: (results as any).completeClass.cooldown.sequence_name || 'Full Body Cooldown',
+          narrative: (results as any).completeClass.cooldown.narrative || 'No cooldown narrative available.',
+          stretches: (results as any).completeClass.cooldown.stretches || [],
+          duration_seconds: (results as any).completeClass.cooldown.duration_seconds || 180,
+          target_muscles: (results as any).completeClass.cooldown.target_muscles || [],
+          recovery_focus: (results as any).completeClass.cooldown.recovery_focus || 'full_body',
           // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.cooldown?.voiceover_url,
-          voiceover_duration: (results as any).completeClass.cooldown?.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.cooldown?.voiceover_enabled || false,
+          voiceover_url: (results as any).completeClass.cooldown.voiceover_url,
+          voiceover_duration: (results as any).completeClass.cooldown.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.cooldown.voiceover_enabled || false,
           // Video demonstration (AWS Phase 1)
-          video_url: (results as any).completeClass.cooldown?.video_url,
-        },
+          video_url: (results as any).completeClass.cooldown.video_url,
+        }] : []),
         // Section 5: Closing Meditation (CONDITIONALLY INCLUDED - only for >30 min classes)
         // Backend returns null for <=30 min classes - filter it out instead of showing "No meditation script available"
         ...((results as any).completeClass.meditation ? [{
@@ -450,21 +451,21 @@ export function AIGenerationPanel() {
           // Video demonstration (AWS Phase 1)
           video_url: (results as any).completeClass.meditation.video_url,
         }] : []),
-        // Section 6: HomeCare Advice (null-safe: homecare may be missing if backend fails)
-        {
+        // Section 6: HomeCare Advice (SKIP for quick practice - only for full classes)
+        ...((results as any).completeClass.homecare ? [{
           type: 'homecare' as const,
-          advice_name: (results as any).completeClass.homecare?.advice_name || 'Post-Class Care',
-          advice_text: (results as any).completeClass.homecare?.advice_text || 'No homecare advice available.',
-          actionable_tips: (results as any).completeClass.homecare?.actionable_tips || [],
-          duration_seconds: (results as any).completeClass.homecare?.duration_seconds || 60,
-          focus_area: (results as any).completeClass.homecare?.focus_area || 'general',
+          advice_name: (results as any).completeClass.homecare.advice_name || 'Post-Class Care',
+          advice_text: (results as any).completeClass.homecare.advice_text || 'No homecare advice available.',
+          actionable_tips: (results as any).completeClass.homecare.actionable_tips || [],
+          duration_seconds: (results as any).completeClass.homecare.duration_seconds || 60,
+          focus_area: (results as any).completeClass.homecare.focus_area || 'general',
           // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.homecare?.voiceover_url,
-          voiceover_duration: (results as any).completeClass.homecare?.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.homecare?.voiceover_enabled || false,
+          voiceover_url: (results as any).completeClass.homecare.voiceover_url,
+          voiceover_duration: (results as any).completeClass.homecare.voiceover_duration,
+          voiceover_enabled: (results as any).completeClass.homecare.voiceover_enabled || false,
           // Video demonstration (AWS Phase 1)
-          video_url: (results as any).completeClass.homecare?.video_url,
-        },
+          video_url: (results as any).completeClass.homecare.video_url,
+        }] : []),
       ]
     : [];
 
