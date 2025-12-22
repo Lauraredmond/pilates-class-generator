@@ -1101,34 +1101,42 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         logger.info(f"✅ Saved class to class_plans (ID: {class_plan_id}) for user {request.user_id}")
 
         # ==============================================================================
-        # 2. SAVE TO CLASS_HISTORY TABLE (for analytics, linked to class_plan)
+        # 2. FIND EXISTING CLASS_HISTORY RECORD (created during generation)
         # ==============================================================================
-        class_history_entry = {
-            'class_plan_id': class_plan_id,  # Link to the saved plan
-            'user_id': request.user_id,
-            'taught_date': today,
-            'actual_duration_minutes': request.duration_minutes,
-            'attendance_count': 1,  # Self-practice
-            'movements_snapshot': enriched_movements_snapshot,  # FIXED: Use enriched version with muscle_groups!
-            'instructor_notes': f"{request.difficulty} level - {request.duration_minutes} minutes - {len(movements_only)} movements",
-            'difficulty_rating': None,
-            'muscle_groups_targeted': unique_muscle_groups,
-            'total_movements_taught': len(movements_only),
-            'created_at': now.isoformat()
-        }
+        # BUGFIX: Don't create duplicate class_history record - it was already created
+        # during class generation in /api/agents/generate-complete-class
+        # Instead, query for the existing record by user_id and date
+        logger.info(f"🔍 Looking for existing class_history record for user {request.user_id} on {today}")
 
-        logger.info(f"💾 DEBUG: Saving to class_history with {len(enriched_movements_snapshot)} items in movements_snapshot")
+        existing_history = supabase.table('class_history') \
+            .select('id') \
+            .eq('user_id', request.user_id) \
+            .eq('taught_date', today) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
 
-        history_response = supabase.table('class_history').insert(class_history_entry).execute()
-
-        if not history_response.data:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to save class to class_history"
-            )
-
-        class_history_id = history_response.data[0]['id']
-        logger.info(f"✅ Saved class to class_history (ID: {class_history_id}) linked to class_plan {class_plan_id}")
+        if existing_history.data:
+            class_history_id = existing_history.data[0]['id']
+            logger.info(f"✅ Found existing class_history record (ID: {class_history_id})")
+        else:
+            # Fallback: If no existing record found (shouldn't happen), create one
+            logger.warning(f"⚠️ No existing class_history found - creating new one (this shouldn't happen)")
+            class_history_entry = {
+                'class_plan_id': class_plan_id,
+                'user_id': request.user_id,
+                'taught_date': today,
+                'actual_duration_minutes': request.duration_minutes,
+                'attendance_count': 1,
+                'movements_snapshot': enriched_movements_snapshot,
+                'instructor_notes': f"{request.difficulty} level - {request.duration_minutes} minutes - {len(movements_only)} movements",
+                'difficulty_rating': None,
+                'muscle_groups_targeted': unique_muscle_groups,
+                'total_movements_taught': len(movements_only),
+                'created_at': now.isoformat()
+            }
+            history_response = supabase.table('class_history').insert(class_history_entry).execute()
+            class_history_id = history_response.data[0]['id'] if history_response.data else None
 
         # ==============================================================================
         # 3. UPDATE USER_PREFERENCES (increment classes_completed)
