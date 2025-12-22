@@ -300,10 +300,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
         </div>
       )}
 
-      {/* DEBUG: Show message if video_url is missing - hidden on mobile, small on desktop */}
+      {/* Video coming soon badge - visible on all devices, non-obstructive */}
       {!item.video_url && item.type === 'movement' && (
-        <div className="hidden md:block absolute top-4 right-4 z-50 bg-red-500 text-white px-2 py-1 rounded text-xs">
-          ⚠️ NO VIDEO_URL
+        <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-burgundy/80 text-cream px-3 py-1.5 rounded-full text-xs md:text-sm font-medium shadow-lg backdrop-blur-sm">
+          🎥 Video coming soon
         </div>
       )}
 

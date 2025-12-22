@@ -101,9 +101,9 @@ class SequenceTools:
         Returns:
             Dict with sequence, muscle balance, validation, and statistics
         """
-        # Validate inputs
-        if not (15 <= target_duration_minutes <= 120):
-            raise ValueError("Duration must be between 15 and 120 minutes")
+        # Validate inputs (allow 12-min quick practice)
+        if not (12 <= target_duration_minutes <= 120):
+            raise ValueError("Duration must be between 12 and 120 minutes")
 
         if difficulty_level not in ["Beginner", "Intermediate", "Advanced"]:
             raise ValueError("Difficulty must be Beginner, Intermediate, or Advanced")
@@ -187,12 +187,19 @@ class SequenceTools:
         """
         Fetch actual section durations from database to calculate overhead
 
+        For 12-min classes: 0 overhead (quick movement practice - just 3 movements)
         For 30-min classes: prep + warmup + cooldown + homecare (no meditation)
         For longer classes: prep + warmup + cooldown + homecare + meditation
 
         Returns:
             Total overhead in minutes (read from database duration_seconds fields)
         """
+        # SPECIAL CASE: 12-minute "Quick movement practice" classes
+        # User requirement: "Just 3 movements, no warmup/cooldown/prep/meditation/homecare"
+        if target_duration == 12:
+            logger.info("✅ 12-minute quick practice: 0 overhead (movements only)")
+            return 0
+
         # DIAGNOSTIC: Check if Supabase client is available
         logger.warning(f"🔍 DIAGNOSTIC: self.supabase is {'AVAILABLE' if self.supabase else 'NONE (using fallback)'}")
 
@@ -378,6 +385,12 @@ class SequenceTools:
                 f"30-min class calculated only {max_movements} movements. Enforcing minimum 4 movements (class will run slightly over 30 min)."
             )
             max_movements = 4
+
+        # ENFORCE EXACTLY 3 MOVEMENTS FOR 12-MIN QUICK PRACTICE
+        # User requirement: "Quick movement practice - just 3 movements for daily practice"
+        if target_duration == 12:
+            max_movements = 3
+            logger.info("✅ 12-minute quick practice: Enforcing exactly 3 movements")
 
         logger.info(
             f"Building sequence: {target_duration} min total - {overhead_minutes} min overhead = {available_minutes} min available / "
@@ -628,17 +641,21 @@ class SequenceTools:
 
         try:
             # Get all transitions from database (duration_seconds required - Migration 021)
+            # VOICEOVER SUPPORT: Fetch voiceover fields (Migration 027)
             transitions_map = {}
             if self.supabase:
                 transitions_response = self.supabase.table('transitions') \
-                    .select('from_position, to_position, narrative, duration_seconds') \
+                    .select('from_position, to_position, narrative, duration_seconds, voiceover_url, voiceover_duration, voiceover_enabled') \
                     .execute()
 
-                # Store both narrative AND duration_seconds from database
+                # Store narrative, duration_seconds, AND voiceover fields from database
                 transitions_map = {
                     (t['from_position'], t['to_position']): {
                         'narrative': t['narrative'],
-                        'duration_seconds': t['duration_seconds']  # MUST come from database
+                        'duration_seconds': t['duration_seconds'],  # MUST come from database
+                        'voiceover_url': t.get('voiceover_url'),  # Voiceover audio URL (Migration 027)
+                        'voiceover_duration': t.get('voiceover_duration'),  # Voiceover duration in seconds
+                        'voiceover_enabled': t.get('voiceover_enabled', False)  # Whether to play voiceover
                     }
                     for t in transitions_response.data
                 }
@@ -654,24 +671,31 @@ class SequenceTools:
                     from_position = movement.get('setup_position', 'Unknown')
                     to_position = sequence[i + 1].get('setup_position', 'Unknown')
 
-                    # Get transition data (narrative + duration) from database
+                    # Get transition data (narrative + duration + voiceover) from database
                     transition_key = (from_position, to_position)
                     transition_data = transitions_map.get(
                         transition_key,
                         {
                             'narrative': f"Transition from {from_position} to {to_position} position with control.",
-                            'duration_seconds': 60  # Fallback if transition not in database
+                            'duration_seconds': 60,  # Fallback if transition not in database
+                            'voiceover_url': None,
+                            'voiceover_duration': None,
+                            'voiceover_enabled': False
                         }
                     )
 
-                    # Add transition item to sequence (using database duration)
+                    # Add transition item to sequence (using database duration + voiceover fields)
                     transition_item = {
                         "type": "transition",
                         "from_position": from_position,
                         "to_position": to_position,
                         "narrative": transition_data['narrative'],
                         "duration_seconds": transition_data['duration_seconds'],  # FROM DATABASE
-                        "name": f"Transition: {from_position} → {to_position}"
+                        "name": f"Transition: {from_position} → {to_position}",
+                        # Voiceover fields (Migration 027)
+                        "voiceover_url": transition_data['voiceover_url'],
+                        "voiceover_duration": transition_data['voiceover_duration'],
+                        "voiceover_enabled": transition_data['voiceover_enabled']
                     }
 
                     sequence_with_transitions.append(transition_item)
