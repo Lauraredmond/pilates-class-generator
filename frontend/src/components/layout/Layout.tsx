@@ -33,39 +33,36 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-premium-texture flex flex-col">
-      {/* Header - Logo only (hidden on home page) */}
+      {/* Header - Logo with Back Button (hidden on home page) */}
       {!isHomePage && (
         <header className="bg-burgundy-dark/80 backdrop-blur-sm border-b border-cream/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-3 flex items-center justify-center">
-            <Link to="/" className="group relative cursor-pointer">
-              {/* Left arrow indicator on hover */}
-              <div className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:-translate-x-1">
-                <ArrowLeft size={20} className="text-cream drop-shadow-lg" />
-              </div>
-
-              {/* Logo with hover effects */}
-              <img
-                src="/assets/Logo4.jpg"
-                alt="Bassline Logo"
-                className="h-12 w-auto rounded-lg shadow-md transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 group-hover:shadow-xl"
+            <div className="group relative flex items-center gap-3">
+              {/* Back Button - Always Visible */}
+              <Link
+                to="/"
+                className="flex items-center gap-2 px-3 py-2 bg-burgundy/80 hover:bg-burgundy text-cream rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
                 title="Back to Home"
-              />
+              >
+                <ArrowLeft size={20} />
+                <span className="text-sm font-medium">Back</span>
+              </Link>
 
-              {/* Right arrow indicator on hover */}
-              <div className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1 rotate-180">
-                <ArrowLeft size={20} className="text-cream drop-shadow-lg" />
-              </div>
+              {/* Logo */}
+              <Link to="/" className="cursor-pointer">
+                <img
+                  src="/assets/Logo4.jpg"
+                  alt="Bassline Logo"
+                  className="h-12 w-auto rounded-lg shadow-md transition-all duration-300 hover:scale-105 hover:brightness-110 hover:shadow-xl"
+                  title="Back to Home"
+                />
+              </Link>
 
-              {/* Tooltip */}
-              <span className="absolute left-1/2 -translate-x-1/2 -bottom-10 bg-burgundy-dark/95 text-cream text-xs px-3 py-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                ← Back to Home
+              {/* Logo credit - appears on hover of either back button or logo */}
+              <span className="absolute left-1/2 -translate-x-1/2 -bottom-10 bg-charcoal/90 text-cream/70 text-[10px] px-3 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Logo by Cian Ryan, La Cathedral
               </span>
-
-              {/* Logo credit - smaller, bottom position */}
-              <span className="absolute left-1/2 -translate-x-1/2 -bottom-16 bg-charcoal/90 text-cream/70 text-[10px] px-2 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity delay-100 whitespace-nowrap pointer-events-none">
-                Logo by Cian Ryan
-              </span>
-            </Link>
+            </div>
           </div>
         </header>
       )}
