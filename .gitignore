@@ -60,6 +60,10 @@ supabase/.temp/
 # Testing
 coverage/
 .nyc_output/
+.env.e2e
+test-results/
+playwright-report/
+playwright/.cache/
 
 # Build outputs
 build/
