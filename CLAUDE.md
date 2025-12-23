@@ -157,26 +157,40 @@ git push origin main --force
 
 ## 🔄 GIT WORKFLOW POLICY
 
-### Automatic Commits After Code Changes
+### Dev-First Workflow (CRITICAL - Updated December 2025)
 
-**RULE:** After making any code changes, automatically commit and push to GitHub unless the user explicitly says not to.
+**RULE:** After making any code changes, automatically commit and push to **`dev` branch FIRST**, then merge to `main` after testing.
 
-**Process:**
-1. Make code changes as requested
-2. Stage all modified files: `git add .`
-3. Create descriptive commit message with:
+**Standard Workflow:**
+1. **Ensure you're on `dev` branch**: `git checkout dev`
+2. Make code changes as requested
+3. Stage all modified files: `git add .`
+4. Create descriptive commit message with:
    - Summary of changes
    - Files modified
    - Purpose/reason for changes
    - Co-authored-by Claude tag
-4. Push to GitHub: `git push origin main`
-5. Confirm with user that changes are live
+5. **Push to dev branch**: `git push origin dev`
+6. Auto-deploys to dev environment for testing:
+   - Frontend: https://bassline-dev.netlify.app
+   - Backend: https://pilates-dev-i0jb.onrender.com
+7. After user confirms testing successful, merge to main:
+   ```bash
+   git checkout main
+   git merge dev
+   git push origin main
+   ```
+8. Auto-deploys to production for beta testers:
+   - Frontend: https://basslinemvp.netlify.app
+   - Backend: https://pilates-class-generator-api3.onrender.com
 
 **When NOT to commit:**
 - User explicitly says "don't commit" or "wait to commit"
 - Files contain secrets or credentials (check first!)
 - Changes are experimental/incomplete
 - User says they want to review changes first
+
+**NEVER push directly to `main` unless explicitly instructed by user.**
 
 **Commit Message Format:**
 ```
@@ -196,6 +210,84 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - No `.env` files being committed
 - Changes align with user's request
 - All files staged are intentional
+
+---
+
+## 🔍 DATABASE ACCESS RULES (Read-Only Schema Inspection)
+
+### Operating Rule for Supabase Database Access
+
+**Purpose:** Enable Claude Code to inspect database schema and query data during troubleshooting, eliminating the need for manual query execution back-and-forth.
+
+**Setup:**
+- Read-only PostgreSQL role: `claude_readonly` (SELECT-only permissions on 31 approved tables)
+- Local query runner script: `scripts/db_readonly_query.mjs`
+- Connection string stored securely in `.env.local` (gitignored)
+- Built-in security: Blocks all write operations, maximum 1000 rows per query
+
+**Operating Protocol:**
+
+When Claude Code needs to inspect database schema or query data:
+
+1. **Write the SQL query** (SELECT only, validated for safety)
+2. **Execute directly using Bash tool**:
+   ```bash
+   node scripts/db_readonly_query.mjs "YOUR_SQL_HERE"
+   ```
+3. **Reason only on returned output** (never assume database state)
+4. **NEVER suggest or execute write operations** (INSERT/UPDATE/DELETE/ALTER/etc.)
+
+**Security Guarantees:**
+- ✅ Only SELECT queries allowed (write operations blocked by script validation)
+- ✅ Only SELECT queries possible (PostgreSQL role has no write permissions)
+- ✅ Maximum 1000 rows returned (prevents massive data dumps)
+- ✅ Connection string never logged or exposed
+- ✅ No access to `user_profiles` table (PII protection - excluded from role permissions)
+
+**Approved Tables (31 total):**
+- `ai_decision_log`, `beta_feedback`, `bias_monitoring`, `class_history`, `class_movements`, `class_plans`
+- `closing_homecare_advice`, `closing_meditation_scripts`, `common_mistakes`, `cooldown_sequences`
+- `llm_invocation_log`, `medical_exclusions_log`, `model_drift_log`, `movement_levels`, `movement_muscles`
+- `movement_usage`, `movements`, `muscle_groups`, `music_playlist_tracks_backup`, `music_playlists_backup`
+- `music_tracks`, `pii_field_registry`, `pii_tokens`, `preparation_scripts`, `ropa_audit_log`
+- `sequence_rules`, `student_profiles`, `teaching_cues`, `transitions`, `user_preferences`, `warmup_routines`
+
+**When to Use:**
+- ✅ Debugging schema mismatches between backend models and Supabase
+- ✅ Verifying data migrations or updates
+- ✅ Troubleshooting query errors
+- ✅ Understanding table relationships and column definitions
+- ✅ Inspecting data to diagnose bugs
+
+**When NOT to Use:**
+- ❌ Never for write operations (INSERT/UPDATE/DELETE/CREATE/ALTER/DROP)
+- ❌ Never without clear troubleshooting purpose
+- ❌ Never to access `user_profiles` (PII table - excluded from permissions)
+- ❌ Never to query data for purposes unrelated to debugging
+
+**Example Usage:**
+```bash
+# Inspect table schema
+node scripts/db_readonly_query.mjs "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'movements' ORDER BY ordinal_position;"
+
+# Query data for debugging
+node scripts/db_readonly_query.mjs "SELECT id, name, difficulty_level FROM movements LIMIT 10;"
+
+# Check table relationships
+node scripts/db_readonly_query.mjs "SELECT COUNT(*) FROM class_movements WHERE class_id = 'uuid-here';"
+```
+
+**Blocked Operations (Security):**
+```bash
+# ❌ This will be BLOCKED by validation
+node scripts/db_readonly_query.mjs "DELETE FROM movements WHERE id = 1;"
+# Output: ❌ BLOCKED: Query contains write operation: DELETE
+```
+
+**Setup Files:**
+- Query runner: `/Users/lauraredmond/Documents/Bassline/Projects/MVP2/scripts/db_readonly_query.mjs`
+- Dependencies: `pg`, `dotenv` (installed via root `package.json`)
+- Environment variable: `DB_READONLY_URL` in `.env.local`
 
 ---
 
@@ -3684,7 +3776,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Cookie policy link
 
 - **Age Verification:**
-  - Ensure COPPA compliance (13+ requirement)
+  - Ensure age requirement compliance (16+ requirement)
   - Age gate on signup
 
 - **AI Transparency Statement:**

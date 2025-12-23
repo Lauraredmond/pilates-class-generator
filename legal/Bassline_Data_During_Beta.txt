@@ -9,12 +9,16 @@ During beta testing we collect only the data needed to provide your personalised
 • Age Range
 • Gender Identity
 • Country
-• Your class preferences (duration, ability level, intensity)  
-• Your practice history (movements performed, timestamps, muscle-group usage)  
-• Basic device information (browser type, operating system, timestamp)  
+• Your class preferences (duration, ability level, intensity)
+• Your practice history (movements performed, timestamps, muscle-group usage)
+• Music genre selections for class background music (Baroque, Classical, Romantic, etc.)
+• Basic device information (browser type, operating system, timestamp)
 • Non-identifying analytics (page views, crashes, errors)
+• Browser storage (authentication tokens, medical disclaimer acceptance, app version)
 
 We do not collect biometric data, medical information, GPS location, microphone or camera data.
+
+Note: We do not use traditional cookies, third-party trackers, or advertising cookies. We only use browser localStorage to keep you logged in, which is automatically cleared when you log out.
 
 2. Why We Collect This Data
 We use your information to:

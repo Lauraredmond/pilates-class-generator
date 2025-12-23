@@ -1,22 +1,149 @@
-[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
-[Log] 🎥 DEBUG: The Hundred from API: – Object (index-wKdYNR2h.js, line 54)
-Object
-[Log] 🎥 DEBUG: The Hundred video_url: – "https://d1chkg8zq1g5j8.cloudfront.net/The_Hundred_Placeholder.mp4" (index-wKdYNR2h.js, line 54)
-[Log] 🎥 DEBUG: The Hundred PlaybackItem: – Object (index-wKdYNR2h.js, line 54)
-Object
-[Log] 🎥 DEBUG: The Hundred PlaybackItem.video_url: – "https://d1chkg8zq1g5j8.cloudfront.net/The_Hundred_Placeholder.mp4" (index-wKdYNR2h.js, line 54)
-[Error] Failed to load resource: the server responded with a status of 400 () (1-preparation-phase.mp3, line 0)
-[Error] Voiceover play error: – NotSupportedError: The operation is not supported.
-NotSupportedError: The operation is not supported.
-	error (index-wKdYNR2h.js:13:5450)
-	(anonymous function) (index-wKdYNR2h.js:46:16651)
-[Error] Failed to play voiceover: – NotSupportedError: The operation is not supported.
-NotSupportedError: The operation is not supported.
-	error (index-wKdYNR2h.js:13:5450)
-	(anonymous function) (index-wKdYNR2h.js:46:17146)
+[Log] 🎥 DEBUG: Auto-playing video after voiceover start (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", duration_seconds: 240, narrative: "Set up supine base on your back with knees bent. I…and shoulders lifted throughout. Repeat 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", duration_seconds: 240, narrative: "Set up supine base on your back with knees bent. I…and shoulders lifted throughout. Repeat 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", duration_seconds: 240, narrative: "Set up supine base on your back with knees bent. I…and shoulders lifted throughout. Repeat 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", duration_seconds: 240, narrative: "Set up supine base on your back with knees bent. I…and shoulders lifted throughout. Repeat 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "5a68e5f1-1915-4b9f-8f6d-b3de53dfae8d", name: "One leg stretch", duration_seconds: 240, narrative: "Set up supine base on your back with knees bent. I…and shoulders lifted throughout. Repeat 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
 [Error] Voiceover load error: (2)
-Event
-MediaError
-	error (index-wKdYNR2h.js:13:5450)
-	(anonymous function) (index-wKdYNR2h.js:46:15337)
-[Log] 🎥 DEBUG: Auto-playing video after voiceover start (index-wKdYNR2h.js, line 16)
+Event {isTrusted: true, type: "error", target: <audio>, currentTarget: <audio>, eventPhase: 2, …}
+MediaError {code: 4, message: "", MEDIA_ERR_ABORTED: 1, MEDIA_ERR_NETWORK: 2, MEDIA_ERR_DECODE: 3, …}
+	error (index-BIAjsq7S.js:13:5450)
+	(anonymous function) (index-BIAjsq7S.js:46:14930)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", duration_seconds: 240, narrative: "Set up in seated neutral with your knees bent and …ed position. Repeat this flowing action 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", duration_seconds: 240, narrative: "Set up in seated neutral with your knees bent and …ed position. Repeat this flowing action 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", duration_seconds: 240, narrative: "Set up in seated neutral with your knees bent and …ed position. Repeat this flowing action 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", duration_seconds: 240, narrative: "Set up in seated neutral with your knees bent and …ed position. Repeat this flowing action 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", duration_seconds: 240, narrative: "Set up in seated neutral with your knees bent and …ed position. Repeat this flowing action 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", duration_seconds: 240, narrative: "Set up in seated neutral with your knees bent and …ed position. Repeat this flowing action 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", duration_seconds: 240, narrative: "Set up in seated neutral with your knees bent and …ed position. Repeat this flowing action 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", duration_seconds: 240, narrative: "Set up in seated neutral with your knees bent and …ed position. Repeat this flowing action 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "f13dfb30-1eee-4683-90c4-e1842357d572", name: "The Crab", duration_seconds: 240, narrative: "Set up in seated neutral with your knees bent and …ed position. Repeat this flowing action 10 times.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Error] Voiceover load error: (2)
+Event {isTrusted: true, type: "error", target: <audio>, currentTarget: <audio>, eventPhase: 2, …}
+MediaError {code: 4, message: "", MEDIA_ERR_ABORTED: 1, MEDIA_ERR_NETWORK: 2, MEDIA_ERR_DECODE: 3, …}
+	error (index-BIAjsq7S.js:13:5450)
+	(anonymous function) (index-BIAjsq7S.js:46:14930)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", duration_seconds: 240, narrative: "Set up supine base, heels close in towards the glu…peat on the opposite leg. Perform 10 repetitions.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", duration_seconds: 240, narrative: "Set up supine base, heels close in towards the glu…peat on the opposite leg. Perform 10 repetitions.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", duration_seconds: 240, narrative: "Set up supine base, heels close in towards the glu…peat on the opposite leg. Perform 10 repetitions.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", duration_seconds: 240, narrative: "Set up supine base, heels close in towards the glu…peat on the opposite leg. Perform 10 repetitions.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: MovementDisplay received item: – {type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", …} (index-BIAjsq7S.js, line 16)
+{type: "movement", id: "8a496de3-94d4-41f6-9cbb-c412dc2063df", name: "Shoulder Bridge", duration_seconds: 240, narrative: "Set up supine base, heels close in towards the glu…peat on the opposite leg. Perform 10 repetitions.", …}Object
+[Log] 🎥 DEBUG: MovementDisplay video_url: – null (index-BIAjsq7S.js, line 16)
+[Log] 🎥 DEBUG: About to check if video_url exists... (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url value: – null (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: item.video_url type: – "object" (index-BIAjsq7S.js, line 45)
+[Log] 🎥 DEBUG: Is video_url truthy?: – false (index-BIAjsq7S.js, line 45)
+[Error] Voiceover load error: (2)
+Event {isTrusted: true, type: "error", target: <audio>, currentTarget: <audio>, eventPhase: 2, …}
+MediaError {code: 4, message: "", MEDIA_ERR_ABORTED: 1, MEDIA_ERR_NETWORK: 2, MEDIA_ERR_DECODE: 3, …}
+	error (index-BIAjsq7S.js:13:5450)
+	(anonymous function) (index-BIAjsq7S.js:46:14930)

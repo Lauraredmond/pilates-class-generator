@@ -3,9 +3,9 @@ Analytics API Router V2
 Enhanced with time period filtering and comprehensive data views
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Path
 from typing import Dict, List, Any, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 import os
 import uuid
@@ -1627,3 +1627,292 @@ async def get_class_sequencing_report(user_id: str):
             status_code=500,
             detail=ErrorMessages.DATABASE_ERROR
         )
+
+
+# ==============================================================================
+# ANALYTICS: Music Genre & Class Duration Distribution (Stacked Bar Charts)
+# ==============================================================================
+
+class MusicGenreDistributionData(BaseModel):
+    """
+    Music genre distribution for stacked bar chart
+
+    OpenAPI Schema for music genre analytics over time periods
+    """
+    period_labels: List[str] = Field(
+        ...,
+        description="Time period labels (e.g., 'Mon', 'Week 1', 'Jan 2025')",
+        example=["Week 1", "Week 2", "Week 3", "Week 4"]
+    )
+    genres: List[str] = Field(
+        ...,
+        description="All available music genres (Baroque, Classical, Romantic, Impressionist, Modern, Contemporary/Postmodern, Celtic Traditional, Jazz)",
+        example=["Baroque", "Classical", "Romantic", "Impressionist", "Modern", "Contemporary/Postmodern", "Celtic Traditional", "Jazz"]
+    )
+    genre_counts: Dict[str, List[int]] = Field(
+        ...,
+        description="Count of classes per genre per period. Keys are genre names, values are arrays of counts matching period_labels",
+        example={
+            "Baroque": [2, 1, 0, 1],
+            "Classical": [1, 2, 1, 0],
+            "Jazz": [0, 0, 1, 2]
+        }
+    )
+
+
+class ClassDurationDistributionData(BaseModel):
+    """
+    Class duration distribution for stacked bar chart
+
+    OpenAPI Schema for class duration analytics over time periods
+    """
+    period_labels: List[str] = Field(
+        ...,
+        description="Time period labels (e.g., 'Mon', 'Week 1', 'Jan 2025')",
+        example=["Week 1", "Week 2", "Week 3", "Week 4"]
+    )
+    durations: List[int] = Field(
+        ...,
+        description="All standard class durations in minutes (12, 30, 45, 60, 75, 90)",
+        example=[12, 30, 45, 60, 75, 90]
+    )
+    duration_counts: Dict[str, List[int]] = Field(
+        ...,
+        description="Count of classes per duration per period. Keys are duration strings (e.g., '30'), values are arrays of counts matching period_labels",
+        example={
+            "12": [0, 1, 0, 0],
+            "30": [2, 1, 3, 1],
+            "60": [1, 2, 1, 2]
+        }
+    )
+
+
+@router.get(
+    "/music-genre-distribution/{user_id}",
+    response_model=MusicGenreDistributionData,
+    summary="Get music genre selection distribution over time",
+    description="""
+    Retrieve music genre selection analytics for stacked bar chart visualization.
+
+    Returns time-series data showing how often each music genre (Baroque, Classical,
+    Romantic, Impressionist, Modern, Contemporary/Postmodern, Celtic Traditional, Jazz)
+    was selected by the user over the specified time period.
+
+    **Use Cases:**
+    - Understand user music preferences over time
+    - Identify trends in music genre selection
+    - Visualize music variety in class planning
+
+    **Returns:**
+    - Period labels for x-axis (e.g., "Week 1", "Week 2")
+    - All 8 available music genres
+    - Count of classes per genre per period for stacked bar visualization
+    """,
+    tags=["Analytics", "Music"],
+    responses={
+        200: {
+            "description": "Music genre distribution retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "period_labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
+                        "genres": ["Baroque", "Classical", "Romantic", "Impressionist", "Modern", "Contemporary/Postmodern", "Celtic Traditional", "Jazz"],
+                        "genre_counts": {
+                            "Baroque": [2, 1, 0, 1],
+                            "Classical": [1, 2, 1, 0],
+                            "Romantic": [0, 1, 2, 1],
+                            "Jazz": [0, 0, 1, 2]
+                        }
+                    }
+                }
+            }
+        },
+        500: {"description": "Database error"}
+    }
+)
+async def get_music_genre_distribution(
+    user_id: str = Path(..., description="User UUID or identifier to fetch analytics for"),
+    period: TimePeriod = Query(
+        default=TimePeriod.WEEK,
+        description="Time period granularity for aggregation. Options: day (last 7 days), week (last 4 weeks), month (last 12 months), total (all time)"
+    )
+):
+    try:
+        user_uuid = _convert_to_uuid(user_id)
+
+        # Get date ranges and labels
+        date_ranges, period_labels = _get_date_ranges(period)
+
+        # All possible music genres (from CLAUDE.md)
+        all_genres = [
+            'Baroque',
+            'Classical',
+            'Romantic',
+            'Impressionist',
+            'Modern',
+            'Contemporary/Postmodern',
+            'Celtic Traditional',
+            'Jazz'
+        ]
+
+        # Initialize counts for all genres and periods
+        genre_counts = {genre: [0] * len(date_ranges) for genre in all_genres}
+
+        # Fetch class history (with BOTH music genre fields)
+        earliest_date = date_ranges[0][0]
+        classes_response = supabase.table('class_history') \
+            .select('taught_date, music_genre, cooldown_music_genre') \
+            .eq('user_id', user_uuid) \
+            .gte('taught_date', earliest_date.isoformat()) \
+            .execute()
+
+        classes = classes_response.data or []
+
+        # Count genres per period (count BOTH movement and cooldown music)
+        for class_item in classes:
+            taught_date_str = class_item.get('taught_date')
+            movement_music = class_item.get('music_genre')
+            cooldown_music = class_item.get('cooldown_music_genre')
+
+            if not taught_date_str:
+                continue
+
+            try:
+                class_date = datetime.fromisoformat(taught_date_str).date()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid taught_date in music_genre_distribution: {taught_date_str}")
+                continue
+
+            # Find which period this class belongs to
+            for period_idx, (start_date, end_date) in enumerate(date_ranges):
+                if start_date <= class_date <= end_date:
+                    # Count movement music genre
+                    if movement_music and movement_music in genre_counts:
+                        genre_counts[movement_music][period_idx] += 1
+
+                    # Count cooldown music genre (separate count - 2 selections per class)
+                    if cooldown_music and cooldown_music in genre_counts:
+                        genre_counts[cooldown_music][period_idx] += 1
+                    break
+
+        return MusicGenreDistributionData(
+            period_labels=period_labels,
+            genres=all_genres,
+            genre_counts=genre_counts
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching music genre distribution for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get(
+    "/class-duration-distribution/{user_id}",
+    response_model=ClassDurationDistributionData,
+    summary="Get class duration selection distribution over time",
+    description="""
+    Retrieve class duration selection analytics for stacked bar chart visualization.
+
+    Returns time-series data showing how often each standard class duration
+    (12, 30, 45, 60, 75, 90 minutes) was selected by the user over the specified time period.
+
+    **Use Cases:**
+    - Understand user scheduling patterns over time
+    - Identify trends in class duration preferences
+    - Visualize duration variety in class planning
+
+    **Returns:**
+    - Period labels for x-axis (e.g., "Week 1", "Week 2")
+    - All 6 standard duration options in minutes
+    - Count of classes per duration per period for stacked bar visualization
+
+    **Note:** Actual class durations are rounded to the nearest standard duration
+    (e.g., 28 minutes → 30 minutes, 58 minutes → 60 minutes)
+    """,
+    tags=["Analytics", "Class Planning"],
+    responses={
+        200: {
+            "description": "Class duration distribution retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "period_labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
+                        "durations": [12, 30, 45, 60, 75, 90],
+                        "duration_counts": {
+                            "12": [0, 1, 0, 0],
+                            "30": [2, 1, 3, 1],
+                            "45": [1, 1, 0, 2],
+                            "60": [1, 2, 1, 2],
+                            "75": [0, 0, 1, 0],
+                            "90": [0, 0, 0, 1]
+                        }
+                    }
+                }
+            }
+        },
+        500: {"description": "Database error"}
+    }
+)
+async def get_class_duration_distribution(
+    user_id: str = Path(..., description="User UUID or identifier to fetch analytics for"),
+    period: TimePeriod = Query(
+        default=TimePeriod.WEEK,
+        description="Time period granularity for aggregation. Options: day (last 7 days), week (last 4 weeks), month (last 12 months), total (all time)"
+    )
+):
+    try:
+        user_uuid = _convert_to_uuid(user_id)
+
+        # Get date ranges and labels
+        date_ranges, period_labels = _get_date_ranges(period)
+
+        # All standard durations (from user requirements)
+        standard_durations = [12, 30, 45, 60, 75, 90]
+
+        # Initialize counts for all durations and periods
+        # Use string keys for JSON serialization
+        duration_counts = {str(duration): [0] * len(date_ranges) for duration in standard_durations}
+
+        # Fetch class history
+        earliest_date = date_ranges[0][0]
+        classes_response = supabase.table('class_history') \
+            .select('taught_date, actual_duration_minutes') \
+            .eq('user_id', user_uuid) \
+            .gte('taught_date', earliest_date.isoformat()) \
+            .execute()
+
+        classes = classes_response.data or []
+
+        # Count durations per period
+        for class_item in classes:
+            taught_date_str = class_item.get('taught_date')
+            duration = class_item.get('actual_duration_minutes')
+
+            if not taught_date_str or not duration:
+                continue
+
+            try:
+                class_date = datetime.fromisoformat(taught_date_str).date()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid taught_date in class_duration_distribution: {taught_date_str}")
+                continue
+
+            # Round duration to nearest standard duration
+            closest_duration = min(standard_durations, key=lambda x: abs(x - duration))
+
+            # Find which period this class belongs to
+            for period_idx, (start_date, end_date) in enumerate(date_ranges):
+                if start_date <= class_date <= end_date:
+                    # Increment count for this duration in this period
+                    duration_counts[str(closest_duration)][period_idx] += 1
+                    break
+
+        return ClassDurationDistributionData(
+            period_labels=period_labels,
+            durations=standard_durations,
+            duration_counts=duration_counts
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching class duration distribution for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)

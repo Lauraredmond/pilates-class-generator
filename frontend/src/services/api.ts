@@ -110,6 +110,11 @@ export const analyticsApi = {
   // SESSION: Movement Families - December 2025
   getMovementFamilyDistribution: (userId: string, period?: string) =>
     api.get(`/api/analytics/movement-family-distribution/${userId}`, { params: { period } }),
+  // Music Genre & Class Duration Distribution - Stacked Bar Charts
+  getMusicGenreDistribution: (userId: string, period?: string) =>
+    api.get(`/api/analytics/music-genre-distribution/${userId}`, { params: { period } }),
+  getClassDurationDistribution: (userId: string, period?: string) =>
+    api.get(`/api/analytics/class-duration-distribution/${userId}`, { params: { period } }),
   // Session 10: Admin LLM Observability
   getLLMLogs: (params: {
     admin_user_id: string;

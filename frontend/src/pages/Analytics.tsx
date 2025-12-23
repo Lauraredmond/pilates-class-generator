@@ -14,12 +14,14 @@ import {
   PointElement,
   LineElement,
   BarElement,
+  BarController,
+  LineController,
   ArcElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import { Line, Doughnut, Chart } from 'react-chartjs-2';
 import { logger } from '../utils/logger';
 
 // Register Chart.js components
@@ -29,6 +31,8 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  BarController,
+  LineController,
   ArcElement,
   Title,
   Tooltip,
@@ -69,6 +73,8 @@ export function Analytics() {
   const [difficultyProgression, setDifficultyProgression] = useState<any>(null);
   const [muscleDistribution, setMuscleDistribution] = useState<any>(null);
   const [movementFamilyDistribution, setMovementFamilyDistribution] = useState<any>(null); // SESSION: Movement Families
+  const [musicGenreDistribution, setMusicGenreDistribution] = useState<any>(null); // Music genre stacked bar chart
+  const [classDurationDistribution, setClassDurationDistribution] = useState<any>(null); // Class duration stacked bar chart
 
   // Fetch all analytics data
   useEffect(() => {
@@ -91,6 +97,8 @@ export function Analytics() {
           difficultyProgResponse,
           muscleDistResponse,
           familyDistResponse, // SESSION: Movement Families
+          musicGenreDistResponse, // Music genre distribution
+          durationDistResponse, // Class duration distribution
         ] = await Promise.all([
           analyticsApi.getSummary(user.id),
           analyticsApi.getMovementHistory(user.id, timePeriod),
@@ -99,6 +107,8 @@ export function Analytics() {
           analyticsApi.getDifficultyProgression(user.id, timePeriod),
           analyticsApi.getMuscleDistribution(user.id, 'total'), // Always show total for doughnut
           analyticsApi.getMovementFamilyDistribution(user.id, 'total'), // SESSION: Movement Families
+          analyticsApi.getMusicGenreDistribution(user.id, timePeriod), // Music genre stacked bar
+          analyticsApi.getClassDurationDistribution(user.id, timePeriod), // Duration stacked bar
         ]);
 
         // Update stats
@@ -120,6 +130,8 @@ export function Analytics() {
         setDifficultyProgression(difficultyProgResponse.data);
         setMuscleDistribution(muscleDistResponse.data);
         setMovementFamilyDistribution(familyDistResponse.data); // SESSION: Movement Families
+        setMusicGenreDistribution(musicGenreDistResponse.data); // Music genre stacked bar
+        setClassDurationDistribution(durationDistResponse.data); // Class duration stacked bar
       } catch (err: any) {
         logger.error('Failed to fetch analytics:', err);
         setError(err.response?.data?.detail || 'Failed to load analytics data');
@@ -157,12 +169,58 @@ export function Analytics() {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top' as const, labels: { color: '#f5f1e8' } },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const label = context.dataset.label || '';
+            const value = context.parsed.y;
+            if (label === 'Challenging movement as % of total movements performed') {
+              return `${label}: ${value}%`;
+            }
+            return `${label}: ${value}`;
+          }
+        }
+      }
     },
     scales: {
       y: {
+        type: 'linear' as const,
+        position: 'left' as const,
         beginAtZero: true,
-        ticks: { color: '#f5f1e8' },
+        ticks: {
+          color: '#f5f1e8',
+          callback: function(value: any) {
+            return value;
+          }
+        },
         grid: { color: 'rgba(245, 241, 232, 0.1)' },
+        title: {
+          display: true,
+          text: 'Movement Count',
+          color: '#f5f1e8',
+          font: { size: 12 }
+        }
+      },
+      y1: {
+        type: 'linear' as const,
+        position: 'right' as const,
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          color: '#D4AF37',
+          callback: function(value: any) {
+            return value + '%';
+          }
+        },
+        grid: {
+          drawOnChartArea: false, // Don't draw grid lines for this axis
+        },
+        title: {
+          display: true,
+          text: 'Challenging %',
+          color: '#D4AF37',
+          font: { size: 12 }
+        }
       },
       x: {
         ticks: { color: '#f5f1e8' },
@@ -176,6 +234,51 @@ export function Analytics() {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'right' as const, labels: { color: '#f5f1e8' } },
+    },
+  };
+
+  const stackedBarChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' as const, labels: { color: '#f5f1e8' } },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false,
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        ticks: {
+          color: '#f5f1e8',
+          stepSize: 1,
+          callback: function(value: any) {
+            // Only show integer labels on x-axis
+            return Number.isInteger(value) ? value : null;
+          }
+        },
+        grid: { color: 'rgba(245, 241, 232, 0.1)' },
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        ticks: {
+          color: '#f5f1e8',
+          stepSize: 1,
+          callback: function(value: any) {
+            // Only show integer labels on y-axis
+            return Number.isInteger(value) ? value : null;
+          }
+        },
+        grid: { color: 'rgba(245, 241, 232, 0.1)' },
+        title: {
+          display: true,
+          text: 'Number of Classes',
+          color: '#f5f1e8',
+          font: { size: 12 }
+        }
+      },
     },
   };
 
@@ -242,16 +345,48 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             label: 'Beginner',
             data: difficultyProgression.beginner_counts,
             backgroundColor: '#cd8b76', // Light terracotta - warm, approachable
+            yAxisID: 'y',
+            type: 'bar' as const,
+            order: 1, // Render behind line
           },
           {
             label: 'Intermediate',
             data: difficultyProgression.intermediate_counts,
             backgroundColor: '#8b2635', // Primary burgundy - brand color
+            yAxisID: 'y',
+            type: 'bar' as const,
+            order: 1, // Render behind line
           },
           {
             label: 'Advanced',
             data: difficultyProgression.advanced_counts,
             backgroundColor: '#5c1a26', // Dark burgundy - intense, challenging
+            yAxisID: 'y',
+            type: 'bar' as const,
+            order: 1, // Render behind line
+          },
+          {
+            label: 'Challenging movement as % of total movements performed',
+            data: difficultyProgression.period_labels.map((_: string, idx: number) => {
+              const beginner = difficultyProgression.beginner_counts[idx] || 0;
+              const intermediate = difficultyProgression.intermediate_counts[idx] || 0;
+              const advanced = difficultyProgression.advanced_counts[idx] || 0;
+              const total = beginner + intermediate + advanced;
+              const challenging = intermediate + advanced;
+              return total > 0 ? Math.round((challenging / total) * 100) : 0;
+            }),
+            borderColor: '#D4AF37', // Olympic gold
+            backgroundColor: 'rgba(212, 175, 55, 0.2)', // Olympic gold with transparency
+            borderWidth: 3,
+            yAxisID: 'y1',
+            type: 'line' as const,
+            tension: 0.4,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: '#D4AF37',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            order: 0, // Render in front of bars
           },
         ],
       }
@@ -321,6 +456,46 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             ],
           },
         ],
+      }
+    : null;
+
+  // Music Genre Distribution - Stacked Bar Chart
+  const musicGenreDistributionChartData = musicGenreDistribution
+    ? {
+        labels: musicGenreDistribution.period_labels,
+        datasets: musicGenreDistribution.genres.map((genre: string, idx: number) => ({
+          label: genre,
+          data: musicGenreDistribution.genre_counts[genre],
+          backgroundColor: [
+            '#8b2635',  // Baroque - Primary burgundy
+            '#cd8b76',  // Classical - Terracotta
+            '#5c1a26',  // Romantic - Dark burgundy
+            '#e3a57a',  // Impressionist - Light peach
+            '#3d1118',  // Modern - Very dark burgundy
+            '#f5f1e8',  // Contemporary/Postmodern - Cream
+            '#d94d5c',  // Celtic Traditional - Bright coral red
+            '#b8927d',  // Jazz - Medium beige
+          ][idx % 8],
+        })),
+      }
+    : null;
+
+  // Class Duration Distribution - Stacked Bar Chart
+  const classDurationDistributionChartData = classDurationDistribution
+    ? {
+        labels: classDurationDistribution.period_labels,
+        datasets: classDurationDistribution.durations.map((duration: number, idx: number) => ({
+          label: `${duration} min`,
+          data: classDurationDistribution.duration_counts[String(duration)],
+          backgroundColor: [
+            '#cd8b76',  // 12 min - Terracotta (lightest)
+            '#b8927d',  // 30 min - Medium beige
+            '#8b2635',  // 45 min - Primary burgundy
+            '#5c1a26',  // 60 min - Dark burgundy
+            '#3d1118',  // 75 min - Very dark burgundy
+            '#2a0d12',  // 90 min - Deepest burgundy (darkest)
+          ][idx % 6],
+        })),
       }
     : null;
 
@@ -467,7 +642,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           <CardBody className="p-6">
             <div className="h-64">
               {difficultyProgressionChartData ? (
-                <Bar data={difficultyProgressionChartData} options={barChartOptions} />
+                <Chart type="bar" data={difficultyProgressionChartData} options={barChartOptions} />
               ) : (
                 <div className="flex items-center justify-center h-full text-cream/60">
                   No data available
@@ -508,6 +683,45 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             <div className="h-96">
               {movementFamilyDistributionChartData ? (
                 <Doughnut data={movementFamilyDistributionChartData} options={doughnutChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-cream/60">
+                  No data available
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Stacked Bar Charts Grid - Music Genre & Class Duration */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Music Genre Distribution Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Music Genre Selection Over Time</CardTitle>
+          </CardHeader>
+          <CardBody className="p-6">
+            <div className="h-96">
+              {musicGenreDistributionChartData ? (
+                <Chart type="bar" data={musicGenreDistributionChartData} options={stackedBarChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-cream/60">
+                  No data available
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Class Duration Distribution Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Class Duration Distribution Over Time</CardTitle>
+          </CardHeader>
+          <CardBody className="p-6">
+            <div className="h-96">
+              {classDurationDistributionChartData ? (
+                <Chart type="bar" data={classDurationDistributionChartData} options={stackedBarChartOptions} />
               ) : (
                 <div className="flex items-center justify-center h-full text-cream/60">
                   No data available

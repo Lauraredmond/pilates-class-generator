@@ -142,6 +142,41 @@ def call_agent_tool(
         )
 
 
+def normalize_music_genre(frontend_value: str) -> str:
+    """
+    Normalize music genre from frontend format to analytics format
+
+    Frontend sends: UPPERCASE with underscores (e.g., "IMPRESSIONIST", "CELTIC_TRADITIONAL")
+    Analytics expects: Title case with spaces (e.g., "Impressionist", "Celtic Traditional")
+
+    Args:
+        frontend_value: Genre value from frontend form (e.g., "BAROQUE", "CONTEMPORARY")
+
+    Returns:
+        Normalized genre value for analytics (e.g., "Baroque", "Contemporary/Postmodern")
+    """
+    # Mapping from frontend values to analytics values
+    genre_mapping = {
+        'BAROQUE': 'Baroque',
+        'CLASSICAL': 'Classical',
+        'ROMANTIC': 'Romantic',
+        'IMPRESSIONIST': 'Impressionist',
+        'MODERN': 'Modern',
+        'CONTEMPORARY': 'Contemporary/Postmodern',
+        'JAZZ': 'Jazz',
+        'CELTIC_TRADITIONAL': 'Celtic Traditional'
+    }
+
+    normalized = genre_mapping.get(frontend_value)
+
+    if not normalized:
+        # Fallback: convert to title case and replace underscores with spaces
+        logger.warning(f"Unknown music genre '{frontend_value}' - using fallback normalization")
+        normalized = frontend_value.replace('_', ' ').title()
+
+    return normalized
+
+
 def get_movement_muscle_groups(movement_id: str) -> list[str]:
     """
     Fetch muscle groups for a movement from movement_muscles junction table
@@ -866,11 +901,24 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
         # Step 8: Select music (if requested)
         music_result = None
+        selected_music_genre = None  # Track for analytics (movement music)
+        selected_cooldown_music_genre = None  # Track for analytics (cooldown music)
         if request.include_music:
             music_input = {
                 "class_duration_minutes": request.class_plan.target_duration_minutes,
                 "target_bpm_range": (90, 130)
             }
+            # Add preferred music styles if provided (for analytics tracking)
+            if request.preferred_music_style:
+                music_input["preferred_genres"] = [request.preferred_music_style]
+                # ANALYTICS FIX: Normalize frontend format to analytics format
+                selected_music_genre = normalize_music_genre(request.preferred_music_style)
+                logger.info(f"Movement music genre: {request.preferred_music_style} → {selected_music_genre}")
+            if request.cooldown_music_style:
+                # ANALYTICS FIX: Normalize frontend format to analytics format
+                selected_cooldown_music_genre = normalize_music_genre(request.cooldown_music_style)
+                logger.info(f"Cooldown music genre: {request.cooldown_music_style} → {selected_cooldown_music_genre}")
+
             music_result = call_agent_tool(
                 tool_id="select_music",
                 parameters=music_input,
@@ -902,6 +950,87 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         # Calculate total processing time
         total_time_ms = (time.time() - start_time) * 1000
 
+        # ============================================================================
+        # ANALYTICS: Save complete class to class_history for analytics tracking
+        # ============================================================================
+        try:
+            logger.info("📊 ANALYTICS: Starting database save (SCHEMA FIXED)")
+            now = datetime.now().isoformat()
+
+            # Extract movements from sequence for analytics
+            sequence_data = sequence_result.get("data", {})
+            sequence = sequence_data.get("sequence", [])
+
+            movements_for_history = []
+            for idx, movement in enumerate(sequence):
+                if movement.get('type') == 'movement':
+                    # Fetch muscle groups from junction table
+                    muscle_groups = get_movement_muscle_groups(movement.get('id', ''))
+
+                    movements_for_history.append({
+                        "type": "movement",
+                        "name": movement.get('name', ''),
+                        "muscle_groups": muscle_groups,
+                        "duration_seconds": movement.get('duration_seconds', 60),
+                        "order_index": idx,
+                        "voiceover_url": movement.get('voiceover_url'),
+                        "voiceover_duration_seconds": movement.get('voiceover_duration_seconds'),
+                        "voiceover_enabled": movement.get('voiceover_enabled', False)
+                    })
+
+            # Save to class_plans table first (SCHEMA CORRECTED)
+            class_plan_data = {
+                # SCHEMA FIX: Use 'title' not 'name'
+                'title': f"{request.class_plan.difficulty_level} Pilates Class ({request.class_plan.target_duration_minutes} min)",
+                'user_id': user_id,
+                # SCHEMA FIX: Use 'main_sequence' not 'movements'
+                'main_sequence': sequence,
+                'duration_minutes': request.class_plan.target_duration_minutes,
+                'difficulty_level': request.class_plan.difficulty_level,
+                'total_movements': len(movements_for_history),
+                'generated_by_ai': False,  # DEFAULT mode is database-driven
+                'created_at': now,
+                'updated_at': now
+            }
+
+            db_response = supabase.table('class_plans').insert(class_plan_data).execute()
+
+            if db_response.data and len(db_response.data) > 0:
+                class_plan_id = db_response.data[0].get('id')
+                logger.info(f"✅ Saved complete class to class_plans (ID: {class_plan_id})")
+
+                # Save to class_history with music_genre for analytics (SCHEMA CORRECTED)
+                # SCHEMA FIX: muscle_groups_targeted is JSONB array, not object keys
+                muscle_groups_array = list(sequence_data.get('muscle_balance', {}).keys())
+
+                class_history_entry = {
+                    'class_plan_id': class_plan_id,
+                    'user_id': user_id,
+                    'taught_date': datetime.now().date().isoformat(),
+                    'actual_duration_minutes': request.class_plan.target_duration_minutes,
+                    'attendance_count': 1,
+                    'movements_snapshot': movements_for_history,
+                    'instructor_notes': f"Complete class with all 6 sections. Movement music: {selected_music_genre or 'None'}, Cooldown music: {selected_cooldown_music_genre or 'None'}",
+                    'difficulty_rating': None,
+                    # SCHEMA FIX: Use array format
+                    'muscle_groups_targeted': muscle_groups_array,
+                    'total_movements_taught': len(movements_for_history),
+                    # ANALYTICS: Save BOTH music genres! (migration 020 + 023)
+                    'music_genre': selected_music_genre,  # Movement music (sections 1-3)
+                    'cooldown_music_genre': selected_cooldown_music_genre,  # Cooldown music (sections 4-6)
+                    'created_at': now
+                }
+
+                supabase.table('class_history').insert(class_history_entry).execute()
+                logger.info(f"✅ Saved to class_history with music_genre: {selected_music_genre}")
+                logger.info("📊 ANALYTICS: Database save completed successfully")
+
+        except Exception as db_error:
+            # Don't fail the request if analytics save fails
+            logger.error(f"❌ ANALYTICS SAVE FAILED: {db_error}", exc_info=True)
+            logger.error(f"❌ Error type: {type(db_error).__name__}")
+            logger.error(f"❌ This is non-critical - class generation will continue")
+
         # DEBUG: Verify what's being sent to frontend
         logger.info("=" * 80)
         logger.info("🎙️🎥 DEBUG: FINAL RESPONSE CHECK")
@@ -920,30 +1049,48 @@ Return all 6 sections with complete details (narrative, timing, instructions).
             logger.info("❌ Warmup is None")
         logger.info("=" * 80)
 
+        # DEBUG: Log data types before assembly
+        logger.info("🔍 PRE-ASSEMBLY TYPE CHECK:")
+        logger.info(f"  preparation: {type(preparation)}")
+        logger.info(f"  warmup: {type(warmup)}")
+        logger.info(f"  sequence_result: {type(sequence_result)}")
+        logger.info(f"  cooldown: {type(cooldown)}")
+        logger.info(f"  meditation: {type(meditation)}")
+        logger.info(f"  homecare: {type(homecare)}")
+        logger.info(f"  music_result: {type(music_result)}")
+        logger.info(f"  research_results: {type(research_results)}")
+
         # Assemble complete class response with all 6 sections
-        return {
-            "success": True,
-            "data": {
-                "preparation": preparation,
-                "warmup": warmup,
-                "sequence": sequence_result,
-                "cooldown": cooldown,
-                "meditation": meditation,
-                "homecare": homecare,
-                "music_recommendation": music_result,
-                "research_enhancements": research_results if research_results else None,
-                "total_processing_time_ms": total_time_ms
-            },
-            "metadata": {
-                "mode": "default",
-                "cost": 0.00,
-                "generated_at": datetime.now().isoformat(),
-                "user_id": user_id,
-                "sections_included": 6,
-                "agents_used": ["sequence", "music", "meditation", "research"] if request.include_research else ["sequence", "music", "meditation"],
-                "orchestration": "jentic_standard_agent"
+        try:
+            logger.info("🏗️ Building response dict...")
+            response_dict = {
+                "success": True,
+                "data": {
+                    "preparation": preparation,
+                    "warmup": warmup,
+                    "sequence": sequence_result,
+                    "cooldown": cooldown,
+                    "meditation": meditation,
+                    "homecare": homecare,
+                    "music_recommendation": music_result,
+                    "research_enhancements": research_results if research_results else None,
+                    "total_processing_time_ms": total_time_ms
+                },
+                "metadata": {
+                    "mode": "default",
+                    "cost": 0.00,
+                    "generated_at": datetime.now().isoformat(),
+                    "user_id": user_id,
+                    "sections_included": 6,
+                    "agents_used": ["sequence", "music", "meditation", "research"] if request.include_research else ["sequence", "music", "meditation"],
+                    "orchestration": "jentic_standard_agent"
+                }
             }
-        }
+            logger.info("✅ Response dict built successfully")
+            return response_dict
+        except Exception as assembly_error:
+            logger.error(f"❌ Error assembling response dict: {assembly_error}", exc_info=True)
+            raise
 
     except HTTPException:
         raise  # Re-raise HTTPException from call_orchestrator_tool
