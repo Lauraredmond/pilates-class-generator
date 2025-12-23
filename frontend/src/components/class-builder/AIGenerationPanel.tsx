@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardBody, CardTitle } from '../ui/Card';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../context/AuthContext';
@@ -16,12 +17,14 @@ import { logger } from '../../utils/logger';
 
 export function AIGenerationPanel() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [results, setResults] = useState<GeneratedClassResults | null>(null);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [lastFormData, setLastFormData] = useState<GenerationFormData | null>(null);
   const [isPlayingClass, setIsPlayingClass] = useState(false);
+  const [showSessionCompleteModal, setShowSessionCompleteModal] = useState(false);
   const setCurrentClass = useStore((state) => state.setCurrentClass);
   const showToast = useStore((state) => state.showToast);
 
@@ -58,6 +61,8 @@ export function AIGenerationPanel() {
         include_music: true,
         include_meditation: true,
         include_research: formData.enableMcpResearch,
+        preferred_music_style: formData.movementMusicStyle,  // Analytics: Track MOVEMENT music genre (sections 1-3)
+        cooldown_music_style: formData.coolDownMusicStyle,  // Analytics: Track COOLDOWN music genre (sections 4-6)
       });
 
       // Validate StandardAgent response
@@ -318,11 +323,21 @@ export function AIGenerationPanel() {
 
   const handleExitPlayback = () => {
     setIsPlayingClass(false);
+    setShowSessionCompleteModal(true);
   };
 
   const handleCompletePlayback = () => {
     setIsPlayingClass(false);
-    showToast('Class completed! Great work!', 'success');
+    setShowSessionCompleteModal(true);
+  };
+
+  const handleSessionCompleteClose = () => {
+    setShowSessionCompleteModal(false);
+  };
+
+  const handleVisitStats = () => {
+    setShowSessionCompleteModal(false);
+    navigate('/analytics');
   };
 
   // SESSION 11: Transform complete class to playback format with all 6 sections
@@ -518,6 +533,50 @@ export function AIGenerationPanel() {
           onComplete={handleCompletePlayback}
           onExit={handleExitPlayback}
         />
+      )}
+
+      {/* Session Complete Modal */}
+      {showSessionCompleteModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] px-4">
+          <div className="bg-burgundy-dark border-2 border-cream/40 rounded-lg p-8 max-w-md w-full shadow-2xl">
+            <div className="text-center space-y-6">
+              {/* Bassline Logo */}
+              <div className="flex justify-center">
+                <img
+                  src="/assets/bassline-logo-yellow-transparent.png"
+                  alt="Bassline Logo"
+                  className="h-20 w-auto"
+                />
+              </div>
+
+              {/* Title */}
+              <h3 className="text-2xl font-bold text-cream">
+                Session Complete
+              </h3>
+
+              {/* Message */}
+              <p className="text-cream/80 text-base leading-relaxed">
+                Visit your Stats to see how today's work contributes to your overall progress, coverage and consistency so far.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3 pt-2">
+                <button
+                  onClick={handleVisitStats}
+                  className="w-full px-6 py-3 bg-cream text-burgundy rounded-lg hover:bg-cream/90 transition-smooth font-semibold shadow-lg"
+                >
+                  View My Stats
+                </button>
+                <button
+                  onClick={handleSessionCompleteClose}
+                  className="w-full px-6 py-3 bg-transparent border border-cream/30 text-cream rounded-lg hover:border-cream/60 hover:bg-cream/5 transition-smooth"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

@@ -182,7 +182,9 @@ class CompleteClassRequest(BaseModel):
     class_plan: SequenceGenerationRequest
     include_music: bool = True
     include_meditation: bool = True
-    include_research: bool = True
+    include_research: bool = False  # Disabled by default - MCP not yet fully implemented
+    preferred_music_style: Optional[str] = None  # Analytics: Track MOVEMENT music genre (sections 1-3: prep, warmup, movements)
+    cooldown_music_style: Optional[str] = None  # Analytics: Track COOLDOWN music genre (sections 4-6: cooldown, meditation, homecare)
 
 
 class CompleteClassResponse(BaseModel):

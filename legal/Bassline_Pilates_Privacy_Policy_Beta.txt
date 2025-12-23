@@ -37,6 +37,7 @@ We store:
 • Muscle groups activated per session
 • Practise history
 • Class generation parameters
+• Music genre selections for class background music (Baroque, Classical, Romantic, etc.)
 
 D. Device & Technical Information
 Automatically collected:
@@ -51,6 +52,17 @@ Collected to ensure safe functioning:
 • Error logs
 • System performance metrics
 • Security scan metadata
+
+F. Browser Storage (localStorage)
+To keep you logged in and ensure the app functions correctly, we store the following data in your browser's local storage:
+• Authentication tokens (JWT) - Required to keep you logged in
+• Medical disclaimer acceptance - Required to comply with safety regulations
+• App version - Required to prevent data corruption during updates
+
+This data is stored locally on your device only, is not shared with third parties, and is automatically deleted when you log out or delete your account.
+
+Note: We do not use traditional cookies, third-party trackers, or advertising cookies.
+
 We do not collect biometric data, medical records, financial data, location data, or camera/microphone data.
 
 3. How We Use Your Data

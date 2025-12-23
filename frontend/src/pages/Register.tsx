@@ -3,6 +3,17 @@ import { Link } from 'react-router-dom';
 import { useAuth, type RegistrationData } from '../context/AuthContext';
 import { CountrySelect } from '../components/ui/CountrySelect';
 
+// Password validation helper
+const validatePassword = (password: string) => {
+  return {
+    minLength: password.length >= 8,
+    hasLowercase: /[a-z]/.test(password),
+    hasUppercase: /[A-Z]/.test(password),
+    hasDigit: /\d/.test(password),
+    hasSymbol: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
+};
+
 export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,11 +26,18 @@ export function Register() {
   const [goals, setGoals] = useState<string[]>([]);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptedBetaTerms, setAcceptedBetaTerms] = useState(false);
+  const [safetyConfirmed, setSafetyConfirmed] = useState(false);
   const [error, setError] = useState('');
+  const [safetyError, setSafetyError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
 
   const { register } = useAuth();
+
+  // Check password requirements in real-time
+  const passwordRequirements = validatePassword(password);
+  const isPasswordValid = Object.values(passwordRequirements).every(Boolean);
 
   const handleGoalToggle = (goal: string) => {
     setGoals(prev =>
@@ -32,6 +50,7 @@ export function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSafetyError(null);
 
     // Validate passwords match
     if (password !== confirmPassword) {
@@ -40,8 +59,15 @@ export function Register() {
     }
 
     // Validate password strength
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (!isPasswordValid) {
+      setError('Password must meet all security requirements');
+      setShowPasswordRequirements(true);
+      return;
+    }
+
+    // Validate safety confirmation
+    if (!safetyConfirmed) {
+      setSafetyError('Please confirm you are 16+ and have appropriate clearance before continuing.');
       return;
     }
 
@@ -187,7 +213,7 @@ export function Register() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-charcoal mb-1">
                   Password <span className="text-red-500">*</span>
@@ -197,12 +223,63 @@ export function Register() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setShowPasswordRequirements(true)}
                   required
-                  minLength={8}
                   className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
                   placeholder="••••••••"
                 />
-                <p className="text-xs text-charcoal/60 mt-1">At least 8 characters</p>
+
+                {/* Password Requirements Checklist */}
+                {(showPasswordRequirements || password.length > 0) && (
+                  <div className="mt-2 p-3 bg-charcoal/5 border border-charcoal/10 rounded text-xs space-y-1.5">
+                    <p className="font-semibold text-charcoal mb-2">Password must contain:</p>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.minLength ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.minLength ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.minLength ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least 8 characters
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.hasLowercase ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.hasLowercase ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.hasLowercase ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least one lowercase letter (a-z)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.hasUppercase ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.hasUppercase ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.hasUppercase ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least one uppercase letter (A-Z)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.hasDigit ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.hasDigit ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.hasDigit ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least one digit (0-9)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={passwordRequirements.hasSymbol ? 'text-green-600' : 'text-charcoal/50'}>
+                        {passwordRequirements.hasSymbol ? '✓' : '○'}
+                      </span>
+                      <span className={passwordRequirements.hasSymbol ? 'text-green-600 font-medium' : 'text-charcoal/70'}>
+                        At least one symbol (!@#$%^&*...)
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -215,10 +292,19 @@ export function Register() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  minLength={8}
                   className="w-full px-4 py-2 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy"
                   placeholder="••••••••"
                 />
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <span>✗</span> Passwords do not match
+                  </p>
+                )}
+                {confirmPassword && password === confirmPassword && password.length > 0 && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <span>✓</span> Passwords match
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -364,24 +450,52 @@ export function Register() {
             </div>
           </div>
 
-          {/* Critical Health Warning */}
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-            <h3 className="font-bold text-red-800 mb-2 flex items-center gap-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Critical Safety Warning
+          {/* Important Health & Age Guidance */}
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
+            <h3 className="font-bold text-amber-900 mb-3">
+              Important Health & Age Guidance
             </h3>
-            <p className="text-sm text-red-900 font-medium mb-2">
-              This application is NOT safe for:
+            <p className="text-sm text-amber-900 mb-2">
+              This programme is intended for users <strong>aged 16 and over</strong>.
             </p>
-            <ul className="list-disc list-inside space-y-1 text-sm text-red-900">
-              <li><strong>Pregnant individuals</strong> after the first trimester, OR <strong>women who have given birth within the last 12 weeks</strong> without written approval from an obstetrician, midwife, or women's health physiotherapist</li>
-              <li><strong>Postnatal women with abdominal separation (diastasis recti)</strong> without written approval from their GP or women's health physiotherapist</li>
+            <p className="text-sm text-amber-900 mb-2">
+              It is not suitable without professional clearance if any of the following apply to you:
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-sm text-amber-900 mb-3">
+              <li>You are <strong>pregnant beyond the first trimester</strong></li>
+              <li>You have <strong>given birth within the last 12 weeks</strong></li>
+              <li>You have been diagnosed with <strong>abdominal separation (diastasis recti)</strong></li>
             </ul>
-            <p className="text-sm text-red-900 mt-2 font-bold">
-              If any of these conditions apply to you, DO NOT use this app without consulting your healthcare provider. You must wait a minimum of 12 weeks postpartum AND complete your 12-week postnatal check before using this application. Doing so prematurely may cause serious harm including pelvic floor damage or abdominal separation.
+            <p className="text-sm text-amber-900 mb-2">
+              If any of the above apply, please seek guidance from your <strong>GP, obstetrician, midwife, or women's health physiotherapist</strong> before using this app.
             </p>
+            <p className="text-sm text-amber-900 mb-2">
+              For postnatal users, a minimum of <strong>12 weeks postpartum</strong> and completion of your <strong>12-week postnatal check</strong> is required before beginning this programme.
+            </p>
+            <p className="text-sm text-amber-900 font-medium">
+              Starting too early or without appropriate clearance may place unnecessary strain on the pelvic floor or abdominal wall.
+            </p>
+          </div>
+
+          {/* Safety Confirmation Checkbox */}
+          <div className="space-y-2">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={safetyConfirmed}
+                onChange={(e) => {
+                  setSafetyConfirmed(e.target.checked);
+                  if (e.target.checked) setSafetyError(null);
+                }}
+                className="mt-1 h-4 w-4 text-burgundy focus:ring-burgundy border-gray-300 rounded"
+              />
+              <span className="text-sm text-charcoal">
+                I confirm that I am <strong>16 years of age or older</strong>, and that none of the above conditions apply to me <strong>(or I have appropriate medical clearance)</strong>.
+              </span>
+            </label>
+            {safetyError && (
+              <p className="text-sm text-red-600 ml-7">{safetyError}</p>
+            )}
           </div>
 
           {/* Legal Agreements - Required */}
@@ -429,7 +543,7 @@ export function Register() {
 
           <button
             type="submit"
-            disabled={loading || !acceptedPrivacy || !acceptedBetaTerms}
+            disabled={loading || !acceptedPrivacy || !acceptedBetaTerms || !safetyConfirmed}
             className="w-full bg-burgundy text-cream py-3 rounded font-semibold hover:bg-burgundy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-smooth mt-6"
           >
             {loading ? 'Creating account...' : 'Create Account'}
