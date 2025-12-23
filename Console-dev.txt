@@ -1,21 +1,8 @@
-[Error] Error: "bar" is not a registered controller.
-	fc (index-Cij538Fb.js:8:167)
-	(anonymous function) (index-Cij538Fb.js:8:390)
-	Sh (index-Cij538Fb.js:6:15854)
-	Sf (index-Cij538Fb.js:8:32268)
-	kf (index-Cij538Fb.js:8:31675)
-	o0 (index-Cij538Fb.js:8:31220)
-	h0 (index-Cij538Fb.js:8:41242)
-	Is (index-Cij538Fb.js:8:40584)
-	Mf (index-Cij538Fb.js:8:37142)
-	ts (index-Cij538Fb.js:6:3275)
-	wr (index-Cij538Fb.js:8:42940)
-	(anonymous function) (index-Cij538Fb.js:8:41042)
-	S (index-Cij538Fb.js:1:10384)
-	ne (index-Cij538Fb.js:1:10751)
-[Error] Error: "bar" is not a registered controller.
-	ts (index-Cij538Fb.js:6:3366)
-	wr (index-Cij538Fb.js:8:42940)
-	(anonymous function) (index-Cij538Fb.js:8:41042)
-	S (index-Cij538Fb.js:1:10384)
-	ne (index-Cij538Fb.js:1:10751)
+[Error] Failed to load resource: the server responded with a status of 500 () (generate-complete-class, line 0)
+[Error] API Error: – {detail: "An unexpected error occurred. Please try again later"}
+	error (index-BrUu61Ho.js:13:5450)
+	(anonymous function) (index-BrUu61Ho.js:14:5732)
+[Error] Failed to generate complete class: – je {stack: "Tg@https://bassline-dev.netlify.app/assets/index-B…-dev.netlify.app/assets/index-BrUu61Ho.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", …}
+je {stack: "Tg@https://bassline-dev.netlify.app/assets/index-B…-dev.netlify.app/assets/index-BrUu61Ho.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}je
+	error (index-BrUu61Ho.js:13:5450)
+	(anonymous function) (index-BrUu61Ho.js:46:29709)
