@@ -39,6 +39,44 @@ We store:
 • Class generation parameters
 • Music genre selections for class background music (Baroque, Classical, Romantic, etc.)
 
+Play Session Data
+When you play a Pilates class, we automatically track your interaction with the class to help us understand user engagement and improve the platform. We collect:
+
+• Session Information:
+  - When you started and ended the class
+  - Total time spent playing the class
+  - Whether you completed the entire class
+  - Which section you reached (preparation, warmup, movements, etc.)
+  - Furthest section you reached during the session
+
+• Interaction Metrics:
+  - Number of times you paused
+  - Number of times you skipped forward
+  - Number of times you rewound/went back
+  - Playback source (library, generated, shared, preview)
+
+• Device Information:
+  - Browser type and version
+  - Operating system
+  - Screen width and height
+  - Whether you're using a mobile device
+
+Purpose: This data helps us:
+- Distinguish between users who create classes vs. those who actually perform them
+- Understand which classes are most engaging and completed
+- Identify where users struggle or lose interest
+- Improve the user experience based on interaction patterns
+- Provide analytics for platform improvement
+
+Qualified Plays: Sessions under 120 seconds (2 minutes) are not counted as "qualified plays" to filter out brief previews and accidental clicks. Only sessions where you engage for at least 2 minutes are included in our engagement metrics.
+
+Legal Basis: Legitimate Interest (GDPR Article 6(1)(f)) - We have a legitimate interest in understanding how our platform is used to improve service quality. This does not override your fundamental rights and freedoms.
+
+Your Control: You can view all your play sessions via Settings > Developer Tools (if you're an admin) or by contacting us to request your data under GDPR Article 15 (Right to Access). All play sessions are protected by Row-Level Security, ensuring you can only access your own data.
+
+Data Storage: EU (Ireland) via Supabase
+Data Retention: Duration of beta testing period, then reviewed
+
 D. Device & Technical Information
 Automatically collected:
 • Browser type/version
@@ -71,6 +109,7 @@ Used for:
 • Tracking muscle engagement
 • Improving accuracy and stability
 • Security and account integrity
+• Monitor Class Engagement: We track when and how users play classes (session duration, completion rates, interaction patterns) to understand user engagement and improve the platform. Sessions under 120 seconds are not counted as "qualified plays."
 
 We do not sell or share your data for advertising.
 
@@ -146,8 +185,19 @@ Overall, all core user data (identity, workout usage, preferences, history, and 
 Retained for the beta duration unless deleted upon request.
 
 7. Your Rights
-• Access, delete, correct, export data
-• Withdraw consent
+Under GDPR, you have the following rights regarding your personal data:
+
+• Right to Access (GDPR Article 15): You can view all your data, including play session history, via Settings > Data Access & Compliance > Download My Data. You can also request a complete copy of all data we hold about you by contacting us.
+
+• Right to Erasure (GDPR Article 17): You can delete your account at any time via Settings. When you delete your account, all your data including play session history is permanently deleted.
+
+• Right to Rectification: You can correct your profile information via Settings.
+
+• Right to Data Portability: You can export all your data in JSON format via Settings > Download My Data.
+
+• Right to Object: You can object to data processing based on legitimate interests (such as play session tracking). Contact us to exercise this right.
+
+• Right to Withdraw Consent: You can withdraw consent at any time by deleting your account or contacting us.
 
 8. Children’s Privacy
 Not intended for individuals under 16.
