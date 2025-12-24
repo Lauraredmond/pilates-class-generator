@@ -2337,6 +2337,8 @@ class QualityTrendData(BaseModel):
 class QualityLogEntry(BaseModel):
     """Single quality log entry with full rule compliance details"""
     id: str
+    user_id: str
+    user_email: Optional[str] = None  # User email for admin tracking
     generated_at: str
     difficulty_level: str
     movement_count: int
@@ -2361,13 +2363,15 @@ class QualityLogEntry(BaseModel):
     quality_score: Optional[float] = None
 
 
-@router.get("/quality-trends/{user_id}", response_model=QualityTrendData)
+@router.get("/quality-trends", response_model=QualityTrendData)
 async def get_quality_trends(
-    user_id: str,
     period: TimePeriod = Query(default=TimePeriod.WEEK)
 ):
     """
-    Get quality tracking trends for the three golden rules
+    Get quality tracking trends for the three golden rules across ALL users
+
+    Admin-only feature: Shows aggregate pass/fail counts for all users
+    to monitor overall class generation quality across the platform
 
     Returns pass/fail counts per period for visualization in Developer Tools dashboard
 
@@ -2377,8 +2381,6 @@ async def get_quality_trends(
     - Rule 3: Historical repertoire coverage (full lookback on all movements)
     """
     try:
-        user_uuid = _convert_to_uuid(user_id)
-
         # Get date ranges and labels
         date_ranges, period_labels = _get_date_ranges(period)
 
@@ -2390,11 +2392,10 @@ async def get_quality_trends(
         rule3_pass = [0] * len(date_ranges)
         rule3_fail = [0] * len(date_ranges)
 
-        # Fetch quality logs
+        # Fetch quality logs for ALL users
         earliest_date = date_ranges[0][0]
         response = supabase.table('class_quality_log') \
             .select('*') \
-            .eq('user_id', user_uuid) \
             .gte('generated_at', earliest_date.isoformat()) \
             .execute()
 
@@ -2457,19 +2458,22 @@ async def get_quality_trends(
         )
 
     except Exception as e:
-        logger.error("Error fetching quality trends for user {}: {}", user_id, str(e), exc_info=True)
+        logger.error("Error fetching quality trends: {}", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
-@router.get("/quality-logs/{user_id}", response_model=List[QualityLogEntry])
+@router.get("/quality-logs", response_model=List[QualityLogEntry])
 async def get_quality_logs(
-    user_id: str,
     limit: int = Query(default=20, ge=1, le=100, description="Maximum number of logs to return")
 ):
     """
-    Get detailed quality log entries for recent classes
+    Get detailed quality log entries for recent classes across ALL users
+
+    Admin-only feature: Shows all users' class generation quality logs
+    with user email for tracking which user generated each class
 
     Returns full rule compliance details including:
+    - User email (for admin tracking by user)
     - Pass/fail status for each of the three golden rules
     - Specific failure information (failed pairs, overrepresented families, etc.)
     - Quality scores and metrics
@@ -2477,20 +2481,33 @@ async def get_quality_logs(
     Used in Developer Tools dashboard to show detailed quality history
     """
     try:
-        user_uuid = _convert_to_uuid(user_id)
-
-        # Fetch recent quality logs
+        # Fetch recent quality logs for ALL users with user email
+        # Using Supabase JOIN syntax: table!foreign_key_name(columns)
         response = supabase.table('class_quality_log') \
-            .select('*') \
-            .eq('user_id', user_uuid) \
+            .select('*, user_profiles!inner(email)') \
             .order('generated_at', desc=True) \
             .limit(limit) \
             .execute()
 
         logs = response.data or []
 
-        return [QualityLogEntry(**log) for log in logs]
+        # Transform to QualityLogEntry format with user_email extracted
+        result = []
+        for log in logs:
+            # Extract user email from nested user_profiles object
+            user_email = None
+            if log.get('user_profiles'):
+                user_email = log['user_profiles'].get('email')
+
+            # Create log entry with user_email
+            log_entry = {**log, 'user_email': user_email}
+            # Remove nested user_profiles object (not in Pydantic model)
+            log_entry.pop('user_profiles', None)
+
+            result.append(QualityLogEntry(**log_entry))
+
+        return result
 
     except Exception as e:
-        logger.error("Error fetching quality logs for user {}: {}", user_id, str(e), exc_info=True)
+        logger.error("Error fetching quality logs: {}", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
