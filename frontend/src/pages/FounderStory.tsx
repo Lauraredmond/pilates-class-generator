@@ -15,6 +15,25 @@ export function FounderStory() {
         </h1>
       </div>
 
+      {/* Founder Story Video - No title, just video */}
+      <div className="mb-12">
+        <div className="relative w-full max-w-4xl mx-auto rounded-lg overflow-hidden shadow-2xl border border-cream/20">
+          <div className="relative" style={{ paddingBottom: '56.25%' /* 16:9 aspect ratio */ }}>
+            <video
+              className="absolute top-0 left-0 w-full h-full object-cover"
+              controls
+              preload="metadata"
+            >
+              <source
+                src="https://pilates-movement-videos.s3.us-east-1.amazonaws.com/FounderStoryVideo.mp4"
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </div>
+
       {/* Story Content */}
       <div className="space-y-12">
         {/* Section 1: The Idea */}
@@ -54,30 +73,6 @@ export function FounderStory() {
             <p>
             It's for that reason I want to help others experience the transformative effects of exercise and movement — and discover that there's more than one way to fall in love with fitness.
             </p>
-          </div>
-        </section>
-
-        {/* Founder Story Video */}
-        <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
-          <h2 className="text-3xl font-semibold text-cream mb-6 text-center">
-            Watch My Story
-          </h2>
-
-          {/* Video Player */}
-          <div className="relative w-full max-w-4xl mx-auto rounded-lg overflow-hidden shadow-2xl border border-cream/20">
-            <div className="relative" style={{ paddingBottom: '56.25%' /* 16:9 aspect ratio */ }}>
-              <video
-                className="absolute top-0 left-0 w-full h-full object-cover"
-                controls
-                preload="metadata"
-              >
-                <source
-                  src="https://pilates-movement-videos.s3.us-east-1.amazonaws.com/FounderStoryVideo.mp4"
-                  type="video/mp4"
-                />
-                Your browser does not support the video tag.
-              </video>
-            </div>
           </div>
         </section>
 
