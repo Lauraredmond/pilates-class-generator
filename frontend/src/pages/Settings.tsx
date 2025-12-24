@@ -65,6 +65,11 @@ export function Settings() {
   const [sequencingReportError, setSequencingReportError] = useState('');
   const [sequencingReportSuccess, setSequencingReportSuccess] = useState('');
 
+  // Creators vs Performers report state
+  const [creatorsReportLoading, setCreatorsReportLoading] = useState(false);
+  const [creatorsReportError, setCreatorsReportError] = useState('');
+  const [creatorsReportData, setCreatorsReportData] = useState<any>(null);
+
   // Report modal state (for mobile-friendly viewing)
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportContent, setReportContent] = useState('');
@@ -358,6 +363,25 @@ export function Settings() {
       }
     } finally {
       setSequencingReportLoading(false);
+    }
+  };
+
+  const handleViewCreatorsReport = async () => {
+    setCreatorsReportLoading(true);
+    setCreatorsReportError('');
+    setCreatorsReportData(null);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(
+        `${API_BASE_URL}/api/analytics/admin/creators-vs-performers?admin_user_id=${user?.id}&period=month`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCreatorsReportData(response.data);
+    } catch (error: any) {
+      setCreatorsReportError(error.response?.data?.detail || 'Failed to load report');
+    } finally {
+      setCreatorsReportLoading(false);
     }
   };
 
@@ -896,22 +920,26 @@ export function Settings() {
         )}
       </div>
 
-      {/* Developer Tools */}
-      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
-        <button
-          onClick={() => toggleSection('developer')}
-          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Wrench className="w-6 h-6 text-burgundy" />
-            <h2 className="text-xl font-semibold text-cream">Developer Tools</h2>
-          </div>
-          {expandedSections.developer ? (
-            <ChevronUp className="w-5 h-5 text-cream/60" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-cream/60" />
-          )}
-        </button>
+      {/* Developer Tools - Admin Only */}
+      {user?.is_admin && (
+        <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
+          <button
+            onClick={() => toggleSection('developer')}
+            className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Wrench className="w-6 h-6 text-burgundy" />
+              <h2 className="text-xl font-semibold text-cream flex items-center gap-2">
+                Developer Tools
+                <span className="text-xs bg-burgundy px-2 py-0.5 rounded text-cream/90">Admin Only</span>
+              </h2>
+            </div>
+            {expandedSections.developer ? (
+              <ChevronUp className="w-5 h-5 text-cream/60" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-cream/60" />
+            )}
+          </button>
 
         {expandedSections.developer && (
           <div className="px-6 pb-6">
@@ -960,6 +988,78 @@ export function Settings() {
               </button>
             </div>
 
+            {/* Creators vs Performers Report */}
+            <div className="mb-6 p-4 bg-burgundy/10 rounded-lg border border-burgundy/20">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-cream mb-2">Creators vs Performers Report</h3>
+                  <p className="text-cream/60 text-sm mb-3">
+                    View analytics comparing users who create classes vs those who actually perform them (qualified plays > 120 seconds):
+                  </p>
+                  <ul className="text-cream/60 text-xs space-y-1 list-disc list-inside mb-3">
+                    <li>Total users by category (creators-only, performers-only, both)</li>
+                    <li>Engagement rates and conversion metrics</li>
+                    <li>Historical time series data</li>
+                    <li>Play session qualification threshold: 120 seconds</li>
+                  </ul>
+                </div>
+              </div>
+
+              {creatorsReportError && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-3">
+                  <p className="text-sm text-red-700">{creatorsReportError}</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleViewCreatorsReport}
+                disabled={creatorsReportLoading}
+                className="w-full flex items-center justify-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-3 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+              >
+                <Database className="w-5 h-5" />
+                {creatorsReportLoading ? 'Loading Report...' : 'View Report'}
+              </button>
+
+              {creatorsReportData && (
+                <div className="mt-4 p-4 bg-charcoal rounded border border-cream/20">
+                  <h4 className="text-md font-semibold text-cream mb-3">Report Summary</h4>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-burgundy/20 p-3 rounded">
+                      <p className="text-xs text-cream/60 mb-1">Total Users</p>
+                      <p className="text-2xl font-bold text-cream">{creatorsReportData.total_users}</p>
+                    </div>
+                    <div className="bg-burgundy/20 p-3 rounded">
+                      <p className="text-xs text-cream/60 mb-1">Creators Only</p>
+                      <p className="text-2xl font-bold text-cream">{creatorsReportData.creators_only}</p>
+                      <p className="text-xs text-cream/50 mt-1">Create but never play</p>
+                    </div>
+                    <div className="bg-burgundy/20 p-3 rounded">
+                      <p className="text-xs text-cream/60 mb-1">Performers Only</p>
+                      <p className="text-2xl font-bold text-cream">{creatorsReportData.performers_only}</p>
+                      <p className="text-xs text-cream/50 mt-1">Play but never create</p>
+                    </div>
+                    <div className="bg-burgundy/20 p-3 rounded">
+                      <p className="text-xs text-cream/60 mb-1">Both Create & Perform</p>
+                      <p className="text-2xl font-bold text-cream">{creatorsReportData.both}</p>
+                      <p className="text-xs text-cream/50 mt-1">Full engagement</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-green-900/20 p-3 rounded border border-green-500/30">
+                      <p className="text-xs text-green-400 mb-1">Creator Engagement Rate</p>
+                      <p className="text-xl font-bold text-green-400">{creatorsReportData.creator_engagement_rate.toFixed(1)}%</p>
+                      <p className="text-xs text-cream/50 mt-1">Creators who also perform</p>
+                    </div>
+                    <div className="bg-blue-900/20 p-3 rounded border border-blue-500/30">
+                      <p className="text-xs text-blue-400 mb-1">Performer Creation Rate</p>
+                      <p className="text-xl font-bold text-blue-400">{creatorsReportData.performer_creation_rate.toFixed(1)}%</p>
+                      <p className="text-xs text-cream/50 mt-1">Performers who also create</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <DebugPanel />
             <div className="mt-6">
               <RecordingModeManager />
@@ -967,6 +1067,8 @@ export function Settings() {
           </div>
         )}
       </div>
+      )}
+
 
       {/* Beta Tester Feedback Link */}
       <div className="my-8 text-center">
