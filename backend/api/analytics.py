@@ -2481,28 +2481,38 @@ async def get_quality_logs(
     Used in Developer Tools dashboard to show detailed quality history
     """
     try:
-        # Fetch recent quality logs for ALL users with user email
-        # Using Supabase JOIN syntax: table!foreign_key_name(columns)
+        # Fetch recent quality logs for ALL users
         response = supabase.table('class_quality_log') \
-            .select('*, user_profiles!inner(email)') \
+            .select('*') \
             .order('generated_at', desc=True) \
             .limit(limit) \
             .execute()
 
         logs = response.data or []
 
-        # Transform to QualityLogEntry format with user_email extracted
+        # Get unique user_ids from logs
+        user_ids = list(set([log['user_id'] for log in logs if log.get('user_id')]))
+
+        # Fetch user emails for all user_ids in one query
+        user_emails = {}
+        if user_ids:
+            users_response = supabase.table('user_profiles') \
+                .select('id, email') \
+                .in_('id', user_ids) \
+                .execute()
+
+            # Create a mapping of user_id -> email
+            for user in users_response.data or []:
+                user_emails[user['id']] = user['email']
+
+        # Transform to QualityLogEntry format with user_email
         result = []
         for log in logs:
-            # Extract user email from nested user_profiles object
-            user_email = None
-            if log.get('user_profiles'):
-                user_email = log['user_profiles'].get('email')
+            user_id = log.get('user_id')
+            user_email = user_emails.get(user_id) if user_id else None
 
             # Create log entry with user_email
             log_entry = {**log, 'user_email': user_email}
-            # Remove nested user_profiles object (not in Pydantic model)
-            log_entry.pop('user_profiles', None)
 
             result.append(QualityLogEntry(**log_entry))
 
