@@ -2457,7 +2457,7 @@ async def get_quality_trends(
         )
 
     except Exception as e:
-        logger.error(f"Error fetching quality trends for user {user_id}: {str(e)}", exc_info=True)
+        logger.error("Error fetching quality trends for user {}: {}", user_id, str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
@@ -2492,5 +2492,5 @@ async def get_quality_logs(
         return [QualityLogEntry(**log) for log in logs]
 
     except Exception as e:
-        logger.error(f"Error fetching quality logs for user {user_id}: {str(e)}", exc_info=True)
+        logger.error("Error fetching quality logs for user {}: {}", user_id, str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
