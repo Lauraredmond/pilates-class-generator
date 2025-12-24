@@ -57,6 +57,30 @@ export function FounderStory() {
           </div>
         </section>
 
+        {/* Founder Story Video */}
+        <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
+          <h2 className="text-3xl font-semibold text-cream mb-6 text-center">
+            Watch My Story
+          </h2>
+
+          {/* Video Player */}
+          <div className="relative w-full max-w-4xl mx-auto rounded-lg overflow-hidden shadow-2xl border border-cream/20">
+            <div className="relative" style={{ paddingBottom: '56.25%' /* 16:9 aspect ratio */ }}>
+              <video
+                className="absolute top-0 left-0 w-full h-full object-cover"
+                controls
+                preload="metadata"
+              >
+                <source
+                  src="https://pilates-movement-videos.s3.us-east-1.amazonaws.com/FounderStoryVideo.mp4"
+                  type="video/mp4"
+                />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+        </section>
+
         {/* Section 3: The Technology */}
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
           <h2 className="text-3xl font-semibold text-cream mb-6">
@@ -108,39 +132,6 @@ export function FounderStory() {
             </p>
             <p className="text-cream/60 mt-1">
               Founder, Bassline Pilates
-            </p>
-          </div>
-        </section>
-
-        {/* Thank You to Beta Testers - Video */}
-        <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
-          <h2 className="text-3xl font-semibold text-cream mb-6 text-center">
-            A Message to Our Beta Testers
-          </h2>
-          <div className="space-y-6">
-            <p className="text-cream/80 text-lg leading-relaxed text-center">
-              Thank you for being part of this journey. Your feedback and support mean everything as we build Bassline together.
-            </p>
-
-            {/* Video Player */}
-            <div className="relative w-full max-w-4xl mx-auto rounded-lg overflow-hidden shadow-2xl border border-cream/20">
-              <div className="relative" style={{ paddingBottom: '56.25%' /* 16:9 aspect ratio */ }}>
-                <video
-                  className="absolute top-0 left-0 w-full h-full object-cover"
-                  controls
-                  poster="/assets/bassline-logo-transparent.png"
-                >
-                  <source
-                    src="https://pilates-movement-videos.s3.us-east-1.amazonaws.com/FounderStoryVideo.mp4"
-                    type="video/mp4"
-                  />
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-            </div>
-
-            <p className="text-cream/60 text-center italic mt-6">
-              With sincere thanks for helping shape the future of Bassline Pilates.
             </p>
           </div>
         </section>
