@@ -91,6 +91,73 @@ class MovementFamilyDistributionData(BaseModel):
     percentages: List[float]
 
 
+# ==============================================================================
+# PLAY SESSION TRACKING MODELS - December 24, 2025
+# ==============================================================================
+
+class PlaySessionStart(BaseModel):
+    """Request to start a new play session"""
+    user_id: str
+    class_plan_id: Optional[str] = None
+    playback_source: str = Field(..., description="'library', 'generated', 'shared', or 'preview'")
+    device_info: Optional[dict] = None
+
+
+class PlaySessionHeartbeat(BaseModel):
+    """Request to update play session duration"""
+    duration_seconds: int
+    current_section_index: Optional[int] = None
+    pause_count: Optional[int] = None
+    skip_count: Optional[int] = None
+    rewind_count: Optional[int] = None
+
+
+class PlaySessionEnd(BaseModel):
+    """Request to end a play session"""
+    duration_seconds: int
+    was_completed: bool = False
+    max_section_reached: Optional[int] = None
+
+
+class PlaySessionResponse(BaseModel):
+    """Response after creating/updating play session"""
+    session_id: str
+    user_id: str
+    class_plan_id: Optional[str] = None
+    started_at: str
+    duration_seconds: int
+    is_qualified_play: bool
+    was_completed: bool
+
+
+class UserPlayStatistics(BaseModel):
+    """Aggregated play statistics for a user"""
+    user_id: str
+    email: str
+    total_sessions: int
+    qualified_plays: int
+    completed_classes: int
+    unique_classes_played: int
+    total_play_seconds: int
+    avg_play_seconds: float
+    longest_session_seconds: int
+    first_play_date: Optional[str] = None
+    last_play_date: Optional[str] = None
+    avg_pauses_per_session: float
+    completion_rate_percentage: float
+
+
+class CreatorsVsPerformersReport(BaseModel):
+    """Admin-only report comparing class creators vs performers"""
+    total_users: int
+    creators_only: int  # Created classes but never played >120s
+    performers_only: int  # Played classes >120s but never created
+    both: int  # Both create and perform
+    creator_engagement_rate: float  # % of creators who also perform
+    performer_creation_rate: float  # % of performers who also create
+    time_series: List[dict]  # Historical data by period
+
+
 # Helper functions
 def _convert_to_uuid(user_id: str) -> str:
     """Convert any user_id string to a valid UUID format"""
@@ -1915,4 +1982,304 @@ async def get_class_duration_distribution(
 
     except Exception as e:
         logger.error(f"Error fetching class duration distribution for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+# ==============================================================================
+# PLAY SESSION TRACKING - December 24, 2025
+# ==============================================================================
+
+@router.post("/play-session/start", response_model=PlaySessionResponse)
+async def start_play_session(data: PlaySessionStart):
+    """
+    Start a new play session when user begins playing a class
+
+    Returns session_id that should be used for heartbeat and end calls
+    """
+    try:
+        user_uuid = _convert_to_uuid(data.user_id)
+
+        # Create new session record
+        session_data = {
+            'user_id': user_uuid,
+            'class_plan_id': data.class_plan_id,
+            'playback_source': data.playback_source,
+            'device_info': data.device_info or {},
+            'duration_seconds': 0,
+            'is_qualified_play': False,  # Will be set to True by trigger when duration > 120
+            'was_completed': False
+        }
+
+        response = supabase.table('class_play_sessions').insert(session_data).execute()
+
+        if not response.data:
+            raise HTTPException(status_code=500, detail="Failed to create play session")
+
+        session = response.data[0]
+
+        return PlaySessionResponse(
+            session_id=session['id'],
+            user_id=session['user_id'],
+            class_plan_id=session.get('class_plan_id'),
+            started_at=session['started_at'],
+            duration_seconds=session['duration_seconds'],
+            is_qualified_play=session['is_qualified_play'],
+            was_completed=session['was_completed']
+        )
+
+    except Exception as e:
+        logger.error(f"Error starting play session: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.put("/play-session/{session_id}/heartbeat", response_model=PlaySessionResponse)
+async def update_play_session_heartbeat(session_id: str, data: PlaySessionHeartbeat):
+    """
+    Update play session with current duration and metrics
+
+    Call this every 30 seconds during playback to track duration
+    The database trigger will automatically set is_qualified_play=True when duration > 120
+    """
+    try:
+        # Prepare update data
+        update_data = {
+            'duration_seconds': data.duration_seconds,
+            'updated_at': datetime.now().isoformat()
+        }
+
+        if data.current_section_index is not None:
+            update_data['current_section_index'] = data.current_section_index
+
+        if data.pause_count is not None:
+            update_data['pause_count'] = data.pause_count
+
+        if data.skip_count is not None:
+            update_data['skip_count'] = data.skip_count
+
+        if data.rewind_count is not None:
+            update_data['rewind_count'] = data.rewind_count
+
+        # Update session
+        response = supabase.table('class_play_sessions') \
+            .update(update_data) \
+            .eq('id', session_id) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Play session not found")
+
+        session = response.data[0]
+
+        return PlaySessionResponse(
+            session_id=session['id'],
+            user_id=session['user_id'],
+            class_plan_id=session.get('class_plan_id'),
+            started_at=session['started_at'],
+            duration_seconds=session['duration_seconds'],
+            is_qualified_play=session['is_qualified_play'],
+            was_completed=session['was_completed']
+        )
+
+    except Exception as e:
+        logger.error(f"Error updating play session heartbeat: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.put("/play-session/{session_id}/end", response_model=PlaySessionResponse)
+async def end_play_session(session_id: str, data: PlaySessionEnd):
+    """
+    End a play session when user stops/completes playback
+
+    Sets final duration, completion status, and ended_at timestamp
+    """
+    try:
+        update_data = {
+            'duration_seconds': data.duration_seconds,
+            'was_completed': data.was_completed,
+            'ended_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat()
+        }
+
+        if data.max_section_reached is not None:
+            update_data['max_section_reached'] = data.max_section_reached
+
+        # Update session
+        response = supabase.table('class_play_sessions') \
+            .update(update_data) \
+            .eq('id', session_id) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Play session not found")
+
+        session = response.data[0]
+
+        return PlaySessionResponse(
+            session_id=session['id'],
+            user_id=session['user_id'],
+            class_plan_id=session.get('class_plan_id'),
+            started_at=session['started_at'],
+            duration_seconds=session['duration_seconds'],
+            is_qualified_play=session['is_qualified_play'],
+            was_completed=session['was_completed']
+        )
+
+    except Exception as e:
+        logger.error(f"Error ending play session: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/user/{user_id}/play-statistics", response_model=UserPlayStatistics)
+async def get_user_play_statistics(user_id: str):
+    """
+    Get aggregated play statistics for a user
+
+    Uses the user_play_statistics database view for efficient querying
+    Shows total sessions, qualified plays (>120s), completion rate, etc.
+    """
+    try:
+        user_uuid = _convert_to_uuid(user_id)
+
+        # Query the database view
+        response = supabase.table('user_play_statistics') \
+            .select('*') \
+            .eq('user_id', user_uuid) \
+            .execute()
+
+        if not response.data or len(response.data) == 0:
+            # Return zero stats if no play history
+            return UserPlayStatistics(
+                user_id=user_uuid,
+                email="unknown",
+                total_sessions=0,
+                qualified_plays=0,
+                completed_classes=0,
+                unique_classes_played=0,
+                total_play_seconds=0,
+                avg_play_seconds=0.0,
+                longest_session_seconds=0,
+                first_play_date=None,
+                last_play_date=None,
+                avg_pauses_per_session=0.0,
+                completion_rate_percentage=0.0
+            )
+
+        stats = response.data[0]
+
+        return UserPlayStatistics(
+            user_id=stats['user_id'],
+            email=stats['email'],
+            total_sessions=stats['total_sessions'],
+            qualified_plays=stats['qualified_plays'],
+            completed_classes=stats['completed_classes'],
+            unique_classes_played=stats['unique_classes_played'],
+            total_play_seconds=stats['total_play_seconds'],
+            avg_play_seconds=float(stats['avg_play_seconds']),
+            longest_session_seconds=stats['longest_session_seconds'],
+            first_play_date=stats.get('first_play_date'),
+            last_play_date=stats.get('last_play_date'),
+            avg_pauses_per_session=float(stats['avg_pauses_per_session']),
+            completion_rate_percentage=float(stats['completion_rate_percentage'])
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching user play statistics: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/admin/creators-vs-performers", response_model=CreatorsVsPerformersReport)
+async def get_creators_vs_performers_report(
+    admin_user_id: str = Query(..., description="Admin user ID for authorization"),
+    period: TimePeriod = Query(default=TimePeriod.MONTH, description="Time period for historical data")
+):
+    """
+    Get admin-only report comparing class creators vs class performers (admin only)
+
+    Shows:
+    - How many users only create classes but never play them
+    - How many users only play classes but never create them
+    - How many users both create and perform classes
+    - Historical trends over time
+
+    **Admin Authorization Required**
+    """
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    try:
+        # Get all users
+        all_users_response = supabase.table('user_profiles') \
+            .select('id, email') \
+            .execute()
+
+        all_users = all_users_response.data or []
+        total_users = len(all_users)
+
+        # Get users who have created classes
+        creators_response = supabase.table('class_plans') \
+            .select('user_id') \
+            .execute()
+
+        creator_user_ids = set(record['user_id'] for record in (creators_response.data or []))
+
+        # Get users who have qualified plays (>120 seconds)
+        performers_response = supabase.table('class_play_sessions') \
+            .select('user_id') \
+            .eq('is_qualified_play', True) \
+            .execute()
+
+        performer_user_ids = set(record['user_id'] for record in (performers_response.data or []))
+
+        # Calculate categories
+        creators_only = creator_user_ids - performer_user_ids
+        performers_only = performer_user_ids - creator_user_ids
+        both = creator_user_ids.intersection(performer_user_ids)
+
+        # Calculate engagement rates
+        creator_engagement_rate = (len(both) / len(creator_user_ids) * 100) if creator_user_ids else 0.0
+        performer_creation_rate = (len(both) / len(performer_user_ids) * 100) if performer_user_ids else 0.0
+
+        # Get historical time series data
+        date_ranges, period_labels = _get_date_ranges(period)
+        time_series = []
+
+        for start_date, end_date in date_ranges:
+            # Count creators in this period
+            creators_in_period = supabase.table('class_plans') \
+                .select('user_id', count='exact') \
+                .gte('created_at', start_date.isoformat()) \
+                .lte('created_at', end_date.isoformat()) \
+                .execute()
+
+            # Count performers in this period
+            performers_in_period = supabase.table('class_play_sessions') \
+                .select('user_id', count='exact') \
+                .eq('is_qualified_play', True) \
+                .gte('started_at', start_date.isoformat()) \
+                .lte('started_at', end_date.isoformat()) \
+                .execute()
+
+            creator_count = creators_in_period.count if creators_in_period.count else 0
+            performer_count = performers_in_period.count if performers_in_period.count else 0
+
+            time_series.append({
+                'period': f"{start_date.isoformat()} to {end_date.isoformat()}",
+                'creators': creator_count,
+                'performers': performer_count
+            })
+
+        return CreatorsVsPerformersReport(
+            total_users=total_users,
+            creators_only=len(creators_only),
+            performers_only=len(performers_only),
+            both=len(both),
+            creator_engagement_rate=round(creator_engagement_rate, 2),
+            performer_creation_rate=round(performer_creation_rate, 2),
+            time_series=time_series
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating creators vs performers report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
