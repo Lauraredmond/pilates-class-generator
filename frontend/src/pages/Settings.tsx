@@ -400,14 +400,14 @@ export function Settings() {
     try {
       const token = localStorage.getItem('access_token');
 
-      // Fetch both trends and recent logs
+      // Fetch both trends and recent logs for ALL users (admin feature)
       const [trendsResponse, logsResponse] = await Promise.all([
         axios.get(
-          `${API_BASE_URL}/api/analytics/quality-trends/${user?.id}?period=week`,
+          `${API_BASE_URL}/api/analytics/quality-trends?period=week`,
           { headers: { Authorization: `Bearer ${token}` } }
         ),
         axios.get(
-          `${API_BASE_URL}/api/analytics/quality-logs/${user?.id}?limit=10`,
+          `${API_BASE_URL}/api/analytics/quality-logs?limit=10`,
           { headers: { Authorization: `Bearer ${token}` } }
         )
       ]);
@@ -428,16 +428,17 @@ export function Settings() {
     try {
       const token = localStorage.getItem('access_token');
 
-      // Fetch ALL quality logs (not just 10 for display)
+      // Fetch ALL quality logs for ALL users (not just 10 for display)
       const response = await axios.get(
-        `${API_BASE_URL}/api/analytics/quality-logs/${user?.id}?limit=100`,
+        `${API_BASE_URL}/api/analytics/quality-logs?limit=100`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const logs = response.data;
 
-      // Convert to CSV format
+      // Convert to CSV format with 16 columns (added User Email)
       const headers = [
+        'User Email',
         'ID',
         'Generated At',
         'Difficulty Level',
@@ -456,6 +457,7 @@ export function Settings() {
       ].join(',');
 
       const rows = logs.map((log: any) => [
+        log.user_email || 'Unknown',
         log.id,
         log.generated_at,
         log.difficulty_level,
