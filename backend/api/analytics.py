@@ -2344,12 +2344,12 @@ class QualityLogEntry(BaseModel):
     # Rule 1: Muscle repetition
     rule1_muscle_repetition_pass: bool
     rule1_max_consecutive_overlap_pct: Optional[float] = None
-    rule1_failed_pairs: Optional[dict] = None
+    rule1_failed_pairs: Optional[Any] = None  # JSON field - Supabase returns as string
 
     # Rule 2: Family balance
     rule2_family_balance_pass: bool
     rule2_max_family_pct: Optional[float] = None
-    rule2_overrepresented_families: Optional[dict] = None
+    rule2_overrepresented_families: Optional[Any] = None  # JSON field - Supabase returns as string
 
     # Rule 3: Repertoire coverage
     rule3_repertoire_coverage_pass: bool
