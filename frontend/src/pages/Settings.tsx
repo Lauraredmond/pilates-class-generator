@@ -70,6 +70,12 @@ export function Settings() {
   const [creatorsReportError, setCreatorsReportError] = useState('');
   const [creatorsReportData, setCreatorsReportData] = useState<any>(null);
 
+  // Quality tracking state
+  const [qualityTrendsLoading, setQualityTrendsLoading] = useState(false);
+  const [qualityTrendsError, setQualityTrendsError] = useState('');
+  const [qualityTrendsData, setQualityTrendsData] = useState<any>(null);
+  const [qualityLogsData, setQualityLogsData] = useState<any[]>([]);
+
   // Report modal state (for mobile-friendly viewing)
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportContent, setReportContent] = useState('');
@@ -382,6 +388,36 @@ export function Settings() {
       setCreatorsReportError(error.response?.data?.detail || 'Failed to load report');
     } finally {
       setCreatorsReportLoading(false);
+    }
+  };
+
+  const handleViewQualityTracking = async () => {
+    setQualityTrendsLoading(true);
+    setQualityTrendsError('');
+    setQualityTrendsData(null);
+    setQualityLogsData([]);
+
+    try {
+      const token = localStorage.getItem('access_token');
+
+      // Fetch both trends and recent logs
+      const [trendsResponse, logsResponse] = await Promise.all([
+        axios.get(
+          `${API_BASE_URL}/api/analytics/quality-trends/${user?.id}?period=week`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
+        axios.get(
+          `${API_BASE_URL}/api/analytics/quality-logs/${user?.id}?limit=10`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      ]);
+
+      setQualityTrendsData(trendsResponse.data);
+      setQualityLogsData(logsResponse.data);
+    } catch (error: any) {
+      setQualityTrendsError(error.response?.data?.detail || 'Failed to load quality tracking data');
+    } finally {
+      setQualityTrendsLoading(false);
     }
   };
 
@@ -1056,6 +1092,188 @@ export function Settings() {
                       <p className="text-xs text-cream/50 mt-1">Performers who also create</p>
                     </div>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quality Tracking Dashboard */}
+            <div className="mb-6 p-4 bg-burgundy/10 rounded-lg border border-burgundy/20">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-cream mb-2">Quality Tracking Dashboard</h3>
+                  <p className="text-cream/60 text-sm mb-3">
+                    Monitor the three golden rules for class quality across your generated classes:
+                  </p>
+                  <ul className="text-cream/60 text-xs space-y-1 list-disc list-inside mb-3">
+                    <li><strong>Rule 1:</strong> Muscle repetition - consecutive movements &lt;50% overlap</li>
+                    <li><strong>Rule 2:</strong> Family balance - no family &gt;40% of class</li>
+                    <li><strong>Rule 3:</strong> Repertoire coverage - full historical lookback</li>
+                  </ul>
+                </div>
+              </div>
+
+              {qualityTrendsError && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-3">
+                  <p className="text-sm text-red-700">{qualityTrendsError}</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleViewQualityTracking}
+                disabled={qualityTrendsLoading}
+                className="w-full flex items-center justify-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-3 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+              >
+                <Database className="w-5 h-5" />
+                {qualityTrendsLoading ? 'Loading Quality Data...' : 'View Quality Tracking'}
+              </button>
+
+              {qualityTrendsData && (
+                <div className="mt-4 space-y-4">
+                  {/* Overall Summary */}
+                  <div className="p-4 bg-charcoal rounded border border-cream/20">
+                    <h4 className="text-md font-semibold text-cream mb-3">Overall Quality Summary</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-burgundy/20 p-3 rounded">
+                        <p className="text-xs text-cream/60 mb-1">Total Classes Tracked</p>
+                        <p className="text-2xl font-bold text-cream">{qualityTrendsData.total_classes}</p>
+                      </div>
+                      <div className={`p-3 rounded ${qualityTrendsData.overall_pass_rate >= 80 ? 'bg-green-900/20 border border-green-500/30' : 'bg-red-900/20 border border-red-500/30'}`}>
+                        <p className={`text-xs mb-1 ${qualityTrendsData.overall_pass_rate >= 80 ? 'text-green-400' : 'text-red-400'}`}>
+                          Overall Pass Rate
+                        </p>
+                        <p className={`text-2xl font-bold ${qualityTrendsData.overall_pass_rate >= 80 ? 'text-green-400' : 'text-red-400'}`}>
+                          {qualityTrendsData.overall_pass_rate.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rule Pass/Fail Trends */}
+                  <div className="p-4 bg-charcoal rounded border border-cream/20">
+                    <h4 className="text-md font-semibold text-cream mb-3">Pass/Fail Trends (Last 4 Weeks)</h4>
+                    <div className="space-y-4">
+                      {/* Rule 1 */}
+                      <div>
+                        <h5 className="text-sm font-semibold text-cream mb-2">Rule 1: Muscle Repetition</h5>
+                        <div className="grid grid-cols-4 gap-2">
+                          {qualityTrendsData.period_labels.map((label: string, idx: number) => (
+                            <div key={idx} className="bg-burgundy/10 p-2 rounded text-center">
+                              <p className="text-xs text-cream/60 mb-1">{label}</p>
+                              <p className="text-lg font-bold text-green-400">
+                                {qualityTrendsData.rule1_pass_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Pass</p>
+                              <p className="text-lg font-bold text-red-400">
+                                {qualityTrendsData.rule1_fail_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Fail</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Rule 2 */}
+                      <div>
+                        <h5 className="text-sm font-semibold text-cream mb-2">Rule 2: Family Balance</h5>
+                        <div className="grid grid-cols-4 gap-2">
+                          {qualityTrendsData.period_labels.map((label: string, idx: number) => (
+                            <div key={idx} className="bg-burgundy/10 p-2 rounded text-center">
+                              <p className="text-xs text-cream/60 mb-1">{label}</p>
+                              <p className="text-lg font-bold text-green-400">
+                                {qualityTrendsData.rule2_pass_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Pass</p>
+                              <p className="text-lg font-bold text-red-400">
+                                {qualityTrendsData.rule2_fail_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Fail</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Rule 3 */}
+                      <div>
+                        <h5 className="text-sm font-semibold text-cream mb-2">Rule 3: Repertoire Coverage</h5>
+                        <div className="grid grid-cols-4 gap-2">
+                          {qualityTrendsData.period_labels.map((label: string, idx: number) => (
+                            <div key={idx} className="bg-burgundy/10 p-2 rounded text-center">
+                              <p className="text-xs text-cream/60 mb-1">{label}</p>
+                              <p className="text-lg font-bold text-green-400">
+                                {qualityTrendsData.rule3_pass_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Pass</p>
+                              <p className="text-lg font-bold text-red-400">
+                                {qualityTrendsData.rule3_fail_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Fail</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent Quality Logs */}
+                  {qualityLogsData.length > 0 && (
+                    <div className="p-4 bg-charcoal rounded border border-cream/20">
+                      <h4 className="text-md font-semibold text-cream mb-3">Recent Classes (Last 10)</h4>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-burgundy/20">
+                            <tr>
+                              <th className="text-left p-2 text-cream">Date</th>
+                              <th className="text-left p-2 text-cream">Difficulty</th>
+                              <th className="text-center p-2 text-cream">Movements</th>
+                              <th className="text-center p-2 text-cream">R1</th>
+                              <th className="text-center p-2 text-cream">R2</th>
+                              <th className="text-center p-2 text-cream">R3</th>
+                              <th className="text-center p-2 text-cream">Overall</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {qualityLogsData.map((log: any) => (
+                              <tr key={log.id} className="border-b border-cream/10">
+                                <td className="p-2 text-cream/70 text-xs">
+                                  {new Date(log.generated_at).toLocaleDateString()}
+                                </td>
+                                <td className="p-2 text-cream/70 text-xs">{log.difficulty_level}</td>
+                                <td className="p-2 text-center text-cream/70 text-xs">{log.movement_count}</td>
+                                <td className="p-2 text-center">
+                                  {log.rule1_muscle_repetition_pass ? (
+                                    <span className="text-green-400 font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-red-400 font-bold">✗</span>
+                                  )}
+                                </td>
+                                <td className="p-2 text-center">
+                                  {log.rule2_family_balance_pass ? (
+                                    <span className="text-green-400 font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-red-400 font-bold">✗</span>
+                                  )}
+                                </td>
+                                <td className="p-2 text-center">
+                                  {log.rule3_repertoire_coverage_pass ? (
+                                    <span className="text-green-400 font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-red-400 font-bold">✗</span>
+                                  )}
+                                </td>
+                                <td className="p-2 text-center">
+                                  {log.overall_pass ? (
+                                    <span className="text-green-400 font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-red-400 font-bold">✗</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
