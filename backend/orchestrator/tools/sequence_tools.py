@@ -168,7 +168,14 @@ class SequenceTools:
             logger.info("ℹ️  QA report skipped (admin-only feature)")
 
         # QUALITY LOGGING: Log rule compliance to database (Migration 036)
+        # DIAGNOSTIC: Check conditions before attempting to log
+        logger.warning(f"🔍 DIAGNOSTIC: Quality logging check:")
+        logger.warning(f"   user_id: {'PRESENT' if user_id else 'NONE'} ({user_id if user_id else 'N/A'})")
+        logger.warning(f"   self.supabase: {'CONNECTED' if self.supabase else 'NONE'}")
+        logger.warning(f"   sequence length: {len(sequence)} movements")
+
         if user_id and self.supabase:
+            logger.warning(f"✅ ATTEMPTING quality logging for user {user_id[:8]}...")
             try:
                 self._log_class_quality(
                     user_id=user_id,
@@ -178,8 +185,14 @@ class SequenceTools:
                     target_duration=target_duration_minutes,
                     difficulty_level=difficulty_level
                 )
+                logger.warning(f"✅ Quality logging COMPLETED successfully")
             except Exception as e:
-                logger.error(f"Failed to log class quality: {e}")
+                logger.error(f"❌ Failed to log class quality: {e}")
+                logger.error(f"   Error type: {type(e).__name__}")
+                import traceback
+                logger.error(f"   Traceback:\n{traceback.format_exc()}")
+        else:
+            logger.warning(f"⚠️  SKIPPING quality logging (missing user_id or Supabase connection)")
 
         return {
             "sequence": sequence_with_transitions,
@@ -1048,16 +1061,25 @@ class SequenceTools:
         - class_movements: Historical tracking (which movements in which classes)
         - class_quality_log: Rule compliance tracking
         """
+        logger.warning(f"🔍 DIAGNOSTIC: _log_class_quality() called")
+        logger.warning(f"   user_id: {user_id}")
+        logger.warning(f"   sequence: {len(sequence)} movements")
+        logger.warning(f"   difficulty: {difficulty_level}")
+        logger.warning(f"   class_plan_id: {class_plan_id or 'None'}")
+
         if not self.supabase:
+            logger.error("❌ DIAGNOSTIC: self.supabase is None - CANNOT LOG")
             return
 
         try:
             # POPULATE class_movements table (historical tracking for Rule 3)
             timestamp_now = datetime.now().isoformat()
+            logger.warning(f"🔍 DIAGNOSTIC: Attempting to insert {len(sequence)} movements into class_movements")
 
+            movements_logged = 0
             for i, movement in enumerate(sequence, start=1):
                 try:
-                    self.supabase.table('class_movements').insert({
+                    insert_data = {
                         'user_id': user_id,
                         'class_plan_id': class_plan_id,
                         'movement_id': movement['id'],
@@ -1065,9 +1087,16 @@ class SequenceTools:
                         'class_generated_at': timestamp_now,
                         'difficulty_level': difficulty_level,
                         'position_in_sequence': i
-                    }).execute()
+                    }
+                    logger.warning(f"   Inserting movement {i}/{len(sequence)}: {movement.get('name')}")
+                    response = self.supabase.table('class_movements').insert(insert_data).execute()
+                    movements_logged += 1
+                    logger.warning(f"   ✅ Movement {i} inserted successfully")
                 except Exception as e:
-                    logger.warning(f"Failed to log movement '{movement.get('name')}' to class_movements: {e}")
+                    logger.error(f"   ❌ Failed to log movement '{movement.get('name')}' to class_movements: {e}")
+                    logger.error(f"      Error type: {type(e).__name__}")
+
+            logger.warning(f"✅ DIAGNOSTIC: Logged {movements_logged}/{len(sequence)} movements to class_movements")
 
             # CALCULATE RULE 1 COMPLIANCE: Consecutive muscle overlap
             rule1_pass = True
@@ -1146,7 +1175,13 @@ class SequenceTools:
 
             # INSERT into class_quality_log
             import json
-            self.supabase.table('class_quality_log').insert({
+            logger.warning(f"🔍 DIAGNOSTIC: Preparing class_quality_log insert:")
+            logger.warning(f"   Rule 1: {'PASS' if rule1_pass else 'FAIL'} (max overlap: {rule1_max_overlap:.1f}%)")
+            logger.warning(f"   Rule 2: {'PASS' if rule2_pass else 'FAIL'} (max family: {rule2_max_family:.1f}%)")
+            logger.warning(f"   Rule 3: {'PASS' if rule3_pass else 'FAIL'} (unique movements: {unique_movements_all_time})")
+            logger.warning(f"   Overall: {'PASS' if overall_pass else 'FAIL'} (score: {quality_score:.2f})")
+
+            quality_log_data = {
                 'user_id': user_id,
                 'class_plan_id': class_plan_id,
                 'generated_at': timestamp_now,
@@ -1175,7 +1210,11 @@ class SequenceTools:
                 'quality_score': quality_score,
                 'muscle_balance': json.dumps(muscle_balance),
                 'family_distribution': json.dumps(family_balance)
-            }).execute()
+            }
+
+            logger.warning(f"🔍 DIAGNOSTIC: Inserting into class_quality_log...")
+            response = self.supabase.table('class_quality_log').insert(quality_log_data).execute()
+            logger.warning(f"✅ DIAGNOSTIC: class_quality_log insert SUCCESSFUL")
 
             logger.info(
                 f"✅ Quality logged: Rule1={'PASS' if rule1_pass else 'FAIL'}, "
