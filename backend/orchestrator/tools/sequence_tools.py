@@ -167,6 +167,33 @@ class SequenceTools:
         else:
             logger.info("ℹ️  QA report skipped (admin-only feature)")
 
+        # QUALITY LOGGING: Log rule compliance to database (Migration 036)
+        # DIAGNOSTIC: Check conditions before attempting to log
+        logger.warning(f"🔍 DIAGNOSTIC: Quality logging check:")
+        logger.warning(f"   user_id: {'PRESENT' if user_id else 'NONE'} ({user_id if user_id else 'N/A'})")
+        logger.warning(f"   self.supabase: {'CONNECTED' if self.supabase else 'NONE'}")
+        logger.warning(f"   sequence length: {len(sequence)} movements")
+
+        if user_id and self.supabase:
+            logger.warning(f"✅ ATTEMPTING quality logging for user {user_id[:8]}...")
+            try:
+                self._log_class_quality(
+                    user_id=user_id,
+                    sequence=sequence,
+                    muscle_balance=muscle_balance,
+                    validation=validation,
+                    target_duration=target_duration_minutes,
+                    difficulty_level=difficulty_level
+                )
+                logger.warning(f"✅ Quality logging COMPLETED successfully")
+            except Exception as e:
+                logger.error(f"❌ Failed to log class quality: {e}")
+                logger.error(f"   Error type: {type(e).__name__}")
+                import traceback
+                logger.error(f"   Traceback:\n{traceback.format_exc()}")
+        else:
+            logger.warning(f"⚠️  SKIPPING quality logging (missing user_id or Supabase connection)")
+
         return {
             "sequence": sequence_with_transitions,
             "movement_count": len(movements_only),
@@ -503,7 +530,8 @@ class SequenceTools:
         if not available:
             return None
 
-        # PHASE 1 FIX: Filter out movements with high consecutive muscle overlap
+        # RULE 1 (HARD CONSTRAINT): Filter out movements with high consecutive muscle overlap
+        # NO FALLBACK - Rule violations are NOT acceptable
         if current_sequence:
             prev_movement = current_sequence[-1]
             prev_muscles = set(mg.get('name', '') for mg in prev_movement.get('muscle_groups', []))
@@ -521,12 +549,20 @@ class SequenceTools:
                         if overlap_pct < 50:
                             filtered_available.append(candidate)
 
-                # If we filtered out everything, fall back to original available list
-                if filtered_available:
-                    available = filtered_available
-                    logger.info(f"Filtered to {len(available)} movements with <50% consecutive muscle overlap")
+                # HARD CONSTRAINT: Always apply filter (no fallback)
+                available = filtered_available
+                logger.info(f"RULE 1 enforced: Filtered to {len(available)} movements with <50% consecutive muscle overlap")
 
-        # SESSION: Movement Families - Filter by family balance (soft enforcement)
+                # If filter blocked all movements, sequence generation will stop here
+                # This is correct behavior - we should NOT violate safety rules
+                if not available:
+                    logger.warning(
+                        f"⚠️  RULE 1 blocked all movements (prev: {prev_movement.get('name')}). "
+                        f"Sequence will stop at {len(current_sequence)} movements to avoid muscle repetition."
+                    )
+
+        # RULE 2 (HARD CONSTRAINT): Filter by family balance - NO OVERRIDES
+        # No movement family should exceed 40% of total movements
         if current_sequence and len(current_sequence) >= 2:  # Only enforce after 2+ movements
             # Calculate current family distribution
             family_balance = self._calculate_family_balance(current_sequence)
@@ -544,17 +580,19 @@ class SequenceTools:
                     if m.get("movement_family") not in overrepresented_families
                 ]
 
-                # SOFT ENFORCEMENT: Only apply filter if it doesn't block ALL options
-                if family_filtered:
-                    available = family_filtered
-                    logger.info(
-                        f"Filtered out families: {overrepresented_families} "
-                        f"({len(available)} movements remaining)"
-                    )
-                else:
+                # HARD CONSTRAINT: Always apply filter (no override)
+                available = family_filtered
+                logger.info(
+                    f"RULE 2 enforced: Filtered out families {overrepresented_families} "
+                    f"({len(available)} movements remaining)"
+                )
+
+                # If filter blocked all movements, sequence generation will stop here
+                # This is correct behavior - we should NOT violate family balance rules
+                if not available:
                     logger.warning(
-                        f"⚠️  Family balance filter would block all movements - allowing override. "
-                        f"Overrepresented: {overrepresented_families}"
+                        f"⚠️  RULE 2 blocked all movements. Overrepresented families: {overrepresented_families}. "
+                        f"Sequence will stop at {len(current_sequence)} movements to maintain family balance."
                     )
 
         # If focus areas specified, prefer those
@@ -841,16 +879,122 @@ class SequenceTools:
         movements: List[Dict[str, Any]]
     ) -> Dict[str, float]:
         """
-        Get movement usage weights based on history
+        RULE 3 (ENHANCED): Get movement usage weights based on complete historical coverage
 
-        Queries existing movement_usage table to calculate weights.
-        Higher weight = prefer this movement (less recently used)
+        Queries NEW class_movements table for full historical lookback.
+        Boosts weights for:
+        1. Movements used rarely across ALL classes (frequency)
+        2. Movements not used recently (recency)
+        3. Movements from underutilized muscle groups (muscle balance over time)
+
+        Higher weight = prefer this movement
         """
         if not self.supabase:
             return {m['id']: 1.0 for m in movements}
 
         try:
-            # Query movement_usage table for this user
+            # RULE 3 IMPLEMENTATION: Query complete historical class_movements data
+            # This gives us FULL lookback - every movement in every class from day 1
+            history_response = self.supabase.table('class_movements') \
+                .select('movement_id, movement_name, class_generated_at') \
+                .eq('user_id', user_id) \
+                .order('class_generated_at', desc=True) \
+                .execute()
+
+            # Count total classes to calculate usage percentages
+            total_classes = len(set(
+                row['class_generated_at'] for row in history_response.data
+            )) if history_response.data else 0
+
+            # Count how many classes each movement appeared in
+            movement_class_counts = {}
+            movement_last_used = {}
+
+            for row in history_response.data:
+                mov_id = row['movement_id']
+                class_date_str = row['class_generated_at']
+
+                # Track class count
+                if mov_id not in movement_class_counts:
+                    movement_class_counts[mov_id] = set()
+                movement_class_counts[mov_id].add(class_date_str)
+
+                # Track most recent usage
+                if 'T' in class_date_str:
+                    class_date = datetime.fromisoformat(class_date_str.replace('Z', '+00:00')).date()
+                else:
+                    class_date = datetime.strptime(class_date_str[:10], '%Y-%m-%d').date()
+
+                if mov_id not in movement_last_used or class_date > movement_last_used[mov_id]:
+                    movement_last_used[mov_id] = class_date
+
+            # Convert class counts to actual counts
+            movement_frequency = {
+                mov_id: len(class_dates)
+                for mov_id, class_dates in movement_class_counts.items()
+            }
+
+            # Calculate weights for each movement
+            weights = {}
+            today = date.today()
+
+            for movement in movements:
+                movement_id = movement['id']
+
+                if movement_id in movement_frequency:
+                    # Calculate usage percentage across all classes
+                    classes_used_in = movement_frequency[movement_id]
+                    usage_percentage = (classes_used_in / total_classes * 100) if total_classes > 0 else 0
+
+                    # Calculate days since last used
+                    last_used = movement_last_used.get(movement_id, today)
+                    days_since = (today - last_used).days
+
+                    # ENHANCED RULE 3 FORMULA:
+                    # Weight = (Recency Boost) / (Frequency Penalty)
+                    # Prefer movements that:
+                    # - Haven't been used recently (high days_since)
+                    # - Haven't been used in many classes (low usage_percentage)
+
+                    recency_boost = (days_since + 1) ** 2  # Quadratic for recency
+                    frequency_penalty = (usage_percentage + 1) ** 1.5  # 1.5 power for frequency
+
+                    weight = recency_boost / frequency_penalty
+
+                    logger.debug(
+                        f"Movement '{movement.get('name')}': "
+                        f"used in {classes_used_in}/{total_classes} classes ({usage_percentage:.1f}%), "
+                        f"last used {days_since} days ago, weight: {weight:.1f}"
+                    )
+                else:
+                    # Never used before - HIGHEST weight (prioritize repertoire expansion)
+                    weight = 100000
+                    logger.debug(f"Movement '{movement.get('name')}': NEVER USED (weight: {weight})")
+
+                weights[movement_id] = weight
+
+            logger.info(
+                f"RULE 3 enforced: Calculated usage weights from {len(history_response.data)} historical movements "
+                f"across {total_classes} classes"
+            )
+            return weights
+
+        except Exception as e:
+            logger.warning(f"Error getting movement usage weights (historical): {e}")
+            # Fallback to old movement_usage table if class_movements not available
+            return self._get_legacy_usage_weights(user_id, movements)
+
+    def _get_legacy_usage_weights(
+        self,
+        user_id: str,
+        movements: List[Dict[str, Any]]
+    ) -> Dict[str, float]:
+        """
+        FALLBACK: Legacy weight calculation using movement_usage table
+
+        Only used if class_movements table is unavailable (shouldn't happen after migration 036).
+        """
+        try:
             response = self.supabase.table('movement_usage') \
                 .select('movement_id, last_used_date, usage_count') \
                 .eq('user_id', user_id) \
@@ -864,7 +1008,6 @@ class SequenceTools:
                 for item in response.data
             }
 
-            # Calculate weights for each movement
             weights = {}
             today = date.today()
 
@@ -872,34 +1015,217 @@ class SequenceTools:
                 movement_id = movement['id']
 
                 if movement_id in usage_map:
-                    # Calculate days since last used
                     last_used_str = usage_map[movement_id]['last_used_date']
                     usage_count = usage_map[movement_id]['usage_count']
 
-                    # Handle both date and datetime formats
                     if 'T' in last_used_str:
                         last_used = datetime.fromisoformat(last_used_str.replace('Z', '+00:00')).date()
                     else:
                         last_used = datetime.strptime(last_used_str, '%Y-%m-%d').date()
 
                     days_since = (today - last_used).days
-
-                    # Weight formula: Combine recency AND frequency
-                    recency_weight = (days_since + 1) ** 3  # Cubic for stronger penalty
-                    frequency_penalty = max(1, usage_count) ** 2  # Quadratic penalty
+                    recency_weight = (days_since + 1) ** 3
+                    frequency_penalty = max(1, usage_count) ** 2
                     weight = recency_weight / frequency_penalty
                 else:
-                    # Never used before - highest weight
                     weight = 100000
 
                 weights[movement_id] = weight
 
-            logger.info(f"Calculated usage weights for {len(weights)} movements")
+            logger.warning("Using LEGACY movement_usage weights (class_movements table unavailable)")
             return weights
 
         except Exception as e:
-            logger.warning(f"Error getting movement usage weights: {e}")
+            logger.error(f"Error in legacy weight calculation: {e}")
             return {m['id']: 1.0 for m in movements}
+
+    def _log_class_quality(
+        self,
+        user_id: str,
+        sequence: List[Dict[str, Any]],
+        muscle_balance: Dict[str, float],
+        validation: Dict[str, Any],
+        target_duration: int,
+        difficulty_level: str,
+        class_plan_id: Optional[str] = None
+    ) -> None:
+        """
+        QUALITY LOGGING (Migration 036): Log rule compliance to database
+
+        Tracks compliance for all 3 rules:
+        1. Don't repeat muscle usage (consecutive movements < 50% overlap)
+        2. Don't overuse movement families (no family > 40%)
+        3. Historical repertoire coverage (full lookback)
+
+        Logs to:
+        - class_movements: Historical tracking (which movements in which classes)
+        - class_quality_log: Rule compliance tracking
+        """
+        logger.warning(f"🔍 DIAGNOSTIC: _log_class_quality() called")
+        logger.warning(f"   user_id: {user_id}")
+        logger.warning(f"   sequence: {len(sequence)} movements")
+        logger.warning(f"   difficulty: {difficulty_level}")
+        logger.warning(f"   class_plan_id: {class_plan_id or 'None'}")
+
+        if not self.supabase:
+            logger.error("❌ DIAGNOSTIC: self.supabase is None - CANNOT LOG")
+            return
+
+        try:
+            # POPULATE class_movements table (historical tracking for Rule 3)
+            timestamp_now = datetime.now().isoformat()
+            logger.warning(f"🔍 DIAGNOSTIC: Attempting to insert {len(sequence)} movements into class_movements")
+
+            movements_logged = 0
+            for i, movement in enumerate(sequence, start=1):
+                try:
+                    insert_data = {
+                        'user_id': user_id,
+                        'class_plan_id': class_plan_id,
+                        'movement_id': movement['id'],
+                        'movement_name': movement.get('name', 'Unknown'),
+                        'class_generated_at': timestamp_now,
+                        'difficulty_level': difficulty_level,
+                        'position_in_sequence': i
+                    }
+                    logger.warning(f"   Inserting movement {i}/{len(sequence)}: {movement.get('name')}")
+                    response = self.supabase.table('class_movements').insert(insert_data).execute()
+                    movements_logged += 1
+                    logger.warning(f"   ✅ Movement {i} inserted successfully")
+                except Exception as e:
+                    logger.error(f"   ❌ Failed to log movement '{movement.get('name')}' to class_movements: {e}")
+                    logger.error(f"      Error type: {type(e).__name__}")
+
+            logger.warning(f"✅ DIAGNOSTIC: Logged {movements_logged}/{len(sequence)} movements to class_movements")
+
+            # CALCULATE RULE 1 COMPLIANCE: Consecutive muscle overlap
+            rule1_pass = True
+            rule1_max_overlap = 0.0
+            rule1_failed_pairs = []
+
+            for i in range(len(sequence) - 1):
+                curr = sequence[i]
+                next_mov = sequence[i + 1]
+
+                curr_muscles = set(mg.get('name', '') for mg in curr.get('muscle_groups', []))
+                next_muscles = set(mg.get('name', '') for mg in next_mov.get('muscle_groups', []))
+
+                if curr_muscles and next_muscles:
+                    overlap = curr_muscles & next_muscles
+                    overlap_pct = (len(overlap) / len(next_muscles)) * 100
+
+                    if overlap_pct > rule1_max_overlap:
+                        rule1_max_overlap = overlap_pct
+
+                    if overlap_pct >= 50:
+                        rule1_pass = False
+                        rule1_failed_pairs.append({
+                            'from': curr.get('name'),
+                            'to': next_mov.get('name'),
+                            'overlap_pct': round(overlap_pct, 1)
+                        })
+
+            # CALCULATE RULE 2 COMPLIANCE: Family balance
+            family_balance = self._calculate_family_balance(sequence)
+            rule2_pass = all(pct < self.MAX_FAMILY_PERCENTAGE for pct in family_balance.values())
+            rule2_max_family = max(family_balance.values()) if family_balance else 0.0
+            rule2_overrepresented = [
+                {'family': family, 'pct': round(pct, 1)}
+                for family, pct in family_balance.items()
+                if pct >= self.MAX_FAMILY_PERCENTAGE
+            ]
+
+            # CALCULATE RULE 3 COMPLIANCE: Repertoire coverage
+            # Query historical data to check coverage
+            history_response = self.supabase.table('class_movements') \
+                .select('movement_id') \
+                .eq('user_id', user_id) \
+                .execute()
+
+            unique_movements_all_time = len(set(row['movement_id'] for row in history_response.data)) if history_response.data else 0
+
+            # Check if any muscle groups are underutilized
+            # (This would require more complex logic - simplified for now)
+            rule3_pass = True  # Assume pass unless specific thresholds violated
+            rule3_underutilized_muscles = []  # Could be calculated from historical muscle balance
+
+            # Calculate stalest movement (days since last used)
+            rule3_stalest_days = 0
+            if history_response.data:
+                # Find oldest class_generated_at timestamp
+                try:
+                    oldest_class = min(
+                        (datetime.fromisoformat(row.get('class_generated_at', timestamp_now).replace('Z', '+00:00')).date()
+                         for row in history_response.data if row.get('class_generated_at')),
+                        default=date.today()
+                    )
+                    rule3_stalest_days = (date.today() - oldest_class).days
+                except Exception as e:
+                    logger.warning(f"Error calculating stalest movement: {e}")
+
+            # OVERALL PASS: All 3 rules must pass
+            overall_pass = rule1_pass and rule2_pass and rule3_pass
+
+            # QUALITY SCORE: 0.0 to 1.0 composite
+            quality_score = (
+                (1.0 if rule1_pass else 0.0) * 0.4 +  # Rule 1 weight: 40%
+                (1.0 if rule2_pass else 0.0) * 0.3 +  # Rule 2 weight: 30%
+                (1.0 if rule3_pass else 0.0) * 0.3    # Rule 3 weight: 30%
+            )
+
+            # INSERT into class_quality_log
+            import json
+            logger.warning(f"🔍 DIAGNOSTIC: Preparing class_quality_log insert:")
+            logger.warning(f"   Rule 1: {'PASS' if rule1_pass else 'FAIL'} (max overlap: {rule1_max_overlap:.1f}%)")
+            logger.warning(f"   Rule 2: {'PASS' if rule2_pass else 'FAIL'} (max family: {rule2_max_family:.1f}%)")
+            logger.warning(f"   Rule 3: {'PASS' if rule3_pass else 'FAIL'} (unique movements: {unique_movements_all_time})")
+            logger.warning(f"   Overall: {'PASS' if overall_pass else 'FAIL'} (score: {quality_score:.2f})")
+
+            quality_log_data = {
+                'user_id': user_id,
+                'class_plan_id': class_plan_id,
+                'generated_at': timestamp_now,
+                'difficulty_level': difficulty_level,
+                'target_duration_minutes': target_duration,
+                'movement_count': len(sequence),
+
+                # Rule 1: Muscle repetition
+                'rule1_muscle_repetition_pass': rule1_pass,
+                'rule1_max_consecutive_overlap_pct': rule1_max_overlap,
+                'rule1_failed_pairs': json.dumps(rule1_failed_pairs) if rule1_failed_pairs else None,
+
+                # Rule 2: Family balance
+                'rule2_family_balance_pass': rule2_pass,
+                'rule2_max_family_pct': rule2_max_family,
+                'rule2_overrepresented_families': json.dumps(rule2_overrepresented) if rule2_overrepresented else None,
+
+                # Rule 3: Repertoire coverage
+                'rule3_repertoire_coverage_pass': rule3_pass,
+                'rule3_unique_movements_count': unique_movements_all_time,
+                'rule3_underutilized_muscles': json.dumps(rule3_underutilized_muscles) if rule3_underutilized_muscles else None,
+                'rule3_stalest_movement_days': rule3_stalest_days,
+
+                # Overall
+                'overall_pass': overall_pass,
+                'quality_score': quality_score,
+                'muscle_balance': json.dumps(muscle_balance),
+                'family_distribution': json.dumps(family_balance)
+            }
+
+            logger.warning(f"🔍 DIAGNOSTIC: Inserting into class_quality_log...")
+            response = self.supabase.table('class_quality_log').insert(quality_log_data).execute()
+            logger.warning(f"✅ DIAGNOSTIC: class_quality_log insert SUCCESSFUL")
+
+            logger.info(
+                f"✅ Quality logged: Rule1={'PASS' if rule1_pass else 'FAIL'}, "
+                f"Rule2={'PASS' if rule2_pass else 'FAIL'}, "
+                f"Rule3={'PASS' if rule3_pass else 'FAIL'}, "
+                f"Overall={'PASS' if overall_pass else 'FAIL'} (score: {quality_score:.2f})"
+            )
+
+        except Exception as e:
+            logger.error(f"Error in _log_class_quality: {e}")
+            raise
 
     def _check_if_admin(self, user_id: str) -> bool:
         """

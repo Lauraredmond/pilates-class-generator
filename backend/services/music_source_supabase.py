@@ -49,6 +49,9 @@ class SupabaseMusicSource(MusicSource):
         'files.freepd.com',
         'cdn.freepd.com',
         'archive.org',  # Internet Archive for public domain classical music
+        's3.us-east-1.amazonaws.com',  # AWS S3 bucket for self-hosted tracks
+        's3.amazonaws.com',  # General AWS S3 domain
+        'amazonaws.com',  # AWS domain (covers all regions)
         # Add more as sources are added
     ]
 

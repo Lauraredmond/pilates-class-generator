@@ -14,7 +14,7 @@ import { useAudioDucking } from '../../hooks/useAudioDucking';
 import { useAuth } from '../../context/AuthContext';
 import { logger } from '../../utils/logger';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://pilates-class-generator-api3.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://pilates-class-generator-api3.onrender.com';
 
 // Music API type definitions
 interface MusicTrack {
@@ -207,6 +207,14 @@ export function ClassPlayback({
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0); // Track index in playlist
   const [musicError, setMusicError] = useState<string | null>(null);
 
+  // Play session tracking state
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [playDuration, setPlayDuration] = useState(0); // Total cumulative playtime in seconds
+  const [pauseCount, setPauseCount] = useState(0);
+  const [skipCount, setSkipCount] = useState(0);
+  const [rewindCount, setRewindCount] = useState(0);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   // Wake Lock to prevent screen from turning off during class
   const wakeLockRef = useRef<any>(null);
 
@@ -219,6 +227,116 @@ export function ClassPlayback({
       setIsPaused(false); // Start playback if already accepted
     }
   }, [user]);
+
+  // ============================================================================
+  // PLAY SESSION TRACKING - December 24, 2025
+  // ============================================================================
+
+  // Start play session when component mounts (after safety acceptance)
+  useEffect(() => {
+    const startSession = async () => {
+      if (!user?.id) return;
+
+      try {
+        const response = await axios.post(`${API_BASE_URL}/api/analytics/play-session/start`, {
+          user_id: user.id,
+          class_plan_id: null, // TODO: Add class_plan_id if available from props
+          playback_source: 'library', // or 'generated', 'shared', 'preview'
+          device_info: {
+            browser: navigator.userAgent,
+            screen_width: window.screen.width,
+            screen_height: window.screen.height,
+            is_mobile: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent),
+          },
+        });
+
+        if (response.data?.session_id) {
+          setSessionId(response.data.session_id);
+          logger.debug('Play session started:', response.data.session_id);
+        }
+      } catch (error) {
+        logger.error('Failed to start play session:', error);
+        // Continue playback even if session tracking fails (graceful degradation)
+      }
+    };
+
+    startSession();
+  }, [user]);
+
+  // Track cumulative play duration (only when not paused)
+  useEffect(() => {
+    if (isPaused || !sessionId) return;
+
+    const durationTracker = setInterval(() => {
+      setPlayDuration((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(durationTracker);
+  }, [isPaused, sessionId]);
+
+  // Send heartbeat every 30 seconds with current duration
+  useEffect(() => {
+    if (!sessionId || isPaused) {
+      // Clear heartbeat interval when paused
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Send immediate heartbeat when resuming
+    const sendHeartbeat = async () => {
+      try {
+        await axios.put(`${API_BASE_URL}/api/analytics/play-session/${sessionId}/heartbeat`, {
+          duration_seconds: playDuration,
+          current_section_index: currentIndex,
+          pause_count: pauseCount,
+          skip_count: skipCount,
+          rewind_count: rewindCount,
+        });
+        logger.debug('Heartbeat sent:', playDuration, 'seconds');
+      } catch (error) {
+        logger.error('Failed to send heartbeat:', error);
+        // Continue playback even if heartbeat fails
+      }
+    };
+
+    // Send initial heartbeat
+    sendHeartbeat();
+
+    // Send heartbeat every 30 seconds
+    heartbeatIntervalRef.current = setInterval(sendHeartbeat, 30000);
+
+    return () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+    };
+  }, [sessionId, isPaused, playDuration, currentIndex, pauseCount, skipCount, rewindCount]);
+
+  // End session when component unmounts
+  useEffect(() => {
+    return () => {
+      const endSession = async () => {
+        if (!sessionId) return;
+
+        try {
+          await axios.put(`${API_BASE_URL}/api/analytics/play-session/${sessionId}/end`, {
+            duration_seconds: playDuration,
+            was_completed: false, // Unmount without completion
+            max_section_reached: currentIndex,
+          });
+          logger.debug('Play session ended (unmount)');
+        } catch (error) {
+          logger.error('Failed to end play session:', error);
+        }
+      };
+
+      endSession();
+    };
+  }, [sessionId, playDuration, currentIndex]);
 
   /**
    * Wake Lock API - Keep screen on during class playback
@@ -463,13 +581,20 @@ export function ClassPlayback({
   }, [currentIndex]);
 
   const handlePause = useCallback(() => {
-    setIsPaused((prev) => !prev);
+    setIsPaused((prev) => {
+      if (!prev) {
+        // About to pause
+        setPauseCount((c) => c + 1);
+      }
+      return !prev;
+    });
   }, []);
 
   const handlePrevious = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
       setTimeRemaining(items[currentIndex - 1]?.duration_seconds || 0);
+      setRewindCount((c) => c + 1); // Track rewind
     }
   }, [currentIndex, items]);
 
@@ -477,15 +602,31 @@ export function ClassPlayback({
     if (currentIndex < totalItems - 1) {
       setCurrentIndex((prev) => prev + 1);
       setTimeRemaining(items[currentIndex + 1]?.duration_seconds || 0);
+      setSkipCount((c) => c + 1); // Track skip
     } else {
       handleComplete();
     }
   }, [currentIndex, totalItems, items]);
 
-  const handleComplete = useCallback(() => {
+  const handleComplete = useCallback(async () => {
     setIsPaused(true);
+
+    // End session with completion=true
+    if (sessionId) {
+      try {
+        await axios.put(`${API_BASE_URL}/api/analytics/play-session/${sessionId}/end`, {
+          duration_seconds: playDuration,
+          was_completed: true, // User completed the entire class
+          max_section_reached: totalItems - 1, // Reached the last section
+        });
+        logger.debug('Play session ended (completed)');
+      } catch (error) {
+        logger.error('Failed to end play session on complete:', error);
+      }
+    }
+
     onComplete?.();
-  }, [onComplete]);
+  }, [onComplete, sessionId, playDuration, totalItems]);
 
   const handleExitRequest = useCallback(() => {
     if (!isPaused && currentIndex > 0) {
@@ -495,10 +636,25 @@ export function ClassPlayback({
     }
   }, [isPaused, currentIndex, onExit]);
 
-  const handleExitConfirm = useCallback(() => {
+  const handleExitConfirm = useCallback(async () => {
     setShowExitConfirm(false);
+
+    // End session when user exits mid-class
+    if (sessionId) {
+      try {
+        await axios.put(`${API_BASE_URL}/api/analytics/play-session/${sessionId}/end`, {
+          duration_seconds: playDuration,
+          was_completed: false, // User exited before completing
+          max_section_reached: currentIndex,
+        });
+        logger.debug('Play session ended (user exit)');
+      } catch (error) {
+        logger.error('Failed to end play session on exit:', error);
+      }
+    }
+
     onExit?.();
-  }, [onExit]);
+  }, [onExit, sessionId, playDuration, currentIndex]);
 
   const handleExitCancel = useCallback(() => {
     setShowExitConfirm(false);

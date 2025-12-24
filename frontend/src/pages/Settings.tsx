@@ -65,6 +65,17 @@ export function Settings() {
   const [sequencingReportError, setSequencingReportError] = useState('');
   const [sequencingReportSuccess, setSequencingReportSuccess] = useState('');
 
+  // Creators vs Performers report state
+  const [creatorsReportLoading, setCreatorsReportLoading] = useState(false);
+  const [creatorsReportError, setCreatorsReportError] = useState('');
+  const [creatorsReportData, setCreatorsReportData] = useState<any>(null);
+
+  // Quality tracking state
+  const [qualityTrendsLoading, setQualityTrendsLoading] = useState(false);
+  const [qualityTrendsError, setQualityTrendsError] = useState('');
+  const [qualityTrendsData, setQualityTrendsData] = useState<any>(null);
+  const [qualityLogsData, setQualityLogsData] = useState<any[]>([]);
+
   // Report modal state (for mobile-friendly viewing)
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportContent, setReportContent] = useState('');
@@ -358,6 +369,131 @@ export function Settings() {
       }
     } finally {
       setSequencingReportLoading(false);
+    }
+  };
+
+  const handleViewCreatorsReport = async () => {
+    setCreatorsReportLoading(true);
+    setCreatorsReportError('');
+    setCreatorsReportData(null);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(
+        `${API_BASE_URL}/api/analytics/admin/creators-vs-performers?admin_user_id=${user?.id}&period=month`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCreatorsReportData(response.data);
+    } catch (error: any) {
+      setCreatorsReportError(error.response?.data?.detail || 'Failed to load report');
+    } finally {
+      setCreatorsReportLoading(false);
+    }
+  };
+
+  const handleViewQualityTracking = async () => {
+    setQualityTrendsLoading(true);
+    setQualityTrendsError('');
+    setQualityTrendsData(null);
+    setQualityLogsData([]);
+
+    try {
+      const token = localStorage.getItem('access_token');
+
+      // Fetch both trends and recent logs for ALL users (admin feature)
+      const [trendsResponse, logsResponse] = await Promise.all([
+        axios.get(
+          `${API_BASE_URL}/api/analytics/quality-trends?period=week`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
+        axios.get(
+          `${API_BASE_URL}/api/analytics/quality-logs?limit=10`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      ]);
+
+      setQualityTrendsData(trendsResponse.data);
+      setQualityLogsData(logsResponse.data);
+    } catch (error: any) {
+      setQualityTrendsError(error.response?.data?.detail || 'Failed to load quality tracking data');
+    } finally {
+      setQualityTrendsLoading(false);
+    }
+  };
+
+  const handleDownloadQualityCSV = async () => {
+    setQualityTrendsLoading(true);
+    setQualityTrendsError('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+
+      // Fetch ALL quality logs for ALL users (not just 10 for display)
+      const response = await axios.get(
+        `${API_BASE_URL}/api/analytics/quality-logs?limit=100`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const logs = response.data;
+
+      // Convert to CSV format with 16 columns (added User Email)
+      const headers = [
+        'User Email',
+        'ID',
+        'Generated At',
+        'Difficulty Level',
+        'Movement Count',
+        'Rule 1: Muscle Repetition (Pass)',
+        'Rule 1: Max Overlap %',
+        'Rule 1: Failed Pairs',
+        'Rule 2: Family Balance (Pass)',
+        'Rule 2: Max Family %',
+        'Rule 2: Overrepresented Families',
+        'Rule 3: Repertoire Coverage (Pass)',
+        'Rule 3: Unique Movements',
+        'Rule 3: Stalest Movement (Days)',
+        'Overall Pass',
+        'Quality Score'
+      ].join(',');
+
+      const rows = logs.map((log: any) => [
+        log.user_email || 'Unknown',
+        log.id,
+        log.generated_at,
+        log.difficulty_level,
+        log.movement_count,
+        log.rule1_muscle_repetition_pass ? 'PASS' : 'FAIL',
+        log.rule1_max_consecutive_overlap_pct || '',
+        log.rule1_failed_pairs ? `"${JSON.stringify(log.rule1_failed_pairs).replace(/"/g, '""')}"` : '',
+        log.rule2_family_balance_pass ? 'PASS' : 'FAIL',
+        log.rule2_max_family_pct || '',
+        log.rule2_overrepresented_families ? `"${JSON.stringify(log.rule2_overrepresented_families).replace(/"/g, '""')}"` : '',
+        log.rule3_repertoire_coverage_pass ? 'PASS' : 'FAIL',
+        log.rule3_unique_movements_count || '',
+        log.rule3_stalest_movement_days || '',
+        log.overall_pass ? 'PASS' : 'FAIL',
+        log.quality_score || ''
+      ].join(','));
+
+      const csv = [headers, ...rows].join('\n');
+
+      // Download CSV file
+      const dataBlob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `quality-tracking-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setPreferencesSuccess('Quality tracking data exported as CSV');
+      setTimeout(() => setPreferencesSuccess(''), 5000);
+    } catch (error: any) {
+      setQualityTrendsError(error.response?.data?.detail || 'Failed to export CSV');
+    } finally {
+      setQualityTrendsLoading(false);
     }
   };
 
@@ -896,22 +1032,26 @@ export function Settings() {
         )}
       </div>
 
-      {/* Developer Tools */}
-      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
-        <button
-          onClick={() => toggleSection('developer')}
-          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Wrench className="w-6 h-6 text-burgundy" />
-            <h2 className="text-xl font-semibold text-cream">Developer Tools</h2>
-          </div>
-          {expandedSections.developer ? (
-            <ChevronUp className="w-5 h-5 text-cream/60" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-cream/60" />
-          )}
-        </button>
+      {/* Developer Tools - Admin Only */}
+      {user?.is_admin && (
+        <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
+          <button
+            onClick={() => toggleSection('developer')}
+            className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Wrench className="w-6 h-6 text-burgundy" />
+              <h2 className="text-xl font-semibold text-cream flex items-center gap-2">
+                Developer Tools
+                <span className="text-xs bg-burgundy px-2 py-0.5 rounded text-cream/90">Admin Only</span>
+              </h2>
+            </div>
+            {expandedSections.developer ? (
+              <ChevronUp className="w-5 h-5 text-cream/60" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-cream/60" />
+            )}
+          </button>
 
         {expandedSections.developer && (
           <div className="px-6 pb-6">
@@ -960,6 +1100,269 @@ export function Settings() {
               </button>
             </div>
 
+            {/* Creators vs Performers Report */}
+            <div className="mb-6 p-4 bg-burgundy/10 rounded-lg border border-burgundy/20">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-cream mb-2">Creators vs Performers Report</h3>
+                  <p className="text-cream/60 text-sm mb-3">
+                    View analytics comparing users who create classes vs those who actually perform them (qualified plays {'>'}  120 seconds):
+                  </p>
+                  <ul className="text-cream/60 text-xs space-y-1 list-disc list-inside mb-3">
+                    <li>Total users by category (creators-only, performers-only, both)</li>
+                    <li>Engagement rates and conversion metrics</li>
+                    <li>Historical time series data</li>
+                    <li>Play session qualification threshold: 120 seconds</li>
+                  </ul>
+                </div>
+              </div>
+
+              {creatorsReportError && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-3">
+                  <p className="text-sm text-red-700">{creatorsReportError}</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleViewCreatorsReport}
+                disabled={creatorsReportLoading}
+                className="w-full flex items-center justify-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-3 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+              >
+                <Database className="w-5 h-5" />
+                {creatorsReportLoading ? 'Loading Report...' : 'View Report'}
+              </button>
+
+              {creatorsReportData && (
+                <div className="mt-4 p-4 bg-charcoal rounded border border-cream/20">
+                  <h4 className="text-md font-semibold text-cream mb-3">Report Summary</h4>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-burgundy/20 p-3 rounded">
+                      <p className="text-xs text-cream/60 mb-1">Total Users</p>
+                      <p className="text-2xl font-bold text-cream">{creatorsReportData.total_users}</p>
+                    </div>
+                    <div className="bg-burgundy/20 p-3 rounded">
+                      <p className="text-xs text-cream/60 mb-1">Creators Only</p>
+                      <p className="text-2xl font-bold text-cream">{creatorsReportData.creators_only}</p>
+                      <p className="text-xs text-cream/50 mt-1">Create but never play</p>
+                    </div>
+                    <div className="bg-burgundy/20 p-3 rounded">
+                      <p className="text-xs text-cream/60 mb-1">Performers Only</p>
+                      <p className="text-2xl font-bold text-cream">{creatorsReportData.performers_only}</p>
+                      <p className="text-xs text-cream/50 mt-1">Play but never create</p>
+                    </div>
+                    <div className="bg-burgundy/20 p-3 rounded">
+                      <p className="text-xs text-cream/60 mb-1">Both Create & Perform</p>
+                      <p className="text-2xl font-bold text-cream">{creatorsReportData.both}</p>
+                      <p className="text-xs text-cream/50 mt-1">Full engagement</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-green-900/20 p-3 rounded border border-green-500/30">
+                      <p className="text-xs text-green-400 mb-1">Creator Engagement Rate</p>
+                      <p className="text-xl font-bold text-green-400">{creatorsReportData.creator_engagement_rate.toFixed(1)}%</p>
+                      <p className="text-xs text-cream/50 mt-1">Creators who also perform</p>
+                    </div>
+                    <div className="bg-blue-900/20 p-3 rounded border border-blue-500/30">
+                      <p className="text-xs text-blue-400 mb-1">Performer Creation Rate</p>
+                      <p className="text-xl font-bold text-blue-400">{creatorsReportData.performer_creation_rate.toFixed(1)}%</p>
+                      <p className="text-xs text-cream/50 mt-1">Performers who also create</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quality Tracking Dashboard */}
+            <div className="mb-6 p-4 bg-burgundy/10 rounded-lg border border-burgundy/20">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-cream mb-2">Quality Tracking Dashboard</h3>
+                  <p className="text-cream/60 text-sm mb-3">
+                    Monitor the three golden rules for class quality across your generated classes:
+                  </p>
+                  <ul className="text-cream/60 text-xs space-y-1 list-disc list-inside mb-3">
+                    <li><strong>Rule 1:</strong> Muscle repetition - consecutive movements &lt;50% overlap</li>
+                    <li><strong>Rule 2:</strong> Family balance - no family &gt;40% of class</li>
+                    <li><strong>Rule 3:</strong> Repertoire coverage - full historical lookback</li>
+                  </ul>
+                </div>
+              </div>
+
+              {qualityTrendsError && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-3">
+                  <p className="text-sm text-red-700">{qualityTrendsError}</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleViewQualityTracking}
+                disabled={qualityTrendsLoading}
+                className="w-full flex items-center justify-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-3 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+              >
+                <Database className="w-5 h-5" />
+                {qualityTrendsLoading ? 'Loading Quality Data...' : 'View Quality Tracking'}
+              </button>
+
+              <button
+                onClick={handleDownloadQualityCSV}
+                disabled={qualityTrendsLoading}
+                className="w-full flex items-center justify-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream px-4 py-2 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+              >
+                <Download className="w-4 h-4" />
+                {qualityTrendsLoading ? 'Exporting CSV...' : 'Export Quality Data (CSV)'}
+              </button>
+
+              {qualityTrendsData && (
+                <div className="mt-4 space-y-4">
+                  {/* Overall Summary */}
+                  <div className="p-4 bg-charcoal rounded border border-cream/20">
+                    <h4 className="text-md font-semibold text-cream mb-3">Overall Quality Summary</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-burgundy/20 p-3 rounded">
+                        <p className="text-xs text-cream/60 mb-1">Total Classes Tracked</p>
+                        <p className="text-2xl font-bold text-cream">{qualityTrendsData.total_classes}</p>
+                      </div>
+                      <div className={`p-3 rounded ${qualityTrendsData.overall_pass_rate >= 80 ? 'bg-green-900/20 border border-green-500/30' : 'bg-red-900/20 border border-red-500/30'}`}>
+                        <p className={`text-xs mb-1 ${qualityTrendsData.overall_pass_rate >= 80 ? 'text-green-400' : 'text-red-400'}`}>
+                          Overall Pass Rate
+                        </p>
+                        <p className={`text-2xl font-bold ${qualityTrendsData.overall_pass_rate >= 80 ? 'text-green-400' : 'text-red-400'}`}>
+                          {qualityTrendsData.overall_pass_rate.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rule Pass/Fail Trends */}
+                  <div className="p-4 bg-charcoal rounded border border-cream/20">
+                    <h4 className="text-md font-semibold text-cream mb-3">Pass/Fail Trends (Last 4 Weeks)</h4>
+                    <div className="space-y-4">
+                      {/* Rule 1 */}
+                      <div>
+                        <h5 className="text-sm font-semibold text-cream mb-2">Rule 1: Muscle Repetition</h5>
+                        <div className="grid grid-cols-4 gap-2">
+                          {qualityTrendsData.period_labels.map((label: string, idx: number) => (
+                            <div key={idx} className="bg-burgundy/10 p-2 rounded text-center">
+                              <p className="text-xs text-cream/60 mb-1">{label}</p>
+                              <p className="text-lg font-bold text-green-400">
+                                {qualityTrendsData.rule1_pass_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Pass</p>
+                              <p className="text-lg font-bold text-red-400">
+                                {qualityTrendsData.rule1_fail_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Fail</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Rule 2 */}
+                      <div>
+                        <h5 className="text-sm font-semibold text-cream mb-2">Rule 2: Family Balance</h5>
+                        <div className="grid grid-cols-4 gap-2">
+                          {qualityTrendsData.period_labels.map((label: string, idx: number) => (
+                            <div key={idx} className="bg-burgundy/10 p-2 rounded text-center">
+                              <p className="text-xs text-cream/60 mb-1">{label}</p>
+                              <p className="text-lg font-bold text-green-400">
+                                {qualityTrendsData.rule2_pass_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Pass</p>
+                              <p className="text-lg font-bold text-red-400">
+                                {qualityTrendsData.rule2_fail_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Fail</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Rule 3 */}
+                      <div>
+                        <h5 className="text-sm font-semibold text-cream mb-2">Rule 3: Repertoire Coverage</h5>
+                        <div className="grid grid-cols-4 gap-2">
+                          {qualityTrendsData.period_labels.map((label: string, idx: number) => (
+                            <div key={idx} className="bg-burgundy/10 p-2 rounded text-center">
+                              <p className="text-xs text-cream/60 mb-1">{label}</p>
+                              <p className="text-lg font-bold text-green-400">
+                                {qualityTrendsData.rule3_pass_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Pass</p>
+                              <p className="text-lg font-bold text-red-400">
+                                {qualityTrendsData.rule3_fail_counts[idx]}
+                              </p>
+                              <p className="text-xs text-cream/50">Fail</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent Quality Logs */}
+                  {qualityLogsData.length > 0 && (
+                    <div className="p-4 bg-charcoal rounded border border-cream/20">
+                      <h4 className="text-md font-semibold text-cream mb-3">Recent Classes (Last 10)</h4>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-burgundy/20">
+                            <tr>
+                              <th className="text-left p-2 text-cream">Date</th>
+                              <th className="text-left p-2 text-cream">Difficulty</th>
+                              <th className="text-center p-2 text-cream">Movements</th>
+                              <th className="text-center p-2 text-cream">R1</th>
+                              <th className="text-center p-2 text-cream">R2</th>
+                              <th className="text-center p-2 text-cream">R3</th>
+                              <th className="text-center p-2 text-cream">Overall</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {qualityLogsData.map((log: any) => (
+                              <tr key={log.id} className="border-b border-cream/10">
+                                <td className="p-2 text-cream/70 text-xs">
+                                  {new Date(log.generated_at).toLocaleDateString()}
+                                </td>
+                                <td className="p-2 text-cream/70 text-xs">{log.difficulty_level}</td>
+                                <td className="p-2 text-center text-cream/70 text-xs">{log.movement_count}</td>
+                                <td className="p-2 text-center">
+                                  {log.rule1_muscle_repetition_pass ? (
+                                    <span className="text-green-400 font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-red-400 font-bold">✗</span>
+                                  )}
+                                </td>
+                                <td className="p-2 text-center">
+                                  {log.rule2_family_balance_pass ? (
+                                    <span className="text-green-400 font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-red-400 font-bold">✗</span>
+                                  )}
+                                </td>
+                                <td className="p-2 text-center">
+                                  {log.rule3_repertoire_coverage_pass ? (
+                                    <span className="text-green-400 font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-red-400 font-bold">✗</span>
+                                  )}
+                                </td>
+                                <td className="p-2 text-center">
+                                  {log.overall_pass ? (
+                                    <span className="text-green-400 font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-red-400 font-bold">✗</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <DebugPanel />
             <div className="mt-6">
               <RecordingModeManager />
@@ -967,6 +1370,8 @@ export function Settings() {
           </div>
         )}
       </div>
+      )}
+
 
       {/* Beta Tester Feedback Link */}
       <div className="my-8 text-center">
