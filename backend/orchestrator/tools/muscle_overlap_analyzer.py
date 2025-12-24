@@ -374,10 +374,11 @@ def _check_historical_muscle_balance(
         Dict with historical balance analysis, or None if no data
     """
     try:
-        # Query movements_usage table for ALL user history (no time limit)
+        # Query movement_usage table for ALL user history (no time limit)
+        # FIXED: Changed 'movements_usage' (plural) to 'movement_usage' (singular) - table name was wrong!
         from datetime import datetime, timedelta
 
-        response = supabase_client.table('movements_usage') \
+        response = supabase_client.table('movement_usage') \
             .select('movement_id, movement_name, used_at') \
             .eq('user_id', user_id) \
             .order('used_at', desc=True) \
