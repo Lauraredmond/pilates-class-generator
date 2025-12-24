@@ -994,7 +994,7 @@ export function Settings() {
                 <div>
                   <h3 className="text-lg font-semibold text-cream mb-2">Creators vs Performers Report</h3>
                   <p className="text-cream/60 text-sm mb-3">
-                    View analytics comparing users who create classes vs those who actually perform them (qualified plays > 120 seconds):
+                    View analytics comparing users who create classes vs those who actually perform them (qualified plays {'>'}  120 seconds):
                   </p>
                   <ul className="text-cream/60 text-xs space-y-1 list-disc list-inside mb-3">
                     <li>Total users by category (creators-only, performers-only, both)</li>
