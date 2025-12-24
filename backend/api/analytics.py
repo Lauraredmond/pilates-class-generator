@@ -2283,3 +2283,214 @@ async def get_creators_vs_performers_report(
     except Exception as e:
         logger.error(f"Error generating creators vs performers report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+# ==============================================================================
+# QUALITY TRACKING ANALYTICS - Developer Tools (December 24, 2025)
+# ==============================================================================
+
+class QualityTrendData(BaseModel):
+    """
+    Quality tracking trend data for the three golden rules
+
+    Shows pass/fail counts over time periods for each rule
+    """
+    period_labels: List[str] = Field(
+        ...,
+        description="Time period labels (e.g., 'Week 1', 'Week 2')",
+        example=["Week 1", "Week 2", "Week 3", "Week 4"]
+    )
+    rule1_pass_counts: List[int] = Field(
+        ...,
+        description="Number of classes that passed Rule 1 (muscle repetition) per period"
+    )
+    rule1_fail_counts: List[int] = Field(
+        ...,
+        description="Number of classes that failed Rule 1 per period"
+    )
+    rule2_pass_counts: List[int] = Field(
+        ...,
+        description="Number of classes that passed Rule 2 (family balance) per period"
+    )
+    rule2_fail_counts: List[int] = Field(
+        ...,
+        description="Number of classes that failed Rule 2 per period"
+    )
+    rule3_pass_counts: List[int] = Field(
+        ...,
+        description="Number of classes that passed Rule 3 (repertoire coverage) per period"
+    )
+    rule3_fail_counts: List[int] = Field(
+        ...,
+        description="Number of classes that failed Rule 3 per period"
+    )
+    overall_pass_rate: float = Field(
+        ...,
+        description="Overall pass rate percentage across all periods"
+    )
+    total_classes: int = Field(
+        ...,
+        description="Total number of classes tracked"
+    )
+
+
+class QualityLogEntry(BaseModel):
+    """Single quality log entry with full rule compliance details"""
+    id: str
+    generated_at: str
+    difficulty_level: str
+    movement_count: int
+
+    # Rule 1: Muscle repetition
+    rule1_muscle_repetition_pass: bool
+    rule1_max_consecutive_overlap_pct: Optional[float] = None
+    rule1_failed_pairs: Optional[dict] = None
+
+    # Rule 2: Family balance
+    rule2_family_balance_pass: bool
+    rule2_max_family_pct: Optional[float] = None
+    rule2_overrepresented_families: Optional[dict] = None
+
+    # Rule 3: Repertoire coverage
+    rule3_repertoire_coverage_pass: bool
+    rule3_unique_movements_count: Optional[int] = None
+    rule3_stalest_movement_days: Optional[int] = None
+
+    # Overall
+    overall_pass: bool
+    quality_score: Optional[float] = None
+
+
+@router.get("/quality-trends/{user_id}", response_model=QualityTrendData)
+async def get_quality_trends(
+    user_id: str,
+    period: TimePeriod = Query(default=TimePeriod.WEEK)
+):
+    """
+    Get quality tracking trends for the three golden rules
+
+    Returns pass/fail counts per period for visualization in Developer Tools dashboard
+
+    **Three Golden Rules:**
+    - Rule 1: Don't repeat muscle usage (consecutive movements < 50% overlap)
+    - Rule 2: Don't overuse movement families (no family > 40%)
+    - Rule 3: Historical repertoire coverage (full lookback on all movements)
+    """
+    try:
+        user_uuid = _convert_to_uuid(user_id)
+
+        # Get date ranges and labels
+        date_ranges, period_labels = _get_date_ranges(period)
+
+        # Initialize counts for all periods
+        rule1_pass = [0] * len(date_ranges)
+        rule1_fail = [0] * len(date_ranges)
+        rule2_pass = [0] * len(date_ranges)
+        rule2_fail = [0] * len(date_ranges)
+        rule3_pass = [0] * len(date_ranges)
+        rule3_fail = [0] * len(date_ranges)
+
+        # Fetch quality logs
+        earliest_date = date_ranges[0][0]
+        response = supabase.table('class_quality_log') \
+            .select('*') \
+            .eq('user_id', user_uuid) \
+            .gte('generated_at', earliest_date.isoformat()) \
+            .execute()
+
+        logs = response.data or []
+        total_classes = len(logs)
+        total_overall_pass = 0
+
+        # Aggregate counts per period
+        for log in logs:
+            generated_at_str = log.get('generated_at')
+            if not generated_at_str:
+                continue
+
+            try:
+                generated_date = datetime.fromisoformat(generated_at_str).date()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid generated_at in quality_trends: {generated_at_str}")
+                continue
+
+            # Find which period this log belongs to
+            for period_idx, (start_date, end_date) in enumerate(date_ranges):
+                if start_date <= generated_date <= end_date:
+                    # Rule 1 counts
+                    if log.get('rule1_muscle_repetition_pass'):
+                        rule1_pass[period_idx] += 1
+                    else:
+                        rule1_fail[period_idx] += 1
+
+                    # Rule 2 counts
+                    if log.get('rule2_family_balance_pass'):
+                        rule2_pass[period_idx] += 1
+                    else:
+                        rule2_fail[period_idx] += 1
+
+                    # Rule 3 counts
+                    if log.get('rule3_repertoire_coverage_pass'):
+                        rule3_pass[period_idx] += 1
+                    else:
+                        rule3_fail[period_idx] += 1
+
+                    # Overall pass rate
+                    if log.get('overall_pass'):
+                        total_overall_pass += 1
+
+                    break
+
+        # Calculate overall pass rate
+        overall_pass_rate = (total_overall_pass / total_classes * 100) if total_classes > 0 else 0.0
+
+        return QualityTrendData(
+            period_labels=period_labels,
+            rule1_pass_counts=rule1_pass,
+            rule1_fail_counts=rule1_fail,
+            rule2_pass_counts=rule2_pass,
+            rule2_fail_counts=rule2_fail,
+            rule3_pass_counts=rule3_pass,
+            rule3_fail_counts=rule3_fail,
+            overall_pass_rate=round(overall_pass_rate, 2),
+            total_classes=total_classes
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching quality trends for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/quality-logs/{user_id}", response_model=List[QualityLogEntry])
+async def get_quality_logs(
+    user_id: str,
+    limit: int = Query(default=20, ge=1, le=100, description="Maximum number of logs to return")
+):
+    """
+    Get detailed quality log entries for recent classes
+
+    Returns full rule compliance details including:
+    - Pass/fail status for each of the three golden rules
+    - Specific failure information (failed pairs, overrepresented families, etc.)
+    - Quality scores and metrics
+
+    Used in Developer Tools dashboard to show detailed quality history
+    """
+    try:
+        user_uuid = _convert_to_uuid(user_id)
+
+        # Fetch recent quality logs
+        response = supabase.table('class_quality_log') \
+            .select('*') \
+            .eq('user_id', user_uuid) \
+            .order('generated_at', desc=True) \
+            .limit(limit) \
+            .execute()
+
+        logs = response.data or []
+
+        return [QualityLogEntry(**log) for log in logs]
+
+    except Exception as e:
+        logger.error(f"Error fetching quality logs for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
