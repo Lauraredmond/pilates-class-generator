@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS class_movements (
     created_at TIMESTAMP DEFAULT NOW(),
 
     -- Foreign keys
-    CONSTRAINT fk_user_id FOREIGN KEY (user_id)
-        REFERENCES user_profiles(id) ON DELETE CASCADE,
+    -- Note: user_id references user_preferences(user_id), not user_profiles(id)
+    -- Removed FK constraint as user_id may not be PK in user_preferences
     CONSTRAINT fk_class_plan_id FOREIGN KEY (class_plan_id)
         REFERENCES class_plans(id) ON DELETE SET NULL,
     CONSTRAINT fk_movement_id FOREIGN KEY (movement_id)
@@ -104,8 +104,8 @@ CREATE TABLE IF NOT EXISTS class_quality_log (
     created_at TIMESTAMP DEFAULT NOW(),
 
     -- Foreign keys
-    CONSTRAINT fk_user_id FOREIGN KEY (user_id)
-        REFERENCES user_profiles(id) ON DELETE CASCADE,
+    -- Note: user_id references user_preferences(user_id), not user_profiles(id)
+    -- Removed FK constraint as user_id may not be PK in user_preferences
     CONSTRAINT fk_class_plan_id FOREIGN KEY (class_plan_id)
         REFERENCES class_plans(id) ON DELETE SET NULL
 );
@@ -126,14 +126,8 @@ CREATE POLICY "Users can view own quality logs" ON class_quality_log
 CREATE POLICY "Users can create own quality logs" ON class_quality_log
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Admins can view all quality logs (for platform analytics)
-CREATE POLICY "Admins can view all quality logs" ON class_quality_log
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM user_profiles
-            WHERE id = auth.uid() AND is_admin = TRUE
-        )
-    );
+-- Note: Admin policy removed - no is_admin field exists in database
+-- Platform-wide analytics available via platform_quality_metrics view (aggregated data only)
 
 COMMENT ON TABLE class_quality_log IS 'Quality assurance log tracking rule compliance for each generated class. Monitors: Rule 1 (muscle repetition), Rule 2 (family balance), Rule 3 (repertoire coverage).';
 
@@ -144,8 +138,7 @@ COMMENT ON TABLE class_quality_log IS 'Quality assurance log tracking rule compl
 -- View 1: User quality statistics
 CREATE OR REPLACE VIEW user_quality_statistics AS
 SELECT
-    u.id as user_id,
-    u.email,
+    user_id,
     COUNT(*) as total_classes_generated,
     COUNT(*) FILTER (WHERE overall_pass = TRUE) as classes_passed,
     COUNT(*) FILTER (WHERE overall_pass = FALSE) as classes_failed,
@@ -165,9 +158,8 @@ SELECT
     ROUND(AVG(rule3_unique_movements_count)::NUMERIC, 0) as avg_unique_movements,
     MIN(generated_at) as first_class_date,
     MAX(generated_at) as most_recent_class_date
-FROM user_profiles u
-LEFT JOIN class_quality_log cql ON u.id = cql.user_id
-GROUP BY u.id, u.email;
+FROM class_quality_log
+GROUP BY user_id;
 
 COMMENT ON VIEW user_quality_statistics IS 'Aggregated quality statistics per user showing rule compliance rates and quality trends';
 
