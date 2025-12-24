@@ -421,6 +421,80 @@ export function Settings() {
     }
   };
 
+  const handleDownloadQualityCSV = async () => {
+    setQualityTrendsLoading(true);
+    setQualityTrendsError('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+
+      // Fetch ALL quality logs (not just 10 for display)
+      const response = await axios.get(
+        `${API_BASE_URL}/api/analytics/quality-logs/${user?.id}?limit=100`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const logs = response.data;
+
+      // Convert to CSV format
+      const headers = [
+        'ID',
+        'Generated At',
+        'Difficulty Level',
+        'Movement Count',
+        'Rule 1: Muscle Repetition (Pass)',
+        'Rule 1: Max Overlap %',
+        'Rule 1: Failed Pairs',
+        'Rule 2: Family Balance (Pass)',
+        'Rule 2: Max Family %',
+        'Rule 2: Overrepresented Families',
+        'Rule 3: Repertoire Coverage (Pass)',
+        'Rule 3: Unique Movements',
+        'Rule 3: Stalest Movement (Days)',
+        'Overall Pass',
+        'Quality Score'
+      ].join(',');
+
+      const rows = logs.map((log: any) => [
+        log.id,
+        log.generated_at,
+        log.difficulty_level,
+        log.movement_count,
+        log.rule1_muscle_repetition_pass ? 'PASS' : 'FAIL',
+        log.rule1_max_consecutive_overlap_pct || '',
+        log.rule1_failed_pairs ? `"${JSON.stringify(log.rule1_failed_pairs).replace(/"/g, '""')}"` : '',
+        log.rule2_family_balance_pass ? 'PASS' : 'FAIL',
+        log.rule2_max_family_pct || '',
+        log.rule2_overrepresented_families ? `"${JSON.stringify(log.rule2_overrepresented_families).replace(/"/g, '""')}"` : '',
+        log.rule3_repertoire_coverage_pass ? 'PASS' : 'FAIL',
+        log.rule3_unique_movements_count || '',
+        log.rule3_stalest_movement_days || '',
+        log.overall_pass ? 'PASS' : 'FAIL',
+        log.quality_score || ''
+      ].join(','));
+
+      const csv = [headers, ...rows].join('\n');
+
+      // Download CSV file
+      const dataBlob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `quality-tracking-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setPreferencesSuccess('Quality tracking data exported as CSV');
+      setTimeout(() => setPreferencesSuccess(''), 5000);
+    } catch (error: any) {
+      setQualityTrendsError(error.response?.data?.detail || 'Failed to export CSV');
+    } finally {
+      setQualityTrendsLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold text-cream mb-6">Settings</h1>
@@ -1125,6 +1199,15 @@ export function Settings() {
               >
                 <Database className="w-5 h-5" />
                 {qualityTrendsLoading ? 'Loading Quality Data...' : 'View Quality Tracking'}
+              </button>
+
+              <button
+                onClick={handleDownloadQualityCSV}
+                disabled={qualityTrendsLoading}
+                className="w-full flex items-center justify-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream px-4 py-2 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+              >
+                <Download className="w-4 h-4" />
+                {qualityTrendsLoading ? 'Exporting CSV...' : 'Export Quality Data (CSV)'}
               </button>
 
               {qualityTrendsData && (
