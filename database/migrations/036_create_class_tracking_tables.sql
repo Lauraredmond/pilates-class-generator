@@ -8,13 +8,22 @@
 BEGIN;
 
 -- ============================================================================
+-- IMPORTANT: Drop existing class_movements table if it exists
+-- ============================================================================
+-- The existing table has a different structure (no user_id column)
+-- We need to recreate it with the correct schema for quality tracking
+-- ----------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS class_movements CASCADE;
+
+-- ============================================================================
 -- Table 1: class_movements
 -- ============================================================================
 -- Purpose: Track which movements were used in which classes (historical usage)
 -- Enables: "Ensure full movement repertoire coverage over time" (Rule 3)
 -- ----------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS class_movements (
+CREATE TABLE class_movements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     class_plan_id UUID,  -- Nullable in case class was deleted
@@ -65,7 +74,7 @@ COMMENT ON TABLE class_movements IS 'Tracks which movements appeared in which cl
 -- Enables: Quality tracking, continuous improvement, rule enforcement monitoring
 -- ----------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS class_quality_log (
+CREATE TABLE class_quality_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     class_plan_id UUID,  -- Nullable in case class was deleted
