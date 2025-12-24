@@ -14,7 +14,7 @@ import { useAudioDucking } from '../../hooks/useAudioDucking';
 import { useAuth } from '../../context/AuthContext';
 import { logger } from '../../utils/logger';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://pilates-class-generator-api3.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://pilates-class-generator-api3.onrender.com';
 
 // Music API type definitions
 interface MusicTrack {
