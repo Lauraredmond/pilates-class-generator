@@ -56,6 +56,19 @@ supabase_key = os.getenv('SUPABASE_KEY')
 if not supabase_url or not supabase_key:
     raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in .env file")
 
+# STARTUP LOG: Verify which Supabase we're connecting to
+logger.info("=" * 80)
+logger.info("🔧 SUPABASE CONNECTION")
+logger.info("=" * 80)
+logger.info(f"📍 SUPABASE_URL: {supabase_url}")
+if 'lixvcebtwusmaipodcpc' in supabase_url:
+    logger.warning("⚠️  WARNING: Connected to PRODUCTION Supabase!")
+elif 'gntqrebxmpdjyuxztwww' in supabase_url:
+    logger.info("✅ Connected to DEV Supabase")
+else:
+    logger.warning(f"⚠️  WARNING: Unknown Supabase project: {supabase_url}")
+logger.info("=" * 80)
+
 supabase: Client = create_client(supabase_url, supabase_key)
 
 router = APIRouter()
