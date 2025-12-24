@@ -91,6 +91,73 @@ class MovementFamilyDistributionData(BaseModel):
     percentages: List[float]
 
 
+# ==============================================================================
+# PLAY SESSION TRACKING MODELS - December 24, 2025
+# ==============================================================================
+
+class PlaySessionStart(BaseModel):
+    """Request to start a new play session"""
+    user_id: str
+    class_plan_id: Optional[str] = None
+    playback_source: str = Field(..., description="'library', 'generated', 'shared', or 'preview'")
+    device_info: Optional[dict] = None
+
+
+class PlaySessionHeartbeat(BaseModel):
+    """Request to update play session duration"""
+    duration_seconds: int
+    current_section_index: Optional[int] = None
+    pause_count: Optional[int] = None
+    skip_count: Optional[int] = None
+    rewind_count: Optional[int] = None
+
+
+class PlaySessionEnd(BaseModel):
+    """Request to end a play session"""
+    duration_seconds: int
+    was_completed: bool = False
+    max_section_reached: Optional[int] = None
+
+
+class PlaySessionResponse(BaseModel):
+    """Response after creating/updating play session"""
+    session_id: str
+    user_id: str
+    class_plan_id: Optional[str] = None
+    started_at: str
+    duration_seconds: int
+    is_qualified_play: bool
+    was_completed: bool
+
+
+class UserPlayStatistics(BaseModel):
+    """Aggregated play statistics for a user"""
+    user_id: str
+    email: str
+    total_sessions: int
+    qualified_plays: int
+    completed_classes: int
+    unique_classes_played: int
+    total_play_seconds: int
+    avg_play_seconds: float
+    longest_session_seconds: int
+    first_play_date: Optional[str] = None
+    last_play_date: Optional[str] = None
+    avg_pauses_per_session: float
+    completion_rate_percentage: float
+
+
+class CreatorsVsPerformersReport(BaseModel):
+    """Admin-only report comparing class creators vs performers"""
+    total_users: int
+    creators_only: int  # Created classes but never played >120s
+    performers_only: int  # Played classes >120s but never created
+    both: int  # Both create and perform
+    creator_engagement_rate: float  # % of creators who also perform
+    performer_creation_rate: float  # % of performers who also create
+    time_series: List[dict]  # Historical data by period
+
+
 # Helper functions
 def _convert_to_uuid(user_id: str) -> str:
     """Convert any user_id string to a valid UUID format"""
@@ -1915,4 +1982,542 @@ async def get_class_duration_distribution(
 
     except Exception as e:
         logger.error(f"Error fetching class duration distribution for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+# ==============================================================================
+# PLAY SESSION TRACKING - December 24, 2025
+# ==============================================================================
+
+@router.post("/play-session/start", response_model=PlaySessionResponse)
+async def start_play_session(data: PlaySessionStart):
+    """
+    Start a new play session when user begins playing a class
+
+    Returns session_id that should be used for heartbeat and end calls
+    """
+    try:
+        user_uuid = _convert_to_uuid(data.user_id)
+
+        # Create new session record
+        session_data = {
+            'user_id': user_uuid,
+            'class_plan_id': data.class_plan_id,
+            'playback_source': data.playback_source,
+            'device_info': data.device_info or {},
+            'duration_seconds': 0,
+            'is_qualified_play': False,  # Will be set to True by trigger when duration > 120
+            'was_completed': False
+        }
+
+        response = supabase.table('class_play_sessions').insert(session_data).execute()
+
+        if not response.data:
+            raise HTTPException(status_code=500, detail="Failed to create play session")
+
+        session = response.data[0]
+
+        return PlaySessionResponse(
+            session_id=session['id'],
+            user_id=session['user_id'],
+            class_plan_id=session.get('class_plan_id'),
+            started_at=session['started_at'],
+            duration_seconds=session['duration_seconds'],
+            is_qualified_play=session['is_qualified_play'],
+            was_completed=session['was_completed']
+        )
+
+    except Exception as e:
+        logger.error(f"Error starting play session: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.put("/play-session/{session_id}/heartbeat", response_model=PlaySessionResponse)
+async def update_play_session_heartbeat(session_id: str, data: PlaySessionHeartbeat):
+    """
+    Update play session with current duration and metrics
+
+    Call this every 30 seconds during playback to track duration
+    The database trigger will automatically set is_qualified_play=True when duration > 120
+    """
+    try:
+        # Prepare update data
+        update_data = {
+            'duration_seconds': data.duration_seconds,
+            'updated_at': datetime.now().isoformat()
+        }
+
+        if data.current_section_index is not None:
+            update_data['current_section_index'] = data.current_section_index
+
+        if data.pause_count is not None:
+            update_data['pause_count'] = data.pause_count
+
+        if data.skip_count is not None:
+            update_data['skip_count'] = data.skip_count
+
+        if data.rewind_count is not None:
+            update_data['rewind_count'] = data.rewind_count
+
+        # Update session
+        response = supabase.table('class_play_sessions') \
+            .update(update_data) \
+            .eq('id', session_id) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Play session not found")
+
+        session = response.data[0]
+
+        return PlaySessionResponse(
+            session_id=session['id'],
+            user_id=session['user_id'],
+            class_plan_id=session.get('class_plan_id'),
+            started_at=session['started_at'],
+            duration_seconds=session['duration_seconds'],
+            is_qualified_play=session['is_qualified_play'],
+            was_completed=session['was_completed']
+        )
+
+    except Exception as e:
+        logger.error(f"Error updating play session heartbeat: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.put("/play-session/{session_id}/end", response_model=PlaySessionResponse)
+async def end_play_session(session_id: str, data: PlaySessionEnd):
+    """
+    End a play session when user stops/completes playback
+
+    Sets final duration, completion status, and ended_at timestamp
+    """
+    try:
+        update_data = {
+            'duration_seconds': data.duration_seconds,
+            'was_completed': data.was_completed,
+            'ended_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat()
+        }
+
+        if data.max_section_reached is not None:
+            update_data['max_section_reached'] = data.max_section_reached
+
+        # Update session
+        response = supabase.table('class_play_sessions') \
+            .update(update_data) \
+            .eq('id', session_id) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Play session not found")
+
+        session = response.data[0]
+
+        return PlaySessionResponse(
+            session_id=session['id'],
+            user_id=session['user_id'],
+            class_plan_id=session.get('class_plan_id'),
+            started_at=session['started_at'],
+            duration_seconds=session['duration_seconds'],
+            is_qualified_play=session['is_qualified_play'],
+            was_completed=session['was_completed']
+        )
+
+    except Exception as e:
+        logger.error(f"Error ending play session: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/user/{user_id}/play-statistics", response_model=UserPlayStatistics)
+async def get_user_play_statistics(user_id: str):
+    """
+    Get aggregated play statistics for a user
+
+    Uses the user_play_statistics database view for efficient querying
+    Shows total sessions, qualified plays (>120s), completion rate, etc.
+    """
+    try:
+        user_uuid = _convert_to_uuid(user_id)
+
+        # Query the database view
+        response = supabase.table('user_play_statistics') \
+            .select('*') \
+            .eq('user_id', user_uuid) \
+            .execute()
+
+        if not response.data or len(response.data) == 0:
+            # Return zero stats if no play history
+            return UserPlayStatistics(
+                user_id=user_uuid,
+                email="unknown",
+                total_sessions=0,
+                qualified_plays=0,
+                completed_classes=0,
+                unique_classes_played=0,
+                total_play_seconds=0,
+                avg_play_seconds=0.0,
+                longest_session_seconds=0,
+                first_play_date=None,
+                last_play_date=None,
+                avg_pauses_per_session=0.0,
+                completion_rate_percentage=0.0
+            )
+
+        stats = response.data[0]
+
+        return UserPlayStatistics(
+            user_id=stats['user_id'],
+            email=stats['email'],
+            total_sessions=stats['total_sessions'],
+            qualified_plays=stats['qualified_plays'],
+            completed_classes=stats['completed_classes'],
+            unique_classes_played=stats['unique_classes_played'],
+            total_play_seconds=stats['total_play_seconds'],
+            avg_play_seconds=float(stats['avg_play_seconds']),
+            longest_session_seconds=stats['longest_session_seconds'],
+            first_play_date=stats.get('first_play_date'),
+            last_play_date=stats.get('last_play_date'),
+            avg_pauses_per_session=float(stats['avg_pauses_per_session']),
+            completion_rate_percentage=float(stats['completion_rate_percentage'])
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching user play statistics: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/admin/creators-vs-performers", response_model=CreatorsVsPerformersReport)
+async def get_creators_vs_performers_report(
+    admin_user_id: str = Query(..., description="Admin user ID for authorization"),
+    period: TimePeriod = Query(default=TimePeriod.MONTH, description="Time period for historical data")
+):
+    """
+    Get admin-only report comparing class creators vs class performers (admin only)
+
+    Shows:
+    - How many users only create classes but never play them
+    - How many users only play classes but never create them
+    - How many users both create and perform classes
+    - Historical trends over time
+
+    **Admin Authorization Required**
+    """
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    try:
+        # Get all users
+        all_users_response = supabase.table('user_profiles') \
+            .select('id, email') \
+            .execute()
+
+        all_users = all_users_response.data or []
+        total_users = len(all_users)
+
+        # Get users who have created classes
+        creators_response = supabase.table('class_plans') \
+            .select('user_id') \
+            .execute()
+
+        creator_user_ids = set(record['user_id'] for record in (creators_response.data or []))
+
+        # Get users who have qualified plays (>120 seconds)
+        performers_response = supabase.table('class_play_sessions') \
+            .select('user_id') \
+            .eq('is_qualified_play', True) \
+            .execute()
+
+        performer_user_ids = set(record['user_id'] for record in (performers_response.data or []))
+
+        # Calculate categories
+        creators_only = creator_user_ids - performer_user_ids
+        performers_only = performer_user_ids - creator_user_ids
+        both = creator_user_ids.intersection(performer_user_ids)
+
+        # Calculate engagement rates
+        creator_engagement_rate = (len(both) / len(creator_user_ids) * 100) if creator_user_ids else 0.0
+        performer_creation_rate = (len(both) / len(performer_user_ids) * 100) if performer_user_ids else 0.0
+
+        # Get historical time series data
+        date_ranges, period_labels = _get_date_ranges(period)
+        time_series = []
+
+        for start_date, end_date in date_ranges:
+            # Count creators in this period
+            creators_in_period = supabase.table('class_plans') \
+                .select('user_id', count='exact') \
+                .gte('created_at', start_date.isoformat()) \
+                .lte('created_at', end_date.isoformat()) \
+                .execute()
+
+            # Count performers in this period
+            performers_in_period = supabase.table('class_play_sessions') \
+                .select('user_id', count='exact') \
+                .eq('is_qualified_play', True) \
+                .gte('started_at', start_date.isoformat()) \
+                .lte('started_at', end_date.isoformat()) \
+                .execute()
+
+            creator_count = creators_in_period.count if creators_in_period.count else 0
+            performer_count = performers_in_period.count if performers_in_period.count else 0
+
+            time_series.append({
+                'period': f"{start_date.isoformat()} to {end_date.isoformat()}",
+                'creators': creator_count,
+                'performers': performer_count
+            })
+
+        return CreatorsVsPerformersReport(
+            total_users=total_users,
+            creators_only=len(creators_only),
+            performers_only=len(performers_only),
+            both=len(both),
+            creator_engagement_rate=round(creator_engagement_rate, 2),
+            performer_creation_rate=round(performer_creation_rate, 2),
+            time_series=time_series
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating creators vs performers report: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+# ==============================================================================
+# QUALITY TRACKING ANALYTICS - Developer Tools (December 24, 2025)
+# ==============================================================================
+
+class QualityTrendData(BaseModel):
+    """
+    Quality tracking trend data for the three golden rules
+
+    Shows pass/fail counts over time periods for each rule
+    """
+    period_labels: List[str] = Field(
+        ...,
+        description="Time period labels (e.g., 'Week 1', 'Week 2')",
+        example=["Week 1", "Week 2", "Week 3", "Week 4"]
+    )
+    rule1_pass_counts: List[int] = Field(
+        ...,
+        description="Number of classes that passed Rule 1 (muscle repetition) per period"
+    )
+    rule1_fail_counts: List[int] = Field(
+        ...,
+        description="Number of classes that failed Rule 1 per period"
+    )
+    rule2_pass_counts: List[int] = Field(
+        ...,
+        description="Number of classes that passed Rule 2 (family balance) per period"
+    )
+    rule2_fail_counts: List[int] = Field(
+        ...,
+        description="Number of classes that failed Rule 2 per period"
+    )
+    rule3_pass_counts: List[int] = Field(
+        ...,
+        description="Number of classes that passed Rule 3 (repertoire coverage) per period"
+    )
+    rule3_fail_counts: List[int] = Field(
+        ...,
+        description="Number of classes that failed Rule 3 per period"
+    )
+    overall_pass_rate: float = Field(
+        ...,
+        description="Overall pass rate percentage across all periods"
+    )
+    total_classes: int = Field(
+        ...,
+        description="Total number of classes tracked"
+    )
+
+
+class QualityLogEntry(BaseModel):
+    """Single quality log entry with full rule compliance details"""
+    id: str
+    user_id: str
+    user_email: Optional[str] = None  # User email for admin tracking
+    generated_at: str
+    difficulty_level: str
+    movement_count: int
+
+    # Rule 1: Muscle repetition
+    rule1_muscle_repetition_pass: bool
+    rule1_max_consecutive_overlap_pct: Optional[float] = None
+    rule1_failed_pairs: Optional[Any] = None  # JSON field - Supabase returns as string
+
+    # Rule 2: Family balance
+    rule2_family_balance_pass: bool
+    rule2_max_family_pct: Optional[float] = None
+    rule2_overrepresented_families: Optional[Any] = None  # JSON field - Supabase returns as string
+
+    # Rule 3: Repertoire coverage
+    rule3_repertoire_coverage_pass: bool
+    rule3_unique_movements_count: Optional[int] = None
+    rule3_stalest_movement_days: Optional[int] = None
+
+    # Overall
+    overall_pass: bool
+    quality_score: Optional[float] = None
+
+
+@router.get("/quality-trends", response_model=QualityTrendData)
+async def get_quality_trends(
+    period: TimePeriod = Query(default=TimePeriod.WEEK)
+):
+    """
+    Get quality tracking trends for the three golden rules across ALL users
+
+    Admin-only feature: Shows aggregate pass/fail counts for all users
+    to monitor overall class generation quality across the platform
+
+    Returns pass/fail counts per period for visualization in Developer Tools dashboard
+
+    **Three Golden Rules:**
+    - Rule 1: Don't repeat muscle usage (consecutive movements < 50% overlap)
+    - Rule 2: Don't overuse movement families (no family > 40%)
+    - Rule 3: Historical repertoire coverage (full lookback on all movements)
+    """
+    try:
+        # Get date ranges and labels
+        date_ranges, period_labels = _get_date_ranges(period)
+
+        # Initialize counts for all periods
+        rule1_pass = [0] * len(date_ranges)
+        rule1_fail = [0] * len(date_ranges)
+        rule2_pass = [0] * len(date_ranges)
+        rule2_fail = [0] * len(date_ranges)
+        rule3_pass = [0] * len(date_ranges)
+        rule3_fail = [0] * len(date_ranges)
+
+        # Fetch quality logs for ALL users
+        earliest_date = date_ranges[0][0]
+        response = supabase.table('class_quality_log') \
+            .select('*') \
+            .gte('generated_at', earliest_date.isoformat()) \
+            .execute()
+
+        logs = response.data or []
+        total_classes = len(logs)
+        total_overall_pass = 0
+
+        # Aggregate counts per period
+        for log in logs:
+            generated_at_str = log.get('generated_at')
+            if not generated_at_str:
+                continue
+
+            try:
+                generated_date = datetime.fromisoformat(generated_at_str).date()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid generated_at in quality_trends: {generated_at_str}")
+                continue
+
+            # Find which period this log belongs to
+            for period_idx, (start_date, end_date) in enumerate(date_ranges):
+                if start_date <= generated_date <= end_date:
+                    # Rule 1 counts
+                    if log.get('rule1_muscle_repetition_pass'):
+                        rule1_pass[period_idx] += 1
+                    else:
+                        rule1_fail[period_idx] += 1
+
+                    # Rule 2 counts
+                    if log.get('rule2_family_balance_pass'):
+                        rule2_pass[period_idx] += 1
+                    else:
+                        rule2_fail[period_idx] += 1
+
+                    # Rule 3 counts
+                    if log.get('rule3_repertoire_coverage_pass'):
+                        rule3_pass[period_idx] += 1
+                    else:
+                        rule3_fail[period_idx] += 1
+
+                    # Overall pass rate
+                    if log.get('overall_pass'):
+                        total_overall_pass += 1
+
+                    break
+
+        # Calculate overall pass rate
+        overall_pass_rate = (total_overall_pass / total_classes * 100) if total_classes > 0 else 0.0
+
+        return QualityTrendData(
+            period_labels=period_labels,
+            rule1_pass_counts=rule1_pass,
+            rule1_fail_counts=rule1_fail,
+            rule2_pass_counts=rule2_pass,
+            rule2_fail_counts=rule2_fail,
+            rule3_pass_counts=rule3_pass,
+            rule3_fail_counts=rule3_fail,
+            overall_pass_rate=round(overall_pass_rate, 2),
+            total_classes=total_classes
+        )
+
+    except Exception as e:
+        logger.error("Error fetching quality trends: {}", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/quality-logs", response_model=List[QualityLogEntry])
+async def get_quality_logs(
+    limit: int = Query(default=20, ge=1, le=100, description="Maximum number of logs to return")
+):
+    """
+    Get detailed quality log entries for recent classes across ALL users
+
+    Admin-only feature: Shows all users' class generation quality logs
+    with user email for tracking which user generated each class
+
+    Returns full rule compliance details including:
+    - User email (for admin tracking by user)
+    - Pass/fail status for each of the three golden rules
+    - Specific failure information (failed pairs, overrepresented families, etc.)
+    - Quality scores and metrics
+
+    Used in Developer Tools dashboard to show detailed quality history
+    """
+    try:
+        # Fetch recent quality logs for ALL users
+        response = supabase.table('class_quality_log') \
+            .select('*') \
+            .order('generated_at', desc=True) \
+            .limit(limit) \
+            .execute()
+
+        logs = response.data or []
+
+        # Get unique user_ids from logs
+        user_ids = list(set([log['user_id'] for log in logs if log.get('user_id')]))
+
+        # Fetch user emails for all user_ids in one query
+        user_emails = {}
+        if user_ids:
+            users_response = supabase.table('user_profiles') \
+                .select('id, email') \
+                .in_('id', user_ids) \
+                .execute()
+
+            # Create a mapping of user_id -> email
+            for user in users_response.data or []:
+                user_emails[user['id']] = user['email']
+
+        # Transform to QualityLogEntry format with user_email
+        result = []
+        for log in logs:
+            user_id = log.get('user_id')
+            user_email = user_emails.get(user_id) if user_id else None
+
+            # Create log entry with user_email
+            log_entry = {**log, 'user_email': user_email}
+
+            result.append(QualityLogEntry(**log_entry))
+
+        return result
+
+    except Exception as e:
+        logger.error("Error fetching quality logs: {}", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
