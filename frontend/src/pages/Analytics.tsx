@@ -143,6 +143,29 @@ export function Analytics() {
     fetchAnalytics();
   }, [user, timePeriod]);
 
+  // Auto-refresh when user navigates back to this page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible again - refresh data
+        fetchAnalytics();
+      }
+    };
+
+    const handleFocus = () => {
+      // Window regained focus - refresh data
+      fetchAnalytics();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, timePeriod]);
+
   // Chart configurations
   const lineChartOptions = {
     responsive: true,
@@ -509,22 +532,12 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             Track your teaching progress and gain insights into your class patterns
           </p>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => fetchAnalytics()}
-            disabled={isLoading}
-            className="px-4 py-2 bg-burgundy-dark text-cream rounded-lg hover:bg-burgundy transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Refresh stats to see latest class count"
-          >
-            {isLoading ? 'Refreshing...' : 'Refresh Stats'}
-          </button>
-          <button
-            onClick={handleExportCSV}
-            className="px-4 py-2 bg-burgundy text-cream rounded-lg hover:bg-burgundy-dark transition-colors font-semibold"
-          >
-            Export CSV
-          </button>
-        </div>
+        <button
+          onClick={handleExportCSV}
+          className="px-4 py-2 bg-burgundy text-cream rounded-lg hover:bg-burgundy-dark transition-colors font-semibold"
+        >
+          Export CSV
+        </button>
       </div>
 
       {/* Time Period Filter */}
