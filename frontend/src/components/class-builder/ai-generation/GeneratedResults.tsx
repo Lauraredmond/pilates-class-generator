@@ -74,6 +74,7 @@ export function GeneratedResults({
   isRegenerating = false,
 }: GeneratedResultsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('sequence');
+  const [isAccepting, setIsAccepting] = useState(false);
 
   const tabs: Array<{ id: TabType; label: string; icon: JSX.Element }> = [
     {
@@ -212,7 +213,14 @@ export function GeneratedResults({
             <Button
               variant="primary"
               size="md"
-              onClick={onAccept}
+              onClick={async () => {
+                if (isAccepting) return; // Prevent double-click
+                setIsAccepting(true);
+                await onAccept();
+                // Keep disabled - modal will close anyway
+              }}
+              disabled={isAccepting || isRegenerating}
+              isLoading={isAccepting}
               className="flex-1 flex items-center justify-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,7 +231,7 @@ export function GeneratedResults({
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              <span>Accept & Add to Class</span>
+              <span>{isAccepting ? 'Saving...' : 'Accept & Add to Class'}</span>
             </Button>
           </div>
         </div>
