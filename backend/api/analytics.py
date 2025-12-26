@@ -1836,21 +1836,14 @@ async def get_music_genre_distribution(
             if cooldown_music and cooldown_music in genre_counts:
                 genre_counts[cooldown_music] += 1
 
-        # Sort genres by count (descending) and filter out unused genres
+        # Sort ALL genres by count (descending) - include genres with 0 count
         sorted_genres = sorted(
-            [(genre, count) for genre, count in genre_counts.items() if count > 0],
+            [(genre, count) for genre, count in genre_counts.items()],
             key=lambda x: x[1],
             reverse=True
         )
 
-        # If no genres used yet, return all genres with 0 counts
-        if not sorted_genres:
-            return MusicGenreDistributionData(
-                genres=all_genres,
-                counts=[0] * len(all_genres)
-            )
-
-        # Extract sorted genres and counts
+        # Extract sorted genres and counts (includes all 8 genres, even if 0)
         genres = [item[0] for item in sorted_genres]
         counts = [item[1] for item in sorted_genres]
 
