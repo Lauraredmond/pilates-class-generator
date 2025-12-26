@@ -197,20 +197,9 @@ export function Analytics() {
           color: '#f5f1e8',
           // Mobile-responsive legend labels
           font: {
-            size: window.innerWidth < 768 ? 9 : 12,  // Smaller font on mobile
+            size: window.innerWidth < 768 ? 10 : 12,  // Smaller font on mobile
           },
-          padding: window.innerWidth < 768 ? 8 : 10,
-          // Generate custom labels with text wrapping on mobile
-          generateLabels: function(chart: any) {
-            const original = ChartJS.overrides.bar.plugins.legend.labels.generateLabels(chart);
-            return original.map((label: any) => {
-              // Shorten long label on mobile
-              if (window.innerWidth < 768 && label.text === 'Challenging movement as % of total movements performed') {
-                label.text = 'Challenging %';
-              }
-              return label;
-            });
-          }
+          padding: window.innerWidth < 768 ? 6 : 10,
         }
       },
       tooltip: {
@@ -218,8 +207,8 @@ export function Analytics() {
           label: function(context: any) {
             const label = context.dataset.label || '';
             const value = context.parsed.y;
-            if (label === 'Challenging movement as % of total movements performed') {
-              return `${label}: ${value}%`;
+            if (label === 'Challenging movement as % of total movements performed' || label === 'Challenging %') {
+              return `Challenging movement as % of total movements performed: ${value}%`;
             }
             return `${label}: ${value}`;
           }
