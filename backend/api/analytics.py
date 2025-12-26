@@ -1815,19 +1815,26 @@ async def get_music_genre_distribution(
         genre_counts = {genre: 0 for genre in all_genres}
 
         # Fetch ALL class history (no date filter - total usage)
+        # Select BOTH music_genre (movements) and cooldown_music_genre (cooldown)
         classes_response = supabase.table('class_history') \
-            .select('music_genre') \
+            .select('music_genre, cooldown_music_genre') \
             .eq('user_id', user_uuid) \
             .execute()
 
         classes = classes_response.data or []
 
-        # Count total usage per genre
+        # Count total usage per genre (count BOTH movement and cooldown music)
         for class_item in classes:
-            music_genre = class_item.get('music_genre')
+            movement_music = class_item.get('music_genre')
+            cooldown_music = class_item.get('cooldown_music_genre')
 
-            if music_genre and music_genre in genre_counts:
-                genre_counts[music_genre] += 1
+            # Count movement music genre
+            if movement_music and movement_music in genre_counts:
+                genre_counts[movement_music] += 1
+
+            # Count cooldown music genre (separate count - 2 selections per class)
+            if cooldown_music and cooldown_music in genre_counts:
+                genre_counts[cooldown_music] += 1
 
         # Sort genres by count (descending) and filter out unused genres
         sorted_genres = sorted(
