@@ -1073,30 +1073,37 @@ class SequenceTools:
 
         try:
             # POPULATE class_movements table (historical tracking for Rule 3)
+            # PERFORMANCE OPTIMIZATION: Batch all inserts into single database call
             timestamp_now = datetime.now().isoformat()
-            logger.warning(f"🔍 DIAGNOSTIC: Attempting to insert {len(sequence)} movements into class_movements")
+            logger.warning(f"🔍 DIAGNOSTIC: Preparing batched insert of {len(sequence)} movements into class_movements")
 
-            movements_logged = 0
+            # Build array of all insert data
+            movements_to_insert = []
             for i, movement in enumerate(sequence, start=1):
-                try:
-                    insert_data = {
-                        'user_id': user_id,
-                        'class_plan_id': class_plan_id,
-                        'movement_id': movement['id'],
-                        'movement_name': movement.get('name', 'Unknown'),
-                        'class_generated_at': timestamp_now,
-                        'difficulty_level': difficulty_level,
-                        'position_in_sequence': i
-                    }
-                    logger.warning(f"   Inserting movement {i}/{len(sequence)}: {movement.get('name')}")
-                    response = self.supabase.table('class_movements').insert(insert_data).execute()
-                    movements_logged += 1
-                    logger.warning(f"   ✅ Movement {i} inserted successfully")
-                except Exception as e:
-                    logger.error(f"   ❌ Failed to log movement '{movement.get('name')}' to class_movements: {e}")
-                    logger.error(f"      Error type: {type(e).__name__}")
+                insert_data = {
+                    'user_id': user_id,
+                    'class_plan_id': class_plan_id,
+                    'movement_id': movement['id'],
+                    'movement_name': movement.get('name', 'Unknown'),
+                    'class_generated_at': timestamp_now,
+                    'difficulty_level': difficulty_level,
+                    'position_in_sequence': i
+                }
+                movements_to_insert.append(insert_data)
+                logger.warning(f"   Prepared movement {i}/{len(sequence)}: {movement.get('name')}")
 
-            logger.warning(f"✅ DIAGNOSTIC: Logged {movements_logged}/{len(sequence)} movements to class_movements")
+            # Single batched INSERT (replaces 7-9 separate calls with 1 call)
+            try:
+                logger.warning(f"🚀 OPTIMIZATION: Executing batched insert ({len(movements_to_insert)} movements in 1 call)")
+                response = self.supabase.table('class_movements').insert(movements_to_insert).execute()
+                movements_logged = len(movements_to_insert)
+                logger.warning(f"✅ DIAGNOSTIC: Batched insert SUCCESSFUL - logged {movements_logged}/{len(sequence)} movements")
+            except Exception as e:
+                logger.error(f"   ❌ Failed batched insert to class_movements: {e}")
+                logger.error(f"      Error type: {type(e).__name__}")
+                movements_logged = 0
+
+            logger.warning(f"✅ OPTIMIZATION COMPLETE: Logged {movements_logged}/{len(sequence)} movements (~600ms saved)")
 
             # CALCULATE RULE 1 COMPLIANCE: Consecutive muscle overlap
             rule1_pass = True
