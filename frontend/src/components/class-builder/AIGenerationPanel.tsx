@@ -552,8 +552,7 @@ export function AIGenerationPanel() {
               {/* Pearson's Law Quote */}
               <div className="border-l-4 border-cream/40 pl-4 py-2">
                 <p className="text-cream/90 text-sm italic leading-relaxed">
-                  "When performance is measured and reported back,
-                  the rate of improvement accelerates."
+                  "When performance is measured, performance improves. When performance is measured and reported back, the rate of improvement accelerates."
                 </p>
                 <p className="text-cream/60 text-xs mt-2">— Pearson's Law</p>
               </div>
