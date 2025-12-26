@@ -55,6 +55,14 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
 
       logger.debug(`[RecordingMode] Ordered movements: ${orderedMovements.map((m: any) => m.name).join(', ')}`);
 
+      // Call backend to add transitions between movements (fetches from database)
+      logger.debug('[RecordingMode] Calling /api/movements/add-transitions');
+      const transitionsResponse = await axios.post(`${API_BASE_URL}/api/movements/add-transitions`, {
+        movements: orderedMovements
+      });
+      const movementsWithTransitions = transitionsResponse.data;
+      logger.debug(`[RecordingMode] Received ${movementsWithTransitions.length} items (movements + transitions)`);
+
       // Fetch framing sections (preparation, warmup, cooldown, meditation, homecare)
       const preparationResponse = await axios.get(`${API_BASE_URL}/api/class-sections/preparation`);
       const warmupResponse = await axios.get(`${API_BASE_URL}/api/class-sections/warmup`);
@@ -102,40 +110,38 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
         video_url: warmup.video_url,
       });
 
-      // Section 3: All 34 movements with transitions
-      for (let i = 0; i < orderedMovements.length; i++) {
-        const movement = orderedMovements[i];
-
-        // Add movement (5 minutes each for recording)
-        items.push({
-          type: 'movement' as const,
-          id: movement.id || `movement-${i}`,
-          name: movement.name,
-          duration_seconds: 300, // 5 minutes per movement for recording
-          narrative: movement.narrative,
-          setup_position: movement.setup_position,
-          watch_out_points: movement.watch_out_points,
-          teaching_cues: movement.teaching_cues || [],
-          muscle_groups: movement.muscle_groups || [],
-          difficulty_level: movement.difficulty_level,
-          primary_muscles: movement.primary_muscles || [],
-          voiceover_url: movement.voiceover_url,
-          voiceover_duration_seconds: movement.voiceover_duration_seconds,
-          voiceover_enabled: movement.voiceover_enabled || false,
-          video_url: movement.video_url, // AWS Phase 1 - CloudFront video demonstration
-        });
-
-        // Add transition after each movement (except last)
-        if (i < orderedMovements.length - 1) {
-          const currentPosition = movement.setup_position || 'Unknown';
-          const nextPosition = orderedMovements[i + 1].setup_position || 'Unknown';
-
+      // Section 3: All 34 movements with database transitions
+      // Backend has already inserted transitions between movements
+      for (const item of movementsWithTransitions) {
+        if (item.type === 'movement') {
+          items.push({
+            type: 'movement' as const,
+            id: item.id,
+            name: item.name,
+            duration_seconds: 300, // 5 minutes per movement for recording
+            narrative: item.narrative,
+            setup_position: item.setup_position,
+            watch_out_points: item.watch_out_points,
+            teaching_cues: item.teaching_cues || [],
+            muscle_groups: item.muscle_groups || [],
+            difficulty_level: item.difficulty_level,
+            primary_muscles: item.primary_muscles || [],
+            voiceover_url: item.voiceover_url,
+            voiceover_duration_seconds: item.voiceover_duration_seconds,
+            voiceover_enabled: item.voiceover_enabled || false,
+            video_url: item.video_url,
+          });
+        } else if (item.type === 'transition') {
+          // Transition from database with proper narrative, duration, and voiceover
           items.push({
             type: 'transition' as const,
-            from_position: currentPosition,
-            to_position: nextPosition,
-            narrative: `Moving from ${currentPosition} to ${nextPosition}.`,
-            duration_seconds: 60,
+            from_position: item.from_position || 'Unknown',
+            to_position: item.to_position || 'Unknown',
+            narrative: item.narrative || `Transition from ${item.from_position} to ${item.to_position}.`,
+            duration_seconds: item.duration_seconds || 60,
+            voiceover_url: item.voiceover_url,
+            voiceover_duration: item.voiceover_duration,
+            voiceover_enabled: item.voiceover_enabled || false,
           });
         }
       }
