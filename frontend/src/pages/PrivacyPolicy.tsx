@@ -59,18 +59,30 @@ export function PrivacyPolicy() {
 
             <h3 className="text-xl font-semibold text-burgundy mt-4 mb-2">B. Profile & Training Preferences</h3>
             <ul className="list-disc pl-6">
-              <li>Optional preference selections</li>
               <li>Pilates experience level</li>
+              <li>Preferred movement level (beginner, intermediate, advanced)</li>
+              <li>Default class duration preference</li>
+              <li>AI strictness level (how closely AI follows sequencing rules)</li>
+              <li>Music style preferences (classical periods, jazz, etc.)</li>
+              <li>Favorite and preferred movements</li>
+              <li>Notification preferences (email, class reminders, weekly summaries)</li>
+              <li>Privacy settings (analytics enabled, data sharing preferences)</li>
+              <li>Research source preferences</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-burgundy mt-4 mb-2">C. Practice & Movement Data</h3>
+            <h3 className="text-xl font-semibold text-burgundy mt-4 mb-2">C. Practise & Movement Data</h3>
             <p>We store data from both class generation and class playback:</p>
             <ul className="list-disc pl-6">
               <li>Movements used in each class (generated and played)</li>
               <li>Muscle groups activated per session</li>
               <li>Practise history (class generation dates and playback dates)</li>
               <li>Class generation parameters (difficulty, duration, focus areas)</li>
-              <li>Class playback data (when classes are played, completion status)</li>
+              <li>Music genre selections (movement music and cooldown music)</li>
+              <li>Class playback data (when classes are played, actual duration, completion status)</li>
+              <li>Whether AI agent was used to generate the class</li>
+              <li>Sequence validation results</li>
+              <li>Difficulty rating and feedback (if provided)</li>
+              <li>Progress tracking (total classes completed, first class date)</li>
             </ul>
             <p className="text-sm italic mt-2">
               This data helps us improve your personalised class recommendations and track your progress over time.
