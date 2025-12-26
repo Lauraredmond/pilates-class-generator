@@ -631,7 +631,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
           <CardBody className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-cream/60 text-sm font-medium">Practice Time</p>
+                <p className="text-cream/60 text-sm font-medium">Practise Time</p>
                 <p className="text-4xl font-bold text-cream mt-2">
                   {Math.floor(stats.totalPracticeTime / 60)}h {stats.totalPracticeTime % 60}m
                 </p>
@@ -686,7 +686,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
         {/* Practice Frequency Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Practice Frequency</CardTitle>
+            <CardTitle>Practise Frequency</CardTitle>
           </CardHeader>
           <CardBody className="p-6">
             <div className="h-64">
