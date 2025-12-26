@@ -549,6 +549,15 @@ export function AIGenerationPanel() {
                 />
               </div>
 
+              {/* Pearson's Law Quote */}
+              <div className="border-l-4 border-cream/40 pl-4 py-2">
+                <p className="text-cream/90 text-sm italic leading-relaxed">
+                  "When performance is measured and reported back,
+                  the rate of improvement accelerates."
+                </p>
+                <p className="text-cream/60 text-xs mt-2">— Pearson's Law</p>
+              </div>
+
               {/* Title */}
               <h3 className="text-2xl font-bold text-cream">
                 Session Complete
@@ -556,7 +565,7 @@ export function AIGenerationPanel() {
 
               {/* Message */}
               <p className="text-cream/80 text-base leading-relaxed">
-                Visit your Stats to see how today's work contributes to your overall progress, coverage and consistency so far.
+                Visit your Stats to see today's progress.
               </p>
 
               {/* Action Buttons */}
