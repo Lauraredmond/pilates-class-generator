@@ -64,13 +64,17 @@ export function PrivacyPolicy() {
             </ul>
 
             <h3 className="text-xl font-semibold text-burgundy mt-4 mb-2">C. Practice & Movement Data</h3>
-            <p>We store:</p>
+            <p>We store data from both class generation and class playback:</p>
             <ul className="list-disc pl-6">
-              <li>Movements used in each class</li>
+              <li>Movements used in each class (generated and played)</li>
               <li>Muscle groups activated per session</li>
-              <li>Practise history</li>
-              <li>Class generation parameters</li>
+              <li>Practise history (class generation dates and playback dates)</li>
+              <li>Class generation parameters (difficulty, duration, focus areas)</li>
+              <li>Class playback data (when classes are played, completion status)</li>
             </ul>
+            <p className="text-sm italic mt-2">
+              This data helps us improve your personalised class recommendations and track your progress over time.
+            </p>
 
             <h3 className="text-xl font-semibold text-burgundy mt-4 mb-2">D. Device & Technical Information</h3>
             <p>Automatically collected:</p>
