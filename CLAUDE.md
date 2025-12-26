@@ -102,6 +102,160 @@ git push origin main --force
 
 ---
 
+## 🚨 NEXT SESSION PRIORITY (December 26, 2025) 🚨
+
+**CRITICAL: Start next session with this action item**
+
+### Netlify Build Minutes - Upgrade Decision
+
+**Context:** Netlify account hit 100% of Free plan build minutes (300 min/month) in December 2025.
+
+**Decision: Upgrade to Personal Plan ($9/month)**
+
+**Rationale:**
+- **December usage:** 930 builds (abnormal - user was off work full-time)
+- **January onwards usage:** Estimated 300-600 builds/month (user back to full-time job)
+- **Personal plan:** 1,000 build minutes/month - comfortable headroom for normal development
+
+**Safety Net:**
+1. Netlify warns at 80% (800 min), 90% (900 min), 100% (1,000 min)
+2. Can upgrade to Pro mid-month instantly if needed
+3. No service suspension - just upgrade before hitting limit
+4. Pro-rated billing for mid-month upgrades
+
+**Monitoring Strategy:**
+- **Month 1 (January):** Monitor build minutes weekly in Netlify dashboard
+- **If hit 800 minutes by day 20:** Upgrade to Pro immediately
+- **Month 2-3:** If usage consistently <700 min → Stay on Personal; if >900 min → Upgrade to Pro
+
+**Cost Comparison:**
+- Personal: $9/month = $108/year
+- Pro: $20/month = $240/year
+- **Savings if Personal works:** $132/year
+
+**Action Required:**
+1. Go to https://app.netlify.com → Team settings → Usage & billing
+2. Click "Switch to Personal" ($9/month option)
+3. Enter payment details and confirm
+4. Verify 1,000 build minutes available
+5. Set calendar reminder to check usage weekly in January
+
+---
+
+## 📋 DOCUMENTATION & TASK MANAGEMENT RULES
+
+**CRITICAL: Single Source of Truth for Tasks**
+
+**Rule:** ONLY use CLAUDE.md for documenting future tasks and to-do items.
+
+**DO NOT create:**
+- ❌ `NEXT_SESSION_NOTES.md` files
+- ❌ `TODO.md` files
+- ❌ `BACKLOG.md` files
+- ❌ Any other markdown files for task tracking
+
+**WHY:** Multiple task files cause confusion when stopping/starting across sessions. CLAUDE.md is the single source of truth.
+
+**How to document tasks:**
+1. Add high-priority items to "NEXT SESSION PRIORITY" section (top of file)
+2. Add medium-priority items to "Future Plans / Enhancement Roadmap" section
+3. Mark tasks as ✅ COMPLETED when done
+4. Remove completed tasks from priority lists
+
+---
+
+## 🔍 PROACTIVE TROUBLESHOOTING & TESTING PROTOCOL
+
+**CRITICAL: Do These Tasks BEFORE Asking User**
+
+As Claude Code working on MVP2, you MUST proactively perform these checks before requesting user assistance:
+
+### Standard Troubleshooting Checks:
+
+1. **Run Database Queries**
+   - Use `node scripts/db_readonly_query.mjs` to inspect database state
+   - Check relevant tables for data integrity
+   - Verify expected records exist
+
+2. **Check Render Backend Logs**
+   - Fetch recent logs from Render API or ask user to check dashboard
+   - Look for errors, warnings, or exceptions
+   - Identify root cause before proposing fixes
+
+3. **Test Class Generation (Regression Check)**
+   - Generate a complete class via API
+   - Verify all 6 sections return correctly:
+     1. Preparation script
+     2. Warmup routine
+     3. Main movements (9 movements + 8 transitions)
+     4. Cooldown sequence
+     5. Closing meditation
+     6. HomeCare advice
+   - Verify music recommendation included
+   - Check response time (<60 seconds for AI mode)
+
+4. **Test Class Playback**
+   - Verify narrative audio plays (voiceover for all 6 sections)
+   - Verify background music plays and advances tracks correctly
+   - Check audio ducking (music at 20% during voiceover, 100% after)
+   - Verify screen wake lock prevents phone sleep on mobile
+
+5. **Verify Database Logging**
+   - Check `class_history` table for new record after class generation
+   - Verify `music_genre` and `cooldown_music_genre` fields populated
+   - Verify `movements_snapshot` JSONB contains expected data
+
+6. **Review Developer Tools Reports**
+   - Check browser console for JavaScript errors
+   - Check Network tab for failed API requests (401, 403, 500 errors)
+   - Verify no CORS issues
+   - Check for CSP violations
+
+### When to Apply This Protocol:
+
+**ALWAYS before:**
+- Diagnosing bugs reported by user
+- Proposing fixes for regressions
+- Claiming "this should work now"
+- Asking user to test manually
+
+**Example Good Workflow:**
+```
+User: "Class generation isn't working"
+
+Claude:
+1. ✅ Checks Render logs → finds 500 error
+2. ✅ Runs database query → finds missing preparation script
+3. ✅ Tests class generation API → reproduces error
+4. ✅ Identifies root cause: preparation table empty
+5. Proposes fix with evidence
+
+Result: User confident in fix, less back-and-forth
+```
+
+**Example Bad Workflow:**
+```
+User: "Class generation isn't working"
+
+Claude:
+❌ "Can you check Render logs?"
+❌ "Can you run this SQL query?"
+❌ "Can you test class generation?"
+
+Result: User frustrated, doing Claude's job
+```
+
+### Tools Available for Proactive Testing:
+
+- **Database:** `node scripts/db_readonly_query.mjs "SQL_QUERY"`
+- **API Testing:** `curl` commands to Render backend
+- **Code Search:** `Grep`, `Glob` for finding relevant code
+- **Log Analysis:** Read Render logs (ask user for recent logs if needed)
+
+**Remember:** Your role is to be proactive, not reactive. Do the investigation work before involving the user.
+
+---
+
 ## 🚨 CRITICAL SECURITY RULES 🚨
 
 ### NEVER Expose Secrets in Code or Documentation
