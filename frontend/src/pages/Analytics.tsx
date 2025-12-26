@@ -191,7 +191,28 @@ export function Analytics() {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'top' as const, labels: { color: '#f5f1e8' } },
+      legend: {
+        position: 'top' as const,
+        labels: {
+          color: '#f5f1e8',
+          // Mobile-responsive legend labels
+          font: {
+            size: window.innerWidth < 768 ? 9 : 12,  // Smaller font on mobile
+          },
+          padding: window.innerWidth < 768 ? 8 : 10,
+          // Generate custom labels with text wrapping on mobile
+          generateLabels: function(chart: any) {
+            const original = ChartJS.overrides.bar.plugins.legend.labels.generateLabels(chart);
+            return original.map((label: any) => {
+              // Shorten long label on mobile
+              if (window.innerWidth < 768 && label.text === 'Challenging movement as % of total movements performed') {
+                label.text = 'Challenging %';
+              }
+              return label;
+            });
+          }
+        }
+      },
       tooltip: {
         callbacks: {
           label: function(context: any) {
