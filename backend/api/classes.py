@@ -578,7 +578,7 @@ async def update_class_plan(class_id: str, update: ClassPlanUpdate):
 class ClassGenerationRequest(BaseModel):
     """Request for AI-generated Pilates class"""
     user_id: str
-    duration_minutes: int = Field(default=30, ge=10, le=120)
+    duration_minutes: int = Field(default=30, ge=1, le=120)  # No minimum - user has duration analytics
     difficulty: str = Field(default="Beginner")
     use_agent: Optional[bool] = None  # If None, fetch from user preferences
 
