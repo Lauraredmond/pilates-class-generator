@@ -1702,28 +1702,20 @@ async def get_class_sequencing_report(user_id: str):
 
 class MusicGenreDistributionData(BaseModel):
     """
-    Music genre distribution for stacked bar chart
+    Music genre favorites ranked by total usage
 
-    OpenAPI Schema for music genre analytics over time periods
+    OpenAPI Schema for horizontal bar chart showing user's favorite music genres
+    sorted by usage (most to least used)
     """
-    period_labels: List[str] = Field(
-        ...,
-        description="Time period labels (e.g., 'Mon', 'Week 1', 'Jan 2025')",
-        example=["Week 1", "Week 2", "Week 3", "Week 4"]
-    )
     genres: List[str] = Field(
         ...,
-        description="All available music genres (Baroque, Classical, Romantic, Impressionist, Modern, Contemporary/Postmodern, Celtic Traditional, Jazz)",
-        example=["Baroque", "Classical", "Romantic", "Impressionist", "Modern", "Contemporary/Postmodern", "Celtic Traditional", "Jazz"]
+        description="Music genres sorted by usage (most to least). Only includes genres with at least 1 class.",
+        example=["Classical", "Baroque", "Jazz", "Romantic"]
     )
-    genre_counts: Dict[str, List[int]] = Field(
+    counts: List[int] = Field(
         ...,
-        description="Count of classes per genre per period. Keys are genre names, values are arrays of counts matching period_labels",
-        example={
-            "Baroque": [2, 1, 0, 1],
-            "Classical": [1, 2, 1, 0],
-            "Jazz": [0, 0, 1, 2]
-        }
+        description="Total number of classes for each genre (aligned with genres list)",
+        example=[12, 8, 5, 3]
     )
 
 
@@ -1757,39 +1749,33 @@ class ClassDurationDistributionData(BaseModel):
 @router.get(
     "/music-genre-distribution/{user_id}",
     response_model=MusicGenreDistributionData,
-    summary="Get music genre selection distribution over time",
+    summary="Get favorite music genres ranked by usage",
     description="""
-    Retrieve music genre selection analytics for stacked bar chart visualization.
+    Retrieve user's favorite music genres ranked by total usage.
 
-    Returns time-series data showing how often each music genre (Baroque, Classical,
+    Returns a simple ranked list showing which music genres (Baroque, Classical,
     Romantic, Impressionist, Modern, Contemporary/Postmodern, Celtic Traditional, Jazz)
-    was selected by the user over the specified time period.
+    the user has selected most frequently across all their classes.
 
     **Use Cases:**
-    - Understand user music preferences over time
-    - Identify trends in music genre selection
-    - Visualize music variety in class planning
+    - Understand user's overall music preferences
+    - Show favorite genres at a glance
+    - Visualize music variety in horizontal bar chart
 
     **Returns:**
-    - Period labels for x-axis (e.g., "Week 1", "Week 2")
-    - All 8 available music genres
-    - Count of classes per genre per period for stacked bar visualization
+    - Genres sorted by usage (most to least used)
+    - Total count for each genre
+    - Only includes genres with at least 1 class
     """,
     tags=["Analytics", "Music"],
     responses={
         200: {
-            "description": "Music genre distribution retrieved successfully",
+            "description": "Music genre favorites retrieved successfully",
             "content": {
                 "application/json": {
                     "example": {
-                        "period_labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
-                        "genres": ["Baroque", "Classical", "Romantic", "Impressionist", "Modern", "Contemporary/Postmodern", "Celtic Traditional", "Jazz"],
-                        "genre_counts": {
-                            "Baroque": [2, 1, 0, 1],
-                            "Classical": [1, 2, 1, 0],
-                            "Romantic": [0, 1, 2, 1],
-                            "Jazz": [0, 0, 1, 2]
-                        }
+                        "genres": ["Classical", "Baroque", "Jazz", "Romantic"],
+                        "counts": [12, 8, 5, 3]
                     }
                 }
             }
@@ -1800,15 +1786,18 @@ class ClassDurationDistributionData(BaseModel):
 async def get_music_genre_distribution(
     user_id: str = Path(..., description="User UUID or identifier to fetch analytics for"),
     period: TimePeriod = Query(
-        default=TimePeriod.WEEK,
-        description="Time period granularity for aggregation. Options: day (last 7 days), week (last 4 weeks), month (last 12 months), total (all time)"
+        default=TimePeriod.TOTAL,
+        description="Time period (ignored - always returns total across all time)"
     )
 ):
+    """
+    Get music genre favorites ranked by total usage
+
+    Returns genres sorted by usage (most to least used) for a simple
+    horizontal bar chart showing user's favorite music genres.
+    """
     try:
         user_uuid = _convert_to_uuid(user_id)
-
-        # Get date ranges and labels
-        date_ranges, period_labels = _get_date_ranges(period)
 
         # All possible music genres (from CLAUDE.md)
         all_genres = [
@@ -1822,50 +1811,45 @@ async def get_music_genre_distribution(
             'Jazz'
         ]
 
-        # Initialize counts for all genres and periods
-        genre_counts = {genre: [0] * len(date_ranges) for genre in all_genres}
+        # Initialize counts for all genres
+        genre_counts = {genre: 0 for genre in all_genres}
 
-        # Fetch class history (with BOTH music genre fields)
-        earliest_date = date_ranges[0][0]
+        # Fetch ALL class history (no date filter - total usage)
+        # Select BOTH music_genre (movements) and cooldown_music_genre (cooldown)
         classes_response = supabase.table('class_history') \
-            .select('taught_date, music_genre, cooldown_music_genre') \
+            .select('music_genre, cooldown_music_genre') \
             .eq('user_id', user_uuid) \
-            .gte('taught_date', earliest_date.isoformat()) \
             .execute()
 
         classes = classes_response.data or []
 
-        # Count genres per period (count BOTH movement and cooldown music)
+        # Count total usage per genre (count BOTH movement and cooldown music)
         for class_item in classes:
-            taught_date_str = class_item.get('taught_date')
             movement_music = class_item.get('music_genre')
             cooldown_music = class_item.get('cooldown_music_genre')
 
-            if not taught_date_str:
-                continue
+            # Count movement music genre
+            if movement_music and movement_music in genre_counts:
+                genre_counts[movement_music] += 1
 
-            try:
-                class_date = datetime.fromisoformat(taught_date_str).date()
-            except (ValueError, TypeError):
-                logger.warning(f"Invalid taught_date in music_genre_distribution: {taught_date_str}")
-                continue
+            # Count cooldown music genre (separate count - 2 selections per class)
+            if cooldown_music and cooldown_music in genre_counts:
+                genre_counts[cooldown_music] += 1
 
-            # Find which period this class belongs to
-            for period_idx, (start_date, end_date) in enumerate(date_ranges):
-                if start_date <= class_date <= end_date:
-                    # Count movement music genre
-                    if movement_music and movement_music in genre_counts:
-                        genre_counts[movement_music][period_idx] += 1
+        # Sort ALL genres by count (descending) - include genres with 0 count
+        sorted_genres = sorted(
+            [(genre, count) for genre, count in genre_counts.items()],
+            key=lambda x: x[1],
+            reverse=True
+        )
 
-                    # Count cooldown music genre (separate count - 2 selections per class)
-                    if cooldown_music and cooldown_music in genre_counts:
-                        genre_counts[cooldown_music][period_idx] += 1
-                    break
+        # Extract sorted genres and counts (includes all 8 genres, even if 0)
+        genres = [item[0] for item in sorted_genres]
+        counts = [item[1] for item in sorted_genres]
 
         return MusicGenreDistributionData(
-            period_labels=period_labels,
-            genres=all_genres,
-            genre_counts=genre_counts
+            genres=genres,
+            counts=counts
         )
 
     except Exception as e:
