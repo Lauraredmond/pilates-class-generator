@@ -106,7 +106,7 @@ export function Analytics() {
         analyticsApi.getDifficultyProgression(user.id, timePeriod),
         analyticsApi.getMuscleDistribution(user.id, 'total'), // Always show total for doughnut
         analyticsApi.getMovementFamilyDistribution(user.id, 'total'), // SESSION: Movement Families
-        analyticsApi.getMusicGenreDistribution(user.id, timePeriod), // Music genre stacked bar
+        analyticsApi.getMusicGenreDistribution(user.id, 'total'), // Music genre ranked bar (always total)
         analyticsApi.getClassDurationDistribution(user.id, timePeriod), // Duration stacked bar
       ]);
 
@@ -305,6 +305,50 @@ export function Analytics() {
     },
   };
 
+  // Horizontal Bar Chart Options - Music Genre Favorites
+  const horizontalBarChartOptions = {
+    indexAxis: 'y' as const,  // Horizontal bars
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },  // No legend needed for single dataset
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `Classes: ${context.parsed.x}`;
+          }
+        }
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        ticks: {
+          color: '#f5f1e8',
+          stepSize: 1,
+          callback: function(value: any) {
+            // Only show integer labels
+            return Number.isInteger(value) ? value : null;
+          }
+        },
+        grid: { color: 'rgba(245, 241, 232, 0.1)' },
+        title: {
+          display: true,
+          text: 'Number of Classes',
+          color: '#f5f1e8',
+          font: { size: 12 }
+        }
+      },
+      y: {
+        ticks: {
+          color: '#f5f1e8',
+          font: { size: 12 }
+        },
+        grid: { color: 'rgba(245, 241, 232, 0.1)' },
+      },
+    },
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -482,24 +526,26 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
       }
     : null;
 
-  // Music Genre Distribution - Stacked Bar Chart
+  // Music Genre Favorites - Horizontal Ranked Bar Chart
   const musicGenreDistributionChartData = musicGenreDistribution
     ? {
-        labels: musicGenreDistribution.period_labels,
-        datasets: musicGenreDistribution.genres.map((genre: string, idx: number) => ({
-          label: genre,
-          data: musicGenreDistribution.genre_counts[genre],
-          backgroundColor: [
-            '#8b2635',  // Baroque - Primary burgundy
-            '#cd8b76',  // Classical - Terracotta
-            '#5c1a26',  // Romantic - Dark burgundy
-            '#e3a57a',  // Impressionist - Light peach
-            '#3d1118',  // Modern - Very dark burgundy
-            '#f5f1e8',  // Contemporary/Postmodern - Cream
-            '#d94d5c',  // Celtic Traditional - Bright coral red
-            '#b8927d',  // Jazz - Medium beige
-          ][idx % 8],
-        })),
+        labels: musicGenreDistribution.genres,  // Already sorted by usage
+        datasets: [
+          {
+            label: 'Classes',
+            data: musicGenreDistribution.counts,
+            backgroundColor: [
+              '#8b2635',  // #1 Most used - Primary burgundy
+              '#cd8b76',  // #2 - Terracotta
+              '#5c1a26',  // #3 - Dark burgundy
+              '#e3a57a',  // #4 - Light peach
+              '#3d1118',  // #5 - Very dark burgundy
+              '#f5f1e8',  // #6 - Cream
+              '#d94d5c',  // #7 - Bright coral red
+              '#b8927d',  // #8 - Medium beige
+            ],
+          },
+        ],
       }
     : null;
 
@@ -714,17 +760,17 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
         </Card>
       </div>
 
-      {/* Stacked Bar Charts Grid - Music Genre & Class Duration */}
+      {/* Music Genre & Class Duration Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Music Genre Distribution Chart */}
+        {/* Music Genre Favorites - Ranked Bar Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Music Genre Selection Over Time</CardTitle>
+            <CardTitle>Favorite Music Genres</CardTitle>
           </CardHeader>
           <CardBody className="p-6">
             <div className="h-96">
               {musicGenreDistributionChartData ? (
-                <Chart type="bar" data={musicGenreDistributionChartData} options={stackedBarChartOptions} />
+                <Chart type="bar" data={musicGenreDistributionChartData} options={horizontalBarChartOptions} />
               ) : (
                 <div className="flex items-center justify-center h-full text-cream/60">
                   No data available
