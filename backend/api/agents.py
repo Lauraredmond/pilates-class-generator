@@ -788,82 +788,55 @@ Return all 6 sections with complete details (narrative, timing, instructions).
             homecare = None
             music_result = None  # No music selection for quick practice
             research_results = []  # No research for quick practice
+            # NOTE: Do NOT return early - continue to class_history save below!
+        else:
+            # Step 2: Select preparation script (Section 1)
+            try:
+                prep_response = supabase.table('preparation_scripts') \
+                    .select('*') \
+                    .limit(1) \
+                    .execute()
 
-            # Calculate total processing time
-            total_time_ms = (time.time() - start_time) * 1000
+                preparation = prep_response.data[0] if prep_response.data else None
+                logger.info(f"Selected preparation: {preparation.get('script_name') if preparation else 'None'}")
+                # DEBUG: Check voiceover and video data in database response
+                if preparation:
+                    logger.info(f"🎙️ DEBUG: Preparation voiceover_enabled: {preparation.get('voiceover_enabled')}")
+                    logger.info(f"🎙️ DEBUG: Preparation voiceover_url: {preparation.get('voiceover_url')}")
+                    logger.info(f"🎙️ DEBUG: Preparation voiceover_duration: {preparation.get('voiceover_duration')}")
+                    logger.info(f"🎥 DEBUG: Preparation video_url: {preparation.get('video_url')}")
+                    logger.info(f"🔍 DEBUG: Preparation fields: {list(preparation.keys())}")
+            except Exception as e:
+                logger.error(f"Failed to fetch preparation script: {e}")
+                preparation = None
 
-            # Return sequence-only class
-            return {
-                "success": True,
-                "data": {
-                    "preparation": None,
-                    "warmup": None,
-                    "sequence": sequence_result,
-                    "cooldown": None,
-                    "meditation": None,
-                    "homecare": None,
-                    "music_recommendation": None,
-                    "research_enhancements": None,
-                    "total_processing_time_ms": total_time_ms
-                },
-                "metadata": {
-                    "mode": "quick_practice",
-                    "cost": 0.00,
-                    "generated_at": datetime.now().isoformat(),
-                    "user_id": user_id,
-                    "sections_included": 0,  # Only movements, no sections
-                    "agents_used": ["sequence"],
-                    "orchestration": "jentic_standard_agent"
-                }
-            }
+            # Step 3: Select warm-up routine (Section 2)
+            # NOTE: Migration 019 left only ONE warmup: "Comprehensive Full Body Warm-up"
+            # So we can just select it directly (no need for RPC function)
+            try:
+                warmup_response = supabase.table('warmup_routines') \
+                    .select('*') \
+                    .eq('routine_name', 'Comprehensive Full Body Warm-up') \
+                    .limit(1) \
+                    .execute()
 
-        # Step 2: Select preparation script (Section 1)
-        try:
-            prep_response = supabase.table('preparation_scripts') \
-                .select('*') \
-                .limit(1) \
-                .execute()
+                warmup = warmup_response.data[0] if warmup_response.data else None
+                logger.info(f"Selected warmup: {warmup.get('routine_name') if warmup else 'None'}")
+                # DEBUG: Check voiceover and video data in database response
+                if warmup:
+                    logger.info(f"🎙️ DEBUG: Warmup voiceover_enabled: {warmup.get('voiceover_enabled')}")
+                    logger.info(f"🎙️ DEBUG: Warmup voiceover_url: {warmup.get('voiceover_url')}")
+                    logger.info(f"🎙️ DEBUG: Warmup voiceover_duration: {warmup.get('voiceover_duration')}")
+                    logger.info(f"🎥 DEBUG: Warmup video_url: {warmup.get('video_url')}")
+                    logger.info(f"🔍 DEBUG: Warmup fields: {list(warmup.keys())}")
+            except Exception as e:
+                logger.error(f"Failed to fetch warmup routine: {e}")
+                warmup = None
 
-            preparation = prep_response.data[0] if prep_response.data else None
-            logger.info(f"Selected preparation: {preparation.get('script_name') if preparation else 'None'}")
-            # DEBUG: Check voiceover and video data in database response
-            if preparation:
-                logger.info(f"🎙️ DEBUG: Preparation voiceover_enabled: {preparation.get('voiceover_enabled')}")
-                logger.info(f"🎙️ DEBUG: Preparation voiceover_url: {preparation.get('voiceover_url')}")
-                logger.info(f"🎙️ DEBUG: Preparation voiceover_duration: {preparation.get('voiceover_duration')}")
-                logger.info(f"🎥 DEBUG: Preparation video_url: {preparation.get('video_url')}")
-                logger.info(f"🔍 DEBUG: Preparation fields: {list(preparation.keys())}")
-        except Exception as e:
-            logger.error(f"Failed to fetch preparation script: {e}")
-            preparation = None
+            # Step 4: Main movements (Section 3) - Already generated above
+            # The sequence_result contains the main movements
 
-        # Step 3: Select warm-up routine (Section 2)
-        # NOTE: Migration 019 left only ONE warmup: "Comprehensive Full Body Warm-up"
-        # So we can just select it directly (no need for RPC function)
-        try:
-            warmup_response = supabase.table('warmup_routines') \
-                .select('*') \
-                .eq('routine_name', 'Comprehensive Full Body Warm-up') \
-                .limit(1) \
-                .execute()
-
-            warmup = warmup_response.data[0] if warmup_response.data else None
-            logger.info(f"Selected warmup: {warmup.get('routine_name') if warmup else 'None'}")
-            # DEBUG: Check voiceover and video data in database response
-            if warmup:
-                logger.info(f"🎙️ DEBUG: Warmup voiceover_enabled: {warmup.get('voiceover_enabled')}")
-                logger.info(f"🎙️ DEBUG: Warmup voiceover_url: {warmup.get('voiceover_url')}")
-                logger.info(f"🎙️ DEBUG: Warmup voiceover_duration: {warmup.get('voiceover_duration')}")
-                logger.info(f"🎥 DEBUG: Warmup video_url: {warmup.get('video_url')}")
-                logger.info(f"🔍 DEBUG: Warmup fields: {list(warmup.keys())}")
-        except Exception as e:
-            logger.error(f"Failed to fetch warmup routine: {e}")
-            warmup = None
-
-        # Step 4: Main movements (Section 3) - Already generated above
-        # The sequence_result contains the main movements
-
-        # Step 5: Select cool-down sequence (Section 4)
+            # Step 5: Select cool-down sequence (Section 4)
         # Use "Full Body Recovery" as default cooldown (actual name in database)
         try:
             cooldown_response = supabase.table('cooldown_sequences') \
