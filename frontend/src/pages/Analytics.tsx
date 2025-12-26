@@ -77,70 +77,93 @@ export function Analytics() {
   const [classDurationDistribution, setClassDurationDistribution] = useState<any>(null); // Class duration stacked bar chart
 
   // Fetch all analytics data
+  const fetchAnalytics = async () => {
+    if (!user) {
+      setIsLoading(false);
+      setError('You must be logged in to view analytics');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const [
+        summaryResponse,
+        movementHistoryResponse,
+        muscleHistoryResponse,
+        practiceFreqResponse,
+        difficultyProgResponse,
+        muscleDistResponse,
+        familyDistResponse, // SESSION: Movement Families
+        musicGenreDistResponse, // Music genre distribution
+        durationDistResponse, // Class duration distribution
+      ] = await Promise.all([
+        analyticsApi.getSummary(user.id),
+        analyticsApi.getMovementHistory(user.id, timePeriod),
+        analyticsApi.getMuscleGroupHistory(user.id, timePeriod),
+        analyticsApi.getPracticeFrequency(user.id, timePeriod),
+        analyticsApi.getDifficultyProgression(user.id, timePeriod),
+        analyticsApi.getMuscleDistribution(user.id, 'total'), // Always show total for doughnut
+        analyticsApi.getMovementFamilyDistribution(user.id, 'total'), // SESSION: Movement Families
+        analyticsApi.getMusicGenreDistribution(user.id, timePeriod), // Music genre stacked bar
+        analyticsApi.getClassDurationDistribution(user.id, timePeriod), // Duration stacked bar
+      ]);
+
+      // Update stats
+      setStats({
+        totalClasses: summaryResponse.data.total_classes,
+        totalPracticeTime: summaryResponse.data.total_practice_time,
+        currentStreak: summaryResponse.data.current_streak,
+        favoriteMovement: summaryResponse.data.favorite_movement,
+        classesThisWeek: summaryResponse.data.classes_this_week,
+        avgClassDuration: summaryResponse.data.avg_class_duration,
+      });
+
+      // Update tables
+      setMovementHistory(movementHistoryResponse.data);
+      setMuscleGroupHistory(muscleHistoryResponse.data);
+
+      // Update charts
+      setPracticeFrequency(practiceFreqResponse.data);
+      setDifficultyProgression(difficultyProgResponse.data);
+      setMuscleDistribution(muscleDistResponse.data);
+      setMovementFamilyDistribution(familyDistResponse.data); // SESSION: Movement Families
+      setMusicGenreDistribution(musicGenreDistResponse.data); // Music genre stacked bar
+      setClassDurationDistribution(durationDistResponse.data); // Class duration stacked bar
+    } catch (err: any) {
+      logger.error('Failed to fetch analytics:', err);
+      setError(err.response?.data?.detail || 'Failed to load analytics data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      if (!user) {
-        setIsLoading(false);
-        setError('You must be logged in to view analytics');
-        return;
-      }
+    fetchAnalytics();
+  }, [user, timePeriod]);
 
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const [
-          summaryResponse,
-          movementHistoryResponse,
-          muscleHistoryResponse,
-          practiceFreqResponse,
-          difficultyProgResponse,
-          muscleDistResponse,
-          familyDistResponse, // SESSION: Movement Families
-          musicGenreDistResponse, // Music genre distribution
-          durationDistResponse, // Class duration distribution
-        ] = await Promise.all([
-          analyticsApi.getSummary(user.id),
-          analyticsApi.getMovementHistory(user.id, timePeriod),
-          analyticsApi.getMuscleGroupHistory(user.id, timePeriod),
-          analyticsApi.getPracticeFrequency(user.id, timePeriod),
-          analyticsApi.getDifficultyProgression(user.id, timePeriod),
-          analyticsApi.getMuscleDistribution(user.id, 'total'), // Always show total for doughnut
-          analyticsApi.getMovementFamilyDistribution(user.id, 'total'), // SESSION: Movement Families
-          analyticsApi.getMusicGenreDistribution(user.id, timePeriod), // Music genre stacked bar
-          analyticsApi.getClassDurationDistribution(user.id, timePeriod), // Duration stacked bar
-        ]);
-
-        // Update stats
-        setStats({
-          totalClasses: summaryResponse.data.total_classes,
-          totalPracticeTime: summaryResponse.data.total_practice_time,
-          currentStreak: summaryResponse.data.current_streak,
-          favoriteMovement: summaryResponse.data.favorite_movement,
-          classesThisWeek: summaryResponse.data.classes_this_week,
-          avgClassDuration: summaryResponse.data.avg_class_duration,
-        });
-
-        // Update tables
-        setMovementHistory(movementHistoryResponse.data);
-        setMuscleGroupHistory(muscleHistoryResponse.data);
-
-        // Update charts
-        setPracticeFrequency(practiceFreqResponse.data);
-        setDifficultyProgression(difficultyProgResponse.data);
-        setMuscleDistribution(muscleDistResponse.data);
-        setMovementFamilyDistribution(familyDistResponse.data); // SESSION: Movement Families
-        setMusicGenreDistribution(musicGenreDistResponse.data); // Music genre stacked bar
-        setClassDurationDistribution(durationDistResponse.data); // Class duration stacked bar
-      } catch (err: any) {
-        logger.error('Failed to fetch analytics:', err);
-        setError(err.response?.data?.detail || 'Failed to load analytics data');
-      } finally {
-        setIsLoading(false);
+  // Auto-refresh when user navigates back to this page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible again - refresh data
+        fetchAnalytics();
       }
     };
 
-    fetchAnalytics();
+    const handleFocus = () => {
+      // Window regained focus - refresh data
+      fetchAnalytics();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [user, timePeriod]);
 
   // Chart configurations
@@ -509,14 +532,12 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             Track your teaching progress and gain insights into your class patterns
           </p>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handleExportCSV}
-            className="px-4 py-2 bg-burgundy text-cream rounded-lg hover:bg-burgundy-dark transition-colors font-semibold"
-          >
-            Export CSV
-          </button>
-        </div>
+        <button
+          onClick={handleExportCSV}
+          className="px-4 py-2 bg-burgundy text-cream rounded-lg hover:bg-burgundy-dark transition-colors font-semibold"
+        >
+          Export CSV
+        </button>
       </div>
 
       {/* Time Period Filter */}

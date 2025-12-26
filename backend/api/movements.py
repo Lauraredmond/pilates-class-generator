@@ -4,7 +4,7 @@ Endpoints for retrieving Pilates movement data
 """
 
 from fastapi import APIRouter, HTTPException
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import os
 from supabase import create_client, Client
@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 from utils.logger import get_logger
 from models.error import ErrorMessages
+from orchestrator.tools.sequence_tools import SequenceTools
 
 # Load environment variables
 load_dotenv()
@@ -220,4 +221,128 @@ async def get_movement_by_id(movement_id: str):
         raise HTTPException(
             status_code=500,
             detail=ErrorMessages.DATABASE_ERROR
+        )
+
+
+# Request/Response models for add-transitions endpoint
+class MovementInput(BaseModel):
+    """Movement data as input for transition insertion"""
+    id: str
+    name: str
+    setup_position: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    # Include all other fields that should be preserved
+    difficulty_level: Optional[str] = None
+    primary_muscles: Optional[List[str]] = None
+    narrative: Optional[str] = None
+    watch_out_points: Optional[str] = None
+    teaching_cues: Optional[List[Dict[str, Any]]] = None
+    muscle_groups: Optional[List[Dict[str, Any]]] = None
+    voiceover_url: Optional[str] = None
+    voiceover_duration_seconds: Optional[int] = None
+    voiceover_enabled: Optional[bool] = None
+    video_url: Optional[str] = None
+
+    class Config:
+        extra = 'allow'  # Allow extra fields to pass through
+
+
+class AddTransitionsRequest(BaseModel):
+    """Request body for adding transitions to a movement sequence"""
+    movements: List[MovementInput]
+
+
+class SequenceItemResponse(BaseModel):
+    """Response item that can be either a movement or a transition"""
+    type: str  # 'movement' or 'transition'
+    # Movement fields
+    id: Optional[str] = None
+    name: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    setup_position: Optional[str] = None
+    difficulty_level: Optional[str] = None
+    primary_muscles: Optional[List[str]] = None
+    narrative: Optional[str] = None
+    watch_out_points: Optional[str] = None
+    teaching_cues: Optional[List[Dict[str, Any]]] = None
+    muscle_groups: Optional[List[Dict[str, Any]]] = None
+    voiceover_url: Optional[str] = None
+    voiceover_duration_seconds: Optional[int] = None
+    voiceover_enabled: Optional[bool] = None
+    video_url: Optional[str] = None
+    # Transition fields
+    from_position: Optional[str] = None
+    to_position: Optional[str] = None
+    voiceover_duration: Optional[int] = None
+
+    class Config:
+        extra = 'allow'  # Allow extra fields to pass through
+
+
+@router.post("/add-transitions", response_model=List[SequenceItemResponse])
+async def add_transitions_to_movements(request: AddTransitionsRequest):
+    """
+    Add database-sourced transitions between movements
+
+    This endpoint is specifically for Recording Mode where we have a predefined
+    sequence of all 34 movements and need to insert transitions from the database.
+
+    Unlike the full sequence generation endpoint, this ONLY adds transitions -
+    it doesn't filter movements, apply safety rules, or limit movement count.
+
+    Request body:
+    {
+      "movements": [
+        {
+          "id": "uuid",
+          "name": "The Hundred",
+          "setup_position": "Supine",
+          "duration_seconds": 300,
+          ...
+        },
+        ...
+      ]
+    }
+
+    Returns:
+    [
+      { "type": "movement", "id": "...", "name": "The Hundred", ... },
+      { "type": "transition", "from_position": "Supine", "to_position": "Supine", "narrative": "...", "duration_seconds": 40, "voiceover_url": "...", ... },
+      { "type": "movement", "id": "...", "name": "Open Leg Rocker", ... },
+      ...
+    ]
+    """
+    try:
+        logger.info(f"[add-transitions] Received {len(request.movements)} movements")
+
+        # Convert Pydantic models to dicts for SequenceTools
+        movements_list = [m.dict() for m in request.movements]
+
+        # Add "type": "movement" to each movement (required by _add_transitions_to_sequence)
+        for movement in movements_list:
+            movement["type"] = "movement"
+
+        # Initialize SequenceTools with Supabase client
+        sequence_tools = SequenceTools(supabase_client=supabase)
+
+        # Use the existing _add_transitions_to_sequence method from sequence_tools.py
+        # This fetches transitions from the database with all fields:
+        # - narrative (from database, not hardcoded)
+        # - duration_seconds (from database, not hardcoded 60)
+        # - voiceover_url, voiceover_duration, voiceover_enabled
+        sequence_with_transitions = sequence_tools._add_transitions_to_sequence(movements_list)
+
+        logger.info(
+            f"[add-transitions] Added transitions: "
+            f"{len(sequence_with_transitions)} total items "
+            f"({len(request.movements)} movements + {len(sequence_with_transitions) - len(request.movements)} transitions)"
+        )
+
+        return sequence_with_transitions
+
+    except Exception as e:
+        logger.error(f"Failed to add transitions to movements: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to add transitions: {str(e)}"
         )
