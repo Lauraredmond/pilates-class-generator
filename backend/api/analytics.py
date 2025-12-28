@@ -1428,6 +1428,15 @@ async def get_class_sequencing_report(user_id: str):
                 detail="No movements found in most recent class"
             )
 
+        # FIX: Transform muscle_groups from list of strings to list of dicts
+        # class_history stores: {"muscle_groups": ["Core", "Legs"]}
+        # generate_overlap_report expects: {"muscle_groups": [{"name": "Core"}, {"name": "Legs"}]}
+        for movement in movements:
+            muscle_groups = movement.get('muscle_groups', [])
+            if muscle_groups and isinstance(muscle_groups[0], str):
+                # Convert list of strings to list of dicts
+                movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
+
         # Generate report using muscle_overlap_analyzer (includes Historical Movement Coverage)
         logger.info(f"Calling generate_overlap_report() for class_plan_id={class_id}, user_id={str(user_uuid)}")
 
@@ -1445,8 +1454,9 @@ async def get_class_sequencing_report(user_id: str):
         # Calculate fail_count for pass_status (check for ≥50% overlap failures)
         fail_count = 0
         for i in range(len(movements) - 1):
-            muscles_a = set(movements[i].get('muscle_groups', []))
-            muscles_b = set(movements[i + 1].get('muscle_groups', []))
+            # Extract muscle names from muscle_groups (now list of dicts)
+            muscles_a = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
+            muscles_b = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
             shared = muscles_a.intersection(muscles_b)
 
             if muscles_a and muscles_b:
