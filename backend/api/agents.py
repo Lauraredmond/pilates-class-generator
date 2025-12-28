@@ -18,7 +18,7 @@ All endpoints preserve the same request/response interface as before.
 Frontend code requires no changes.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from typing import Optional
 from loguru import logger
 import os
@@ -46,6 +46,9 @@ from models import (
 from models.error import ErrorMessages
 
 from utils.auth import get_current_user_id  # REAL JWT authentication
+
+# Import background task function for sequencing report generation
+from api.analytics import generate_and_save_sequencing_report_background
 
 # Load environment variables
 load_dotenv()
@@ -533,6 +536,7 @@ async def research_cues(
 @router.post("/generate-complete-class", response_model=dict)
 async def generate_complete_class(
     request: CompleteClassRequest,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     agent: BasslinePilatesCoachAgent = Depends(get_agent)
 ):
@@ -1042,6 +1046,16 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                 supabase.table('class_history').insert(class_history_entry).execute()
                 logger.info(f"✅ Saved to class_history with music_genre: {selected_music_genre}")
                 logger.info("📊 ANALYTICS: Database save completed successfully")
+
+                # SEQUENCING REPORT: Trigger async background generation
+                # This runs AFTER class_history is saved, so it doesn't slow down the API
+                background_tasks.add_task(
+                    generate_and_save_sequencing_report_background,
+                    class_plan_id=class_plan_id,
+                    user_id=user_id,
+                    movements_snapshot=movements_for_history
+                )
+                logger.info(f"🔄 Scheduled background sequencing report generation for class {class_plan_id}")
 
         except Exception as db_error:
             # Don't fail the request if analytics save fails
