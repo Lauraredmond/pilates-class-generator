@@ -1381,10 +1381,112 @@ class ClassSequencingReportResponse(BaseModel):
     pass_status: bool
 
 
+@router.get("/class-sequencing-report/all-users/latest", response_model=ClassSequencingReportResponse)
+async def get_latest_class_sequencing_report_all_users(
+    admin_user_id: str = Query(..., description="Admin user ID for authorization")
+):
+    """
+    Generate class sequencing validation report for most recent class across ALL users (admin only)
+
+    Returns markdown-formatted report showing:
+    - Movement sequence data
+    - Consecutive muscle overlap analysis
+    - Summary statistics
+    - Detailed muscle group breakdown
+    - Movement pattern proximity check
+    - Historical muscle balance analysis
+
+    **Admin Authorization Required**
+    **Used in Developer Tools section of Settings page**
+    """
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    try:
+        # Fetch most recent class ACROSS ALL USERS (no user_id filter)
+        response = supabase.table('class_history') \
+            .select('*') \
+            .order('taught_date', desc=True) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
+
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="No class history found in database"
+            )
+
+        class_record = response.data[0]
+        class_id = class_record['class_plan_id']
+        class_date = class_record.get('taught_date', 'Unknown')
+        movements_snapshot = class_record.get('movements_snapshot', [])
+        user_id = class_record.get('user_id')  # Get user_id for historical lookup
+
+        # Filter only movements (exclude transitions)
+        movements = [m for m in movements_snapshot if m.get('type') == 'movement']
+
+        if not movements:
+            raise HTTPException(
+                status_code=404,
+                detail="No movements found in most recent class"
+            )
+
+        # Transform muscle_groups from list of strings to list of dicts
+        for movement in movements:
+            muscle_groups = movement.get('muscle_groups', [])
+            if muscle_groups and isinstance(muscle_groups[0], str):
+                movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
+
+        # Generate report using muscle_overlap_analyzer
+        logger.info(f"Calling generate_overlap_report() for class_plan_id={class_id}, user_id={user_id} (all users mode)")
+
+        report_result = generate_overlap_report(
+            sequence=movements,
+            user_id=str(user_id),
+            supabase_client=supabase,
+            class_plan_id=class_id,
+            output_dir="/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"
+        )
+
+        report_content = report_result.get("content", "")
+        logger.info(f"Report generated successfully. File saved: {report_result.get('file_path', 'N/A')}")
+
+        # Calculate fail_count for pass_status
+        fail_count = 0
+        for i in range(len(movements) - 1):
+            muscles_a = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
+            muscles_b = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
+            shared = muscles_a.intersection(muscles_b)
+
+            if muscles_a and muscles_b:
+                smaller_set_size = min(len(muscles_a), len(muscles_b))
+                overlap_pct = (len(shared) / smaller_set_size * 100) if smaller_set_size > 0 else 0
+                if overlap_pct >= 50:
+                    fail_count += 1
+
+        return ClassSequencingReportResponse(
+            report_content=report_content,
+            class_id=class_id,
+            class_date=class_date,
+            total_movements=len(movements),
+            pass_status=(fail_count == 0)
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating class sequencing report for all users: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=ErrorMessages.DATABASE_ERROR
+        )
+
+
 @router.get("/class-sequencing-report/{user_id}", response_model=ClassSequencingReportResponse)
 async def get_class_sequencing_report(user_id: str):
     """
-    Generate class sequencing validation report for most recent class
+    Generate class sequencing validation report for most recent class FOR SPECIFIC USER
 
     Returns markdown-formatted report showing:
     - Movement sequence data
@@ -1399,7 +1501,7 @@ async def get_class_sequencing_report(user_id: str):
     try:
         user_uuid = _convert_to_uuid(user_id)
 
-        # Fetch most recent class (sort by taught_date first, then created_at for same-day classes)
+        # Fetch most recent class FOR THIS USER ONLY
         response = supabase.table('class_history') \
             .select('*') \
             .eq('user_id', user_uuid) \
