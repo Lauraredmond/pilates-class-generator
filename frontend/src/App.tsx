@@ -87,12 +87,12 @@ function App() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-burgundy mb-4">Thank You for Your Honesty</h1>
+          <h1 className="text-2xl font-bold text-burgundy mb-4">Thank You</h1>
           <p className="text-charcoal mb-4 text-left">
-            Based on your response, we recommend <strong>consulting with your GP or healthcare provider</strong> before practicing Pilates during pregnancy or early postnatal recovery.
+            Based on your response, we recommend <strong>consulting with your GP or healthcare provider</strong> before practising Pilates during pregnancy or early postnatal recovery.
           </p>
           <p className="text-charcoal mb-6 text-left">
-            Your safety and wellbeing are our top priority. A qualified healthcare professional can provide personalized guidance on the safest way to practice Pilates during this important time.
+            Your safety and wellbeing are our top priority. A qualified healthcare professional can provide personalised guidance on the safest way to practise Pilates during this important time.
           </p>
           <p className="text-sm text-gray-600 mb-4 text-left">
             If your circumstances have changed, please refresh the page to update your information.
