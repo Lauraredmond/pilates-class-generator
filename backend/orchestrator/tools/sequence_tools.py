@@ -173,9 +173,15 @@ class SequenceTools:
         logger.warning(f"   user_id: {'PRESENT' if user_id else 'NONE'} ({user_id if user_id else 'N/A'})")
         logger.warning(f"   self.supabase: {'CONNECTED' if self.supabase else 'NONE'}")
         logger.warning(f"   sequence length: {len(sequence)} movements")
+        logger.warning(f"   self.supabase type: {type(self.supabase).__name__ if self.supabase else 'None'}")
+        logger.warning(f"   self.supabase url: {self.supabase.supabase_url if self.supabase and hasattr(self.supabase, 'supabase_url') else 'N/A'}")
 
         if user_id and self.supabase:
             logger.warning(f"✅ ATTEMPTING quality logging for user {user_id[:8]}...")
+            logger.warning(f"   🔧 CRITICAL: About to call _log_class_quality() method")
+            logger.warning(f"   🔧 user_id: {user_id}")
+            logger.warning(f"   🔧 sequence: {len(sequence)} movements")
+            logger.warning(f"   🔧 difficulty: {difficulty_level}")
             try:
                 self._log_class_quality(
                     user_id=user_id,
@@ -186,13 +192,21 @@ class SequenceTools:
                     difficulty_level=difficulty_level
                 )
                 logger.warning(f"✅ Quality logging COMPLETED successfully")
+                logger.warning(f"   ✅ CONFIRMED: _log_class_quality() executed without exception")
             except Exception as e:
-                logger.error(f"❌ Failed to log class quality: {e}")
+                logger.error(f"❌ CRITICAL FAILURE in quality logging")
+                logger.error(f"   Error: {e}")
                 logger.error(f"   Error type: {type(e).__name__}")
                 import traceback
-                logger.error(f"   Traceback:\n{traceback.format_exc()}")
+                logger.error(f"   Full traceback:\n{traceback.format_exc()}")
+                # RE-RAISE to ensure this error is visible
+                raise
         else:
             logger.warning(f"⚠️  SKIPPING quality logging (missing user_id or Supabase connection)")
+            if not user_id:
+                logger.error(f"   ❌ CRITICAL: user_id is None - this should NEVER happen!")
+            if not self.supabase:
+                logger.error(f"   ❌ CRITICAL: self.supabase is None - SequenceTools not initialized correctly!")
 
         return {
             "sequence": sequence_with_transitions,
@@ -1072,7 +1086,9 @@ class SequenceTools:
         logger.warning(f"   class_plan_id: {class_plan_id or 'None'}")
 
         if not self.supabase:
-            logger.error("❌ DIAGNOSTIC: self.supabase is None - CANNOT LOG")
+            logger.error("❌ CRITICAL: self.supabase is None - CANNOT LOG")
+            logger.error("   This indicates SequenceTools was initialized without Supabase client")
+            logger.error("   Check BasslinePilatesTools.__init__() in orchestrator/tools.py")
             return
 
         try:
@@ -1099,12 +1115,20 @@ class SequenceTools:
             # Single batched INSERT (replaces 7-9 separate calls with 1 call)
             try:
                 logger.warning(f"🚀 OPTIMIZATION: Executing batched insert ({len(movements_to_insert)} movements in 1 call)")
+                logger.warning(f"   Table: class_movements")
+                logger.warning(f"   Inserting {len(movements_to_insert)} movement records")
+                logger.warning(f"   Sample data (first movement): {movements_to_insert[0] if movements_to_insert else 'EMPTY'}")
+
                 response = self.supabase.table('class_movements').insert(movements_to_insert).execute()
                 movements_logged = len(movements_to_insert)
                 logger.warning(f"✅ DIAGNOSTIC: Batched insert SUCCESSFUL - logged {movements_logged}/{len(sequence)} movements")
+                logger.warning(f"   Response data count: {len(response.data) if response.data else 0}")
             except Exception as e:
-                logger.error(f"   ❌ Failed batched insert to class_movements: {e}")
+                logger.error(f"   ❌ CRITICAL: Failed batched insert to class_movements: {e}")
                 logger.error(f"      Error type: {type(e).__name__}")
+                logger.error(f"      Data being inserted: {movements_to_insert}")
+                import traceback
+                logger.error(f"      Full traceback:\n{traceback.format_exc()}")
                 movements_logged = 0
 
             logger.warning(f"✅ OPTIMIZATION COMPLETE: Logged {movements_logged}/{len(sequence)} movements (~600ms saved)")
@@ -1224,8 +1248,23 @@ class SequenceTools:
             }
 
             logger.warning(f"🔍 DIAGNOSTIC: Inserting into class_quality_log...")
-            response = self.supabase.table('class_quality_log').insert(quality_log_data).execute()
-            logger.warning(f"✅ DIAGNOSTIC: class_quality_log insert SUCCESSFUL")
+            logger.warning(f"   Table: class_quality_log")
+            logger.warning(f"   Data keys: {list(quality_log_data.keys())}")
+            logger.warning(f"   user_id: {quality_log_data['user_id']}")
+            logger.warning(f"   generated_at: {quality_log_data['generated_at']}")
+            logger.warning(f"   movement_count: {quality_log_data['movement_count']}")
+
+            try:
+                response = self.supabase.table('class_quality_log').insert(quality_log_data).execute()
+                logger.warning(f"✅ DIAGNOSTIC: class_quality_log insert SUCCESSFUL")
+                logger.warning(f"   Response data: {response.data}")
+                logger.warning(f"   Response count: {response.count if hasattr(response, 'count') else 'N/A'}")
+            except Exception as insert_error:
+                logger.error(f"❌ CRITICAL: INSERT to class_quality_log FAILED")
+                logger.error(f"   Error: {insert_error}")
+                logger.error(f"   Error type: {type(insert_error).__name__}")
+                logger.error(f"   Data being inserted: {quality_log_data}")
+                raise
 
             logger.info(
                 f"✅ Quality logged: Rule1={'PASS' if rule1_pass else 'FAIL'}, "
@@ -1235,7 +1274,10 @@ class SequenceTools:
             )
 
         except Exception as e:
-            logger.error(f"Error in _log_class_quality: {e}")
+            logger.error(f"❌ CRITICAL: Exception in _log_class_quality: {e}")
+            logger.error(f"   Error type: {type(e).__name__}")
+            import traceback
+            logger.error(f"   Full traceback:\n{traceback.format_exc()}")
             raise
 
     def _check_if_admin(self, user_id: str) -> bool:
