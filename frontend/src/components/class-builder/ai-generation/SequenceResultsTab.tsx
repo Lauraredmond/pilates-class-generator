@@ -29,30 +29,10 @@ export function SequenceResultsTab({ data }: SequenceResultsTabProps) {
     }
   };
 
-  // Calculate balance score from dynamic muscle groups
-  const calculateBalanceScore = (): number => {
-    const muscleValues = Object.values(data.muscle_balance);
-    if (muscleValues.length === 0) return 0;
-    const sum = muscleValues.reduce((acc, val) => acc + val, 0);
-    return Math.round(sum / muscleValues.length);
-  };
-
-  // Get primary muscle group with highest percentage
-  const getPrimaryMuscle = (): { name: string; percentage: number } => {
-    const entries = Object.entries(data.muscle_balance);
-    if (entries.length === 0) return { name: 'N/A', percentage: 0 };
-    const [name, percentage] = entries.reduce((max, curr) =>
-      curr[1] > max[1] ? curr : max
-    );
-    return { name, percentage: Math.round(percentage) };
-  };
-
-  const primaryMuscle = getPrimaryMuscle();
-
   return (
     <div className="space-y-6">
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="bg-burgundy-dark border border-cream/30 rounded-lg p-4">
           <p className="text-xs text-cream/60 mb-1">Movements</p>
           <p className="text-2xl font-bold text-cream">{data.movement_count}</p>
@@ -63,15 +43,6 @@ export function SequenceResultsTab({ data }: SequenceResultsTabProps) {
           <p className="text-2xl font-bold text-cream">
             {Math.round(data.total_duration / 60)}m
           </p>
-        </div>
-        <div className="bg-burgundy-dark border border-cream/30 rounded-lg p-4">
-          <p className="text-xs text-cream/60 mb-1">Primary Focus</p>
-          <p className="text-lg font-bold text-cream">{primaryMuscle.percentage}%</p>
-          <p className="text-xs text-cream/60 mt-1 truncate">{primaryMuscle.name}</p>
-        </div>
-        <div className="bg-burgundy-dark border border-cream/30 rounded-lg p-4">
-          <p className="text-xs text-cream/60 mb-1">Balance Score</p>
-          <p className="text-2xl font-bold text-cream">{calculateBalanceScore()}%</p>
         </div>
       </div>
 
