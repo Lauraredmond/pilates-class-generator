@@ -458,7 +458,7 @@ export function Settings() {
 
       const rows = logs.map((log: any) => [
         log.user_email || 'Unknown',
-        log.id,
+        log.class_plan_id,  // FIX: Use class_plan_id for reconciliation with sequencing report
         log.generated_at,
         log.difficulty_level,
         log.movement_count,
