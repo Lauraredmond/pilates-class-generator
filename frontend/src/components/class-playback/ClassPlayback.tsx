@@ -716,6 +716,17 @@ export function ClassPlayback({
             totalDuration={currentItem.duration_seconds}
             currentIndex={currentIndex}
             totalItems={totalItems}
+            playlistName={currentPlaylist?.name}
+            trackIndex={currentTrackIndex}
+            totalTracks={currentPlaylist?.tracks?.length}
+            currentTrack={
+              currentPlaylist?.tracks?.[currentTrackIndex]
+                ? {
+                    composer: currentPlaylist.tracks[currentTrackIndex].composer,
+                    title: currentPlaylist.tracks[currentTrackIndex].title,
+                  }
+                : undefined
+            }
           />
         </div>
 
@@ -793,38 +804,42 @@ export function ClassPlayback({
               </button>
             )}
 
-            {/* Audio status indicator */}
-            <div className="text-xs text-cream/40 space-y-1">
-              <p className="flex items-center gap-2">
-                <span className={`inline-block w-2 h-2 rounded-full ${audioState.isPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
-                {audioState.isPlaying ? 'Audio Playing' : audioState.isReady ? 'Audio Ready' : 'Audio Loading...'}
-              </p>
+            {/*
+              AUDIO DEBUG INFO - Conditionally shown based on environment
 
-              {/* Show current volume during ducking */}
-              <p className="flex items-center gap-2">
-                Music: {Math.round(audioState.currentVolume * 100)}%
-                {audioState.currentVolume < 1.0 && ' (ducked for voiceover)'}
-              </p>
+              To enable full debugging in production (if audio issues occur):
+              1. Change isDev to: const isDev = true;
+              2. This will show all audio state details for troubleshooting
+              3. Remember to revert after debugging
 
-              {/* Show if voiceover is active for this section */}
-              {currentVoiceover && (
-                <p className="text-green-400">
-                  🎙️ Voiceover enabled for this section
-                </p>
-              )}
+              NOTE: Music playlist info now displayed inline with countdown timer (TimerDisplay component)
+            */}
+            {(() => {
+              const isDev = import.meta.env.DEV; // true in dev, false in production
 
-              {currentPlaylist && (
-                <>
-                  <p>Playlist: {currentPlaylist.name}</p>
-                  <p>Track {currentTrackIndex + 1} of {currentPlaylist.tracks?.length || 0}</p>
-                  {currentPlaylist.tracks && currentPlaylist.tracks[currentTrackIndex] && (
-                    <p className="truncate max-w-xs">
-                      {currentPlaylist.tracks[currentTrackIndex].composer} - {currentPlaylist.tracks[currentTrackIndex].title}
+              return isDev ? (
+                <div className="text-xs text-cream/40 space-y-1">
+                  {/* DEBUG INFO - Only shown in dev */}
+                  <p className="flex items-center gap-2">
+                    <span className={`inline-block w-2 h-2 rounded-full ${audioState.isPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
+                    {audioState.isPlaying ? 'Audio Playing' : audioState.isReady ? 'Audio Ready' : 'Audio Loading...'}
+                  </p>
+
+                  {/* Show current volume during ducking */}
+                  <p className="flex items-center gap-2">
+                    Music: {Math.round(audioState.currentVolume * 100)}%
+                    {audioState.currentVolume < 1.0 && ' (ducked for voiceover)'}
+                  </p>
+
+                  {/* Show if voiceover is active for this section */}
+                  {currentVoiceover && (
+                    <p className="text-green-400">
+                      🎙️ Voiceover enabled for this section
                     </p>
                   )}
-                </>
-              )}
-            </div>
+                </div>
+              ) : null;
+            })()}
           </>
         )}
       </div>
