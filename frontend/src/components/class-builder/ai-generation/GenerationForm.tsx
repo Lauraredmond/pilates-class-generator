@@ -214,9 +214,6 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
               </option>
             ))}
           </select>
-          <p className="text-xs text-cream/60 mt-1">
-            Classical music from Internet Archive - public domain, no ads
-          </p>
         </div>
 
         {/* Cool Down Music */}
@@ -237,9 +234,6 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
               </option>
             ))}
           </select>
-          <p className="text-xs text-cream/60 mt-1">
-            Calming classical music for relaxation and stretching
-          </p>
         </div>
       </div>
 
