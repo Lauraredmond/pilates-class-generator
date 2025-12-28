@@ -16,6 +16,7 @@ from loguru import logger
 from collections import defaultdict
 
 from models.error import ErrorMessages
+from orchestrator.tools.muscle_overlap_analyzer import generate_overlap_report
 
 # Load environment variables
 load_dotenv()
@@ -1414,7 +1415,7 @@ async def get_class_sequencing_report(user_id: str):
             )
 
         class_record = response.data[0]
-        class_id = class_record['id']
+        class_id = class_record['class_plan_id']  # FIX: Use FK to class_plans, not class_history's own id
         class_date = class_record.get('taught_date', 'Unknown')
         movements_snapshot = class_record.get('movements_snapshot', [])
 
@@ -1427,256 +1428,32 @@ async def get_class_sequencing_report(user_id: str):
                 detail="No movements found in most recent class"
             )
 
-        # Generate report
-        report_lines = []
-        report_lines.append("# Muscle Overlap Analysis Report")
-        report_lines.append("")
-        report_lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        report_lines.append(f"**Class ID:** {class_id}")
-        report_lines.append(f"**Class Date:** {class_date}")
-        report_lines.append(f"**Total Movements:** {len(movements)}")
-        report_lines.append("")
+        # Generate report using muscle_overlap_analyzer (includes Historical Movement Coverage)
+        logger.info(f"Calling generate_overlap_report() for class_plan_id={class_id}, user_id={str(user_uuid)}")
 
-        # Movement Sequence Data (CSV)
-        report_lines.append("## Movement Sequence Data (CSV)")
-        report_lines.append("")
-        report_lines.append("Position,Movement Name,Muscle Groups,Muscle Count")
+        report_result = generate_overlap_report(
+            sequence=movements,
+            user_id=str(user_uuid),
+            supabase_client=supabase,
+            class_plan_id=class_id,  # FIX: Use correct class_plan_id for reconciliation
+            output_dir="/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"  # FIX: Save report file
+        )
 
-        for idx, movement in enumerate(movements, start=1):
-            name = movement.get('name', 'Unknown')
-            muscle_groups = movement.get('muscle_groups', [])
-            muscle_str = '; '.join(muscle_groups) if muscle_groups else 'None'
-            muscle_count = len(muscle_groups)
-            report_lines.append(f"{idx},{name},\"{muscle_str}\",{muscle_count}")
+        report_content = report_result.get("content", "")
+        logger.info(f"Report generated successfully. File saved: {report_result.get('file_path', 'N/A')}")
 
-        report_lines.append("")
-
-        # Consecutive Muscle Overlap Analysis
-        report_lines.append("## Consecutive Muscle Overlap Analysis (CSV)")
-        report_lines.append("")
-        report_lines.append("Movement A,Movement B,Shared Muscles,Overlap Count,Overlap %,Pass (<50%)?")
-
-        overlaps = []
-        pass_count = 0
+        # Calculate fail_count for pass_status (check for ≥50% overlap failures)
         fail_count = 0
-
         for i in range(len(movements) - 1):
-            mov_a = movements[i]
-            mov_b = movements[i + 1]
-
-            name_a = mov_a.get('name', 'Unknown')
-            name_b = mov_b.get('name', 'Unknown')
-
-            muscles_a = set(mov_a.get('muscle_groups', []))
-            muscles_b = set(mov_b.get('muscle_groups', []))
-
+            muscles_a = set(movements[i].get('muscle_groups', []))
+            muscles_b = set(movements[i + 1].get('muscle_groups', []))
             shared = muscles_a.intersection(muscles_b)
-            shared_str = '; '.join(sorted(shared)) if shared else 'None'
 
-            overlap_count = len(shared)
-
-            # Calculate overlap percentage (based on smaller muscle group set)
             if muscles_a and muscles_b:
                 smaller_set_size = min(len(muscles_a), len(muscles_b))
-                overlap_pct = (overlap_count / smaller_set_size * 100) if smaller_set_size > 0 else 0
-            else:
-                overlap_pct = 0
-
-            overlaps.append(overlap_pct)
-
-            pass_status = "PASS" if overlap_pct < 50 else "FAIL"
-            if overlap_pct < 50:
-                pass_count += 1
-            else:
-                fail_count += 1
-
-            report_lines.append(f"{name_a},{name_b},\"{shared_str}\",{overlap_count},{overlap_pct:.1f}%,{pass_status}")
-
-        report_lines.append("")
-
-        # Summary Statistics
-        report_lines.append("## Summary Statistics")
-        report_lines.append("")
-        total_pairs = len(overlaps)
-        avg_overlap = sum(overlaps) / total_pairs if total_pairs > 0 else 0
-        max_overlap = max(overlaps) if overlaps else 0
-
-        report_lines.append(f"- Total Consecutive Pairs: {total_pairs}")
-        report_lines.append(f"- Passed (<50% overlap): {pass_count} ({pass_count/total_pairs*100:.1f}%)" if total_pairs > 0 else "- Passed: 0")
-        report_lines.append(f"- Failed (≥50% overlap): {fail_count} ({fail_count/total_pairs*100:.1f}%)" if total_pairs > 0 else "- Failed: 0")
-        report_lines.append(f"- Average Overlap: {avg_overlap:.1f}%")
-        report_lines.append(f"- Maximum Overlap: {max_overlap:.1f}%")
-        report_lines.append("")
-
-        if fail_count == 0:
-            report_lines.append("### ✅ **ALL CHECKS PASSED:** No consecutive movements exceed 50% overlap")
-        else:
-            report_lines.append(f"### ❌ **{fail_count} FAILURE(S):** Some consecutive movements exceed 50% overlap")
-
-        report_lines.append("")
-
-        # Detailed Muscle Group Breakdown
-        report_lines.append("## Detailed Muscle Group Breakdown")
-        report_lines.append("")
-
-        for idx, movement in enumerate(movements, start=1):
-            name = movement.get('name', 'Unknown')
-            muscle_groups = movement.get('muscle_groups', [])
-
-            report_lines.append(f"### {idx}. {name}")
-            report_lines.append(f"**Muscle Groups:** {', '.join(muscle_groups) if muscle_groups else 'None'}")
-
-            if idx < len(movements):
-                next_mov = movements[idx]
-                next_muscles = set(next_mov.get('muscle_groups', []))
-                current_muscles = set(muscle_groups)
-                shared = current_muscles.intersection(next_muscles)
-
-                if current_muscles and next_muscles:
-                    smaller_size = min(len(current_muscles), len(next_muscles))
-                    overlap_pct = (len(shared) / smaller_size * 100) if smaller_size > 0 else 0
-                    report_lines.append(f"**Overlap with next:** {overlap_pct:.1f}% ({', '.join(sorted(shared)) if shared else 'None'})")
-
-            report_lines.append("")
-
-        # Movement Pattern Proximity Check
-        report_lines.append("## Movement Pattern Proximity Check")
-        report_lines.append("**Rule:** Similar movement patterns should not appear within 3 positions of each other.")
-        report_lines.append("")
-
-        # Fetch movement patterns from database
-        movement_names = [m.get('name') for m in movements if m.get('name')]
-        pattern_cache = {}
-
-        if movement_names:
-            patterns_response = supabase.table('movements') \
-                .select('name, movement_pattern') \
-                .in_('name', movement_names) \
-                .execute()
-
-            for mov in patterns_response.data:
-                pattern_cache[mov['name']] = mov.get('movement_pattern', 'Unknown')
-
-        # Check for pattern proximity violations
-        proximity_violations = []
-        for i in range(len(movements)):
-            mov_name = movements[i].get('name')
-            pattern = pattern_cache.get(mov_name, 'Unknown')
-
-            # Check next 3 movements
-            for j in range(i + 1, min(i + 4, len(movements))):
-                next_mov_name = movements[j].get('name')
-                next_pattern = pattern_cache.get(next_mov_name, 'Unknown')
-
-                if pattern == next_pattern and pattern != 'Unknown':
-                    distance = j - i
-                    proximity_violations.append(f"- Position {i+1} ({mov_name}) and Position {j+1} ({next_mov_name}): Both {pattern} (distance: {distance})")
-
-        if proximity_violations:
-            report_lines.append(f"### ❌ **{len(proximity_violations)} VIOLATION(S):**")
-            report_lines.extend(proximity_violations)
-        else:
-            report_lines.append("### ✅ **NO VIOLATIONS:** Movement patterns are well distributed")
-
-        report_lines.append("")
-
-        # Historical Muscle Balance Analysis
-        report_lines.append("## Historical Muscle Balance Analysis")
-        report_lines.append("**Goal:** Ensure all muscle groups are covered over time")
-        report_lines.append("")
-
-        # Count muscle groups in this class
-        muscle_totals = defaultdict(int)
-        for movement in movements:
-            for muscle in movement.get('muscle_groups', []):
-                muscle_totals[muscle] += 1
-
-        if muscle_totals:
-            report_lines.append("**This Class:**")
-            sorted_muscles = sorted(muscle_totals.items(), key=lambda x: x[1], reverse=True)
-            for muscle, count in sorted_muscles:
-                report_lines.append(f"- {muscle}: {count} movement(s)")
-        else:
-            report_lines.append("**This Class:** No muscle group data available")
-
-        report_lines.append("")
-
-        # Movement Family Balance Analysis
-        report_lines.append("## Movement Family Balance Analysis")
-        report_lines.append("**Goal:** Class should roughly correlate with overall family distribution across 34 movements")
-        report_lines.append("")
-
-        # Fetch ALL movements from database to get overall family distribution
-        all_movements_response = supabase.table('movements') \
-            .select('name, movement_family') \
-            .execute()
-
-        all_movements = all_movements_response.data or []
-
-        # Calculate overall distribution across 34 movements
-        overall_family_counts = defaultdict(int)
-        for mov in all_movements:
-            family = mov.get('movement_family', 'other')
-            overall_family_counts[family] += 1
-
-        total_movements_db = len(all_movements)
-
-        # Calculate class distribution
-        class_family_counts = defaultdict(int)
-        for movement in movements:
-            # Need to lookup movement_family for this movement
-            movement_name = movement.get('name')
-            if movement_name:
-                # Find in all_movements
-                mov_data = next((m for m in all_movements if m['name'] == movement_name), None)
-                if mov_data:
-                    family = mov_data.get('movement_family', 'other')
-                    class_family_counts[family] += 1
-
-        total_movements_class = len(movements)
-
-        # Compare proportions
-        report_lines.append("### Overall Distribution (34 Movements)")
-        sorted_overall = sorted(overall_family_counts.items(), key=lambda x: x[1], reverse=True)
-        for family, count in sorted_overall:
-            percentage = (count / total_movements_db * 100) if total_movements_db > 0 else 0
-            report_lines.append(f"- {family}: {count} movements ({percentage:.1f}%)")
-
-        report_lines.append("")
-        report_lines.append("### This Class Distribution")
-        sorted_class = sorted(class_family_counts.items(), key=lambda x: x[1], reverse=True)
-        for family, count in sorted_class:
-            percentage = (count / total_movements_class * 100) if total_movements_class > 0 else 0
-            overall_pct = (overall_family_counts[family] / total_movements_db * 100) if total_movements_db > 0 else 0
-            diff = percentage - overall_pct
-            diff_str = f"(+{diff:.1f}%)" if diff > 0 else f"({diff:.1f}%)"
-            report_lines.append(f"- {family}: {count} movements ({percentage:.1f}%) {diff_str} vs overall")
-
-        report_lines.append("")
-
-        # Check for over-representation (>50% higher than overall proportion)
-        family_warnings = []
-        for family, count in class_family_counts.items():
-            class_pct = (count / total_movements_class * 100) if total_movements_class > 0 else 0
-            overall_pct = (overall_family_counts[family] / total_movements_db * 100) if total_movements_db > 0 else 0
-
-            # Check if class proportion is more than 50% higher than overall proportion
-            if overall_pct > 0 and (class_pct / overall_pct) > 1.5:
-                family_warnings.append(f"- **{family}**: {class_pct:.1f}% in class vs {overall_pct:.1f}% overall (overrepresented)")
-
-        if family_warnings:
-            report_lines.append("### ⚠️ **FAMILY BALANCE WARNINGS:**")
-            report_lines.extend(family_warnings)
-        else:
-            report_lines.append("### ✅ **BALANCED:** Family distribution roughly correlates with overall proportions")
-
-        report_lines.append("")
-        report_lines.append("---")
-        report_lines.append("")
-        report_lines.append("*Generated by Bassline Pilates Class Sequencing Analyzer*")
-
-        # Combine into final report
-        report_content = '\n'.join(report_lines)
+                overlap_pct = (len(shared) / smaller_set_size * 100) if smaller_set_size > 0 else 0
+                if overlap_pct >= 50:
+                    fail_count += 1
 
         return ClassSequencingReportResponse(
             report_content=report_content,
