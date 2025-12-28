@@ -14,13 +14,13 @@ CREATE TABLE IF NOT EXISTS class_sequencing_reports (
     generated_at TIMESTAMP DEFAULT NOW(),
 
     -- Constraints
-    UNIQUE(class_plan_id),  -- One report per class
-
-    -- Indexes for performance
-    CREATE INDEX idx_class_sequencing_reports_user ON class_sequencing_reports(user_id);
-    CREATE INDEX idx_class_sequencing_reports_date ON class_sequencing_reports(generated_at DESC);
-    CREATE INDEX idx_class_sequencing_reports_status ON class_sequencing_reports(pass_status);
+    UNIQUE(class_plan_id)  -- One report per class
 );
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_class_sequencing_reports_user ON class_sequencing_reports(user_id);
+CREATE INDEX IF NOT EXISTS idx_class_sequencing_reports_date ON class_sequencing_reports(generated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_class_sequencing_reports_status ON class_sequencing_reports(pass_status);
 
 -- Enable Row Level Security
 ALTER TABLE class_sequencing_reports ENABLE ROW LEVEL SECURITY;
