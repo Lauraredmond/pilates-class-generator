@@ -461,8 +461,11 @@ class SequenceTools:
         # Priority: Flexion -> Rotation -> Extension -> Lateral -> Balance
         pattern_order = ["flexion", "rotation", "extension", "lateral", "balance"]
 
-        # Leave room for cooldown
-        while len(sequence) < (max_movements - 1):
+        # For 12-min quick practice: Fill to exactly 3 movements (no cooldown required)
+        # For other classes: Leave room for dedicated cooldown movement
+        target_count = max_movements if target_duration == 12 else (max_movements - 1)
+
+        while len(sequence) < target_count:
             selected = self._select_next_movement(
                 movements=movements,
                 current_sequence=sequence,
@@ -481,15 +484,16 @@ class SequenceTools:
             selected_copy["type"] = "movement"
             sequence.append(selected_copy)
 
-        # Rule 3: Always end with cooldown
-        cooldown = self._get_cooldown_movement(movements, sequence)
-        if cooldown:
-            cooldown_copy = cooldown.copy()
-            # PRESERVE database duration_seconds instead of overwriting with teaching_time
-            if "duration_seconds" not in cooldown_copy or not cooldown_copy["duration_seconds"]:
-                cooldown_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
-            cooldown_copy["type"] = "movement"
-            sequence.append(cooldown_copy)
+        # Rule 3: Add dedicated cooldown movement (but NOT for 12-min quick practice)
+        if target_duration != 12:
+            cooldown = self._get_cooldown_movement(movements, sequence)
+            if cooldown:
+                cooldown_copy = cooldown.copy()
+                # PRESERVE database duration_seconds instead of overwriting with teaching_time
+                if "duration_seconds" not in cooldown_copy or not cooldown_copy["duration_seconds"]:
+                    cooldown_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
+                cooldown_copy["type"] = "movement"
+                sequence.append(cooldown_copy)
 
         # DEBUG: Log voiceover fields in final sequence
         logger.info("=" * 80)
