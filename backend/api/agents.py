@@ -25,6 +25,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from supabase import create_client, Client
+import uuid
 
 # Import SimplifiedStandardAgent with ReWOO reasoner (Phase 2)
 from orchestrator.simplified_agent import BasslinePilatesCoachAgent
@@ -750,10 +751,16 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         logger.info("🔧 Using: Direct Supabase queries")
         logger.info("=" * 80)
 
+        # Step 0: Generate class_plan_id BEFORE sequence generation
+        # This UUID will be used for quality logging reconciliation
+        class_plan_id = str(uuid.uuid4())
+        logger.info(f"🆔 Generated class_plan_id: {class_plan_id}")
+
         # Step 1: Generate main sequence (existing behavior)
-        # CRITICAL: Add user_id to parameters for admin check (QA reports)
+        # CRITICAL: Add user_id AND class_plan_id to parameters for quality logging
         sequence_params = request.class_plan.dict()
         sequence_params['user_id'] = user_id
+        sequence_params['class_plan_id'] = class_plan_id  # NEW: Pass for quality logging
 
         sequence_result = call_agent_tool(
             tool_id="generate_sequence",
@@ -966,6 +973,8 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
             # Save to class_plans table first (SCHEMA CORRECTED)
             class_plan_data = {
+                # NEW: Use pre-generated UUID for reconciliation with quality logs
+                'id': class_plan_id,
                 # SCHEMA FIX: Use 'title' not 'name'
                 'title': f"{request.class_plan.difficulty_level} Pilates Class ({request.class_plan.target_duration_minutes} min)",
                 'user_id': user_id,
@@ -982,8 +991,11 @@ Return all 6 sections with complete details (narrative, timing, instructions).
             db_response = supabase.table('class_plans').insert(class_plan_data).execute()
 
             if db_response.data and len(db_response.data) > 0:
-                class_plan_id = db_response.data[0].get('id')
-                logger.info(f"✅ Saved complete class to class_plans (ID: {class_plan_id})")
+                # Verify the same class_plan_id was used
+                inserted_id = db_response.data[0].get('id')
+                logger.info(f"✅ Saved complete class to class_plans (ID: {inserted_id})")
+                if inserted_id != class_plan_id:
+                    logger.error(f"⚠️ WARNING: Inserted ID ({inserted_id}) doesn't match pre-generated ID ({class_plan_id})!")
 
                 # Save to class_history with music_genre for analytics (SCHEMA CORRECTED)
                 # SCHEMA FIX: muscle_groups_targeted is JSONB array, not object keys
