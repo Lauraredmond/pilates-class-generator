@@ -81,23 +81,25 @@ function App() {
   if (disclaimerRejected) {
     return (
       <div className="min-h-screen bg-burgundy flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-lg text-center">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-burgundy mb-4">Access Denied</h1>
-          <p className="text-charcoal mb-6">
-            You cannot use this application at this time.
+          <h1 className="text-2xl font-bold text-burgundy mb-4">Thank You for Your Honesty</h1>
+          <p className="text-charcoal mb-4 text-left">
+            Based on your response, we recommend <strong>consulting with your GP or healthcare provider</strong> before practicing Pilates during pregnancy or early postnatal recovery.
           </p>
-          <p className="text-sm text-gray-600 mb-4">
-            If you believe this is an error or your circumstances have changed, please refresh the page
-            to start again.
+          <p className="text-charcoal mb-6 text-left">
+            Your safety and wellbeing are our top priority. A qualified healthcare professional can provide personalized guidance on the safest way to practice Pilates during this important time.
+          </p>
+          <p className="text-sm text-gray-600 mb-4 text-left">
+            If your circumstances have changed, please refresh the page to update your information.
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-burgundy text-cream px-6 py-2 rounded hover:bg-burgundy/90"
+            className="bg-burgundy text-cream px-6 py-3 rounded hover:bg-burgundy/90 w-full"
           >
             Refresh Page
           </button>
