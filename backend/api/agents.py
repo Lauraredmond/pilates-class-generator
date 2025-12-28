@@ -756,6 +756,29 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         class_plan_id = str(uuid.uuid4())
         logger.info(f"🆔 Generated class_plan_id: {class_plan_id}")
 
+        # Step 0.5: Create STUB class_plans record NOW (before sequence generation)
+        # This satisfies the foreign key constraint when quality logging happens
+        # We'll UPDATE it with full data after sequence generation completes
+        try:
+            stub_class_plan = {
+                'id': class_plan_id,
+                'title': f"{request.class_plan.difficulty_level} Class (Generating...)",
+                'user_id': user_id,
+                'difficulty_level': request.class_plan.difficulty_level,
+                'duration_minutes': request.class_plan.target_duration_minutes,
+                'generated_by_ai': False,
+                'created_at': datetime.now().isoformat()
+            }
+            supabase.table('class_plans').insert(stub_class_plan).execute()
+            logger.info(f"✅ Created stub class_plans record (ID: {class_plan_id}) for FK constraint")
+        except Exception as stub_error:
+            logger.error(f"❌ Failed to create stub class_plans record: {stub_error}")
+            # Re-raise - we need this stub for quality logging to work
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to initialize class plan record"
+            )
+
         # Step 1: Generate main sequence (existing behavior)
         # CRITICAL: Add user_id AND class_plan_id to parameters for quality logging
         sequence_params = request.class_plan.dict()
@@ -971,24 +994,21 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                         "voiceover_enabled": movement.get('voiceover_enabled', False)
                     })
 
-            # Save to class_plans table first (SCHEMA CORRECTED)
+            # UPDATE stub class_plans record with full data (already inserted above)
+            # Changed from INSERT to UPDATE since stub record was created before sequence generation
             class_plan_data = {
-                # NEW: Use pre-generated UUID for reconciliation with quality logs
-                'id': class_plan_id,
                 # SCHEMA FIX: Use 'title' not 'name'
                 'title': f"{request.class_plan.difficulty_level} Pilates Class ({request.class_plan.target_duration_minutes} min)",
-                'user_id': user_id,
                 # SCHEMA FIX: Use 'main_sequence' not 'movements'
                 'main_sequence': sequence,
                 'duration_minutes': request.class_plan.target_duration_minutes,
                 'difficulty_level': request.class_plan.difficulty_level,
                 'total_movements': len(movements_for_history),
                 'generated_by_ai': False,  # DEFAULT mode is database-driven
-                'created_at': now,
                 'updated_at': now
             }
 
-            db_response = supabase.table('class_plans').insert(class_plan_data).execute()
+            db_response = supabase.table('class_plans').update(class_plan_data).eq('id', class_plan_id).execute()
 
             if db_response.data and len(db_response.data) > 0:
                 # Verify the same class_plan_id was used
