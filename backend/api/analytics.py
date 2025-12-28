@@ -2108,6 +2108,7 @@ class QualityTrendData(BaseModel):
 class QualityLogEntry(BaseModel):
     """Single quality log entry with full rule compliance details"""
     id: str
+    class_plan_id: Optional[str] = None  # FIX: Add for reconciliation with sequencing report
     user_id: str
     user_email: Optional[str] = None  # User email for admin tracking
     generated_at: str
