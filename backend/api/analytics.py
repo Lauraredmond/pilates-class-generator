@@ -3,7 +3,7 @@ Analytics API Router V2
 Enhanced with time period filtering and comprehensive data views
 """
 
-from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi import APIRouter, HTTPException, Query, Path, BackgroundTasks
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 from enum import Enum
@@ -2394,4 +2394,181 @@ async def get_quality_logs(
 
     except Exception as e:
         logger.error("Error fetching quality logs: {}", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+# ==============================================================================
+# AUTO-GENERATION OF SEQUENCING REPORTS - Background Task
+# ==============================================================================
+
+async def generate_and_save_sequencing_report_background(
+    class_plan_id: str,
+    user_id: str,
+    movements_snapshot: List[Dict[str, Any]]
+):
+    """
+    Background task to generate and save sequencing report to database
+
+    This runs AFTER class creation completes, so it doesn't slow down the app.
+    Reports are stored in class_sequencing_reports table for later retrieval.
+
+    **Performance Impact:** ZERO - runs asynchronously after API response
+    """
+    try:
+        logger.info(f"🔄 Background task: Generating sequencing report for class {class_plan_id}")
+
+        # Filter only movements (exclude transitions)
+        movements = [m for m in movements_snapshot if m.get('type') == 'movement']
+
+        if not movements or len(movements) == 0:
+            logger.warning(f"⚠️ No movements in class {class_plan_id}, skipping report generation")
+            return
+
+        # Transform muscle_groups from list of strings to list of dicts (if needed)
+        for movement in movements:
+            muscle_groups = movement.get('muscle_groups', [])
+            if muscle_groups and isinstance(muscle_groups[0], str):
+                movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
+
+        # Generate report using muscle_overlap_analyzer
+        report_result = generate_overlap_report(
+            sequence=movements,
+            user_id=str(user_id),
+            supabase_client=supabase,
+            class_plan_id=class_plan_id,
+            output_dir="/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"
+        )
+
+        report_content = report_result.get("content", "")
+
+        # Calculate fail_count for pass_status
+        fail_count = 0
+        for i in range(len(movements) - 1):
+            muscles_a = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
+            muscles_b = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
+            shared = muscles_a.intersection(muscles_b)
+
+            if muscles_a and muscles_b:
+                smaller_set_size = min(len(muscles_a), len(muscles_b))
+                overlap_pct = (len(shared) / smaller_set_size * 100) if smaller_set_size > 0 else 0
+                if overlap_pct >= 50:
+                    fail_count += 1
+
+        pass_status = (fail_count == 0)
+
+        # Save report to database (NOT filesystem)
+        report_data = {
+            'class_plan_id': class_plan_id,
+            'user_id': user_id,
+            'report_content': report_content,
+            'pass_status': pass_status,
+            'total_movements': len(movements),
+            'fail_count': fail_count
+        }
+
+        # Insert or update (upsert on class_plan_id unique constraint)
+        supabase.table('class_sequencing_reports').upsert(report_data).execute()
+
+        logger.info(f"✅ Background task: Saved sequencing report for class {class_plan_id} (pass={pass_status})")
+
+    except Exception as e:
+        logger.error(f"❌ Background task failed: Error generating sequencing report for class {class_plan_id}: {str(e)}", exc_info=True)
+        # Don't raise - background tasks should fail gracefully
+
+
+@router.post("/trigger-report-generation/{class_plan_id}")
+async def trigger_sequencing_report_generation(
+    class_plan_id: str,
+    background_tasks: BackgroundTasks
+):
+    """
+    Trigger async report generation for a specific class
+
+    This endpoint is called AFTER class creation. It schedules a background task
+    to generate the sequencing report without blocking the API response.
+
+    **Performance Impact:**
+    - API responds immediately (< 10ms)
+    - Report generation happens in background (doesn't block user)
+    - No slowdown to class creation flow
+
+    **Usage:** Call this from class creation endpoint after saving class to database
+    """
+    try:
+        # Fetch class from class_history
+        response = supabase.table('class_history') \
+            .select('*') \
+            .eq('class_plan_id', class_plan_id) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
+
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Class with class_plan_id {class_plan_id} not found"
+            )
+
+        class_record = response.data[0]
+        user_id = class_record.get('user_id')
+        movements_snapshot = class_record.get('movements_snapshot', [])
+
+        # Schedule background task (doesn't block)
+        background_tasks.add_task(
+            generate_and_save_sequencing_report_background,
+            class_plan_id=class_plan_id,
+            user_id=user_id,
+            movements_snapshot=movements_snapshot
+        )
+
+        return {
+            "message": "Report generation scheduled in background",
+            "class_plan_id": class_plan_id,
+            "status": "pending"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error triggering report generation: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/sequencing-report/{class_plan_id}")
+async def get_saved_sequencing_report(class_plan_id: str):
+    """
+    Retrieve a previously generated sequencing report from database
+
+    Returns the saved report if it exists, otherwise returns 404.
+    Reports are generated asynchronously after class creation.
+
+    **Performance:** Instant retrieval from database (no LLM or computation)
+    """
+    try:
+        response = supabase.table('class_sequencing_reports') \
+            .select('*') \
+            .eq('class_plan_id', class_plan_id) \
+            .execute()
+
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No sequencing report found for class {class_plan_id}. Report may still be generating in background."
+            )
+
+        report = response.data[0]
+
+        return {
+            "class_plan_id": report['class_plan_id'],
+            "report_content": report['report_content'],
+            "pass_status": report['pass_status'],
+            "total_movements": report['total_movements'],
+            "fail_count": report['fail_count'],
+            "generated_at": report['generated_at']
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving sequencing report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
