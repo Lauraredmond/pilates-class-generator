@@ -83,7 +83,8 @@ class SequenceTools:
         excluded_movements: List[str] = None,
         user_id: Optional[str] = None,
         strictness_level: str = "guided",  # strict, guided, or autonomous
-        include_mcp_research: bool = False  # Whether to enhance with web research
+        include_mcp_research: bool = False,  # Whether to enhance with web research
+        class_plan_id: Optional[str] = None  # NEW: UUID for quality logging reconciliation
     ) -> Dict[str, Any]:
         """
         Generate a complete Pilates movement sequence
@@ -189,7 +190,8 @@ class SequenceTools:
                     muscle_balance=muscle_balance,
                     validation=validation,
                     target_duration=target_duration_minutes,
-                    difficulty_level=difficulty_level
+                    difficulty_level=difficulty_level,
+                    class_plan_id=class_plan_id  # NEW: Pass for quality logging reconciliation
                 )
                 logger.warning(f"✅ Quality logging COMPLETED successfully")
                 logger.warning(f"   ✅ CONFIRMED: _log_class_quality() executed without exception")
