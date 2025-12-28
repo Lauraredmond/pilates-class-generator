@@ -254,11 +254,7 @@ export function BetaFeedback() {
         <ul className="space-y-2 text-cream/70 text-sm">
           <li className="flex items-start gap-2">
             <CheckCircle className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" />
-            <span>You'll receive an email confirmation that we've received your feedback</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckCircle className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" />
-            <span>We'll review your submission within 24-48 hours</span>
+            <span>We'll review your submission shortly, thank you very much for taking the time to help enhance our platform.</span>
           </li>
           <li className="flex items-start gap-2">
             <CheckCircle className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" />
@@ -266,7 +262,7 @@ export function BetaFeedback() {
           </li>
           <li className="flex items-start gap-2">
             <CheckCircle className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" />
-            <span>Feature requests are tracked and prioritized for future releases</span>
+            <span>Feature requests are tracked and prioritised for future releases</span>
           </li>
         </ul>
       </div>
