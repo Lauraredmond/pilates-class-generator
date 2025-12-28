@@ -278,7 +278,7 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
           </button>
           {!hasGeneratedClass && (
             <p className="text-xs text-cream/40 mt-2">
-              Available after generating a class
+              Button available after generating a class
             </p>
           )}
         </div>
