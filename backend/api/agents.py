@@ -837,101 +837,101 @@ Return all 6 sections with complete details (narrative, timing, instructions).
             # The sequence_result contains the main movements
 
             # Step 5: Select cool-down sequence (Section 4)
-        # Use "Full Body Recovery" as default cooldown (actual name in database)
-        try:
-            cooldown_response = supabase.table('cooldown_sequences') \
-                .select('*') \
-                .eq('sequence_name', 'Full Body Recovery') \
-                .limit(1) \
-                .execute()
-
-            cooldown = cooldown_response.data[0] if cooldown_response.data else None
-            logger.info(f"Selected cooldown: {cooldown.get('sequence_name') if cooldown else 'None'}")
-        except Exception as e:
-            logger.error(f"Failed to fetch cooldown sequence: {e}")
-            cooldown = None
-
-        # Step 6: Select meditation (Section 5)
-        # For 30-min classes: skip meditation to allow more movements
-        include_meditation = request.class_plan.target_duration_minutes > 30
-        meditation = None
-
-        if include_meditation:
+            # Use "Full Body Recovery" as default cooldown (actual name in database)
             try:
-                meditation_response = supabase.table('closing_meditation_scripts') \
+                cooldown_response = supabase.table('cooldown_sequences') \
                     .select('*') \
-                    .eq('post_intensity', 'moderate') \
+                    .eq('sequence_name', 'Full Body Recovery') \
                     .limit(1) \
                     .execute()
 
-                meditation = meditation_response.data[0] if meditation_response.data else None
-                logger.info(f"Selected meditation: {meditation.get('script_name') if meditation else 'None'}")
+                cooldown = cooldown_response.data[0] if cooldown_response.data else None
+                logger.info(f"Selected cooldown: {cooldown.get('sequence_name') if cooldown else 'None'}")
             except Exception as e:
-                logger.error(f"Failed to fetch meditation script: {e}")
-                meditation = None
-        else:
-            logger.info(f"⏭️  Skipping meditation for {request.class_plan.target_duration_minutes}-min class (meditation only for classes > 30 min)")
+                logger.error(f"Failed to fetch cooldown sequence: {e}")
+                cooldown = None
 
-        # Step 7: Select homecare advice (Section 6)
-        try:
-            homecare_response = supabase.table('closing_homecare_advice') \
-                .select('*') \
-                .limit(1) \
-                .execute()
+            # Step 6: Select meditation (Section 5)
+            # For 30-min classes: skip meditation to allow more movements
+            include_meditation = request.class_plan.target_duration_minutes > 30
+            meditation = None
 
-            homecare = homecare_response.data[0] if homecare_response.data else None
-            logger.info(f"Selected homecare: {homecare.get('advice_name') if homecare else 'None'}")
-        except Exception as e:
-            logger.error(f"Failed to fetch homecare advice: {e}")
-            homecare = None
+            if include_meditation:
+                try:
+                    meditation_response = supabase.table('closing_meditation_scripts') \
+                        .select('*') \
+                        .eq('post_intensity', 'moderate') \
+                        .limit(1) \
+                        .execute()
 
-        # Step 8: Select music (if requested)
-        music_result = None
-        selected_music_genre = None  # Track for analytics (movement music)
-        selected_cooldown_music_genre = None  # Track for analytics (cooldown music)
-        if request.include_music:
-            music_input = {
-                "class_duration_minutes": request.class_plan.target_duration_minutes,
-                "target_bpm_range": (90, 130)
-            }
-            # Add preferred music styles if provided (for analytics tracking)
-            if request.preferred_music_style:
-                music_input["preferred_genres"] = [request.preferred_music_style]
-                # ANALYTICS FIX: Normalize frontend format to analytics format
-                selected_music_genre = normalize_music_genre(request.preferred_music_style)
-                logger.info(f"Movement music genre: {request.preferred_music_style} → {selected_music_genre}")
-            if request.cooldown_music_style:
-                # ANALYTICS FIX: Normalize frontend format to analytics format
-                selected_cooldown_music_genre = normalize_music_genre(request.cooldown_music_style)
-                logger.info(f"Cooldown music genre: {request.cooldown_music_style} → {selected_cooldown_music_genre}")
+                    meditation = meditation_response.data[0] if meditation_response.data else None
+                    logger.info(f"Selected meditation: {meditation.get('script_name') if meditation else 'None'}")
+                except Exception as e:
+                    logger.error(f"Failed to fetch meditation script: {e}")
+                    meditation = None
+            else:
+                logger.info(f"⏭️  Skipping meditation for {request.class_plan.target_duration_minutes}-min class (meditation only for classes > 30 min)")
 
-            music_result = call_agent_tool(
-                tool_id="select_music",
-                parameters=music_input,
-                user_id=user_id,
-                agent=agent
-            )
+            # Step 7: Select homecare advice (Section 6)
+            try:
+                homecare_response = supabase.table('closing_homecare_advice') \
+                    .select('*') \
+                    .limit(1) \
+                    .execute()
 
-        # Step 9: Perform research enhancements (if requested)
-        research_results = []
-        if request.include_research:
-            # Research first few movements
-            movements = sequence_data.get("sequence", [])[:3]
+                homecare = homecare_response.data[0] if homecare_response.data else None
+                logger.info(f"Selected homecare: {homecare.get('advice_name') if homecare else 'None'}")
+            except Exception as e:
+                logger.error(f"Failed to fetch homecare advice: {e}")
+                homecare = None
 
-            for movement in movements:
-                research_input = {
-                    "research_type": "movement_cues",
-                    "movement_name": movement.get("name"),
-                    "trusted_sources_only": True
+            # Step 8: Select music (if requested)
+            music_result = None
+            selected_music_genre = None  # Track for analytics (movement music)
+            selected_cooldown_music_genre = None  # Track for analytics (cooldown music)
+            if request.include_music:
+                music_input = {
+                    "class_duration_minutes": request.class_plan.target_duration_minutes,
+                    "target_bpm_range": (90, 130)
                 }
-                research_result = call_agent_tool(
-                    tool_id="research_cues",
-                    parameters=research_input,
+                # Add preferred music styles if provided (for analytics tracking)
+                if request.preferred_music_style:
+                    music_input["preferred_genres"] = [request.preferred_music_style]
+                    # ANALYTICS FIX: Normalize frontend format to analytics format
+                    selected_music_genre = normalize_music_genre(request.preferred_music_style)
+                    logger.info(f"Movement music genre: {request.preferred_music_style} → {selected_music_genre}")
+                if request.cooldown_music_style:
+                    # ANALYTICS FIX: Normalize frontend format to analytics format
+                    selected_cooldown_music_genre = normalize_music_genre(request.cooldown_music_style)
+                    logger.info(f"Cooldown music genre: {request.cooldown_music_style} → {selected_cooldown_music_genre}")
+
+                music_result = call_agent_tool(
+                    tool_id="select_music",
+                    parameters=music_input,
                     user_id=user_id,
                     agent=agent
                 )
-                if research_result["success"]:
-                    research_results.append(research_result)
+
+            # Step 9: Perform research enhancements (if requested)
+            research_results = []
+            if request.include_research:
+                # Research first few movements
+                movements = sequence_data.get("sequence", [])[:3]
+
+                for movement in movements:
+                    research_input = {
+                        "research_type": "movement_cues",
+                        "movement_name": movement.get("name"),
+                        "trusted_sources_only": True
+                    }
+                    research_result = call_agent_tool(
+                        tool_id="research_cues",
+                        parameters=research_input,
+                        user_id=user_id,
+                        agent=agent
+                    )
+                    if research_result["success"]:
+                        research_results.append(research_result)
 
         # Calculate total processing time
         total_time_ms = (time.time() - start_time) * 1000
