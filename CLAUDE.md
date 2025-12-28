@@ -102,43 +102,27 @@ git push origin main --force
 
 ---
 
-## 🚨 NEXT SESSION PRIORITY (December 26, 2025) 🚨
+## ✅ COMPLETED: Netlify Build Minutes - Upgrade Decision (December 28, 2025) ✅
 
-**CRITICAL: Start next session with this action item**
-
-### Netlify Build Minutes - Upgrade Decision
+**Status:** COMPLETED - User upgraded to Personal Plan ($9/month)
 
 **Context:** Netlify account hit 100% of Free plan build minutes (300 min/month) in December 2025.
 
-**Decision: Upgrade to Personal Plan ($9/month)**
-
-**Rationale:**
-- **December usage:** 930 builds (abnormal - user was off work full-time)
-- **January onwards usage:** Estimated 300-600 builds/month (user back to full-time job)
-- **Personal plan:** 1,000 build minutes/month - comfortable headroom for normal development
-
-**Safety Net:**
-1. Netlify warns at 80% (800 min), 90% (900 min), 100% (1,000 min)
-2. Can upgrade to Pro mid-month instantly if needed
-3. No service suspension - just upgrade before hitting limit
-4. Pro-rated billing for mid-month upgrades
+**Action Taken:** Upgraded to Personal Plan ($9/month = 1,000 build minutes/month)
 
 **Monitoring Strategy:**
 - **Month 1 (January):** Monitor build minutes weekly in Netlify dashboard
 - **If hit 800 minutes by day 20:** Upgrade to Pro immediately
 - **Month 2-3:** If usage consistently <700 min → Stay on Personal; if >900 min → Upgrade to Pro
 
-**Cost Comparison:**
-- Personal: $9/month = $108/year
-- Pro: $20/month = $240/year
-- **Savings if Personal works:** $132/year
+---
 
-**Action Required:**
-1. Go to https://app.netlify.com → Team settings → Usage & billing
-2. Click "Switch to Personal" ($9/month option)
-3. Enter payment details and confirm
-4. Verify 1,000 build minutes available
-5. Set calendar reminder to check usage weekly in January
+## 🚀 WHERE WE LEFT OFF (December 28, 2025) 🚀
+
+**CRITICAL: Read from here for current session priorities**
+
+**Active Tasks for This Session:**
+- Fix pregnancy exclusion message (make it empathetic, not error-like)
 
 ---
 
@@ -3560,17 +3544,13 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
    - **Verification:** All 6 section types render correctly in playback
    - **See:** Session 13 "✅ FIXED: Playback Crash" for complete resolution details
 
-4. **Single Movement Video Demo** (60 minutes)
-   - Record The Hundred demonstration
-   - Upload to Supabase, update database, deploy frontend
-   - See Priority #2 in Enhancement Roadmap below
+4. **~~Single Movement Video Demo~~** ❌ NOT APPLICABLE ANYMORE
+   - **Status:** Removed from roadmap (December 28, 2025)
+   - **Reason:** User decided not to pursue this feature
 
-5. **Archive.org Music Migration** (30 minutes)
-   - Download 14 tracks, upload to Supabase Storage
-   - Update database URLs, test playback
-   - See "Known Issues & Fixes" section (search CLAUDE.md)
-
-**User Request:** "Please ensure that you bring this up in all of our next sessions for this project so that we are sure to complete it."
+5. **~~Archive.org Music Migration~~** ❌ NOT APPLICABLE ANYMORE
+   - **Status:** Removed from roadmap (December 28, 2025)
+   - **Reason:** Much of this work has been completed or determined unnecessary
 
 ---
 
@@ -3601,41 +3581,13 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
   - Update database with URLs/durations
   - Migration 019 ready for warmup narrative update
 
-#### **2. Single Movement Video Demonstration** (HIGH PRIORITY - Complete before 2025)
-- **Goal:** Add one video demo to validate demand before investing in all 34 movements
-- **Movement:** "The Hundred" (most iconic, beginner-friendly, first in classical order)
-- **Implementation:** Picture-in-Picture video (375px wide, top-right, muted autoplay, loops)
-- **Cost:** ~$0.34/month (37.5 MB video, 100 users/month viewing)
-- **Timeline:** 60 minutes total implementation time
-- **Success Metrics:**
-  - >70% users say "Yes, add more videos" in post-class survey
-  - >10% improvement in class completion rate
-  - Stays under $0.50/month bandwidth cost
-- **Technical Steps:**
-  1. Record 2-minute demo of The Hundred (30 min)
-  2. Optimize with ffmpeg (720p H.264, ~37 MB final) (15 min)
-  3. Upload to Supabase Storage `movement-videos` bucket (5 min)
-  4. Update movements table: `SET video_url = '...' WHERE name = 'The Hundred'` (2 min)
-  5. Update MovementDisplay.tsx with picture-in-picture video element (10 min)
-  6. Test on iOS Safari + Android Chrome (3 min)
-- **User Feedback Collection:**
-  - Post-class survey: "Did you find the video demonstration helpful?"
-  - Track completion rates for classes with The Hundred
-  - Monitor bandwidth usage vs projection
-- **Expansion Path (if successful):**
-  - Tier 1: Core 5 movements (~$1.70/month)
-  - Tier 2: All Beginner (14 movements)
-  - Tier 3: All 34 movements (migrate to AWS/R2 per Infrastructure Roadmap)
-- **Context:** User feedback indicates text-only narrative is confusing for non-seasoned practitioners. One demo video validates whether visual aids increase engagement before committing to full video library.
-- Estimated Time: 60 minutes
+#### **~~2. Single Movement Video Demonstration~~** ❌ NOT APPLICABLE ANYMORE
+- **Status:** Removed from roadmap (December 28, 2025)
+- **Reason:** User decided not to pursue this feature
 
-#### **3. Add Jazz Music Style** (High Priority)
-- Add "Jazz" to musical stylistic periods
-- Source: Internet Archive Jazz collection
-- Example URL: [Provide specific Internet Archive Jazz collection URL]
-- Database: Add Jazz tracks to `music_tracks` table
-- Frontend: Add "Jazz" option to music style dropdown
-- Estimated Time: 2-3 hours
+#### **~~3. Add Jazz Music Style~~** ❌ NOT APPLICABLE ANYMORE
+- **Status:** Removed from roadmap (December 28, 2025)
+- **Reason:** User decided not to pursue this feature
 
 #### **4. Restrict AI Mode Toggle to Admins + Cost Reduction** (High Priority)
 - **Admin-Only AI Toggle:**
@@ -3659,26 +3611,9 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 - Update branding/styling per design specs
 - Estimated Time: 2-3 hours
 
-#### **6. AWS Migration Assessment** (High Priority - Cost Analysis)
-- **Context:** $1,000 AWS credits received from Amazon
-- **Questions to Answer:**
-  1. How easy is it to migrate/copy MVP2 to AWS environment?
-  2. Would AWS be a cost saving compared to current stack (Render + Netlify + Supabase)?
-  3. Could AWS solve Supabase user authentication issues?
-  4. Migration strategy: Full migration vs hybrid approach?
-  5. Which AWS services to use?
-     - AWS Amplify (frontend hosting)
-     - AWS Lambda + API Gateway (backend API)
-     - Amazon RDS PostgreSQL or DynamoDB (database)
-     - Amazon Cognito (user authentication)
-- **Analysis Required:**
-  - Current monthly costs: Render + Netlify + Supabase
-  - Projected AWS costs with $1K credits
-  - Migration complexity and time estimate
-  - Feature parity comparison
-  - Authentication improvement potential
-- **Deliverable:** Cost analysis report with migration recommendation
-- Estimated Time: 4-6 hours (analysis), 20-40 hours (migration if approved)
+#### **~~6. AWS Migration Assessment~~** ❌ NOT APPLICABLE ANYMORE
+- **Status:** Removed from roadmap (December 28, 2025)
+- **Reason:** Much of this work has been completed or determined unnecessary
 
 #### **7. Add Nutrition Tracker** (High Priority)
 - **Data Source:** `/Users/lauraredmond/Documents/Bassline/Admin/7. Product/Nutrition/Nutrition Information-Table-LRAdjusted.xlsx`
