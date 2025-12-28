@@ -156,10 +156,13 @@ class SequenceTools:
                 # Generate report with enhanced checks:
                 # - Movement pattern proximity (Crab + Seal issue)
                 # - Historical muscle balance (underutilized muscle groups)
+                # - Reconciliation with quality log via class_plan_id
                 report_data = generate_overlap_report(
                     sequence=sequence,
                     user_id=user_id,
-                    supabase_client=self.supabase
+                    supabase_client=self.supabase,
+                    class_plan_id=class_plan_id,  # FIX: For reconciliation with quality log
+                    output_dir="/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"  # FIX: For file generation
                 )
                 logger.info(f"📊 Enhanced QA report generated for admin user: {report_data.get('timestamp')}")
                 qa_report = report_data  # Include in API response
