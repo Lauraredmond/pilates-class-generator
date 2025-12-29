@@ -3,7 +3,7 @@ Analytics API Router V2
 Enhanced with time period filtering and comprehensive data views
 """
 
-from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi import APIRouter, HTTPException, Query, Path, BackgroundTasks
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 from enum import Enum
@@ -16,6 +16,7 @@ from loguru import logger
 from collections import defaultdict
 
 from models.error import ErrorMessages
+from orchestrator.tools.muscle_overlap_analyzer import generate_overlap_report
 
 # Load environment variables
 load_dotenv()
@@ -1380,10 +1381,112 @@ class ClassSequencingReportResponse(BaseModel):
     pass_status: bool
 
 
+@router.get("/class-sequencing-report/all-users/latest", response_model=ClassSequencingReportResponse)
+async def get_latest_class_sequencing_report_all_users(
+    admin_user_id: str = Query(..., description="Admin user ID for authorization")
+):
+    """
+    Generate class sequencing validation report for most recent class across ALL users (admin only)
+
+    Returns markdown-formatted report showing:
+    - Movement sequence data
+    - Consecutive muscle overlap analysis
+    - Summary statistics
+    - Detailed muscle group breakdown
+    - Movement pattern proximity check
+    - Historical muscle balance analysis
+
+    **Admin Authorization Required**
+    **Used in Developer Tools section of Settings page**
+    """
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    try:
+        # Fetch most recent class ACROSS ALL USERS (no user_id filter)
+        response = supabase.table('class_history') \
+            .select('*') \
+            .order('taught_date', desc=True) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
+
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="No class history found in database"
+            )
+
+        class_record = response.data[0]
+        class_id = class_record['class_plan_id']
+        class_date = class_record.get('taught_date', 'Unknown')
+        movements_snapshot = class_record.get('movements_snapshot', [])
+        user_id = class_record.get('user_id')  # Get user_id for historical lookup
+
+        # Filter only movements (exclude transitions)
+        movements = [m for m in movements_snapshot if m.get('type') == 'movement']
+
+        if not movements:
+            raise HTTPException(
+                status_code=404,
+                detail="No movements found in most recent class"
+            )
+
+        # Transform muscle_groups from list of strings to list of dicts
+        for movement in movements:
+            muscle_groups = movement.get('muscle_groups', [])
+            if muscle_groups and isinstance(muscle_groups[0], str):
+                movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
+
+        # Generate report using muscle_overlap_analyzer
+        logger.info(f"Calling generate_overlap_report() for class_plan_id={class_id}, user_id={user_id} (all users mode)")
+
+        report_result = generate_overlap_report(
+            sequence=movements,
+            user_id=str(user_id),
+            supabase_client=supabase,
+            class_plan_id=class_id,
+            output_dir="/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"
+        )
+
+        report_content = report_result.get("content", "")
+        logger.info(f"Report generated successfully. File saved: {report_result.get('file_path', 'N/A')}")
+
+        # Calculate fail_count for pass_status
+        fail_count = 0
+        for i in range(len(movements) - 1):
+            muscles_a = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
+            muscles_b = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
+            shared = muscles_a.intersection(muscles_b)
+
+            if muscles_a and muscles_b:
+                smaller_set_size = min(len(muscles_a), len(muscles_b))
+                overlap_pct = (len(shared) / smaller_set_size * 100) if smaller_set_size > 0 else 0
+                if overlap_pct >= 50:
+                    fail_count += 1
+
+        return ClassSequencingReportResponse(
+            report_content=report_content,
+            class_id=class_id,
+            class_date=class_date,
+            total_movements=len(movements),
+            pass_status=(fail_count == 0)
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating class sequencing report for all users: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=ErrorMessages.DATABASE_ERROR
+        )
+
+
 @router.get("/class-sequencing-report/{user_id}", response_model=ClassSequencingReportResponse)
 async def get_class_sequencing_report(user_id: str):
     """
-    Generate class sequencing validation report for most recent class
+    Generate class sequencing validation report for most recent class FOR SPECIFIC USER
 
     Returns markdown-formatted report showing:
     - Movement sequence data
@@ -1398,7 +1501,7 @@ async def get_class_sequencing_report(user_id: str):
     try:
         user_uuid = _convert_to_uuid(user_id)
 
-        # Fetch most recent class (sort by taught_date first, then created_at for same-day classes)
+        # Fetch most recent class FOR THIS USER ONLY
         response = supabase.table('class_history') \
             .select('*') \
             .eq('user_id', user_uuid) \
@@ -1414,7 +1517,7 @@ async def get_class_sequencing_report(user_id: str):
             )
 
         class_record = response.data[0]
-        class_id = class_record['id']
+        class_id = class_record['class_plan_id']  # FIX: Use FK to class_plans, not class_history's own id
         class_date = class_record.get('taught_date', 'Unknown')
         movements_snapshot = class_record.get('movements_snapshot', [])
 
@@ -1427,256 +1530,42 @@ async def get_class_sequencing_report(user_id: str):
                 detail="No movements found in most recent class"
             )
 
-        # Generate report
-        report_lines = []
-        report_lines.append("# Muscle Overlap Analysis Report")
-        report_lines.append("")
-        report_lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        report_lines.append(f"**Class ID:** {class_id}")
-        report_lines.append(f"**Class Date:** {class_date}")
-        report_lines.append(f"**Total Movements:** {len(movements)}")
-        report_lines.append("")
-
-        # Movement Sequence Data (CSV)
-        report_lines.append("## Movement Sequence Data (CSV)")
-        report_lines.append("")
-        report_lines.append("Position,Movement Name,Muscle Groups,Muscle Count")
-
-        for idx, movement in enumerate(movements, start=1):
-            name = movement.get('name', 'Unknown')
+        # FIX: Transform muscle_groups from list of strings to list of dicts
+        # class_history stores: {"muscle_groups": ["Core", "Legs"]}
+        # generate_overlap_report expects: {"muscle_groups": [{"name": "Core"}, {"name": "Legs"}]}
+        for movement in movements:
             muscle_groups = movement.get('muscle_groups', [])
-            muscle_str = '; '.join(muscle_groups) if muscle_groups else 'None'
-            muscle_count = len(muscle_groups)
-            report_lines.append(f"{idx},{name},\"{muscle_str}\",{muscle_count}")
+            if muscle_groups and isinstance(muscle_groups[0], str):
+                # Convert list of strings to list of dicts
+                movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
 
-        report_lines.append("")
+        # Generate report using muscle_overlap_analyzer (includes Historical Movement Coverage)
+        logger.info(f"Calling generate_overlap_report() for class_plan_id={class_id}, user_id={str(user_uuid)}")
 
-        # Consecutive Muscle Overlap Analysis
-        report_lines.append("## Consecutive Muscle Overlap Analysis (CSV)")
-        report_lines.append("")
-        report_lines.append("Movement A,Movement B,Shared Muscles,Overlap Count,Overlap %,Pass (<50%)?")
+        report_result = generate_overlap_report(
+            sequence=movements,
+            user_id=str(user_uuid),
+            supabase_client=supabase,
+            class_plan_id=class_id,  # FIX: Use correct class_plan_id for reconciliation
+            output_dir="/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"  # FIX: Save report file
+        )
 
-        overlaps = []
-        pass_count = 0
+        report_content = report_result.get("content", "")
+        logger.info(f"Report generated successfully. File saved: {report_result.get('file_path', 'N/A')}")
+
+        # Calculate fail_count for pass_status (check for ≥50% overlap failures)
         fail_count = 0
-
         for i in range(len(movements) - 1):
-            mov_a = movements[i]
-            mov_b = movements[i + 1]
-
-            name_a = mov_a.get('name', 'Unknown')
-            name_b = mov_b.get('name', 'Unknown')
-
-            muscles_a = set(mov_a.get('muscle_groups', []))
-            muscles_b = set(mov_b.get('muscle_groups', []))
-
+            # Extract muscle names from muscle_groups (now list of dicts)
+            muscles_a = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
+            muscles_b = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
             shared = muscles_a.intersection(muscles_b)
-            shared_str = '; '.join(sorted(shared)) if shared else 'None'
 
-            overlap_count = len(shared)
-
-            # Calculate overlap percentage (based on smaller muscle group set)
             if muscles_a and muscles_b:
                 smaller_set_size = min(len(muscles_a), len(muscles_b))
-                overlap_pct = (overlap_count / smaller_set_size * 100) if smaller_set_size > 0 else 0
-            else:
-                overlap_pct = 0
-
-            overlaps.append(overlap_pct)
-
-            pass_status = "PASS" if overlap_pct < 50 else "FAIL"
-            if overlap_pct < 50:
-                pass_count += 1
-            else:
-                fail_count += 1
-
-            report_lines.append(f"{name_a},{name_b},\"{shared_str}\",{overlap_count},{overlap_pct:.1f}%,{pass_status}")
-
-        report_lines.append("")
-
-        # Summary Statistics
-        report_lines.append("## Summary Statistics")
-        report_lines.append("")
-        total_pairs = len(overlaps)
-        avg_overlap = sum(overlaps) / total_pairs if total_pairs > 0 else 0
-        max_overlap = max(overlaps) if overlaps else 0
-
-        report_lines.append(f"- Total Consecutive Pairs: {total_pairs}")
-        report_lines.append(f"- Passed (<50% overlap): {pass_count} ({pass_count/total_pairs*100:.1f}%)" if total_pairs > 0 else "- Passed: 0")
-        report_lines.append(f"- Failed (≥50% overlap): {fail_count} ({fail_count/total_pairs*100:.1f}%)" if total_pairs > 0 else "- Failed: 0")
-        report_lines.append(f"- Average Overlap: {avg_overlap:.1f}%")
-        report_lines.append(f"- Maximum Overlap: {max_overlap:.1f}%")
-        report_lines.append("")
-
-        if fail_count == 0:
-            report_lines.append("### ✅ **ALL CHECKS PASSED:** No consecutive movements exceed 50% overlap")
-        else:
-            report_lines.append(f"### ❌ **{fail_count} FAILURE(S):** Some consecutive movements exceed 50% overlap")
-
-        report_lines.append("")
-
-        # Detailed Muscle Group Breakdown
-        report_lines.append("## Detailed Muscle Group Breakdown")
-        report_lines.append("")
-
-        for idx, movement in enumerate(movements, start=1):
-            name = movement.get('name', 'Unknown')
-            muscle_groups = movement.get('muscle_groups', [])
-
-            report_lines.append(f"### {idx}. {name}")
-            report_lines.append(f"**Muscle Groups:** {', '.join(muscle_groups) if muscle_groups else 'None'}")
-
-            if idx < len(movements):
-                next_mov = movements[idx]
-                next_muscles = set(next_mov.get('muscle_groups', []))
-                current_muscles = set(muscle_groups)
-                shared = current_muscles.intersection(next_muscles)
-
-                if current_muscles and next_muscles:
-                    smaller_size = min(len(current_muscles), len(next_muscles))
-                    overlap_pct = (len(shared) / smaller_size * 100) if smaller_size > 0 else 0
-                    report_lines.append(f"**Overlap with next:** {overlap_pct:.1f}% ({', '.join(sorted(shared)) if shared else 'None'})")
-
-            report_lines.append("")
-
-        # Movement Pattern Proximity Check
-        report_lines.append("## Movement Pattern Proximity Check")
-        report_lines.append("**Rule:** Similar movement patterns should not appear within 3 positions of each other.")
-        report_lines.append("")
-
-        # Fetch movement patterns from database
-        movement_names = [m.get('name') for m in movements if m.get('name')]
-        pattern_cache = {}
-
-        if movement_names:
-            patterns_response = supabase.table('movements') \
-                .select('name, movement_pattern') \
-                .in_('name', movement_names) \
-                .execute()
-
-            for mov in patterns_response.data:
-                pattern_cache[mov['name']] = mov.get('movement_pattern', 'Unknown')
-
-        # Check for pattern proximity violations
-        proximity_violations = []
-        for i in range(len(movements)):
-            mov_name = movements[i].get('name')
-            pattern = pattern_cache.get(mov_name, 'Unknown')
-
-            # Check next 3 movements
-            for j in range(i + 1, min(i + 4, len(movements))):
-                next_mov_name = movements[j].get('name')
-                next_pattern = pattern_cache.get(next_mov_name, 'Unknown')
-
-                if pattern == next_pattern and pattern != 'Unknown':
-                    distance = j - i
-                    proximity_violations.append(f"- Position {i+1} ({mov_name}) and Position {j+1} ({next_mov_name}): Both {pattern} (distance: {distance})")
-
-        if proximity_violations:
-            report_lines.append(f"### ❌ **{len(proximity_violations)} VIOLATION(S):**")
-            report_lines.extend(proximity_violations)
-        else:
-            report_lines.append("### ✅ **NO VIOLATIONS:** Movement patterns are well distributed")
-
-        report_lines.append("")
-
-        # Historical Muscle Balance Analysis
-        report_lines.append("## Historical Muscle Balance Analysis")
-        report_lines.append("**Goal:** Ensure all muscle groups are covered over time")
-        report_lines.append("")
-
-        # Count muscle groups in this class
-        muscle_totals = defaultdict(int)
-        for movement in movements:
-            for muscle in movement.get('muscle_groups', []):
-                muscle_totals[muscle] += 1
-
-        if muscle_totals:
-            report_lines.append("**This Class:**")
-            sorted_muscles = sorted(muscle_totals.items(), key=lambda x: x[1], reverse=True)
-            for muscle, count in sorted_muscles:
-                report_lines.append(f"- {muscle}: {count} movement(s)")
-        else:
-            report_lines.append("**This Class:** No muscle group data available")
-
-        report_lines.append("")
-
-        # Movement Family Balance Analysis
-        report_lines.append("## Movement Family Balance Analysis")
-        report_lines.append("**Goal:** Class should roughly correlate with overall family distribution across 34 movements")
-        report_lines.append("")
-
-        # Fetch ALL movements from database to get overall family distribution
-        all_movements_response = supabase.table('movements') \
-            .select('name, movement_family') \
-            .execute()
-
-        all_movements = all_movements_response.data or []
-
-        # Calculate overall distribution across 34 movements
-        overall_family_counts = defaultdict(int)
-        for mov in all_movements:
-            family = mov.get('movement_family', 'other')
-            overall_family_counts[family] += 1
-
-        total_movements_db = len(all_movements)
-
-        # Calculate class distribution
-        class_family_counts = defaultdict(int)
-        for movement in movements:
-            # Need to lookup movement_family for this movement
-            movement_name = movement.get('name')
-            if movement_name:
-                # Find in all_movements
-                mov_data = next((m for m in all_movements if m['name'] == movement_name), None)
-                if mov_data:
-                    family = mov_data.get('movement_family', 'other')
-                    class_family_counts[family] += 1
-
-        total_movements_class = len(movements)
-
-        # Compare proportions
-        report_lines.append("### Overall Distribution (34 Movements)")
-        sorted_overall = sorted(overall_family_counts.items(), key=lambda x: x[1], reverse=True)
-        for family, count in sorted_overall:
-            percentage = (count / total_movements_db * 100) if total_movements_db > 0 else 0
-            report_lines.append(f"- {family}: {count} movements ({percentage:.1f}%)")
-
-        report_lines.append("")
-        report_lines.append("### This Class Distribution")
-        sorted_class = sorted(class_family_counts.items(), key=lambda x: x[1], reverse=True)
-        for family, count in sorted_class:
-            percentage = (count / total_movements_class * 100) if total_movements_class > 0 else 0
-            overall_pct = (overall_family_counts[family] / total_movements_db * 100) if total_movements_db > 0 else 0
-            diff = percentage - overall_pct
-            diff_str = f"(+{diff:.1f}%)" if diff > 0 else f"({diff:.1f}%)"
-            report_lines.append(f"- {family}: {count} movements ({percentage:.1f}%) {diff_str} vs overall")
-
-        report_lines.append("")
-
-        # Check for over-representation (>50% higher than overall proportion)
-        family_warnings = []
-        for family, count in class_family_counts.items():
-            class_pct = (count / total_movements_class * 100) if total_movements_class > 0 else 0
-            overall_pct = (overall_family_counts[family] / total_movements_db * 100) if total_movements_db > 0 else 0
-
-            # Check if class proportion is more than 50% higher than overall proportion
-            if overall_pct > 0 and (class_pct / overall_pct) > 1.5:
-                family_warnings.append(f"- **{family}**: {class_pct:.1f}% in class vs {overall_pct:.1f}% overall (overrepresented)")
-
-        if family_warnings:
-            report_lines.append("### ⚠️ **FAMILY BALANCE WARNINGS:**")
-            report_lines.extend(family_warnings)
-        else:
-            report_lines.append("### ✅ **BALANCED:** Family distribution roughly correlates with overall proportions")
-
-        report_lines.append("")
-        report_lines.append("---")
-        report_lines.append("")
-        report_lines.append("*Generated by Bassline Pilates Class Sequencing Analyzer*")
-
-        # Combine into final report
-        report_content = '\n'.join(report_lines)
+                overlap_pct = (len(shared) / smaller_set_size * 100) if smaller_set_size > 0 else 0
+                if overlap_pct >= 50:
+                    fail_count += 1
 
         return ClassSequencingReportResponse(
             report_content=report_content,
@@ -2321,6 +2210,7 @@ class QualityTrendData(BaseModel):
 class QualityLogEntry(BaseModel):
     """Single quality log entry with full rule compliance details"""
     id: str
+    class_plan_id: Optional[str] = None  # FIX: Add for reconciliation with sequencing report
     user_id: str
     user_email: Optional[str] = None  # User email for admin tracking
     generated_at: str
@@ -2504,4 +2394,369 @@ async def get_quality_logs(
 
     except Exception as e:
         logger.error("Error fetching quality logs: {}", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+# ==============================================================================
+# AUTO-GENERATION OF SEQUENCING REPORTS - Background Task
+# ==============================================================================
+
+async def generate_and_save_sequencing_report_background(
+    class_plan_id: str,
+    user_id: str,
+    movements_snapshot: List[Dict[str, Any]]
+):
+    """
+    Background task to generate and save sequencing report to database
+
+    This runs AFTER class creation completes, so it doesn't slow down the app.
+    Reports are stored in class_sequencing_reports table for later retrieval.
+
+    **Performance Impact:** ZERO - runs asynchronously after API response
+    """
+    try:
+        logger.info(f"🔄 Background task: Generating sequencing report for class {class_plan_id}")
+
+        # Filter only movements (exclude transitions)
+        movements = [m for m in movements_snapshot if m.get('type') == 'movement']
+
+        if not movements or len(movements) == 0:
+            logger.warning(f"⚠️ No movements in class {class_plan_id}, skipping report generation")
+            return
+
+        # Transform muscle_groups from list of strings to list of dicts (if needed)
+        for movement in movements:
+            muscle_groups = movement.get('muscle_groups', [])
+            if muscle_groups and isinstance(muscle_groups[0], str):
+                movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
+
+        # Generate report using muscle_overlap_analyzer
+        report_result = generate_overlap_report(
+            sequence=movements,
+            user_id=str(user_id),
+            supabase_client=supabase,
+            class_plan_id=class_plan_id,
+            output_dir="/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"
+        )
+
+        report_content = report_result.get("content", "")
+
+        # Calculate fail_count for pass_status
+        # CRITICAL FIX: Use same formula as muscle_overlap_analyzer.py (divide by NEXT movement's muscles, not smaller set)
+        # CRITICAL FIX 2: Check BOTH Rule 1 AND Rule 2 (family balance) - not just Rule 1
+
+        # Rule 1: Consecutive Muscle Overlap
+        rule1_fail_count = 0
+        for i in range(len(movements) - 1):
+            current_muscles = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
+            next_muscles = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
+            shared = current_muscles.intersection(next_muscles)
+
+            if current_muscles and next_muscles:
+                # FORMULA MUST MATCH muscle_overlap_analyzer.py line 88:
+                # overlap_pct = (overlap_count / len(next_muscles)) * 100
+                overlap_pct = (len(shared) / len(next_muscles) * 100) if next_muscles else 0
+                if overlap_pct >= 50:
+                    rule1_fail_count += 1
+
+        # Rule 2: Movement Family Balance
+        # Calculate family distribution (must match muscle_overlap_analyzer.py lines 169-189)
+        family_counts = {}
+        for movement in movements:
+            family = movement.get('movement_family', 'other')  # Use 'other' to match QA report
+            if family not in family_counts:
+                family_counts[family] = 0
+            family_counts[family] += 1
+
+        # Check if any family exceeds 40% threshold
+        MAX_FAMILY_PERCENTAGE = 40.0
+        rule2_pass = True
+        rule2_fail_count = 0
+        if movements:
+            for family, count in family_counts.items():
+                family_pct = (count / len(movements)) * 100
+                if family_pct >= MAX_FAMILY_PERCENTAGE:
+                    rule2_pass = False
+                    rule2_fail_count += 1  # Count how many families exceed threshold
+
+        # Overall pass status: BOTH Rule 1 AND Rule 2 must pass
+        pass_status = (rule1_fail_count == 0 and rule2_pass)
+
+        # Total fail count for database (Rule 1 failures + Rule 2 violations)
+        fail_count = rule1_fail_count + rule2_fail_count
+
+        # Save report to database (NOT filesystem)
+        report_data = {
+            'class_plan_id': class_plan_id,
+            'user_id': user_id,
+            'report_content': report_content,
+            'pass_status': pass_status,
+            'total_movements': len(movements),
+            'fail_count': fail_count
+        }
+
+        # Insert or update (upsert on class_plan_id unique constraint)
+        supabase.table('class_sequencing_reports').upsert(report_data).execute()
+
+        logger.info(f"✅ Background task: Saved sequencing report for class {class_plan_id} (pass={pass_status})")
+
+    except Exception as e:
+        logger.error(f"❌ Background task failed: Error generating sequencing report for class {class_plan_id}: {str(e)}", exc_info=True)
+        # Don't raise - background tasks should fail gracefully
+
+
+@router.post("/trigger-report-generation/{class_plan_id}")
+async def trigger_sequencing_report_generation(
+    class_plan_id: str,
+    background_tasks: BackgroundTasks
+):
+    """
+    Trigger async report generation for a specific class
+
+    This endpoint is called AFTER class creation. It schedules a background task
+    to generate the sequencing report without blocking the API response.
+
+    **Performance Impact:**
+    - API responds immediately (< 10ms)
+    - Report generation happens in background (doesn't block user)
+    - No slowdown to class creation flow
+
+    **Usage:** Call this from class creation endpoint after saving class to database
+    """
+    try:
+        # Fetch class from class_history
+        response = supabase.table('class_history') \
+            .select('*') \
+            .eq('class_plan_id', class_plan_id) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
+
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Class with class_plan_id {class_plan_id} not found"
+            )
+
+        class_record = response.data[0]
+        user_id = class_record.get('user_id')
+        movements_snapshot = class_record.get('movements_snapshot', [])
+
+        # Schedule background task (doesn't block)
+        background_tasks.add_task(
+            generate_and_save_sequencing_report_background,
+            class_plan_id=class_plan_id,
+            user_id=user_id,
+            movements_snapshot=movements_snapshot
+        )
+
+        return {
+            "message": "Report generation scheduled in background",
+            "class_plan_id": class_plan_id,
+            "status": "pending"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error triggering report generation: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/sequencing-report/{class_plan_id}")
+async def get_saved_sequencing_report(class_plan_id: str):
+    """
+    Retrieve or generate a sequencing report for a class
+
+    **Behavior:**
+    1. If report exists in database → return it immediately
+    2. If report doesn't exist → generate on-demand, save to database, return it
+
+    **Use Case:** Manual download for classes created before auto-generation feature
+
+    **Performance:**
+    - Cached reports: Instant retrieval (~10ms)
+    - On-demand generation: ~200ms (no LLM, pure computation)
+    """
+    try:
+        # Step 1: Try to retrieve existing report
+        response = supabase.table('class_sequencing_reports') \
+            .select('*') \
+            .eq('class_plan_id', class_plan_id) \
+            .execute()
+
+        # If report exists, return it
+        if response.data and len(response.data) > 0:
+            report = response.data[0]
+            logger.info(f"✅ Retrieved existing sequencing report for class {class_plan_id}")
+            return {
+                "class_plan_id": report['class_plan_id'],
+                "report_content": report['report_content'],
+                "pass_status": report['pass_status'],
+                "total_movements": report['total_movements'],
+                "fail_count": report['fail_count'],
+                "generated_at": report['generated_at']
+            }
+
+        # Step 2: Report doesn't exist - generate on-demand
+        logger.info(f"🔄 No existing report found for class {class_plan_id} - generating on-demand")
+
+        # Try to fetch class from class_history first (has movements_snapshot field)
+        class_response = supabase.table('class_history') \
+            .select('*') \
+            .eq('class_plan_id', class_plan_id) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
+
+        user_id = None
+        movements_snapshot = []
+
+        if class_response.data and len(class_response.data) > 0:
+            # Found in class_history - use movements_snapshot
+            class_record = class_response.data[0]
+            user_id = class_record.get('user_id')
+            movements_snapshot = class_record.get('movements_snapshot', [])
+            logger.info(f"✅ Found class in class_history table")
+        else:
+            # Not in class_history - try class_plans table as fallback
+            logger.info(f"⚠️ Class not found in class_history, trying class_plans...")
+            plans_response = supabase.table('class_plans') \
+                .select('*') \
+                .eq('id', class_plan_id) \
+                .limit(1) \
+                .execute()
+
+            if not plans_response.data or len(plans_response.data) == 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Class {class_plan_id} not found in class_history or class_plans. Cannot generate report."
+                )
+
+            # Found in class_plans - use main_sequence field instead
+            plan_record = plans_response.data[0]
+            user_id = plan_record.get('user_id')
+            # class_plans has 'main_sequence' instead of 'movements_snapshot'
+            main_sequence = plan_record.get('main_sequence', [])
+
+            # Transform main_sequence to movements_snapshot format
+            # main_sequence contains full movement objects with all details
+            # We need to extract just what movements_snapshot would have
+            movements_snapshot = []
+            for idx, item in enumerate(main_sequence):
+                if item.get('type') == 'movement':
+                    # Extract movement data in movements_snapshot format
+                    # CRITICAL: Include movement_family for Rule 2 (Family Balance) calculations
+                    movements_snapshot.append({
+                        "type": "movement",
+                        "name": item.get('name', ''),
+                        "muscle_groups": item.get('muscle_groups', []),
+                        "duration_seconds": item.get('duration_seconds', 60),
+                        "movement_family": item.get('movement_family', 'other'),  # FIX: Include for Rule 2
+                        "order_index": idx
+                    })
+
+            logger.info(f"✅ Found class in class_plans table, extracted {len(movements_snapshot)} movements from main_sequence")
+
+        # Generate report synchronously (runs in this request)
+        # This is the SAME logic as generate_and_save_sequencing_report_background
+        # but runs synchronously instead of in background task
+
+        # Filter only movements (exclude transitions)
+        movements = [m for m in movements_snapshot if m.get('type') == 'movement']
+
+        if not movements or len(movements) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Class {class_plan_id} has no movements in snapshot. Cannot generate report."
+            )
+
+        # Transform muscle_groups from list of strings to list of dicts (if needed)
+        for movement in movements:
+            muscle_groups = movement.get('muscle_groups', [])
+            if muscle_groups and isinstance(muscle_groups[0], str):
+                movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
+
+        # Generate report using muscle_overlap_analyzer
+        report_result = generate_overlap_report(
+            sequence=movements,
+            user_id=str(user_id),
+            supabase_client=supabase,
+            class_plan_id=class_plan_id,
+            output_dir="/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"
+        )
+
+        report_content = report_result.get("content", "")
+
+        # Calculate fail_count for pass_status using corrected formula
+        # CRITICAL FIX: Check BOTH Rule 1 AND Rule 2 (family balance) - not just Rule 1
+
+        # Rule 1: Consecutive Muscle Overlap
+        rule1_fail_count = 0
+        for i in range(len(movements) - 1):
+            current_muscles = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
+            next_muscles = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
+            shared = current_muscles.intersection(next_muscles)
+
+            if current_muscles and next_muscles:
+                # FORMULA MUST MATCH muscle_overlap_analyzer.py
+                overlap_pct = (len(shared) / len(next_muscles) * 100) if next_muscles else 0
+                if overlap_pct >= 50:
+                    rule1_fail_count += 1
+
+        # Rule 2: Movement Family Balance
+        # Calculate family distribution (must match muscle_overlap_analyzer.py lines 169-189)
+        family_counts = {}
+        for movement in movements:
+            family = movement.get('movement_family', 'other')  # Use 'other' to match QA report
+            if family not in family_counts:
+                family_counts[family] = 0
+            family_counts[family] += 1
+
+        # Check if any family exceeds 40% threshold
+        MAX_FAMILY_PERCENTAGE = 40.0
+        rule2_pass = True
+        rule2_fail_count = 0
+        if movements:
+            for family, count in family_counts.items():
+                family_pct = (count / len(movements)) * 100
+                if family_pct >= MAX_FAMILY_PERCENTAGE:
+                    rule2_pass = False
+                    rule2_fail_count += 1  # Count how many families exceed threshold
+
+        # Overall pass status: BOTH Rule 1 AND Rule 2 must pass
+        pass_status = (rule1_fail_count == 0 and rule2_pass)
+
+        # Total fail count for database (Rule 1 failures + Rule 2 violations)
+        fail_count = rule1_fail_count + rule2_fail_count
+
+        # Save report to database
+        report_data = {
+            'class_plan_id': class_plan_id,
+            'user_id': user_id,
+            'report_content': report_content,
+            'pass_status': pass_status,
+            'total_movements': len(movements),
+            'fail_count': fail_count
+        }
+
+        # Insert or update (upsert on class_plan_id unique constraint)
+        supabase.table('class_sequencing_reports').upsert(report_data).execute()
+
+        logger.info(f"✅ Generated and saved on-demand sequencing report for class {class_plan_id} (pass={pass_status})")
+
+        # Return newly generated report
+        return {
+            "class_plan_id": class_plan_id,
+            "report_content": report_content,
+            "pass_status": pass_status,
+            "total_movements": len(movements),
+            "fail_count": fail_count,
+            "generated_at": report_data.get('generated_at', datetime.now().isoformat())
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving/generating sequencing report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)

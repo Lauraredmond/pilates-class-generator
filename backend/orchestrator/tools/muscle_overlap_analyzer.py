@@ -19,7 +19,8 @@ def generate_overlap_report(
     sequence: List[Dict[str, Any]],
     output_dir: str = None,
     user_id: Optional[str] = None,
-    supabase_client = None
+    supabase_client = None,
+    class_plan_id: Optional[str] = None
 ) -> dict:
     """
     Generate a detailed muscle overlap analysis report
@@ -29,12 +30,14 @@ def generate_overlap_report(
         output_dir: Directory to save report (optional - only saves if provided)
         user_id: User ID for historical analysis (optional)
         supabase_client: Supabase client for historical queries (optional)
+        class_plan_id: Class plan ID for reconciliation with quality logs (optional)
 
     Returns:
         Dict with report content and metadata:
         {
             "content": "markdown report content",
             "timestamp": "YYYYMMDD_HHMMSS",
+            "class_plan_id": "uuid" (if provided),
             "file_path": "path/to/file" (only if output_dir provided)
         }
     """
@@ -44,6 +47,8 @@ def generate_overlap_report(
     lines = []
     lines.append("# Muscle Overlap Analysis Report")
     lines.append(f"\n**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append(f"\n**Class ID:** `{class_plan_id if class_plan_id else 'UNKNOWN - CANNOT RECONCILE WITH QUALITY LOG'}`")
+    lines.append(f"\n**User ID:** `{user_id if user_id else 'UNKNOWN'}`")
     lines.append(f"\n**Total Movements:** {len(sequence)}")
     lines.append("\n---\n")
 
@@ -161,6 +166,62 @@ def generate_overlap_report(
 
     lines.append("\n---\n")
 
+    # Section 4b: Movement Family Balance Analysis (RECONCILIATION WITH QA REPORT RULE 2)
+    lines.append("## Movement Family Balance Analysis\n")
+    lines.append("**Goal:** Ensure no single movement family dominates the class (Rule 2: Family Balance)\n")
+    lines.append("**Rule:** No movement family should exceed 40% of total movements\n")
+    lines.append(f"**Total Movements in Class:** {len(sequence)}\n")
+
+    # Calculate family distribution
+    family_counts = {}
+    for movement in sequence:
+        family = movement.get('movement_family', 'other')  # CONSISTENCY FIX: Use 'other' to match QA report
+        if family not in family_counts:
+            family_counts[family] = 0
+        family_counts[family] += 1
+
+    # Convert to percentages
+    family_percentages = {
+        family: (count / len(sequence) * 100) if len(sequence) > 0 else 0
+        for family, count in family_counts.items()
+    }
+
+    # Check for overrepresented families (>40%)
+    MAX_FAMILY_PERCENTAGE = 40.0
+    overrepresented_families = [
+        (family, pct) for family, pct in family_percentages.items()
+        if pct >= MAX_FAMILY_PERCENTAGE
+    ]
+
+    # Display family distribution table
+    lines.append("### Family Distribution\n")
+    lines.append("```csv")
+    lines.append("Movement Family,Count,Percentage,Pass (<40%)?")
+
+    for family, count in sorted(family_counts.items(), key=lambda x: x[1], reverse=True):
+        pct = family_percentages[family]
+        pass_fail = "✅ PASS" if pct < MAX_FAMILY_PERCENTAGE else "❌ FAIL"
+        lines.append(f"{family},{count},{pct:.1f}%,{pass_fail}")
+
+    lines.append("```\n")
+
+    # Summary
+    if overrepresented_families:
+        lines.append(f"### ❌ **RULE 2 VIOLATION:** {len(overrepresented_families)} family/families exceed 40% threshold\n")
+        lines.append("**Overrepresented Families:**")
+        for family, pct in overrepresented_families:
+            movement_names = [m.get('name') for m in sequence if m.get('movement_family') == family]
+            lines.append(f"- **{family}**: {pct:.1f}% ({len(movement_names)} movements)")
+            lines.append(f"  - Movements: {', '.join(movement_names)}")
+        lines.append("\n**Impact:** This violates QA Rule 2 (Family Balance). The class may lack variety.")
+    else:
+        lines.append("### ✅ **RULE 2 PASSED:** All movement families are below 40% threshold\n")
+        lines.append("The class has good family balance and variety.")
+
+    lines.append("\n**Note:** This section reconciles with the QA Report's 'Rule 2: Family Balance' metric.\n")
+
+    lines.append("\n---\n")
+
     # Section 5: Movement Pattern Proximity Check (NEW - addresses Crab/Seal issue)
     lines.append("## Movement Pattern Proximity Check\n")
     lines.append("**Rule:** Similar movement patterns should not appear within 3 positions of each other.\n")
@@ -195,7 +256,69 @@ def generate_overlap_report(
 
     lines.append("\n---\n")
 
-    # Section 6: Historical Muscle Balance Check (NEW - track muscle coverage over time)
+    # Section 6: Historical Movement Coverage Analysis (NEW - user requested)
+    if user_id and supabase_client:
+        lines.append("## Historical Movement Coverage Analysis\n")
+        lines.append("**Goal:** Track which movements you've practiced and identify gaps in your repertoire.\n")
+        lines.append("**Note:** This analyzes your ENTIRE Pilates journey from day 1.\n")
+
+        movement_coverage = _check_historical_movement_coverage(user_id, sequence, supabase_client)
+
+        if movement_coverage:
+            lines.append(f"\n**Total Unique Movements Practiced:** {movement_coverage['total_unique_movements']}")
+            lines.append(f"**Total Classes Analyzed:** {movement_coverage['classes_analyzed']}")
+            lines.append(f"**Your Journey:** {movement_coverage['days_since_start']} days since first class ({movement_coverage['first_class_date']})\n")
+
+            # Movements in this class
+            current_movement_names = [m.get('name', 'Unknown') for m in sequence]
+            lines.append("### Movements in This Class\n")
+            for i, name in enumerate(current_movement_names, 1):
+                lines.append(f"{i}. {name}")
+            lines.append("")
+
+            # Never practiced before
+            if movement_coverage['never_practiced']:
+                lines.append(f"### 🎯 **NEW MOVEMENTS** ({len(movement_coverage['never_practiced'])} movements you've NEVER practiced before)\n")
+                for movement in movement_coverage['never_practiced']:
+                    lines.append(f"- **{movement}**")
+                lines.append("")
+
+            # Rarely practiced (< 3 times)
+            if movement_coverage['rarely_practiced']:
+                lines.append(f"### ⚠️ **RARELY PRACTICED** ({len(movement_coverage['rarely_practiced'])} movements practiced < 3 times)\n")
+                lines.append("```csv")
+                lines.append("Movement Name,Times Practiced,Last Practiced (Days Ago)")
+                for mov in movement_coverage['rarely_practiced']:
+                    lines.append(f"{mov['name']},{mov['count']},{mov['days_ago']}")
+                lines.append("```\n")
+
+            # Stalest movements (not in this class)
+            if movement_coverage['stale_movements']:
+                lines.append(f"### ⏰ **STALEST MOVEMENTS** (Top 10 movements not practiced recently)\n")
+                lines.append("```csv")
+                lines.append("Movement Name,Last Practiced (Days Ago),Times Used Total")
+                for mov in movement_coverage['stale_movements'][:10]:
+                    lines.append(f"{mov['name']},{mov['days_ago']},{mov['count']}")
+                lines.append("```\n")
+
+            # Repertoire gaps (classical movements never practiced)
+            if movement_coverage['repertoire_gaps']:
+                lines.append(f"### 📋 **CLASSICAL REPERTOIRE GAPS** ({len(movement_coverage['repertoire_gaps'])} classical movements never practiced)\n")
+                lines.append("These are Joseph Pilates' 34 classical movements you haven't tried yet:\n")
+                for movement in movement_coverage['repertoire_gaps'][:10]:  # Show first 10
+                    lines.append(f"- {movement}")
+                if len(movement_coverage['repertoire_gaps']) > 10:
+                    lines.append(f"- ...and {len(movement_coverage['repertoire_gaps']) - 10} more")
+                lines.append("")
+        else:
+            lines.append("⚠️ No historical movement coverage data available")
+    else:
+        lines.append("## Historical Movement Coverage Analysis\n")
+        lines.append("⚠️ **Skipped:** Historical analysis requires user_id and database connection")
+
+    lines.append("\n---\n")
+
+    # Section 7: Historical Muscle Balance Check (track muscle coverage over time)
     if user_id and supabase_client:
         lines.append("## Historical Muscle Balance Analysis\n")
         lines.append("**Goal:** Ensure all muscle groups are covered over time (not just in one class).\n")
@@ -266,6 +389,7 @@ def generate_overlap_report(
     result = {
         "content": report_content,
         "timestamp": timestamp,
+        "class_plan_id": class_plan_id if class_plan_id else None  # For reconciliation with quality logs
     }
 
     # Optionally save to file (only if output_dir provided)
@@ -348,6 +472,146 @@ def _detect_pattern_proximity(sequence: List[Dict[str, Any]], proximity_range: i
                 })
 
     return warnings
+
+
+def _check_historical_movement_coverage(
+    user_id: str,
+    current_sequence: List[Dict[str, Any]],
+    supabase_client
+) -> Optional[Dict[str, Any]]:
+    """
+    Check historical movement coverage to identify repertoire gaps
+
+    User requirement: "All history should be checked to ensure freshness of
+    movement and comprehensive usage across movements from the day you start"
+
+    Args:
+        user_id: User ID to query
+        current_sequence: Current class movements
+        supabase_client: Supabase client for database queries
+
+    Returns:
+        Dict with movement coverage analysis, or None if no data
+    """
+    try:
+        from datetime import datetime, timedelta
+
+        # Query ALL movements in database (classical repertoire)
+        all_movements_response = supabase_client.table('movements') \
+            .select('id, name, difficulty_level') \
+            .execute()
+
+        all_movements = {m['id']: m['name'] for m in all_movements_response.data}
+
+        # Query user's historical movement usage (from day 1)
+        usage_response = supabase_client.table('class_movements') \
+            .select('movement_id, movement_name, class_generated_at') \
+            .eq('user_id', user_id) \
+            .order('class_generated_at', desc=True) \
+            .execute()
+
+        if not usage_response.data:
+            # First class ever - all movements are new
+            current_movement_names = [m.get('name', 'Unknown') for m in current_sequence]
+            return {
+                'total_unique_movements': len(current_movement_names),
+                'classes_analyzed': 1,
+                'days_since_start': 0,
+                'first_class_date': datetime.now().date().isoformat(),
+                'never_practiced': current_movement_names,
+                'rarely_practiced': [],
+                'stale_movements': [],
+                'repertoire_gaps': [name for name in all_movements.values() if name not in current_movement_names]
+            }
+
+        # Track movement usage
+        movement_usage = {}  # movement_id -> {name, count, last_used_date}
+        classes_by_date = set()
+
+        for usage in usage_response.data:
+            movement_id = usage['movement_id']
+            movement_name = usage['movement_name']
+            used_date = usage['class_generated_at'][:10]  # YYYY-MM-DD
+
+            classes_by_date.add(used_date)
+
+            if movement_id not in movement_usage:
+                movement_usage[movement_id] = {
+                    'name': movement_name,
+                    'count': 0,
+                    'last_used_date': used_date
+                }
+
+            movement_usage[movement_id]['count'] += 1
+
+            # Track most recent use
+            if used_date > movement_usage[movement_id]['last_used_date']:
+                movement_usage[movement_id]['last_used_date'] = used_date
+
+        # Calculate days since user started
+        first_class_date = min(datetime.fromisoformat(m['class_generated_at'].replace('Z', '+00:00')).date()
+                               for m in usage_response.data)
+        days_since_start = (datetime.now().date() - first_class_date).days
+
+        # Identify movements in current class
+        current_movement_names = [m.get('name', 'Unknown') for m in current_sequence]
+        current_movement_ids = [m.get('id') for m in current_sequence if m.get('id')]
+
+        # Never practiced before (in current class but not in history)
+        never_practiced = [
+            name for name in current_movement_names
+            if not any(usage['name'] == name for usage in movement_usage.values())
+        ]
+
+        # Rarely practiced (< 3 times total)
+        rarely_practiced = []
+        for mov_id, data in movement_usage.items():
+            if data['count'] < 3:
+                days_ago = (datetime.now().date() - datetime.fromisoformat(data['last_used_date']).date()).days
+                rarely_practiced.append({
+                    'name': data['name'],
+                    'count': data['count'],
+                    'days_ago': days_ago
+                })
+
+        # Sort rarely practiced by count ascending (least practiced first)
+        rarely_practiced.sort(key=lambda x: x['count'])
+
+        # Stalest movements (not in current class, sorted by days since last use)
+        stale_movements = []
+        for mov_id, data in movement_usage.items():
+            if mov_id not in current_movement_ids:  # Not in current class
+                days_ago = (datetime.now().date() - datetime.fromisoformat(data['last_used_date']).date()).days
+                stale_movements.append({
+                    'name': data['name'],
+                    'days_ago': days_ago,
+                    'count': data['count']
+                })
+
+        # Sort by days_ago descending (stalest first)
+        stale_movements.sort(key=lambda x: x['days_ago'], reverse=True)
+
+        # Repertoire gaps (classical movements never practiced)
+        practiced_movement_names = set(data['name'] for data in movement_usage.values())
+        repertoire_gaps = [
+            name for name in all_movements.values()
+            if name not in practiced_movement_names
+        ]
+
+        return {
+            'total_unique_movements': len(movement_usage),
+            'classes_analyzed': len(classes_by_date),
+            'days_since_start': days_since_start,
+            'first_class_date': first_class_date.isoformat(),
+            'never_practiced': never_practiced,
+            'rarely_practiced': rarely_practiced,
+            'stale_movements': stale_movements,
+            'repertoire_gaps': sorted(repertoire_gaps)
+        }
+
+    except Exception as e:
+        logger.warning(f"Historical movement coverage check failed: {e}")
+        return None
 
 
 def _check_historical_muscle_balance(

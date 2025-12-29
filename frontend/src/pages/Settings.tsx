@@ -65,6 +65,12 @@ export function Settings() {
   const [sequencingReportError, setSequencingReportError] = useState('');
   const [sequencingReportSuccess, setSequencingReportSuccess] = useState('');
 
+  // Class plan ID report state (for specific class_plan_id lookup)
+  const [classPlanIdInput, setClassPlanIdInput] = useState('');
+  const [classPlanReportLoading, setClassPlanReportLoading] = useState(false);
+  const [classPlanReportError, setClassPlanReportError] = useState('');
+  const [classPlanReportSuccess, setClassPlanReportSuccess] = useState('');
+
   // Creators vs Performers report state
   const [creatorsReportLoading, setCreatorsReportLoading] = useState(false);
   const [creatorsReportError, setCreatorsReportError] = useState('');
@@ -372,6 +378,51 @@ export function Settings() {
     }
   };
 
+  const handleDownloadClassPlanReport = async () => {
+    if (!classPlanIdInput.trim()) {
+      setClassPlanReportError('Please enter a class plan ID');
+      return;
+    }
+
+    setClassPlanReportLoading(true);
+    setClassPlanReportError('');
+    setClassPlanReportSuccess('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE_URL}/api/analytics/sequencing-report/${classPlanIdInput.trim()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Download markdown file
+      const reportData = response.data;
+      const dataBlob = new Blob([reportData.report_content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sequencing-report-${classPlanIdInput.trim()}-${new Date().toISOString().split('T')[0]}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      const passStatus = reportData.pass_status ? 'PASSED' : 'FAILED';
+      setClassPlanReportSuccess(`Report downloaded! Sequencing: ${passStatus} (${reportData.total_movements} movements)`);
+      setTimeout(() => setClassPlanReportSuccess(''), 10000);
+      setClassPlanIdInput(''); // Clear input after success
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        setClassPlanReportError('No report found for this class plan ID. The report may still be generating, or the ID may be invalid.');
+      } else {
+        setClassPlanReportError(error.response?.data?.detail || 'Failed to fetch report');
+      }
+    } finally {
+      setClassPlanReportLoading(false);
+    }
+  };
+
   const handleViewCreatorsReport = async () => {
     setCreatorsReportLoading(true);
     setCreatorsReportError('');
@@ -458,7 +509,7 @@ export function Settings() {
 
       const rows = logs.map((log: any) => [
         log.user_email || 'Unknown',
-        log.id,
+        log.class_plan_id,  // FIX: Use class_plan_id for reconciliation with sequencing report
         log.generated_at,
         log.difficulty_level,
         log.movement_count,
@@ -1098,6 +1149,50 @@ export function Settings() {
                 <Download className="w-5 h-5" />
                 {sequencingReportLoading ? 'Generating Report...' : 'Download Latest Class Report (.md)'}
               </button>
+            </div>
+
+            {/* Generate Report by Class Plan ID */}
+            <div className="mb-6 p-4 bg-burgundy/10 rounded-lg border border-burgundy/20">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-cream mb-2">Generate Report by Class Plan ID</h3>
+                  <p className="text-cream/60 text-sm mb-3">
+                    Enter a specific class plan ID to download its sequencing report:
+                  </p>
+                </div>
+              </div>
+
+              {classPlanReportSuccess && (
+                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <p className="text-green-400 text-sm">{classPlanReportSuccess}</p>
+                </div>
+              )}
+
+              {classPlanReportError && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                  <p className="text-sm text-red-700">{classPlanReportError}</p>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={classPlanIdInput}
+                  onChange={(e) => setClassPlanIdInput(e.target.value)}
+                  placeholder="Enter class plan ID (UUID)"
+                  className="flex-1 px-4 py-3 bg-burgundy/20 border border-cream/20 rounded text-cream placeholder-cream/40 focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  disabled={classPlanReportLoading}
+                />
+                <button
+                  onClick={handleDownloadClassPlanReport}
+                  disabled={classPlanReportLoading || !classPlanIdInput.trim()}
+                  className="flex items-center justify-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-6 py-3 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  <Download className="w-5 h-5" />
+                  {classPlanReportLoading ? 'Fetching...' : 'Download Report'}
+                </button>
+              </div>
             </div>
 
             {/* Creators vs Performers Report */}

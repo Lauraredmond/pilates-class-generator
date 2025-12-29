@@ -69,7 +69,7 @@ export function ClassBuilder() {
           <div>
             <h1 className="text-3xl font-bold text-cream">Automatically Generate My Class</h1>
             <p className="text-cream/70 mt-1">
-            Creates a class shaped by your level, history, and classical Pilates principles
+            Creates a class shaped by your level, class history, and classical Pilates principles
             </p>
           </div>
         </div>
