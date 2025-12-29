@@ -908,45 +908,53 @@ async def _get_favorite_movement(user_id: str) -> str:
 
 
 async def _get_top_movements_with_coverage(user_id: str) -> dict:
-    """Get top 3 most-selected movements and their combined coverage percentage"""
+    """Get top 3 most-selected movements and their combined coverage percentage
+
+    Uses same data source as Movement History table: class_history.movements_snapshot
+    """
     try:
         user_uuid = _convert_to_uuid(user_id)
 
-        # Get all movement usage for this user
-        response = supabase.table('movement_usage') \
-            .select('movement_id, usage_count') \
+        # Fetch class history (same as Movement History table)
+        classes_response = supabase.table('class_history') \
+            .select('movements_snapshot') \
             .eq('user_id', user_uuid) \
-            .order('usage_count', desc=True) \
             .execute()
 
-        if not response.data or len(response.data) == 0:
+        classes = classes_response.data or []
+
+        if not classes:
             return {
                 "top_3_movements": ["No data yet"],
                 "coverage_percentage": 0
             }
 
-        # Calculate total usage across all movements
-        total_usage = sum(item['usage_count'] for item in response.data)
+        # Count movement occurrences from movements_snapshot
+        movement_counts = {}
+        total_movements = 0
 
-        # Get top 3
-        top_3_data = response.data[:3]
-        top_3_usage = sum(item['usage_count'] for item in top_3_data)
+        for class_item in classes:
+            movements_snapshot = class_item.get('movements_snapshot', [])
+            for movement in movements_snapshot:
+                if movement.get('type') == 'movement':
+                    movement_name = movement.get('name', '')
+                    if movement_name:
+                        movement_counts[movement_name] = movement_counts.get(movement_name, 0) + 1
+                        total_movements += 1
+
+        if total_movements == 0:
+            return {
+                "top_3_movements": ["No data yet"],
+                "coverage_percentage": 0
+            }
+
+        # Sort by count and get top 3
+        sorted_movements = sorted(movement_counts.items(), key=lambda x: x[1], reverse=True)
+        top_3_movements = [name for name, count in sorted_movements[:3]]
 
         # Calculate coverage percentage
-        coverage_percentage = round((top_3_usage / total_usage) * 100) if total_usage > 0 else 0
-
-        # Fetch movement names
-        movement_ids = [item['movement_id'] for item in top_3_data]
-        movement_response = supabase.table('movements') \
-            .select('id, name') \
-            .in_('id', movement_ids) \
-            .execute()
-
-        # Create a lookup dict for movement names
-        movement_names = {m['id']: m['name'] for m in movement_response.data}
-
-        # Build top 3 list in order
-        top_3_movements = [movement_names.get(item['movement_id'], 'Unknown') for item in top_3_data]
+        top_3_count = sum(count for name, count in sorted_movements[:3])
+        coverage_percentage = round((top_3_count / total_movements) * 100)
 
         return {
             "top_3_movements": top_3_movements,
@@ -954,7 +962,7 @@ async def _get_top_movements_with_coverage(user_id: str) -> dict:
         }
 
     except Exception as e:
-        logger.warning(f"Error getting top movements with coverage: {e}")
+        logger.warning(f"Error getting top movements with coverage: {e}", exc_info=True)
         return {
             "top_3_movements": ["No data yet"],
             "coverage_percentage": 0
