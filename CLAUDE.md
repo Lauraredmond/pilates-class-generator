@@ -117,12 +117,43 @@ git push origin main --force
 
 ---
 
-## 🚀 WHERE WE LEFT OFF (December 28, 2025) 🚀
+## 🚀 WHERE WE LEFT OFF (December 29, 2025) 🚀
 
 **CRITICAL: Read from here for current session priorities**
 
-**Active Tasks for This Session:**
-- Fix pregnancy exclusion message (make it empathetic, not error-like)
+**Active Tasks for Next Session:**
+
+### 🔴 PRIORITY 1: Fix pass_status Logic Mismatch (STILL BROKEN)
+
+**Problem:** QA Report and Sequencing Report STILL showing different pass/fail results despite attempted fix in commit 77696c8e.
+
+**Example Class ID:** `47a4d753-5dac-4679-baea-30e81d978c09`
+
+**What We've Tried:**
+- ✅ Fixed formula inconsistency (commit a3bb3308)
+- ✅ Added Movement Family Balance section to sequencing reports (commit ece7d8b7)
+- ✅ Fixed 12-minute class report generation (commits 07d5b349, 7b13b9f1)
+- ✅ Fixed inconsistent movement_family defaults (commit 31f5aea5)
+- ✅ Updated pass_status to check BOTH Rule 1 AND Rule 2 (commit 77696c8e) ⚠️ **STILL NOT WORKING**
+
+**User Requirement:** "they have to exactly match, otherwise the apps accuracy stats lose all credibility"
+
+**Next Steps:**
+1. Query database for class `47a4d753-5dac-4679-baea-30e81d978c09`:
+   - Check `class_sequencing_reports.pass_status` and `fail_count`
+   - Check `class_quality_log.rule1_muscle_repetition_pass`, `rule2_family_balance_pass`, `overall_pass`
+   - Download sequencing report markdown and check summary lines
+2. Identify exact mismatch (which rule is causing disagreement?)
+3. Debug why pass_status calculation logic still doesn't match report content
+4. Apply correct fix and verify with multiple test classes
+
+**Files Involved:**
+- `/backend/api/analytics.py` (lines 2444-2486, lines 2691-2731)
+- `/backend/orchestrator/tools/muscle_overlap_analyzer.py` (report generation)
+- `/backend/orchestrator/tools/sequence_tools.py` (QA quality logging)
+- `/docs/QUALITY_REPORT_AUDIT.md` (audit documentation)
+
+**Status:** User stopped troubleshooting for tonight - continue next session
 
 ---
 
