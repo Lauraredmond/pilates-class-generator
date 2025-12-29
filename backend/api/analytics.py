@@ -2442,15 +2442,17 @@ async def generate_and_save_sequencing_report_background(
         report_content = report_result.get("content", "")
 
         # Calculate fail_count for pass_status
+        # CRITICAL FIX: Use same formula as muscle_overlap_analyzer.py (divide by NEXT movement's muscles, not smaller set)
         fail_count = 0
         for i in range(len(movements) - 1):
-            muscles_a = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
-            muscles_b = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
-            shared = muscles_a.intersection(muscles_b)
+            current_muscles = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
+            next_muscles = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
+            shared = current_muscles.intersection(next_muscles)
 
-            if muscles_a and muscles_b:
-                smaller_set_size = min(len(muscles_a), len(muscles_b))
-                overlap_pct = (len(shared) / smaller_set_size * 100) if smaller_set_size > 0 else 0
+            if current_muscles and next_muscles:
+                # FORMULA MUST MATCH muscle_overlap_analyzer.py line 88:
+                # overlap_pct = (overlap_count / len(next_muscles)) * 100
+                overlap_pct = (len(shared) / len(next_muscles) * 100) if next_muscles else 0
                 if overlap_pct >= 50:
                     fail_count += 1
 
