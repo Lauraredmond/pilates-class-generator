@@ -211,11 +211,21 @@ class EarlySkipByMovement(BaseModel):
     avg_planned_duration: float
 
 
+class DataSourceMetadata(BaseModel):
+    """Metadata about data source for transparency"""
+    table_name: str
+    sql_query: str
+    description: str
+
+
 class EarlySkipAnalytics(BaseModel):
-    """Aggregated early skip analytics for admin dashboard"""
+    """Aggregated early skip analytics for admin dashboard (with SQL transparency)"""
     by_section_type: List[EarlySkipBySection]
     by_movement: List[EarlySkipByMovement]  # Top 10 most-skipped movements
     overall_stats: Dict[str, Any]  # Total plays, total early skips, overall rate
+
+    # SQL transparency - show exactly how data was derived
+    data_sources: List[DataSourceMetadata]
 
 
 # Helper functions
@@ -3221,10 +3231,84 @@ async def get_early_skip_analytics(
             "overall_skip_rate_pct": overall_skip_rate_pct
         }
 
+        # Build SQL query strings for transparency (what the user can run in Supabase)
+        data_sources = [
+            DataSourceMetadata(
+                table_name="playback_section_events",
+                sql_query=f"""
+-- Skip rates by section type
+SELECT
+  section_type,
+  COUNT(*) as total_plays,
+  SUM(CASE WHEN is_early_skip THEN 1 ELSE 0 END) as early_skips,
+  ROUND(100.0 * SUM(CASE WHEN is_early_skip THEN 1 ELSE 0 END) / COUNT(*), 1) as early_skip_rate_pct,
+  ROUND(AVG(duration_seconds), 1) as avg_duration_seconds,
+  ROUND(AVG(planned_duration_seconds), 1) as avg_planned_duration
+FROM playback_section_events
+WHERE {where_clause}
+GROUP BY section_type
+ORDER BY early_skip_rate_pct DESC;
+                """.strip(),
+                description="Skip rates aggregated by section type (preparation, warmup, movement, cooldown, meditation, homecare)"
+            ),
+            DataSourceMetadata(
+                table_name="playback_section_events",
+                sql_query=f"""
+-- Top 10 most-skipped movements (minimum 10 plays for statistical significance)
+SELECT
+  movement_id,
+  movement_name,
+  COUNT(*) as total_plays,
+  SUM(CASE WHEN is_early_skip THEN 1 ELSE 0 END) as early_skips,
+  ROUND(100.0 * SUM(CASE WHEN is_early_skip THEN 1 ELSE 0 END) / COUNT(*), 1) as early_skip_rate_pct,
+  ROUND(AVG(duration_seconds), 1) as avg_duration_seconds,
+  ROUND(AVG(planned_duration_seconds), 1) as avg_planned_duration
+FROM playback_section_events
+WHERE {where_clause}
+  AND section_type = 'movement'
+  AND movement_id IS NOT NULL
+GROUP BY movement_id, movement_name
+HAVING COUNT(*) >= 10
+ORDER BY early_skip_rate_pct DESC
+LIMIT 10;
+                """.strip(),
+                description="Movements with highest skip rates (requires minimum 10 plays to avoid skewed data from low sample sizes)"
+            ),
+            DataSourceMetadata(
+                table_name="playback_section_events",
+                sql_query=f"""
+-- Overall platform statistics
+SELECT
+  COUNT(*) as total_plays,
+  SUM(CASE WHEN is_early_skip THEN 1 ELSE 0 END) as total_early_skips,
+  ROUND(100.0 * SUM(CASE WHEN is_early_skip THEN 1 ELSE 0 END) / COUNT(*), 1) as overall_skip_rate_pct
+FROM playback_section_events
+WHERE {where_clause};
+                """.strip(),
+                description="Platform-wide early skip statistics across all sections and classes"
+            ),
+            DataSourceMetadata(
+                table_name="playback_section_events",
+                sql_query=f"""
+-- ended_reason breakdown (diagnostic query)
+SELECT
+  ended_reason,
+  COUNT(*) as count,
+  ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) as percentage
+FROM playback_section_events
+WHERE {where_clause}
+GROUP BY ended_reason
+ORDER BY count DESC;
+                """.strip(),
+                description="Breakdown of why sections ended (completed, skipped_next, skipped_previous, exited) for diagnostic purposes"
+            )
+        ]
+
         return EarlySkipAnalytics(
             by_section_type=by_section_type,
             by_movement=by_movement,
-            overall_stats=overall_stats
+            overall_stats=overall_stats,
+            data_sources=data_sources
         )
 
     except HTTPException:
