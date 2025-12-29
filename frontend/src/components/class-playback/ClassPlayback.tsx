@@ -326,7 +326,8 @@ export function ClassPlayback({
     return () => {
       const endSession = async () => {
         // End current section if in progress (early skip analytics)
-        if (currentSectionEventId && currentItem?.type !== 'transition') {
+        const item = items[currentIndex];
+        if (currentSectionEventId && item?.type !== 'transition') {
           try {
             await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
               section_event_id: currentSectionEventId,
@@ -355,7 +356,7 @@ export function ClassPlayback({
 
       endSession();
     };
-  }, [sessionId, playDuration, currentIndex, currentSectionEventId, currentItem]);
+  }, [sessionId, playDuration, currentIndex, currentSectionEventId, items]);
 
   /**
    * Wake Lock API - Keep screen on during class playback
@@ -678,7 +679,8 @@ export function ClassPlayback({
 
   const handlePrevious = useCallback(async () => {
     // End current section with rewind reason (early skip analytics)
-    if (currentSectionEventId && currentItem?.type !== 'transition') {
+    const item = items[currentIndex];
+    if (currentSectionEventId && item?.type !== 'transition') {
       try {
         await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
           section_event_id: currentSectionEventId,
@@ -697,11 +699,12 @@ export function ClassPlayback({
       setTimeRemaining(items[currentIndex - 1]?.duration_seconds || 0);
       setRewindCount((c) => c + 1); // Track rewind
     }
-  }, [currentIndex, items, currentSectionEventId, currentItem]);
+  }, [currentIndex, items, currentSectionEventId]);
 
   const handleNext = useCallback(async () => {
     // End current section with skip reason (early skip analytics)
-    if (currentSectionEventId && currentItem?.type !== 'transition') {
+    const item = items[currentIndex];
+    if (currentSectionEventId && item?.type !== 'transition') {
       try {
         await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
           section_event_id: currentSectionEventId,
@@ -722,7 +725,7 @@ export function ClassPlayback({
     } else {
       handleComplete();
     }
-  }, [currentIndex, totalItems, items, currentSectionEventId, currentItem]);
+  }, [currentIndex, totalItems, items, currentSectionEventId]);
 
   const handleComplete = useCallback(async () => {
     setIsPaused(true);
@@ -756,7 +759,8 @@ export function ClassPlayback({
     setShowExitConfirm(false);
 
     // End current section with exit reason (early skip analytics)
-    if (currentSectionEventId && currentItem?.type !== 'transition') {
+    const item = items[currentIndex];
+    if (currentSectionEventId && item?.type !== 'transition') {
       try {
         await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
           section_event_id: currentSectionEventId,
@@ -784,7 +788,7 @@ export function ClassPlayback({
     }
 
     onExit?.();
-  }, [onExit, sessionId, playDuration, currentIndex, currentSectionEventId, currentItem]);
+  }, [onExit, sessionId, playDuration, currentIndex, currentSectionEventId, items]);
 
   const handleExitCancel = useCallback(() => {
     setShowExitConfirm(false);
