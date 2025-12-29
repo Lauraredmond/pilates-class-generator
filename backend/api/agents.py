@@ -291,6 +291,7 @@ async def generate_sequence(
                             "type": "movement",
                             "name": movement.get('name', ''),
                             "muscle_groups": muscle_groups,
+                            "movement_family": movement.get('movement_family', 'other'),  # FIX: Include for Rule 2 calculations
                             "duration_seconds": movement.get('duration_seconds', 60),
                             "order_index": idx,
                             # Voiceover audio fields (Session 13.5)
@@ -991,6 +992,7 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                         "type": "movement",
                         "name": movement.get('name', ''),
                         "muscle_groups": muscle_groups,
+                        "movement_family": movement.get('movement_family', 'other'),  # FIX: Include for Rule 2 calculations
                         "duration_seconds": movement.get('duration_seconds', 60),
                         "order_index": idx,
                         "voiceover_url": movement.get('voiceover_url'),

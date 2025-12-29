@@ -2430,6 +2430,41 @@ async def generate_and_save_sequencing_report_background(
             if muscle_groups and isinstance(muscle_groups[0], str):
                 movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
 
+        # ENRICHMENT FIX: Get actual movement_family from movements table
+        # If movements_snapshot has all "other", join to movements table to get real values
+        movement_names = [m.get('name') for m in movements if m.get('name')]
+        logger.info(f"🔍 DEBUG: Attempting to enrich {len(movement_names)} movement names: {movement_names[:5]}...")
+        if movement_names:
+            try:
+                movements_response = supabase.table('movements') \
+                    .select('name, movement_family') \
+                    .in_('name', movement_names) \
+                    .execute()
+
+                logger.info(f"🔍 DEBUG: Query returned {len(movements_response.data) if movements_response.data else 0} rows")
+                if movements_response.data:
+                    logger.info(f"🔍 DEBUG: Sample result: {movements_response.data[0]}")
+
+                # Build lookup map
+                family_lookup = {
+                    m['name']: m.get('movement_family', 'other')
+                    for m in movements_response.data
+                }
+
+                logger.info(f"🔍 DEBUG: Built lookup map with {len(family_lookup)} entries")
+
+                # Enrich movements with actual family values
+                enriched_count = 0
+                for movement in movements:
+                    movement_name = movement.get('name')
+                    if movement_name in family_lookup:
+                        movement['movement_family'] = family_lookup[movement_name]
+                        enriched_count += 1
+
+                logger.info(f"✅ Enriched {enriched_count}/{len(movements)} movements with movement_family from database")
+            except Exception as e:
+                logger.error(f"❌ Failed to enrich movement_family: {e}", exc_info=True)
+
         # Generate report using muscle_overlap_analyzer
         report_result = generate_overlap_report(
             sequence=movements,
@@ -2475,7 +2510,7 @@ async def generate_and_save_sequencing_report_background(
         if movements:
             for family, count in family_counts.items():
                 family_pct = (count / len(movements)) * 100
-                if family_pct >= MAX_FAMILY_PERCENTAGE:
+                if family_pct > MAX_FAMILY_PERCENTAGE:  # FIXED: Changed >= to > (matches sequence_tools.py line 1170)
                     rule2_pass = False
                     rule2_fail_count += 1  # Count how many families exceed threshold
 
@@ -2677,6 +2712,41 @@ async def get_saved_sequencing_report(class_plan_id: str):
             if muscle_groups and isinstance(muscle_groups[0], str):
                 movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
 
+        # ENRICHMENT FIX: Get actual movement_family from movements table
+        # If movements_snapshot has all "other", join to movements table to get real values
+        movement_names = [m.get('name') for m in movements if m.get('name')]
+        logger.info(f"🔍 DEBUG: Attempting to enrich {len(movement_names)} movement names: {movement_names[:5]}...")
+        if movement_names:
+            try:
+                movements_response = supabase.table('movements') \
+                    .select('name, movement_family') \
+                    .in_('name', movement_names) \
+                    .execute()
+
+                logger.info(f"🔍 DEBUG: Query returned {len(movements_response.data) if movements_response.data else 0} rows")
+                if movements_response.data:
+                    logger.info(f"🔍 DEBUG: Sample result: {movements_response.data[0]}")
+
+                # Build lookup map
+                family_lookup = {
+                    m['name']: m.get('movement_family', 'other')
+                    for m in movements_response.data
+                }
+
+                logger.info(f"🔍 DEBUG: Built lookup map with {len(family_lookup)} entries")
+
+                # Enrich movements with actual family values
+                enriched_count = 0
+                for movement in movements:
+                    movement_name = movement.get('name')
+                    if movement_name in family_lookup:
+                        movement['movement_family'] = family_lookup[movement_name]
+                        enriched_count += 1
+
+                logger.info(f"✅ Enriched {enriched_count}/{len(movements)} movements with movement_family from database")
+            except Exception as e:
+                logger.error(f"❌ Failed to enrich movement_family: {e}", exc_info=True)
+
         # Generate report using muscle_overlap_analyzer
         report_result = generate_overlap_report(
             sequence=movements,
@@ -2720,7 +2790,7 @@ async def get_saved_sequencing_report(class_plan_id: str):
         if movements:
             for family, count in family_counts.items():
                 family_pct = (count / len(movements)) * 100
-                if family_pct >= MAX_FAMILY_PERCENTAGE:
+                if family_pct > MAX_FAMILY_PERCENTAGE:  # FIXED: Changed >= to > (matches sequence_tools.py line 1170)
                     rule2_pass = False
                     rule2_fail_count += 1  # Count how many families exceed threshold
 
