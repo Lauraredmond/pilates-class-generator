@@ -43,13 +43,17 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     return () => clearTimeout(timer);
   }, [item, isPaused]);
 
+  // Reset scroll to top ONLY when section changes (not on pause/resume)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    container.scrollTop = 0;
+  }, [item]);
+
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-
-    // Reset scroll to top when item changes
-    container.scrollTop = 0;
 
     // Don't start scrolling if paused (e.g., H&S modal is shown)
     if (isPaused) return;
