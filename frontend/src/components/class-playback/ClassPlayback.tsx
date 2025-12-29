@@ -329,7 +329,7 @@ export function ClassPlayback({
         const item = items[currentIndex];
         if (currentSectionEventId && item?.type !== 'transition') {
           try {
-            await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
+            await axios.put(`${API_BASE_URL}/api/analytics/playback/section-end`, {
               section_event_id: currentSectionEventId,
               ended_reason: 'exited'
             });
@@ -438,7 +438,7 @@ export function ClassPlayback({
         // End previous section first (if exists)
         if (currentSectionEventId) {
           await axios.put(
-            `${API_BASE_URL}/api/playback/section-end`,
+            `${API_BASE_URL}/api/analytics/playback/section-end`,
             {
               section_event_id: currentSectionEventId,
               ended_reason: 'completed'  // Natural advance (timer ran out)
@@ -449,7 +449,7 @@ export function ClassPlayback({
 
         // Start new section
         const response = await axios.post(
-          `${API_BASE_URL}/api/playback/section-start`,
+          `${API_BASE_URL}/api/analytics/playback/section-start`,
           {
             play_session_id: sessionId,
             section_type: currentItem.type,
@@ -682,7 +682,7 @@ export function ClassPlayback({
     const item = items[currentIndex];
     if (currentSectionEventId && item?.type !== 'transition') {
       try {
-        await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
+        await axios.put(`${API_BASE_URL}/api/analytics/playback/section-end`, {
           section_event_id: currentSectionEventId,
           ended_reason: 'skipped_previous'
         });
@@ -706,7 +706,7 @@ export function ClassPlayback({
     const item = items[currentIndex];
     if (currentSectionEventId && item?.type !== 'transition') {
       try {
-        await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
+        await axios.put(`${API_BASE_URL}/api/analytics/playback/section-end`, {
           section_event_id: currentSectionEventId,
           ended_reason: 'skipped_next'
         });
@@ -762,7 +762,7 @@ export function ClassPlayback({
     const item = items[currentIndex];
     if (currentSectionEventId && item?.type !== 'transition') {
       try {
-        await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
+        await axios.put(`${API_BASE_URL}/api/analytics/playback/section-end`, {
           section_event_id: currentSectionEventId,
           ended_reason: 'exited'
         });
