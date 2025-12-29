@@ -2574,7 +2574,7 @@ async def get_saved_sequencing_report(class_plan_id: str):
         # Step 2: Report doesn't exist - generate on-demand
         logger.info(f"🔄 No existing report found for class {class_plan_id} - generating on-demand")
 
-        # Fetch class from class_history to get movements_snapshot
+        # Try to fetch class from class_history first (has movements_snapshot field)
         class_response = supabase.table('class_history') \
             .select('*') \
             .eq('class_plan_id', class_plan_id) \
@@ -2582,15 +2582,52 @@ async def get_saved_sequencing_report(class_plan_id: str):
             .limit(1) \
             .execute()
 
-        if not class_response.data or len(class_response.data) == 0:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Class {class_plan_id} not found in class_history. Cannot generate report."
-            )
+        user_id = None
+        movements_snapshot = []
 
-        class_record = class_response.data[0]
-        user_id = class_record.get('user_id')
-        movements_snapshot = class_record.get('movements_snapshot', [])
+        if class_response.data and len(class_response.data) > 0:
+            # Found in class_history - use movements_snapshot
+            class_record = class_response.data[0]
+            user_id = class_record.get('user_id')
+            movements_snapshot = class_record.get('movements_snapshot', [])
+            logger.info(f"✅ Found class in class_history table")
+        else:
+            # Not in class_history - try class_plans table as fallback
+            logger.info(f"⚠️ Class not found in class_history, trying class_plans...")
+            plans_response = supabase.table('class_plans') \
+                .select('*') \
+                .eq('id', class_plan_id) \
+                .limit(1) \
+                .execute()
+
+            if not plans_response.data or len(plans_response.data) == 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Class {class_plan_id} not found in class_history or class_plans. Cannot generate report."
+                )
+
+            # Found in class_plans - use main_sequence field instead
+            plan_record = plans_response.data[0]
+            user_id = plan_record.get('user_id')
+            # class_plans has 'main_sequence' instead of 'movements_snapshot'
+            main_sequence = plan_record.get('main_sequence', [])
+
+            # Transform main_sequence to movements_snapshot format
+            # main_sequence contains full movement objects with all details
+            # We need to extract just what movements_snapshot would have
+            movements_snapshot = []
+            for idx, item in enumerate(main_sequence):
+                if item.get('type') == 'movement':
+                    # Extract movement data in movements_snapshot format
+                    movements_snapshot.append({
+                        "type": "movement",
+                        "name": item.get('name', ''),
+                        "muscle_groups": item.get('muscle_groups', []),
+                        "duration_seconds": item.get('duration_seconds', 60),
+                        "order_index": idx
+                    })
+
+            logger.info(f"✅ Found class in class_plans table, extracted {len(movements_snapshot)} movements from main_sequence")
 
         # Generate report synchronously (runs in this request)
         # This is the SAME logic as generate_and_save_sequencing_report_background
