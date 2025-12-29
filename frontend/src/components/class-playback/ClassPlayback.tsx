@@ -184,6 +184,7 @@ interface ClassPlaybackProps {
   movementMusicStyle: string;
   coolDownMusicStyle: string;
   className?: string;
+  classId?: string;  // Optional: class plan ID for analytics tracking
   onComplete?: () => void;
   onExit?: () => void;
 }
@@ -193,6 +194,7 @@ export function ClassPlayback({
   movementMusicStyle,
   coolDownMusicStyle,
   className = '',
+  classId,
   onComplete,
   onExit,
 }: ClassPlaybackProps) {
@@ -214,6 +216,9 @@ export function ClassPlayback({
   const [skipCount, setSkipCount] = useState(0);
   const [rewindCount, setRewindCount] = useState(0);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Early skip analytics tracking state (December 29, 2025)
+  const [currentSectionEventId, setCurrentSectionEventId] = useState<string | null>(null);
 
   // Wake Lock to prevent screen from turning off during class
   const wakeLockRef = useRef<any>(null);
@@ -320,6 +325,20 @@ export function ClassPlayback({
   useEffect(() => {
     return () => {
       const endSession = async () => {
+        // End current section if in progress (early skip analytics)
+        if (currentSectionEventId && currentItem?.type !== 'transition') {
+          try {
+            await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
+              section_event_id: currentSectionEventId,
+              ended_reason: 'exited'
+            });
+            logger.debug('[EarlySkip] Section ended on unmount (exited)');
+          } catch (error) {
+            logger.error('[EarlySkip] Failed to end section on unmount:', error);
+          }
+        }
+
+        // End play session
         if (!sessionId) return;
 
         try {
@@ -336,7 +355,7 @@ export function ClassPlayback({
 
       endSession();
     };
-  }, [sessionId, playDuration, currentIndex]);
+  }, [sessionId, playDuration, currentIndex, currentSectionEventId, currentItem]);
 
   /**
    * Wake Lock API - Keep screen on during class playback
@@ -390,6 +409,73 @@ export function ClassPlayback({
       }
     };
   }, [isPaused]);
+
+  // ============================================================================
+  // EARLY SKIP ANALYTICS - Section Event Tracking (December 29, 2025)
+  // ============================================================================
+
+  /**
+   * Start section tracking when currentIndex changes
+   *
+   * Excludes transitions per requirements (they're only 20s and auto-advance)
+   * Graceful degradation: failures don't interrupt playback
+   */
+  useEffect(() => {
+    const startSectionTracking = async () => {
+      if (!sessionId || !user?.id) return;
+
+      const currentItem = items[currentIndex];
+      if (!currentItem) return;
+
+      // Skip transitions (no tracking per requirements)
+      if (currentItem.type === 'transition') {
+        logger.debug('[EarlySkip] Skipping transition section (no tracking)');
+        return;
+      }
+
+      try {
+        // End previous section first (if exists)
+        if (currentSectionEventId) {
+          await axios.put(
+            `${API_BASE_URL}/api/playback/section-end`,
+            {
+              section_event_id: currentSectionEventId,
+              ended_reason: 'completed'  // Natural advance (timer ran out)
+            }
+          );
+          logger.debug(`[EarlySkip] Previous section ended: ${currentSectionEventId}`);
+        }
+
+        // Start new section
+        const response = await axios.post(
+          `${API_BASE_URL}/api/playback/section-start`,
+          {
+            play_session_id: sessionId,
+            section_type: currentItem.type,
+            section_index: currentIndex,
+            movement_id: currentItem.type === 'movement' ? (currentItem as PlaybackMovement).id : null,
+            movement_name:
+              currentItem.type === 'movement' ? (currentItem as PlaybackMovement).name :
+              (currentItem as any).script_name ||
+              (currentItem as any).routine_name ||
+              (currentItem as any).sequence_name ||
+              (currentItem as any).advice_name ||
+              null,
+            planned_duration_seconds: currentItem.duration_seconds,
+            class_plan_id: classId || null
+          }
+        );
+
+        setCurrentSectionEventId(response.data.section_event_id);
+        logger.debug(`[EarlySkip] Section started: ${currentItem.type} (event_id: ${response.data.section_event_id})`);
+      } catch (error) {
+        logger.error('[EarlySkip] Failed to start section tracking (graceful degradation):', error);
+        // Continue playback even if tracking fails
+      }
+    };
+
+    startSectionTracking();
+  }, [currentIndex, sessionId, user?.id, classId, items]);
 
   const currentItem = items[currentIndex];
   const totalItems = items.length;
@@ -590,15 +676,45 @@ export function ClassPlayback({
     });
   }, []);
 
-  const handlePrevious = useCallback(() => {
+  const handlePrevious = useCallback(async () => {
+    // End current section with rewind reason (early skip analytics)
+    if (currentSectionEventId && currentItem?.type !== 'transition') {
+      try {
+        await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
+          section_event_id: currentSectionEventId,
+          ended_reason: 'skipped_previous'
+        });
+        logger.debug('[EarlySkip] Section ended (skipped_previous)');
+      } catch (error) {
+        logger.error('[EarlySkip] Failed to end section on rewind:', error);
+        // Continue with rewind even if tracking fails
+      }
+    }
+
+    // Existing rewind logic
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
       setTimeRemaining(items[currentIndex - 1]?.duration_seconds || 0);
       setRewindCount((c) => c + 1); // Track rewind
     }
-  }, [currentIndex, items]);
+  }, [currentIndex, items, currentSectionEventId, currentItem]);
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
+    // End current section with skip reason (early skip analytics)
+    if (currentSectionEventId && currentItem?.type !== 'transition') {
+      try {
+        await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
+          section_event_id: currentSectionEventId,
+          ended_reason: 'skipped_next'
+        });
+        logger.debug('[EarlySkip] Section ended (skipped_next)');
+      } catch (error) {
+        logger.error('[EarlySkip] Failed to end section on skip:', error);
+        // Continue with skip even if tracking fails
+      }
+    }
+
+    // Existing skip logic
     if (currentIndex < totalItems - 1) {
       setCurrentIndex((prev) => prev + 1);
       setTimeRemaining(items[currentIndex + 1]?.duration_seconds || 0);
@@ -606,7 +722,7 @@ export function ClassPlayback({
     } else {
       handleComplete();
     }
-  }, [currentIndex, totalItems, items]);
+  }, [currentIndex, totalItems, items, currentSectionEventId, currentItem]);
 
   const handleComplete = useCallback(async () => {
     setIsPaused(true);
@@ -639,6 +755,20 @@ export function ClassPlayback({
   const handleExitConfirm = useCallback(async () => {
     setShowExitConfirm(false);
 
+    // End current section with exit reason (early skip analytics)
+    if (currentSectionEventId && currentItem?.type !== 'transition') {
+      try {
+        await axios.put(`${API_BASE_URL}/api/playback/section-end`, {
+          section_event_id: currentSectionEventId,
+          ended_reason: 'exited'
+        });
+        logger.debug('[EarlySkip] Section ended (exited)');
+      } catch (error) {
+        logger.error('[EarlySkip] Failed to end section on exit:', error);
+        // Continue with exit even if tracking fails
+      }
+    }
+
     // End session when user exits mid-class
     if (sessionId) {
       try {
@@ -654,7 +784,7 @@ export function ClassPlayback({
     }
 
     onExit?.();
-  }, [onExit, sessionId, playDuration, currentIndex]);
+  }, [onExit, sessionId, playDuration, currentIndex, currentSectionEventId, currentItem]);
 
   const handleExitCancel = useCallback(() => {
     setShowExitConfirm(false);
