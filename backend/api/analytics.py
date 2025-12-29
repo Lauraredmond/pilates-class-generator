@@ -2539,38 +2539,131 @@ async def trigger_sequencing_report_generation(
 @router.get("/sequencing-report/{class_plan_id}")
 async def get_saved_sequencing_report(class_plan_id: str):
     """
-    Retrieve a previously generated sequencing report from database
+    Retrieve or generate a sequencing report for a class
 
-    Returns the saved report if it exists, otherwise returns 404.
-    Reports are generated asynchronously after class creation.
+    **Behavior:**
+    1. If report exists in database → return it immediately
+    2. If report doesn't exist → generate on-demand, save to database, return it
 
-    **Performance:** Instant retrieval from database (no LLM or computation)
+    **Use Case:** Manual download for classes created before auto-generation feature
+
+    **Performance:**
+    - Cached reports: Instant retrieval (~10ms)
+    - On-demand generation: ~200ms (no LLM, pure computation)
     """
     try:
+        # Step 1: Try to retrieve existing report
         response = supabase.table('class_sequencing_reports') \
             .select('*') \
             .eq('class_plan_id', class_plan_id) \
             .execute()
 
-        if not response.data or len(response.data) == 0:
+        # If report exists, return it
+        if response.data and len(response.data) > 0:
+            report = response.data[0]
+            logger.info(f"✅ Retrieved existing sequencing report for class {class_plan_id}")
+            return {
+                "class_plan_id": report['class_plan_id'],
+                "report_content": report['report_content'],
+                "pass_status": report['pass_status'],
+                "total_movements": report['total_movements'],
+                "fail_count": report['fail_count'],
+                "generated_at": report['generated_at']
+            }
+
+        # Step 2: Report doesn't exist - generate on-demand
+        logger.info(f"🔄 No existing report found for class {class_plan_id} - generating on-demand")
+
+        # Fetch class from class_history to get movements_snapshot
+        class_response = supabase.table('class_history') \
+            .select('*') \
+            .eq('class_plan_id', class_plan_id) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
+
+        if not class_response.data or len(class_response.data) == 0:
             raise HTTPException(
                 status_code=404,
-                detail=f"No sequencing report found for class {class_plan_id}. Report may still be generating in background."
+                detail=f"Class {class_plan_id} not found in class_history. Cannot generate report."
             )
 
-        report = response.data[0]
+        class_record = class_response.data[0]
+        user_id = class_record.get('user_id')
+        movements_snapshot = class_record.get('movements_snapshot', [])
 
+        # Generate report synchronously (runs in this request)
+        # This is the SAME logic as generate_and_save_sequencing_report_background
+        # but runs synchronously instead of in background task
+
+        # Filter only movements (exclude transitions)
+        movements = [m for m in movements_snapshot if m.get('type') == 'movement']
+
+        if not movements or len(movements) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Class {class_plan_id} has no movements in snapshot. Cannot generate report."
+            )
+
+        # Transform muscle_groups from list of strings to list of dicts (if needed)
+        for movement in movements:
+            muscle_groups = movement.get('muscle_groups', [])
+            if muscle_groups and isinstance(muscle_groups[0], str):
+                movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
+
+        # Generate report using muscle_overlap_analyzer
+        report_result = generate_overlap_report(
+            sequence=movements,
+            user_id=str(user_id),
+            supabase_client=supabase,
+            class_plan_id=class_plan_id,
+            output_dir="/Users/lauraredmond/Documents/Bassline/Projects/MVP2/analytics"
+        )
+
+        report_content = report_result.get("content", "")
+
+        # Calculate fail_count for pass_status using corrected formula
+        fail_count = 0
+        for i in range(len(movements) - 1):
+            current_muscles = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
+            next_muscles = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
+            shared = current_muscles.intersection(next_muscles)
+
+            if current_muscles and next_muscles:
+                # FORMULA MUST MATCH muscle_overlap_analyzer.py
+                overlap_pct = (len(shared) / len(next_muscles) * 100) if next_muscles else 0
+                if overlap_pct >= 50:
+                    fail_count += 1
+
+        pass_status = (fail_count == 0)
+
+        # Save report to database
+        report_data = {
+            'class_plan_id': class_plan_id,
+            'user_id': user_id,
+            'report_content': report_content,
+            'pass_status': pass_status,
+            'total_movements': len(movements),
+            'fail_count': fail_count
+        }
+
+        # Insert or update (upsert on class_plan_id unique constraint)
+        supabase.table('class_sequencing_reports').upsert(report_data).execute()
+
+        logger.info(f"✅ Generated and saved on-demand sequencing report for class {class_plan_id} (pass={pass_status})")
+
+        # Return newly generated report
         return {
-            "class_plan_id": report['class_plan_id'],
-            "report_content": report['report_content'],
-            "pass_status": report['pass_status'],
-            "total_movements": report['total_movements'],
-            "fail_count": report['fail_count'],
-            "generated_at": report['generated_at']
+            "class_plan_id": class_plan_id,
+            "report_content": report_content,
+            "pass_status": pass_status,
+            "total_movements": len(movements),
+            "fail_count": fail_count,
+            "generated_at": report_data.get('generated_at', datetime.now().isoformat())
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving sequencing report: {str(e)}", exc_info=True)
+        logger.error(f"Error retrieving/generating sequencing report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
