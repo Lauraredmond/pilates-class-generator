@@ -25,6 +25,7 @@ export function AIGenerationPanel() {
   const [lastFormData, setLastFormData] = useState<GenerationFormData | null>(null);
   const [isPlayingClass, setIsPlayingClass] = useState(false);
   const [showSessionCompleteModal, setShowSessionCompleteModal] = useState(false);
+  const [savedClassId, setSavedClassId] = useState<string | null>(null);  // NEW: Store class_plan_id for analytics
   const setCurrentClass = useStore((state) => state.setCurrentClass);
   const showToast = useStore((state) => state.showToast);
 
@@ -280,7 +281,13 @@ export function AIGenerationPanel() {
         class_name: 'Automatically Generated Class',
       });
 
-      logger.debug('[AIGenerationPanel] Class saved to database');
+      logger.debug('[AIGenerationPanel] Class saved to database', {
+        class_plan_id: saveResponse.data.class_plan_id,
+        class_history_id: saveResponse.data.class_history_id
+      });
+
+      // Store class_plan_id for analytics tracking
+      setSavedClassId(saveResponse.data.class_plan_id);
 
       // Add generated sequence to current class (frontend state)
       setCurrentClass({
@@ -530,6 +537,7 @@ export function AIGenerationPanel() {
           items={playbackItems}
           movementMusicStyle={lastFormData.movementMusicStyle}
           coolDownMusicStyle={lastFormData.coolDownMusicStyle}
+          classId={savedClassId || undefined}
           onComplete={handleCompletePlayback}
           onExit={handleExitPlayback}
         />
