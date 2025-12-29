@@ -162,6 +162,23 @@ class CreatorsVsPerformersReport(BaseModel):
     time_series: List[dict]  # Historical data by period
 
 
+class CreatorsVsPerformersUserDetail(BaseModel):
+    """Individual user details for creators vs performers drilldown"""
+    user_id: str
+    email: Optional[str] = None
+    created_classes_count: int
+    completed_plays_count: int  # Qualified plays (>120s)
+    last_activity_at: Optional[str] = None
+
+
+class CreatorsVsPerformersUsersResponse(BaseModel):
+    """Paginated response for user drilldown"""
+    category: str  # 'creators_only', 'performers_only', 'both'
+    total_count: int
+    users: List[CreatorsVsPerformersUserDetail]
+    has_more: bool
+
+
 # ==============================================================================
 # EARLY SKIP ANALYTICS MODELS - December 29, 2025
 # ==============================================================================
@@ -2291,6 +2308,128 @@ async def get_creators_vs_performers_report(
         raise
     except Exception as e:
         logger.error(f"Error generating creators vs performers report: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/admin/creators-vs-performers/users", response_model=CreatorsVsPerformersUsersResponse)
+async def get_creators_vs_performers_users(
+    admin_user_id: str = Query(..., description="Admin user ID for authorization"),
+    category: str = Query(..., description="User category: creators_only, performers_only, or both"),
+    limit: int = Query(default=50, ge=1, le=200, description="Number of users to return"),
+    offset: int = Query(default=0, ge=0, description="Offset for pagination")
+):
+    """Get individual users for creators vs performers drilldown (admin only)"""
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    # Validate category parameter
+    valid_categories = {'creators_only', 'performers_only', 'both'}
+    if category not in valid_categories:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid category. Must be one of: {', '.join(valid_categories)}"
+        )
+
+    try:
+        # Reuse logic from summary endpoint for consistency
+        creators_response = supabase.table('class_plans').select('user_id').execute()
+        creator_user_ids = set(record['user_id'] for record in (creators_response.data or []))
+
+        performers_response = supabase.table('class_play_sessions') \
+            .select('user_id') \
+            .eq('is_qualified_play', True) \
+            .execute()
+        performer_user_ids = set(record['user_id'] for record in (performers_response.data or []))
+
+        # Calculate category sets
+        creators_only = creator_user_ids - performer_user_ids
+        performers_only = performer_user_ids - creator_user_ids
+        both = creator_user_ids.intersection(performer_user_ids)
+
+        # Select the appropriate user set
+        if category == 'creators_only':
+            target_user_ids = creators_only
+        elif category == 'performers_only':
+            target_user_ids = performers_only
+        else:  # both
+            target_user_ids = both
+
+        total_count = len(target_user_ids)
+
+        # Apply pagination
+        paginated_user_ids = list(target_user_ids)[offset:offset + limit]
+        has_more = (offset + limit) < total_count
+
+        # Build detailed user records
+        users = []
+        for user_id in paginated_user_ids:
+            # Get user email
+            user_profile_response = supabase.table('user_profiles') \
+                .select('email') \
+                .eq('id', user_id) \
+                .execute()
+            email = user_profile_response.data[0]['email'] if user_profile_response.data else None
+
+            # Count created classes
+            created_classes_response = supabase.table('class_plans') \
+                .select('id', count='exact') \
+                .eq('user_id', user_id) \
+                .execute()
+            created_classes_count = created_classes_response.count or 0
+
+            # Count qualified plays
+            completed_plays_response = supabase.table('class_play_sessions') \
+                .select('id', count='exact') \
+                .eq('user_id', user_id) \
+                .eq('is_qualified_play', True) \
+                .execute()
+            completed_plays_count = completed_plays_response.count or 0
+
+            # Get last activity (most recent class creation or play session)
+            last_class_response = supabase.table('class_plans') \
+                .select('created_at') \
+                .eq('user_id', user_id) \
+                .order('created_at', desc=True) \
+                .limit(1) \
+                .execute()
+
+            last_play_response = supabase.table('class_play_sessions') \
+                .select('started_at') \
+                .eq('user_id', user_id) \
+                .order('started_at', desc=True) \
+                .limit(1) \
+                .execute()
+
+            last_activity_at = None
+            if last_class_response.data and last_play_response.data:
+                last_activity_at = max(
+                    last_class_response.data[0]['created_at'],
+                    last_play_response.data[0]['started_at']
+                )
+            elif last_class_response.data:
+                last_activity_at = last_class_response.data[0]['created_at']
+            elif last_play_response.data:
+                last_activity_at = last_play_response.data[0]['started_at']
+
+            users.append(CreatorsVsPerformersUserDetail(
+                user_id=user_id,
+                email=email,
+                created_classes_count=created_classes_count,
+                completed_plays_count=completed_plays_count,
+                last_activity_at=last_activity_at
+            ))
+
+        return CreatorsVsPerformersUsersResponse(
+            category=category,
+            total_count=total_count,
+            users=users,
+            has_more=has_more
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching creators vs performers users: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
