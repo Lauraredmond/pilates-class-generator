@@ -585,7 +585,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
         <div>
           <h1 className="text-3xl font-bold text-cream mb-2">Analytics & Progress</h1>
           <p className="text-cream/70">
-            Track your teaching progress and gain insights into your class patterns
+            Track your progress and gain insights into your historical class patterns
           </p>
         </div>
         <button
@@ -775,7 +775,7 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
         {/* Music Genre Favorites - Ranked Bar Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Favorite Music Genres</CardTitle>
+            <CardTitle>Favourite Music Genres</CardTitle>
           </CardHeader>
           <CardBody className="p-6">
             <div className="h-96">
