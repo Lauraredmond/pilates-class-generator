@@ -166,6 +166,62 @@ def generate_overlap_report(
 
     lines.append("\n---\n")
 
+    # Section 4b: Movement Family Balance Analysis (RECONCILIATION WITH QA REPORT RULE 2)
+    lines.append("## Movement Family Balance Analysis\n")
+    lines.append("**Goal:** Ensure no single movement family dominates the class (Rule 2: Family Balance)\n")
+    lines.append("**Rule:** No movement family should exceed 40% of total movements\n")
+    lines.append(f"**Total Movements in Class:** {len(sequence)}\n")
+
+    # Calculate family distribution
+    family_counts = {}
+    for movement in sequence:
+        family = movement.get('movement_family', 'unknown')
+        if family not in family_counts:
+            family_counts[family] = 0
+        family_counts[family] += 1
+
+    # Convert to percentages
+    family_percentages = {
+        family: (count / len(sequence) * 100) if len(sequence) > 0 else 0
+        for family, count in family_counts.items()
+    }
+
+    # Check for overrepresented families (>40%)
+    MAX_FAMILY_PERCENTAGE = 40.0
+    overrepresented_families = [
+        (family, pct) for family, pct in family_percentages.items()
+        if pct >= MAX_FAMILY_PERCENTAGE
+    ]
+
+    # Display family distribution table
+    lines.append("### Family Distribution\n")
+    lines.append("```csv")
+    lines.append("Movement Family,Count,Percentage,Pass (<40%)?")
+
+    for family, count in sorted(family_counts.items(), key=lambda x: x[1], reverse=True):
+        pct = family_percentages[family]
+        pass_fail = "✅ PASS" if pct < MAX_FAMILY_PERCENTAGE else "❌ FAIL"
+        lines.append(f"{family},{count},{pct:.1f}%,{pass_fail}")
+
+    lines.append("```\n")
+
+    # Summary
+    if overrepresented_families:
+        lines.append(f"### ❌ **RULE 2 VIOLATION:** {len(overrepresented_families)} family/families exceed 40% threshold\n")
+        lines.append("**Overrepresented Families:**")
+        for family, pct in overrepresented_families:
+            movement_names = [m.get('name') for m in sequence if m.get('movement_family') == family]
+            lines.append(f"- **{family}**: {pct:.1f}% ({len(movement_names)} movements)")
+            lines.append(f"  - Movements: {', '.join(movement_names)}")
+        lines.append("\n**Impact:** This violates QA Rule 2 (Family Balance). The class may lack variety.")
+    else:
+        lines.append("### ✅ **RULE 2 PASSED:** All movement families are below 40% threshold\n")
+        lines.append("The class has good family balance and variety.")
+
+    lines.append("\n**Note:** This section reconciles with the QA Report's 'Rule 2: Family Balance' metric.\n")
+
+    lines.append("\n---\n")
+
     # Section 5: Movement Pattern Proximity Check (NEW - addresses Crab/Seal issue)
     lines.append("## Movement Pattern Proximity Check\n")
     lines.append("**Rule:** Similar movement patterns should not appear within 3 positions of each other.\n")
