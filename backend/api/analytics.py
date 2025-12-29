@@ -3107,7 +3107,7 @@ async def end_section_event(data: SectionEndRequest):
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
 
 
-@router.get("/analytics/early-skips", response_model=EarlySkipAnalytics)
+@router.get("/early-skips", response_model=EarlySkipAnalytics)
 async def get_early_skip_analytics(
     admin_user_id: str = Query(..., description="Admin user ID for authorization"),
     from_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
