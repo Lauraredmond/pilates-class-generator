@@ -3,7 +3,7 @@ Analytics API Router V2
 Enhanced with time period filtering and comprehensive data views
 """
 
-from fastapi import APIRouter, HTTPException, Query, Path, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, Path, BackgroundTasks, Depends
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 from enum import Enum
@@ -17,6 +17,7 @@ from collections import defaultdict
 
 from models.error import ErrorMessages
 from orchestrator.tools.muscle_overlap_analyzer import generate_overlap_report
+from utils.auth import get_current_user_id
 
 # Load environment variables
 load_dotenv()
@@ -159,6 +160,62 @@ class CreatorsVsPerformersReport(BaseModel):
     creator_engagement_rate: float  # % of creators who also perform
     performer_creation_rate: float  # % of performers who also create
     time_series: List[dict]  # Historical data by period
+
+
+# ==============================================================================
+# EARLY SKIP ANALYTICS MODELS - December 29, 2025
+# ==============================================================================
+
+class SectionStartRequest(BaseModel):
+    """Request to start tracking a section playback event"""
+    play_session_id: str
+    section_type: str  # 'preparation', 'warmup', 'movement', 'cooldown', 'meditation', 'homecare'
+    section_index: int  # 0-based position in playback sequence
+    movement_id: Optional[str] = None  # Only for movement sections
+    movement_name: Optional[str] = None  # Only for movement sections
+    planned_duration_seconds: int  # From PlaybackItem.duration_seconds
+    class_plan_id: Optional[str] = None  # Optional: class may be deleted or ad-hoc
+
+
+class SectionEndRequest(BaseModel):
+    """Request to end tracking a section playback event"""
+    section_event_id: str
+    ended_reason: str  # 'completed', 'skipped_next', 'skipped_previous', 'exited', 'jumped'
+
+
+class SectionEventResponse(BaseModel):
+    """Response after creating/updating section event"""
+    section_event_id: str
+    started_at: str
+    is_early_skip: Optional[bool] = None  # Only set after section ends
+
+
+class EarlySkipBySection(BaseModel):
+    """Early skip statistics for a section type"""
+    section_type: str
+    total_plays: int
+    early_skips: int
+    early_skip_rate_pct: float
+    avg_duration_seconds: float
+    avg_planned_duration: float
+
+
+class EarlySkipByMovement(BaseModel):
+    """Early skip statistics for a specific movement"""
+    movement_id: str
+    movement_name: str
+    total_plays: int
+    early_skips: int
+    early_skip_rate_pct: float
+    avg_duration_seconds: float
+    avg_planned_duration: float
+
+
+class EarlySkipAnalytics(BaseModel):
+    """Aggregated early skip analytics for admin dashboard"""
+    by_section_type: List[EarlySkipBySection]
+    by_movement: List[EarlySkipByMovement]  # Top 10 most-skipped movements
+    overall_stats: Dict[str, Any]  # Total plays, total early skips, overall rate
 
 
 # Helper functions
@@ -2898,4 +2955,276 @@ async def get_saved_sequencing_report(class_plan_id: str):
         raise
     except Exception as e:
         logger.error(f"Error retrieving/generating sequencing report: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+# ==============================================================================
+# EARLY SKIP ANALYTICS ENDPOINTS - December 29, 2025
+# ==============================================================================
+
+@router.post("/playback/section-start", response_model=SectionEventResponse)
+async def start_section_event(
+    data: SectionStartRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Start tracking a section playback event
+
+    Called when a new section begins playback (ONE event per section start).
+    Excludes transitions per requirements (they auto-advance every 20s).
+
+    Performance: Low frequency (~12 calls per 30min class)
+    """
+    try:
+        user_uuid = _convert_to_uuid(user_id)
+
+        # Prepare event data
+        event_data = {
+            'user_id': user_uuid,
+            'play_session_id': data.play_session_id,
+            'class_plan_id': data.class_plan_id,
+            'section_type': data.section_type,
+            'section_index': data.section_index,
+            'movement_id': data.movement_id,
+            'movement_name': data.movement_name,
+            'planned_duration_seconds': data.planned_duration_seconds,
+            'started_at': datetime.now().isoformat()
+        }
+
+        # Insert event record
+        response = supabase.table('playback_section_events').insert(event_data).execute()
+
+        if not response.data:
+            raise HTTPException(status_code=500, detail="Failed to create section event")
+
+        event = response.data[0]
+
+        logger.debug(f"Section started: {data.section_type} (index {data.section_index}, session {data.play_session_id})")
+
+        return SectionEventResponse(
+            section_event_id=event['id'],
+            started_at=event['started_at']
+        )
+
+    except Exception as e:
+        logger.error(f"Error starting section event: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.put("/playback/section-end", response_model=SectionEventResponse)
+async def end_section_event(data: SectionEndRequest):
+    """
+    End tracking a section playback event
+
+    Called when section ends (auto-advance, skip, or exit).
+    Computes duration and is_early_skip server-side.
+
+    IDEMPOTENT: Safe to call multiple times (won't overwrite existing ended_at)
+
+    Early Skip Logic:
+    - Threshold: 60s for most sections, 20s for transitions
+    - Early skip = duration < threshold AND ended_reason != 'completed'
+    - Natural completion (timer ran out) is NOT an early skip
+    """
+    try:
+        ended_at = datetime.now()
+
+        # Fetch existing record
+        existing_response = supabase.table('playback_section_events') \
+            .select('*') \
+            .eq('id', data.section_event_id) \
+            .execute()
+
+        if not existing_response.data:
+            raise HTTPException(status_code=404, detail="Section event not found")
+
+        event = existing_response.data[0]
+
+        # IDEMPOTENCY: Skip if already ended
+        if event.get('ended_at'):
+            logger.debug(f"Section already ended: {data.section_event_id} (idempotent call)")
+            return SectionEventResponse(
+                section_event_id=event['id'],
+                started_at=event['started_at'],
+                is_early_skip=event.get('is_early_skip')
+            )
+
+        # Compute duration
+        started_at_dt = datetime.fromisoformat(event['started_at'].replace('Z', '+00:00'))
+        duration_seconds = int((ended_at - started_at_dt).total_seconds())
+
+        # Determine early skip threshold (60s for most, 20s for transitions)
+        threshold = 20 if event['section_type'] == 'transition' else 60
+
+        # Early skip if duration < threshold AND not naturally completed
+        is_early_skip = duration_seconds < threshold and data.ended_reason != 'completed'
+
+        # Update record
+        update_data = {
+            'ended_at': ended_at.isoformat(),
+            'duration_seconds': duration_seconds,
+            'ended_reason': data.ended_reason,
+            'is_early_skip': is_early_skip,
+            'updated_at': ended_at.isoformat()
+        }
+
+        response = supabase.table('playback_section_events') \
+            .update(update_data) \
+            .eq('id', data.section_event_id) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Failed to update section event")
+
+        updated_event = response.data[0]
+
+        logger.debug(f"Section ended: {event['section_type']} (duration: {duration_seconds}s, early_skip: {is_early_skip}, reason: {data.ended_reason})")
+
+        return SectionEventResponse(
+            section_event_id=updated_event['id'],
+            started_at=updated_event['started_at'],
+            is_early_skip=updated_event['is_early_skip']
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error ending section event: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
+
+
+@router.get("/analytics/early-skips", response_model=EarlySkipAnalytics)
+async def get_early_skip_analytics(
+    admin_user_id: str = Query(..., description="Admin user ID for authorization"),
+    from_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    to_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    class_id: Optional[str] = Query(None, description="Filter by specific class plan ID")
+):
+    """
+    Get early skip analytics (ADMIN ONLY)
+
+    Returns aggregated statistics:
+    - Skip rates by section type (prep, warmup, movement, cooldown, meditation, homecare)
+    - Top 10 most-skipped movements (min 10 plays for statistical significance)
+    - Overall platform stats (total plays, total early skips, overall rate)
+
+    **Admin Authorization Required**
+    """
+    # Verify admin access
+    await verify_admin(admin_user_id)
+
+    try:
+        # Build WHERE clause for filters
+        where_clauses = ["ended_at IS NOT NULL"]
+
+        if from_date:
+            where_clauses.append(f"started_at >= '{from_date}'::date")
+        if to_date:
+            where_clauses.append(f"started_at <= '{to_date}'::date")
+        if class_id:
+            where_clauses.append(f"class_plan_id = '{class_id}'")
+
+        where_clause = " AND ".join(where_clauses)
+
+        # Query 1: Skip rates by section type (using database view)
+        section_response = supabase.table('playback_section_events') \
+            .select('section_type, is_early_skip, duration_seconds, planned_duration_seconds') \
+            .execute()
+
+        # Aggregate in Python (simpler than raw SQL for now)
+        section_stats_dict = {}
+        for event in (section_response.data or []):
+            section_type = event['section_type']
+            if section_type not in section_stats_dict:
+                section_stats_dict[section_type] = {
+                    'total': 0,
+                    'early_skips': 0,
+                    'duration_sum': 0,
+                    'planned_sum': 0
+                }
+
+            section_stats_dict[section_type]['total'] += 1
+            if event.get('is_early_skip'):
+                section_stats_dict[section_type]['early_skips'] += 1
+            section_stats_dict[section_type]['duration_sum'] += event.get('duration_seconds', 0)
+            section_stats_dict[section_type]['planned_sum'] += event.get('planned_duration_seconds', 0)
+
+        by_section_type = [
+            EarlySkipBySection(
+                section_type=section_type,
+                total_plays=stats['total'],
+                early_skips=stats['early_skips'],
+                early_skip_rate_pct=round((stats['early_skips'] / stats['total'] * 100) if stats['total'] > 0 else 0, 1),
+                avg_duration_seconds=round(stats['duration_sum'] / stats['total'], 1) if stats['total'] > 0 else 0,
+                avg_planned_duration=round(stats['planned_sum'] / stats['total'], 1) if stats['total'] > 0 else 0
+            )
+            for section_type, stats in section_stats_dict.items()
+        ]
+
+        # Query 2: Top 10 most-skipped movements
+        movement_response = supabase.table('playback_section_events') \
+            .select('movement_id, movement_name, is_early_skip, duration_seconds, planned_duration_seconds') \
+            .eq('section_type', 'movement') \
+            .not_.is_('movement_id', 'null') \
+            .execute()
+
+        # Aggregate by movement
+        movement_stats_dict = {}
+        for event in (movement_response.data or []):
+            movement_id = event['movement_id']
+            if movement_id not in movement_stats_dict:
+                movement_stats_dict[movement_id] = {
+                    'movement_name': event['movement_name'],
+                    'total': 0,
+                    'early_skips': 0,
+                    'duration_sum': 0,
+                    'planned_sum': 0
+                }
+
+            movement_stats_dict[movement_id]['total'] += 1
+            if event.get('is_early_skip'):
+                movement_stats_dict[movement_id]['early_skips'] += 1
+            movement_stats_dict[movement_id]['duration_sum'] += event.get('duration_seconds', 0)
+            movement_stats_dict[movement_id]['planned_sum'] += event.get('planned_duration_seconds', 0)
+
+        # Filter min 10 plays and sort by skip rate
+        movements_list = []
+        for movement_id, stats in movement_stats_dict.items():
+            if stats['total'] >= 10:
+                movements_list.append(
+                    EarlySkipByMovement(
+                        movement_id=movement_id,
+                        movement_name=stats['movement_name'],
+                        total_plays=stats['total'],
+                        early_skips=stats['early_skips'],
+                        early_skip_rate_pct=round((stats['early_skips'] / stats['total'] * 100), 1),
+                        avg_duration_seconds=round(stats['duration_sum'] / stats['total'], 1),
+                        avg_planned_duration=round(stats['planned_sum'] / stats['total'], 1)
+                    )
+                )
+
+        by_movement = sorted(movements_list, key=lambda x: x.early_skip_rate_pct, reverse=True)[:10]
+
+        # Query 3: Overall stats
+        all_events = section_response.data or []
+        total_plays = len(all_events)
+        total_early_skips = sum(1 for e in all_events if e.get('is_early_skip'))
+        overall_skip_rate_pct = round((total_early_skips / total_plays * 100) if total_plays > 0 else 0, 1)
+
+        overall_stats = {
+            "total_plays": total_plays,
+            "total_early_skips": total_early_skips,
+            "overall_skip_rate_pct": overall_skip_rate_pct
+        }
+
+        return EarlySkipAnalytics(
+            by_section_type=by_section_type,
+            by_movement=by_movement,
+            overall_stats=overall_stats
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching early skip analytics: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=ErrorMessages.DATABASE_ERROR)
