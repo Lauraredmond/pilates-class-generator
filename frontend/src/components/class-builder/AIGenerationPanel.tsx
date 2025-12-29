@@ -537,7 +537,7 @@ export function AIGenerationPanel() {
           items={playbackItems}
           movementMusicStyle={lastFormData.movementMusicStyle}
           coolDownMusicStyle={lastFormData.coolDownMusicStyle}
-          classId={savedClassId || undefined}  {/* NEW: Pass class_plan_id for early skip analytics */}
+          classId={savedClassId || undefined}
           onComplete={handleCompletePlayback}
           onExit={handleExitPlayback}
         />
