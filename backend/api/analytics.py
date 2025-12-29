@@ -2430,6 +2430,32 @@ async def generate_and_save_sequencing_report_background(
             if muscle_groups and isinstance(muscle_groups[0], str):
                 movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
 
+        # ENRICHMENT FIX: Get actual movement_family from movements table
+        # If movements_snapshot has all "other", join to movements table to get real values
+        movement_names = [m.get('name') for m in movements if m.get('name')]
+        if movement_names:
+            try:
+                movements_response = supabase.table('movements') \
+                    .select('name, movement_family') \
+                    .in_('name', movement_names) \
+                    .execute()
+
+                # Build lookup map
+                family_lookup = {
+                    m['name']: m.get('movement_family', 'other')
+                    for m in movements_response.data
+                }
+
+                # Enrich movements with actual family values
+                for movement in movements:
+                    movement_name = movement.get('name')
+                    if movement_name in family_lookup:
+                        movement['movement_family'] = family_lookup[movement_name]
+
+                logger.info(f"✅ Enriched {len(movements)} movements with movement_family from database")
+            except Exception as e:
+                logger.warning(f"Failed to enrich movement_family: {e}")
+
         # Generate report using muscle_overlap_analyzer
         report_result = generate_overlap_report(
             sequence=movements,
@@ -2676,6 +2702,32 @@ async def get_saved_sequencing_report(class_plan_id: str):
             muscle_groups = movement.get('muscle_groups', [])
             if muscle_groups and isinstance(muscle_groups[0], str):
                 movement['muscle_groups'] = [{"name": mg} for mg in muscle_groups]
+
+        # ENRICHMENT FIX: Get actual movement_family from movements table
+        # If movements_snapshot has all "other", join to movements table to get real values
+        movement_names = [m.get('name') for m in movements if m.get('name')]
+        if movement_names:
+            try:
+                movements_response = supabase.table('movements') \
+                    .select('name, movement_family') \
+                    .in_('name', movement_names) \
+                    .execute()
+
+                # Build lookup map
+                family_lookup = {
+                    m['name']: m.get('movement_family', 'other')
+                    for m in movements_response.data
+                }
+
+                # Enrich movements with actual family values
+                for movement in movements:
+                    movement_name = movement.get('name')
+                    if movement_name in family_lookup:
+                        movement['movement_family'] = family_lookup[movement_name]
+
+                logger.info(f"✅ Enriched {len(movements)} movements with movement_family from database")
+            except Exception as e:
+                logger.warning(f"Failed to enrich movement_family: {e}")
 
         # Generate report using muscle_overlap_analyzer
         report_result = generate_overlap_report(
