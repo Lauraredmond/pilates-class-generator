@@ -175,7 +175,7 @@ def generate_overlap_report(
     # Calculate family distribution
     family_counts = {}
     for movement in sequence:
-        family = movement.get('movement_family', 'unknown')
+        family = movement.get('movement_family', 'other')  # CONSISTENCY FIX: Use 'other' to match QA report
         if family not in family_counts:
             family_counts[family] = 0
         family_counts[family] += 1
