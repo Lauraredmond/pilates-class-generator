@@ -3160,8 +3160,8 @@ async def get_early_skip_analytics(
             section_stats_dict[section_type]['total'] += 1
             if event.get('is_early_skip'):
                 section_stats_dict[section_type]['early_skips'] += 1
-            section_stats_dict[section_type]['duration_sum'] += event.get('duration_seconds', 0)
-            section_stats_dict[section_type]['planned_sum'] += event.get('planned_duration_seconds', 0)
+            section_stats_dict[section_type]['duration_sum'] += (event.get('duration_seconds') or 0)
+            section_stats_dict[section_type]['planned_sum'] += (event.get('planned_duration_seconds') or 0)
 
         by_section_type = [
             EarlySkipBySection(
@@ -3198,8 +3198,8 @@ async def get_early_skip_analytics(
             movement_stats_dict[movement_id]['total'] += 1
             if event.get('is_early_skip'):
                 movement_stats_dict[movement_id]['early_skips'] += 1
-            movement_stats_dict[movement_id]['duration_sum'] += event.get('duration_seconds', 0)
-            movement_stats_dict[movement_id]['planned_sum'] += event.get('planned_duration_seconds', 0)
+            movement_stats_dict[movement_id]['duration_sum'] += (event.get('duration_seconds') or 0)
+            movement_stats_dict[movement_id]['planned_sum'] += (event.get('planned_duration_seconds') or 0)
 
         # Filter min 10 plays and sort by skip rate
         movements_list = []
