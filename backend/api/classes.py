@@ -1006,6 +1006,7 @@ class SaveCompletedClassRequest(BaseModel):
 
 class SaveCompletedClassResponse(BaseModel):
     """Response after saving completed class"""
+    class_plan_id: str  # NEW: Added for early skip analytics tracking
     class_history_id: str
     classes_completed: int
     experience_level: str
@@ -1226,6 +1227,7 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         logger.info(f"✅ Updated movement_usage for {len(movements_only)} movements")
 
         return SaveCompletedClassResponse(
+            class_plan_id=class_plan_id,  # NEW: Return for early skip analytics tracking
             class_history_id=class_history_id,
             classes_completed=new_classes_completed,
             experience_level=experience_level,
