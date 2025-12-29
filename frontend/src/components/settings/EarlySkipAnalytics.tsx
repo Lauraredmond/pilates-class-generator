@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Database, CheckCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Database } from 'lucide-react';
 import { analyticsApi } from '../../services/api';
 import { logger } from '../../utils/logger';
 
