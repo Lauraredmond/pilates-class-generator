@@ -6,6 +6,7 @@ import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as Sett
 import { logger } from '../utils/logger';
 import { RecordingModeManager } from '../components/recording-mode/RecordingModeManager';
 import { DebugPanel } from '../components/DebugPanel';
+import { EarlySkipAnalytics } from '../components/settings/EarlySkipAnalytics';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -1457,6 +1458,9 @@ export function Settings() {
                 </div>
               )}
             </div>
+
+            {/* Early Skip Analytics - December 29, 2025 */}
+            <EarlySkipAnalytics userId={user!.id} />
 
             <DebugPanel />
             <div className="mt-6">
