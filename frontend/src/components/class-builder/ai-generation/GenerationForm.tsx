@@ -59,8 +59,8 @@ const ALL_MUSIC_STYLES = [
   { value: 'IMPRESSIONIST', label: 'Impressionist (Debussy, Ravel)' },
   { value: 'MODERN', label: 'Modern (Satie, Copland)' },
   { value: 'CONTEMPORARY', label: 'Contemporary (Ambient, Meditation)' },
-  { value: 'JAZZ', label: 'Jazz (Relaxing Coffee Shop)' },
-  { value: 'CELTIC_TRADITIONAL', label: 'Celtic Traditional (Irish Flute)' },
+  { value: 'JAZZ', label: 'Jazz (Cool, smooth)' },
+  { value: 'CELTIC_TRADITIONAL', label: 'Celtic Traditional (Ancestral, enduring)' },
 ];
 
 // Use same list for both movement and cool down (all periods suitable for Pilates)
@@ -214,9 +214,6 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
               </option>
             ))}
           </select>
-          <p className="text-xs text-cream/60 mt-1">
-            Classical music from Internet Archive - public domain, no ads
-          </p>
         </div>
 
         {/* Cool Down Music */}
@@ -237,9 +234,6 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
               </option>
             ))}
           </select>
-          <p className="text-xs text-cream/60 mt-1">
-            Calming classical music for relaxation and stretching
-          </p>
         </div>
       </div>
 
@@ -256,7 +250,7 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
             <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span>Generate Complete Class</span>
+          <span>Generate Class Plan</span>
         </Button>
       </div>
 
@@ -284,7 +278,7 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
           </button>
           {!hasGeneratedClass && (
             <p className="text-xs text-cream/40 mt-2">
-              Available after generating a class
+              Button available after generating a class
             </p>
           )}
         </div>

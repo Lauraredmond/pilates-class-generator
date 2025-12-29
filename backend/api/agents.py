@@ -18,13 +18,14 @@ All endpoints preserve the same request/response interface as before.
 Frontend code requires no changes.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from typing import Optional
 from loguru import logger
 import os
 from dotenv import load_dotenv
 from datetime import datetime
 from supabase import create_client, Client
+import uuid
 
 # Import SimplifiedStandardAgent with ReWOO reasoner (Phase 2)
 from orchestrator.simplified_agent import BasslinePilatesCoachAgent
@@ -45,6 +46,9 @@ from models import (
 from models.error import ErrorMessages
 
 from utils.auth import get_current_user_id  # REAL JWT authentication
+
+# Import background task function for sequencing report generation
+from api.analytics import generate_and_save_sequencing_report_background
 
 # Load environment variables
 load_dotenv()
@@ -532,6 +536,7 @@ async def research_cues(
 @router.post("/generate-complete-class", response_model=dict)
 async def generate_complete_class(
     request: CompleteClassRequest,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     agent: BasslinePilatesCoachAgent = Depends(get_agent)
 ):
@@ -750,10 +755,39 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         logger.info("🔧 Using: Direct Supabase queries")
         logger.info("=" * 80)
 
+        # Step 0: Generate class_plan_id BEFORE sequence generation
+        # This UUID will be used for quality logging reconciliation
+        class_plan_id = str(uuid.uuid4())
+        logger.info(f"🆔 Generated class_plan_id: {class_plan_id}")
+
+        # Step 0.5: Create STUB class_plans record NOW (before sequence generation)
+        # This satisfies the foreign key constraint when quality logging happens
+        # We'll UPDATE it with full data after sequence generation completes
+        try:
+            stub_class_plan = {
+                'id': class_plan_id,
+                'title': f"{request.class_plan.difficulty_level} Class (Generating...)",
+                'user_id': user_id,
+                'difficulty_level': request.class_plan.difficulty_level,
+                'duration_minutes': request.class_plan.target_duration_minutes,
+                'generated_by_ai': False,
+                'created_at': datetime.now().isoformat()
+            }
+            supabase.table('class_plans').insert(stub_class_plan).execute()
+            logger.info(f"✅ Created stub class_plans record (ID: {class_plan_id}) for FK constraint")
+        except Exception as stub_error:
+            logger.error(f"❌ Failed to create stub class_plans record: {stub_error}")
+            # Re-raise - we need this stub for quality logging to work
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to initialize class plan record"
+            )
+
         # Step 1: Generate main sequence (existing behavior)
-        # CRITICAL: Add user_id to parameters for admin check (QA reports)
+        # CRITICAL: Add user_id AND class_plan_id to parameters for quality logging
         sequence_params = request.class_plan.dict()
         sequence_params['user_id'] = user_id
+        sequence_params['class_plan_id'] = class_plan_id  # NEW: Pass for quality logging
 
         sequence_result = call_agent_tool(
             tool_id="generate_sequence",
@@ -964,26 +998,28 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                         "voiceover_enabled": movement.get('voiceover_enabled', False)
                     })
 
-            # Save to class_plans table first (SCHEMA CORRECTED)
+            # UPDATE stub class_plans record with full data (already inserted above)
+            # Changed from INSERT to UPDATE since stub record was created before sequence generation
             class_plan_data = {
                 # SCHEMA FIX: Use 'title' not 'name'
                 'title': f"{request.class_plan.difficulty_level} Pilates Class ({request.class_plan.target_duration_minutes} min)",
-                'user_id': user_id,
                 # SCHEMA FIX: Use 'main_sequence' not 'movements'
                 'main_sequence': sequence,
                 'duration_minutes': request.class_plan.target_duration_minutes,
                 'difficulty_level': request.class_plan.difficulty_level,
                 'total_movements': len(movements_for_history),
                 'generated_by_ai': False,  # DEFAULT mode is database-driven
-                'created_at': now,
                 'updated_at': now
             }
 
-            db_response = supabase.table('class_plans').insert(class_plan_data).execute()
+            db_response = supabase.table('class_plans').update(class_plan_data).eq('id', class_plan_id).execute()
 
             if db_response.data and len(db_response.data) > 0:
-                class_plan_id = db_response.data[0].get('id')
-                logger.info(f"✅ Saved complete class to class_plans (ID: {class_plan_id})")
+                # Verify the same class_plan_id was used
+                inserted_id = db_response.data[0].get('id')
+                logger.info(f"✅ Saved complete class to class_plans (ID: {inserted_id})")
+                if inserted_id != class_plan_id:
+                    logger.error(f"⚠️ WARNING: Inserted ID ({inserted_id}) doesn't match pre-generated ID ({class_plan_id})!")
 
                 # Save to class_history with music_genre for analytics (SCHEMA CORRECTED)
                 # SCHEMA FIX: muscle_groups_targeted is JSONB array, not object keys
@@ -1010,6 +1046,16 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                 supabase.table('class_history').insert(class_history_entry).execute()
                 logger.info(f"✅ Saved to class_history with music_genre: {selected_music_genre}")
                 logger.info("📊 ANALYTICS: Database save completed successfully")
+
+                # SEQUENCING REPORT: Trigger async background generation
+                # This runs AFTER class_history is saved, so it doesn't slow down the API
+                background_tasks.add_task(
+                    generate_and_save_sequencing_report_background,
+                    class_plan_id=class_plan_id,
+                    user_id=user_id,
+                    movements_snapshot=movements_for_history
+                )
+                logger.info(f"🔄 Scheduled background sequencing report generation for class {class_plan_id}")
 
         except Exception as db_error:
             # Don't fail the request if analytics save fails

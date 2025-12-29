@@ -1,1 +1,7 @@
-[Error] Refused to load https://pilates-movement-videos.s3.us-east-1.amazonaws.com/FounderStoryVideo.mp4 because it does not appear in the media-src directive of the Content Security Policy. (x2)
+[Error] Failed to load resource: the server responded with a status of 500 () (c6db6029-5e98-4d4d-89b9-d6e9de65acb3, line 0)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – _e
+_e
+	error (index-jefhkpru.js:13:5450)
+	(anonymous function) (index-jefhkpru.js:54:21404)
+[Error] Failed to load resource: the server responded with a status of 500 () (c6db6029-5e98-4d4d-89b9-d6e9de65acb3, line 0)
