@@ -2475,7 +2475,7 @@ async def generate_and_save_sequencing_report_background(
         if movements:
             for family, count in family_counts.items():
                 family_pct = (count / len(movements)) * 100
-                if family_pct >= MAX_FAMILY_PERCENTAGE:
+                if family_pct > MAX_FAMILY_PERCENTAGE:  # FIXED: Changed >= to > (matches sequence_tools.py line 1170)
                     rule2_pass = False
                     rule2_fail_count += 1  # Count how many families exceed threshold
 
@@ -2720,7 +2720,7 @@ async def get_saved_sequencing_report(class_plan_id: str):
         if movements:
             for family, count in family_counts.items():
                 family_pct = (count / len(movements)) * 100
-                if family_pct >= MAX_FAMILY_PERCENTAGE:
+                if family_pct > MAX_FAMILY_PERCENTAGE:  # FIXED: Changed >= to > (matches sequence_tools.py line 1170)
                     rule2_pass = False
                     rule2_fail_count += 1  # Count how many families exceed threshold
 
