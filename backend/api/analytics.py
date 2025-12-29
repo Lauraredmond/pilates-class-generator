@@ -2443,7 +2443,10 @@ async def generate_and_save_sequencing_report_background(
 
         # Calculate fail_count for pass_status
         # CRITICAL FIX: Use same formula as muscle_overlap_analyzer.py (divide by NEXT movement's muscles, not smaller set)
-        fail_count = 0
+        # CRITICAL FIX 2: Check BOTH Rule 1 AND Rule 2 (family balance) - not just Rule 1
+
+        # Rule 1: Consecutive Muscle Overlap
+        rule1_fail_count = 0
         for i in range(len(movements) - 1):
             current_muscles = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
             next_muscles = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
@@ -2454,9 +2457,33 @@ async def generate_and_save_sequencing_report_background(
                 # overlap_pct = (overlap_count / len(next_muscles)) * 100
                 overlap_pct = (len(shared) / len(next_muscles) * 100) if next_muscles else 0
                 if overlap_pct >= 50:
-                    fail_count += 1
+                    rule1_fail_count += 1
 
-        pass_status = (fail_count == 0)
+        # Rule 2: Movement Family Balance
+        # Calculate family distribution (must match muscle_overlap_analyzer.py lines 169-189)
+        family_counts = {}
+        for movement in movements:
+            family = movement.get('movement_family', 'other')  # Use 'other' to match QA report
+            if family not in family_counts:
+                family_counts[family] = 0
+            family_counts[family] += 1
+
+        # Check if any family exceeds 40% threshold
+        MAX_FAMILY_PERCENTAGE = 40.0
+        rule2_pass = True
+        rule2_fail_count = 0
+        if movements:
+            for family, count in family_counts.items():
+                family_pct = (count / len(movements)) * 100
+                if family_pct >= MAX_FAMILY_PERCENTAGE:
+                    rule2_pass = False
+                    rule2_fail_count += 1  # Count how many families exceed threshold
+
+        # Overall pass status: BOTH Rule 1 AND Rule 2 must pass
+        pass_status = (rule1_fail_count == 0 and rule2_pass)
+
+        # Total fail count for database (Rule 1 failures + Rule 2 violations)
+        fail_count = rule1_fail_count + rule2_fail_count
 
         # Save report to database (NOT filesystem)
         report_data = {
@@ -2662,7 +2689,10 @@ async def get_saved_sequencing_report(class_plan_id: str):
         report_content = report_result.get("content", "")
 
         # Calculate fail_count for pass_status using corrected formula
-        fail_count = 0
+        # CRITICAL FIX: Check BOTH Rule 1 AND Rule 2 (family balance) - not just Rule 1
+
+        # Rule 1: Consecutive Muscle Overlap
+        rule1_fail_count = 0
         for i in range(len(movements) - 1):
             current_muscles = set(mg.get('name', '') for mg in movements[i].get('muscle_groups', []))
             next_muscles = set(mg.get('name', '') for mg in movements[i + 1].get('muscle_groups', []))
@@ -2672,9 +2702,33 @@ async def get_saved_sequencing_report(class_plan_id: str):
                 # FORMULA MUST MATCH muscle_overlap_analyzer.py
                 overlap_pct = (len(shared) / len(next_muscles) * 100) if next_muscles else 0
                 if overlap_pct >= 50:
-                    fail_count += 1
+                    rule1_fail_count += 1
 
-        pass_status = (fail_count == 0)
+        # Rule 2: Movement Family Balance
+        # Calculate family distribution (must match muscle_overlap_analyzer.py lines 169-189)
+        family_counts = {}
+        for movement in movements:
+            family = movement.get('movement_family', 'other')  # Use 'other' to match QA report
+            if family not in family_counts:
+                family_counts[family] = 0
+            family_counts[family] += 1
+
+        # Check if any family exceeds 40% threshold
+        MAX_FAMILY_PERCENTAGE = 40.0
+        rule2_pass = True
+        rule2_fail_count = 0
+        if movements:
+            for family, count in family_counts.items():
+                family_pct = (count / len(movements)) * 100
+                if family_pct >= MAX_FAMILY_PERCENTAGE:
+                    rule2_pass = False
+                    rule2_fail_count += 1  # Count how many families exceed threshold
+
+        # Overall pass status: BOTH Rule 1 AND Rule 2 must pass
+        pass_status = (rule1_fail_count == 0 and rule2_pass)
+
+        # Total fail count for database (Rule 1 failures + Rule 2 violations)
+        fail_count = rule1_fail_count + rule2_fail_count
 
         # Save report to database
         report_data = {
