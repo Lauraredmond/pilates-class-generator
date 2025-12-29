@@ -3056,8 +3056,12 @@ async def end_section_event(data: SectionEndRequest):
         # Determine early skip threshold (60s for most, 20s for transitions)
         threshold = 20 if event['section_type'] == 'transition' else 60
 
-        # Early skip if duration < threshold AND not naturally completed
-        is_early_skip = duration_seconds < threshold and data.ended_reason != 'completed'
+        # Early skip ONLY if user specifically skipped the section (not exited entire class)
+        # 'exited' means user closed entire class playback, not skipping this specific section
+        is_early_skip = (
+            duration_seconds < threshold and
+            data.ended_reason in ['skipped_next', 'skipped_previous']
+        )
 
         # Update record
         update_data = {
