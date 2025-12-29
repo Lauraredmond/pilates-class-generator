@@ -321,16 +321,32 @@ export function ClassPlayback({
     };
   }, [sessionId, isPaused, playDuration, currentIndex, pauseCount, skipCount, rewindCount]);
 
-  // End session when component unmounts
+  // Refs to capture latest values for unmount cleanup
+  const sessionIdRef = useRef(sessionId);
+  const playDurationRef = useRef(playDuration);
+  const currentIndexRef = useRef(currentIndex);
+  const currentSectionEventIdRef = useRef(currentSectionEventId);
+  const itemsRef = useRef(items);
+
+  // Update refs when values change
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+    playDurationRef.current = playDuration;
+    currentIndexRef.current = currentIndex;
+    currentSectionEventIdRef.current = currentSectionEventId;
+    itemsRef.current = items;
+  }, [sessionId, playDuration, currentIndex, currentSectionEventId, items]);
+
+  // End session when component unmounts (ONLY on unmount, not when currentIndex changes)
   useEffect(() => {
     return () => {
       const endSession = async () => {
         // End current section if in progress (early skip analytics)
-        const item = items[currentIndex];
-        if (currentSectionEventId && item?.type !== 'transition') {
+        const item = itemsRef.current[currentIndexRef.current];
+        if (currentSectionEventIdRef.current && item?.type !== 'transition') {
           try {
             await axios.put(`${API_BASE_URL}/api/analytics/playback/section-end`, {
-              section_event_id: currentSectionEventId,
+              section_event_id: currentSectionEventIdRef.current,
               ended_reason: 'exited'
             });
             logger.debug('[EarlySkip] Section ended on unmount (exited)');
@@ -340,13 +356,13 @@ export function ClassPlayback({
         }
 
         // End play session
-        if (!sessionId) return;
+        if (!sessionIdRef.current) return;
 
         try {
-          await axios.put(`${API_BASE_URL}/api/analytics/play-session/${sessionId}/end`, {
-            duration_seconds: playDuration,
+          await axios.put(`${API_BASE_URL}/api/analytics/play-session/${sessionIdRef.current}/end`, {
+            duration_seconds: playDurationRef.current,
             was_completed: false, // Unmount without completion
-            max_section_reached: currentIndex,
+            max_section_reached: currentIndexRef.current,
           });
           logger.debug('Play session ended (unmount)');
         } catch (error) {
@@ -356,7 +372,7 @@ export function ClassPlayback({
 
       endSession();
     };
-  }, [sessionId, playDuration, currentIndex, currentSectionEventId, items]);
+  }, []); // Empty deps = cleanup ONLY runs on component unmount
 
   /**
    * Wake Lock API - Keep screen on during class playback
