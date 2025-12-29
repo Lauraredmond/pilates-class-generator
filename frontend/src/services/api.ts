@@ -132,6 +132,13 @@ export const analyticsApi = {
     api.get(`/api/analytics/llm-logs/${logId}`, {
       params: { admin_user_id: adminUserId },
     }),
+  // Early Skip Analytics - Admin Only (December 29, 2025)
+  getEarlySkipAnalytics: (params: {
+    admin_user_id: string;
+    from_date?: string;  // YYYY-MM-DD format
+    to_date?: string;    // YYYY-MM-DD format
+    class_id?: string;   // Filter by specific class plan ID
+  }) => api.get('/api/analytics/early-skips', { params }),
 };
 
 export default api;
