@@ -454,22 +454,7 @@ export function ClassPlayback({
       }
 
       try {
-        // End previous section first (if exists)
-        if (currentSectionEventId) {
-          logger.debug('[EarlySkip] Ending previous section:', currentSectionEventId);
-          await axios.put(
-            `${API_BASE_URL}/api/analytics/playback/section-end`,
-            {
-              section_event_id: currentSectionEventId,
-              ended_reason: 'completed'  // Natural advance (timer ran out)
-            }
-          );
-          logger.debug(`[EarlySkip] Previous section ended: ${currentSectionEventId}`);
-        } else {
-          logger.debug('[EarlySkip] No previous section to end');
-        }
-
-        // Start new section
+        // Start new section (previous section already ended by handleNext/handlePrevious/unmount)
         const response = await axios.post(
           `${API_BASE_URL}/api/analytics/playback/section-start`,
           {
