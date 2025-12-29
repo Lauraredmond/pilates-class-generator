@@ -423,10 +423,29 @@ export function ClassPlayback({
    */
   useEffect(() => {
     const startSectionTracking = async () => {
-      if (!sessionId || !user?.id) return;
+      logger.debug('[EarlySkip] useEffect triggered', {
+        currentIndex,
+        sessionId: sessionId ? 'exists' : 'null',
+        userId: user?.id ? 'exists' : 'null',
+        currentSectionEventId: currentSectionEventId ? 'exists' : 'null'
+      });
+
+      if (!sessionId || !user?.id) {
+        logger.debug('[EarlySkip] Early return - missing sessionId or userId');
+        return;
+      }
 
       const currentItem = items[currentIndex];
-      if (!currentItem) return;
+      if (!currentItem) {
+        logger.debug('[EarlySkip] Early return - no current item');
+        return;
+      }
+
+      logger.debug('[EarlySkip] Current item:', {
+        type: currentItem.type,
+        index: currentIndex,
+        name: (currentItem as any).script_name || (currentItem as any).routine_name || (currentItem as any).name
+      });
 
       // Skip transitions (no tracking per requirements)
       if (currentItem.type === 'transition') {
@@ -437,6 +456,7 @@ export function ClassPlayback({
       try {
         // End previous section first (if exists)
         if (currentSectionEventId) {
+          logger.debug('[EarlySkip] Ending previous section:', currentSectionEventId);
           await axios.put(
             `${API_BASE_URL}/api/analytics/playback/section-end`,
             {
@@ -445,6 +465,8 @@ export function ClassPlayback({
             }
           );
           logger.debug(`[EarlySkip] Previous section ended: ${currentSectionEventId}`);
+        } else {
+          logger.debug('[EarlySkip] No previous section to end');
         }
 
         // Start new section
