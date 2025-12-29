@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 import os
 import uuid
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from loguru import logger
@@ -2988,7 +2988,7 @@ async def start_section_event(
             'movement_id': data.movement_id,
             'movement_name': data.movement_name,
             'planned_duration_seconds': data.planned_duration_seconds,
-            'started_at': datetime.now().isoformat()
+            'started_at': datetime.now(timezone.utc).isoformat()
         }
 
         # Insert event record
@@ -3027,7 +3027,7 @@ async def end_section_event(data: SectionEndRequest):
     - Natural completion (timer ran out) is NOT an early skip
     """
     try:
-        ended_at = datetime.now()
+        ended_at = datetime.now(timezone.utc)
 
         # Fetch existing record
         existing_response = supabase.table('playback_section_events') \
