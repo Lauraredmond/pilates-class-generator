@@ -15,6 +15,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  // Persist scroll state across pause/resume cycles
+  const pausedElapsedTimeRef = useRef<number>(0); // Time already scrolled before pause
+  const pauseTimestampRef = useRef<number>(0); // When the pause happened
+
   // DEBUG: Check if video_url exists when rendering movements
   if (item.type === 'movement') {
     console.log('🎥 DEBUG: MovementDisplay received item:', item);
@@ -43,16 +47,28 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     return () => clearTimeout(timer);
   }, [item, isPaused]);
 
+  // Reset scroll to top ONLY when section changes (not on pause/resume)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    container.scrollTop = 0;
+
+    // Reset pause state refs when new section starts
+    pausedElapsedTimeRef.current = 0;
+    pauseTimestampRef.current = 0;
+  }, [item]);
+
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Reset scroll to top when item changes
-    container.scrollTop = 0;
-
-    // Don't start scrolling if paused (e.g., H&S modal is shown)
-    if (isPaused) return;
+    // If paused, save current elapsed time and exit
+    if (isPaused) {
+      // Store when the pause happened so we can calculate elapsed time later
+      pauseTimestampRef.current = performance.now();
+      return;
+    }
 
     // Use voiceover duration if available (syncs scroll with voiceover audio)
     // Check both property names: voiceover_duration_seconds (movements) and voiceover_duration (other sections)
@@ -74,10 +90,17 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
     let startTime: number;
     let animationFrame: number;
+    let lastElapsed: number = 0; // Track last elapsed time for saving on pause
 
     const scroll = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
+      if (!startTime) {
+        // First frame: adjust startTime to account for any previously scrolled time
+        // If resuming from pause, we need startTime to be in the past
+        startTime = timestamp - pausedElapsedTimeRef.current;
+      }
+
       const elapsed = timestamp - startTime;
+      lastElapsed = elapsed;
 
       // Simple continuous scroll - pauses are created by blank lines in the narrative
       const newScrollTop = Math.min(scrollSpeed * elapsed, scrollHeight);
@@ -98,6 +121,8 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       clearTimeout(timeout);
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);
+        // Save the elapsed time when cancelling (happens on pause)
+        pausedElapsedTimeRef.current = lastElapsed;
       }
     };
   }, [item, isPaused]);

@@ -6,6 +6,7 @@ import { Trash2, AlertTriangle, Key, CheckCircle, Bell, Shield, Settings as Sett
 import { logger } from '../utils/logger';
 import { RecordingModeManager } from '../components/recording-mode/RecordingModeManager';
 import { DebugPanel } from '../components/DebugPanel';
+import { EarlySkipAnalytics } from '../components/settings/EarlySkipAnalytics';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -75,6 +76,14 @@ export function Settings() {
   const [creatorsReportLoading, setCreatorsReportLoading] = useState(false);
   const [creatorsReportError, setCreatorsReportError] = useState('');
   const [creatorsReportData, setCreatorsReportData] = useState<any>(null);
+
+  // Creators vs Performers user drilldown state
+  const [selectedCategory, setSelectedCategory] = useState<string>('creators_only');
+  const [usersData, setUsersData] = useState<any>(null);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [usersOffset, setUsersOffset] = useState(0);
+  const [usersLimit] = useState(50);
 
   // Quality tracking state
   const [qualityTrendsLoading, setQualityTrendsLoading] = useState(false);
@@ -439,6 +448,25 @@ export function Settings() {
       setCreatorsReportError(error.response?.data?.detail || 'Failed to load report');
     } finally {
       setCreatorsReportLoading(false);
+    }
+  };
+
+  const handleFetchUsers = async (category: string, offset: number = 0) => {
+    setUsersLoading(true);
+    setUsersError('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(
+        `${API_BASE_URL}/api/analytics/admin/creators-vs-performers/users?admin_user_id=${user?.id}&category=${category}&limit=${usersLimit}&offset=${offset}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setUsersData(response.data);
+      setUsersOffset(offset);
+    } catch (error: any) {
+      setUsersError(error.response?.data?.detail || 'Failed to load users');
+    } finally {
+      setUsersLoading(false);
     }
   };
 
@@ -1265,6 +1293,100 @@ export function Settings() {
                   </div>
                 </div>
               )}
+
+              {/* User Drilldown - Show after report loaded */}
+              {creatorsReportData && (
+                <div className="mt-4 p-4 bg-charcoal rounded border border-cream/20">
+                  <h4 className="text-md font-semibold text-cream mb-3">User Breakdown by Category</h4>
+
+                  {/* Category Selector */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-cream mb-2">Select Category</label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        handleFetchUsers(e.target.value, 0);
+                      }}
+                      className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                    >
+                      <option value="creators_only">Creators Only ({creatorsReportData.creators_only})</option>
+                      <option value="performers_only">Performers Only ({creatorsReportData.performers_only})</option>
+                      <option value="both">Both Create & Perform ({creatorsReportData.both})</option>
+                    </select>
+                  </div>
+
+                  {/* Errors */}
+                  {usersError && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-3">
+                      <p className="text-sm text-red-700">{usersError}</p>
+                    </div>
+                  )}
+
+                  {/* Load Users Button */}
+                  {!usersData && (
+                    <button
+                      onClick={() => handleFetchUsers(selectedCategory, 0)}
+                      disabled={usersLoading}
+                      className="w-full flex items-center justify-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-2 rounded font-semibold transition-smooth disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+                    >
+                      <Database className="w-5 h-5" />
+                      {usersLoading ? 'Loading Users...' : 'Load Users'}
+                    </button>
+                  )}
+
+                  {/* User Table */}
+                  {usersData && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm mb-4">
+                        <thead className="bg-burgundy/20">
+                          <tr>
+                            <th className="text-left p-2 text-cream">Email</th>
+                            <th className="text-center p-2 text-cream">Classes Created</th>
+                            <th className="text-center p-2 text-cream">Completed Plays</th>
+                            <th className="text-left p-2 text-cream">Last Activity</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {usersData.users.map((user: any) => (
+                            <tr key={user.user_id} className="border-b border-cream/10">
+                              <td className="p-2 text-cream/70">{user.email || 'N/A'}</td>
+                              <td className="p-2 text-center text-cream/70">{user.created_classes_count}</td>
+                              <td className="p-2 text-center text-cream/70">{user.completed_plays_count}</td>
+                              <td className="p-2 text-cream/70 text-xs">
+                                {user.last_activity_at ? new Date(user.last_activity_at).toLocaleString() : 'N/A'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Pagination Info */}
+                      <div className="flex items-center justify-between text-sm text-cream/60 mb-3">
+                        <p>
+                          Showing {usersOffset + 1}-{Math.min(usersOffset + usersLimit, usersData.total_count)} of {usersData.total_count} users
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleFetchUsers(selectedCategory, Math.max(0, usersOffset - usersLimit))}
+                            disabled={usersLoading || usersOffset === 0}
+                            className="px-3 py-1 bg-burgundy/20 hover:bg-burgundy/30 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Previous
+                          </button>
+                          <button
+                            onClick={() => handleFetchUsers(selectedCategory, usersOffset + usersLimit)}
+                            disabled={usersLoading || !usersData.has_more}
+                            className="px-3 py-1 bg-burgundy/20 hover:bg-burgundy/30 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Quality Tracking Dashboard */}
@@ -1457,6 +1579,9 @@ export function Settings() {
                 </div>
               )}
             </div>
+
+            {/* Early Skip Analytics - December 29, 2025 */}
+            <EarlySkipAnalytics userId={user!.id} />
 
             <DebugPanel />
             <div className="mt-6">
