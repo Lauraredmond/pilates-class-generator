@@ -679,22 +679,11 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
 
         <Card>
           <CardBody className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-cream/60 text-sm font-medium mb-3">Top 3 Movements</p>
-                <div className="space-y-1">
-                  {stats.top3Movements.slice(0, 3).map((movement, idx) => (
-                    <p key={idx} className="text-sm text-cream/90">
-                      {idx + 1}. {movement}
-                    </p>
-                  ))}
-                </div>
-              </div>
-              <div className="h-16 w-16 rounded-full bg-burgundy/30 flex items-center justify-center flex-shrink-0">
-                <svg className="w-8 h-8 text-cream" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
+            <div>
+              <p className="text-cream/60 text-sm font-medium">Top 3 Movements</p>
+              <p className="text-xl font-bold text-cream mt-2">
+                {stats.top3Movements.slice(0, 3).join(', ')}
+              </p>
             </div>
             <p className="text-cream/50 text-xs mt-3">{stats.coveragePercentage}% of total selections</p>
           </CardBody>
