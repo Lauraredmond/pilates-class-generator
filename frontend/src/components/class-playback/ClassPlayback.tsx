@@ -656,6 +656,21 @@ export function ClassPlayback({
             setTimeout(() => onComplete?.(), 100);
             return 0;
           } else {
+            // End current section with 'completed' reason before advancing (natural completion)
+            const item = items[currentIndex];
+            if (currentSectionEventId && item?.type !== 'transition') {
+              axios.put(`${API_BASE_URL}/api/analytics/playback/section-end`, {
+                section_event_id: currentSectionEventId,
+                ended_reason: 'completed'
+              })
+                .then(() => {
+                  logger.debug('[EarlySkip] Section ended (completed - timer reached 0)');
+                })
+                .catch((error) => {
+                  logger.error('[EarlySkip] Failed to end section on natural completion:', error);
+                });
+            }
+
             setTimeout(() => {
               setCurrentIndex((idx) => idx + 1);
             }, 100);
@@ -667,7 +682,7 @@ export function ClassPlayback({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isPaused, currentIndex, currentItem, totalItems, items, onComplete]);
+  }, [isPaused, currentIndex, currentItem, totalItems, items, onComplete, currentSectionEventId]);
 
   // Initialize time remaining when item changes
   useEffect(() => {
