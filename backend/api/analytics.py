@@ -2619,11 +2619,13 @@ async def get_saved_sequencing_report(class_plan_id: str):
             for idx, item in enumerate(main_sequence):
                 if item.get('type') == 'movement':
                     # Extract movement data in movements_snapshot format
+                    # CRITICAL: Include movement_family for Rule 2 (Family Balance) calculations
                     movements_snapshot.append({
                         "type": "movement",
                         "name": item.get('name', ''),
                         "muscle_groups": item.get('muscle_groups', []),
                         "duration_seconds": item.get('duration_seconds', 60),
+                        "movement_family": item.get('movement_family', 'other'),  # FIX: Include for Rule 2
                         "order_index": idx
                     })
 
