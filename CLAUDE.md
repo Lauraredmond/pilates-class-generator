@@ -328,9 +328,13 @@ Result: User frustrated, doing Claude's job
 
 ### Dev-First Workflow (CRITICAL - Updated December 2025)
 
-**RULE:** After making any code changes, automatically commit and push to **`dev` branch FIRST**, then merge to `main` after testing.
+**🚨 CRITICAL RULE: NEVER push to GitHub without explicit user permission 🚨**
 
-**Standard Workflow:**
+**WHY:** Every push triggers Netlify builds, consuming build minutes/credits. User is on Personal plan (1,000 min/month).
+
+**RULE:** After making any code changes, commit locally ONLY. DO NOT push to GitHub unless user explicitly approves.
+
+**Modified Workflow:**
 1. **Ensure you're on `dev` branch**: `git checkout dev`
 2. Make code changes as requested
 3. Stage all modified files: `git add .`
@@ -339,25 +343,33 @@ Result: User frustrated, doing Claude's job
    - Files modified
    - Purpose/reason for changes
    - Co-authored-by Claude tag
-5. **Push to dev branch**: `git push origin dev`
-6. Auto-deploys to dev environment for testing:
+5. **Commit locally**: `git commit -m "message"`
+6. **ASK USER**: "Ready to push to GitHub? This will trigger Netlify build."
+7. **ONLY IF USER APPROVES**: `git push origin dev`
+8. Auto-deploys to dev environment for testing:
    - Frontend: https://bassline-dev.netlify.app
    - Backend: https://pilates-dev-i0jb.onrender.com
-7. After user confirms testing successful, merge to main:
+9. After user confirms testing successful, merge to main:
    ```bash
    git checkout main
    git merge dev
-   git push origin main
+   git push origin main  # (ONLY with user permission!)
    ```
-8. Auto-deploys to production for beta testers:
-   - Frontend: https://basslinemvp.netlify.app
-   - Backend: https://pilates-class-generator-api3.onrender.com
+10. Auto-deploys to production for beta testers:
+    - Frontend: https://basslinemvp.netlify.app
+    - Backend: https://pilates-class-generator-api3.onrender.com
 
 **When NOT to commit:**
 - User explicitly says "don't commit" or "wait to commit"
 - Files contain secrets or credentials (check first!)
 - Changes are experimental/incomplete
 - User says they want to review changes first
+
+**When NOT to push:**
+- ❌ **NEVER push without asking user first** (conserves Netlify build minutes)
+- User explicitly says "don't push yet"
+- Multiple commits pending - batch them into one push
+- Changes need local testing first
 
 **NEVER push directly to `main` unless explicitly instructed by user.**
 
