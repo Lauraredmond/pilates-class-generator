@@ -259,6 +259,39 @@ def _convert_to_uuid(user_id: str) -> str:
     return str(user_uuid)
 
 
+def _normalize_muscle_group_name(name: str) -> str:
+    """
+    Normalize muscle group names for case-insensitive matching.
+
+    Handles inconsistencies between muscle_groups table (Title Case)
+    and movement_muscles table (lowercase, varying spacing).
+
+    Examples:
+        "Core Strength" -> "core strength"
+        "Core strength" -> "core strength"
+        "Hip mobility and/ or strengthening" -> "hip mobility and/or strengthening"
+        "Thoracic mobility &/ or strength" -> "thoracic mobility &/or strength"
+
+    Returns: Normalized lowercase name with standardized spacing
+    """
+    if not name:
+        return ""
+
+    # Convert to lowercase
+    normalized = name.lower()
+
+    # Standardize "and/ or" -> "and/or" (remove space before slash)
+    normalized = normalized.replace("and/ or", "and/or")
+
+    # Standardize "&/ or" -> "&/or" (remove space before slash)
+    normalized = normalized.replace("&/ or", "&/or")
+
+    # Remove extra whitespace
+    normalized = " ".join(normalized.split())
+
+    return normalized
+
+
 def _get_date_ranges(period: TimePeriod) -> tuple[List[tuple[date, date]], List[str]]:
     """
     Calculate date ranges and labels based on time period
@@ -474,10 +507,16 @@ async def get_muscle_group_history(
             .select('name') \
             .execute()
 
-        all_muscle_groups = [mg['name'] for mg in all_muscle_groups_response.data]
+        # Build mapping: normalized name -> display name
+        # This allows case-insensitive matching while preserving display names
+        normalized_to_display = {}
+        for mg in all_muscle_groups_response.data:
+            display_name = mg['name']
+            normalized_name = _normalize_muscle_group_name(display_name)
+            normalized_to_display[normalized_name] = display_name
 
-        # Initialize counts for ALL muscle groups
-        muscle_counts = {name: [0] * len(date_ranges) for name in all_muscle_groups}
+        # Initialize counts using NORMALIZED names as keys
+        muscle_counts = {normalized: [0] * len(date_ranges) for normalized in normalized_to_display.keys()}
 
         # Fetch class history
         earliest_date = date_ranges[0][0]
@@ -553,15 +592,18 @@ async def get_muscle_group_history(
                                 # Lookup from cache (no database query!)
                                 muscle_groups = muscle_groups_cache.get(movement_name, [])
                                 for muscle_group in muscle_groups:
-                                    if muscle_group in muscle_counts:
-                                        muscle_counts[muscle_group][period_idx] += 1
+                                    # Normalize muscle group name for case-insensitive matching
+                                    normalized_muscle_group = _normalize_muscle_group_name(muscle_group)
+                                    if normalized_muscle_group in muscle_counts:
+                                        muscle_counts[normalized_muscle_group][period_idx] += 1
                     break
 
-        # Convert to response format
+        # Convert to response format using DISPLAY names (not normalized)
         result = []
-        for muscle_group_name, counts in muscle_counts.items():
+        for normalized_name, counts in muscle_counts.items():
+            display_name = normalized_to_display[normalized_name]
             result.append(TimeSeriesData(
-                label=muscle_group_name,
+                label=display_name,  # Use Title Case display name
                 periods=counts,
                 period_labels=period_labels,
                 total=sum(counts)
@@ -795,7 +837,19 @@ async def get_muscle_distribution(
                 for name, mov_id in movement_name_to_id.items():
                     muscle_groups_cache[name] = movement_id_to_muscles.get(mov_id, [])
 
-        # Count muscle group usage using cached data
+        # Fetch ALL muscle groups from database for display name mapping
+        all_muscle_groups_response = supabase.table('muscle_groups') \
+            .select('name') \
+            .execute()
+
+        # Build mapping: normalized name -> display name (same as muscle_group_history)
+        normalized_to_display = {}
+        for mg in all_muscle_groups_response.data:
+            display_name = mg['name']
+            normalized_name = _normalize_muscle_group_name(display_name)
+            normalized_to_display[normalized_name] = display_name
+
+        # Count muscle group usage using cached data with NORMALIZED keys
         muscle_totals = defaultdict(int)
 
         for class_item in classes:
@@ -807,7 +861,9 @@ async def get_muscle_distribution(
                         # Lookup from cache (no database query!)
                         muscle_groups = muscle_groups_cache.get(movement_name, [])
                         for muscle_group in muscle_groups:
-                            muscle_totals[muscle_group] += 1
+                            # Normalize for consistent aggregation
+                            normalized_muscle_group = _normalize_muscle_group_name(muscle_group)
+                            muscle_totals[normalized_muscle_group] += 1
 
         # Calculate percentages
         total_count = sum(muscle_totals.values())
@@ -818,7 +874,8 @@ async def get_muscle_distribution(
         # Sort by usage and take top 10 for readability
         sorted_muscles = sorted(muscle_totals.items(), key=lambda x: x[1], reverse=True)[:10]
 
-        muscle_groups = [m[0] for m in sorted_muscles]
+        # Convert back to DISPLAY names for response
+        muscle_groups = [normalized_to_display.get(m[0], m[0]) for m in sorted_muscles]
         percentages = [(m[1] / total_count) * 100 for m in sorted_muscles]
 
         return MuscleDistributionData(
