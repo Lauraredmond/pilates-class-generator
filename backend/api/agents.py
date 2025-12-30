@@ -810,6 +810,11 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
         logger.info(f"Target muscles from sequence: {target_muscles}")
 
+        # Initialize music genre tracking variables for analytics (BEFORE quick practice check)
+        # These must be initialized here so they're available in BOTH code paths (quick practice AND full class)
+        selected_music_genre = None  # Track for analytics (movement music)
+        selected_cooldown_music_genre = None  # Track for analytics (cooldown music)
+
         # SPECIAL CASE: 12-minute "Quick movement practice" - Skip all 6 sections
         # User requirement: "Just 3 movements for daily practice, no warmup/cooldown/prep"
         is_quick_practice = request.class_plan.target_duration_minutes == 12
@@ -922,8 +927,7 @@ Return all 6 sections with complete details (narrative, timing, instructions).
 
             # Step 8: Select music (if requested)
             music_result = None
-            selected_music_genre = None  # Track for analytics (movement music)
-            selected_cooldown_music_genre = None  # Track for analytics (cooldown music)
+            # NOTE: selected_music_genre and selected_cooldown_music_genre already initialized before is_quick_practice check
             if request.include_music:
                 music_input = {
                     "class_duration_minutes": request.class_plan.target_duration_minutes,
