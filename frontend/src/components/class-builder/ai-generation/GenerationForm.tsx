@@ -29,7 +29,7 @@ interface GenerationFormProps {
 
 const DURATION_OPTIONS = [
   { value: 12, label: '12 minutes - Quick movement practise' },
-  { value: 30, label: '30 minutes - Full class' },
+  { value: 30, label: '30 minutes - Class excludes relaxation phase' },
   { value: 45, label: '45 minutes - Full class' },
   { value: 60, label: '60 minutes - Full class' },
   { value: 75, label: '75 minutes - Full class' },
