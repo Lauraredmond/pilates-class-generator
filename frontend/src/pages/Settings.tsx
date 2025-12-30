@@ -1643,7 +1643,7 @@ export function Settings() {
       {/* Password Change Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-charcoal rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-charcoal/95 backdrop-blur-sm rounded-lg shadow-xl max-w-md w-full p-6 border border-cream/20">
             <div className="flex items-center gap-3 mb-4">
               <Key className="w-8 h-8 text-burgundy" />
               <h2 className="text-2xl font-bold text-cream">Change Password</h2>
