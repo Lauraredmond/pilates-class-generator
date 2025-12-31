@@ -517,6 +517,7 @@ class SequenceTools:
         # TASK 5: FILL PASS - Add more movements if time permits
         # Try to fill up to target duration without exceeding it
         # Only for non-quick-practice classes (12-min has no overhead)
+        logger.info(f"🔍 FILL PASS CHECK: target_duration={target_duration}, condition={target_duration != 12}")
         if target_duration != 12:
             # Calculate current sequence duration
             current_sequence_duration = sum(m.get("duration_seconds", teaching_time_seconds) for m in sequence)
