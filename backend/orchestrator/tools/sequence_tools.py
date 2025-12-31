@@ -536,12 +536,18 @@ class SequenceTools:
             target_total_seconds = target_duration * 60
             remaining_seconds = target_total_seconds - total_used_seconds
 
-            # Minimum time needed for movement + transition
-            min_time_needed = teaching_time_seconds + (self.TRANSITION_TIME_MINUTES * 60)
+            # FIX: Calculate minimum time needed based on ACTUAL movement durations, not teaching_time
+            # Find shortest movement duration in available pool
+            min_movement_duration = min(
+                (m.get("duration_seconds") or teaching_time_seconds for m in movements),
+                default=teaching_time_seconds
+            )
+            min_time_needed = min_movement_duration + (self.TRANSITION_TIME_MINUTES * 60)
 
             logger.info(
                 f"FILL PASS: Current: {total_used_seconds}s / Target: {target_total_seconds}s | "
-                f"Remaining: {remaining_seconds}s (need {min_time_needed}s for movement+transition)"
+                f"Remaining: {remaining_seconds}s (need {min_time_needed}s for movement+transition) | "
+                f"Min movement duration: {min_movement_duration}s"
             )
 
             # Fill pass loop: add movements while there's enough time
