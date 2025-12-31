@@ -16,6 +16,18 @@ interface RecordingModeManagerProps {
   onClose?: () => void;
 }
 
+/**
+ * Validates duration from database, using 60-second minimal default if NULL/missing
+ * Logs warning when fallback is used
+ */
+function validateDuration(duration: number | null | undefined, sectionName: string): number {
+  if (duration === null || duration === undefined || duration <= 0) {
+    logger.warn(`[RecordingMode] Missing duration for ${sectionName}, using 60-second minimal default`);
+    return 60;
+  }
+  return duration;
+}
+
 export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -79,38 +91,38 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
       // Build playback items array
       const items: PlaybackItem[] = [];
 
-      // Section 1: Preparation
+      // Section 1: Preparation (duration from database)
       items.push({
         type: 'preparation' as const,
-        script_name: preparation.script_name || 'Pilates Principles',
-        narrative: preparation.narrative || 'No preparation narrative available.',
-        key_principles: preparation.key_principles || [],
-        duration_seconds: preparation.duration_seconds || 240,
-        breathing_pattern: preparation.breathing_pattern || 'Inhale/Exhale',
-        breathing_focus: preparation.breathing_focus || 'Lateral breathing',
-        voiceover_url: preparation.voiceover_url,
-        voiceover_duration: preparation.voiceover_duration,
-        voiceover_enabled: preparation.voiceover_enabled || false,
+        script_name: preparation?.script_name || 'Pilates Principles',
+        narrative: preparation?.narrative || 'No preparation narrative available.',
+        key_principles: preparation?.key_principles || [],
+        duration_seconds: validateDuration(preparation?.duration_seconds, 'Preparation'),
+        breathing_pattern: preparation?.breathing_pattern || 'Inhale/Exhale',
+        breathing_focus: preparation?.breathing_focus || 'Lateral breathing',
+        voiceover_url: preparation?.voiceover_url,
+        voiceover_duration: preparation?.voiceover_duration,
+        voiceover_enabled: preparation?.voiceover_enabled || false,
         // Video demonstration (AWS Phase 1) - CRITICAL: Must map from backend
-        video_url: preparation.video_url,
+        video_url: preparation?.video_url,
       });
 
-      // Section 2: Warmup
+      // Section 2: Warmup (duration from database)
       items.push({
         type: 'warmup' as const,
-        routine_name: warmup.routine_name || 'Full Body Warm-up',
-        narrative: warmup.narrative || 'No warmup narrative available.',
-        movements: warmup.movements || [],
-        duration_seconds: warmup.duration_seconds || 180,
-        focus_area: warmup.focus_area || 'full_body',
-        voiceover_url: warmup.voiceover_url,
-        voiceover_duration: warmup.voiceover_duration,
-        voiceover_enabled: warmup.voiceover_enabled || false,
+        routine_name: warmup?.routine_name || 'Full Body Warm-up',
+        narrative: warmup?.narrative || 'No warmup narrative available.',
+        movements: warmup?.movements || [],
+        duration_seconds: validateDuration(warmup?.duration_seconds, 'Warmup'),
+        focus_area: warmup?.focus_area || 'full_body',
+        voiceover_url: warmup?.voiceover_url,
+        voiceover_duration: warmup?.voiceover_duration,
+        voiceover_enabled: warmup?.voiceover_enabled || false,
         // Video demonstration (AWS Phase 1) - CRITICAL: Must map from backend
-        video_url: warmup.video_url,
+        video_url: warmup?.video_url,
       });
 
-      // Section 3: All 34 movements with database transitions
+      // Section 3: All 34 movements with database transitions (durations from database)
       // Backend has already inserted transitions between movements
       for (const item of movementsWithTransitions) {
         if (item.type === 'movement') {
@@ -118,7 +130,7 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
             type: 'movement' as const,
             id: item.id,
             name: item.name,
-            duration_seconds: 300, // 5 minutes per movement for recording
+            duration_seconds: validateDuration(item.duration_seconds, `Movement: ${item.name}`),
             narrative: item.narrative,
             setup_position: item.setup_position,
             watch_out_points: item.watch_out_points,
@@ -138,7 +150,7 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
             from_position: item.from_position || 'Unknown',
             to_position: item.to_position || 'Unknown',
             narrative: item.narrative || `Transition from ${item.from_position} to ${item.to_position}.`,
-            duration_seconds: item.duration_seconds || 60,
+            duration_seconds: validateDuration(item.duration_seconds, `Transition: ${item.from_position} → ${item.to_position}`),
             voiceover_url: item.voiceover_url,
             voiceover_duration: item.voiceover_duration,
             voiceover_enabled: item.voiceover_enabled || false,
@@ -146,53 +158,58 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
         }
       }
 
-      // Section 4: Cooldown
+      // Section 4: Cooldown (duration from database)
       items.push({
         type: 'cooldown' as const,
-        sequence_name: cooldown.sequence_name || 'Full Body Cooldown',
-        narrative: cooldown.narrative || 'No cooldown narrative available.',
-        stretches: cooldown.stretches || [],
-        duration_seconds: cooldown.duration_seconds || 180,
-        target_muscles: cooldown.target_muscles || [],
-        recovery_focus: cooldown.recovery_focus || 'full_body',
-        voiceover_url: cooldown.voiceover_url,
-        voiceover_duration: cooldown.voiceover_duration,
-        voiceover_enabled: cooldown.voiceover_enabled || false,
+        sequence_name: cooldown?.sequence_name || 'Full Body Cooldown',
+        narrative: cooldown?.narrative || 'No cooldown narrative available.',
+        stretches: cooldown?.stretches || [],
+        duration_seconds: validateDuration(cooldown?.duration_seconds, 'Cooldown'),
+        target_muscles: cooldown?.target_muscles || [],
+        recovery_focus: cooldown?.recovery_focus || 'full_body',
+        voiceover_url: cooldown?.voiceover_url,
+        voiceover_duration: cooldown?.voiceover_duration,
+        voiceover_enabled: cooldown?.voiceover_enabled || false,
         // Video demonstration (AWS Phase 1)
-        video_url: cooldown.video_url,
+        video_url: cooldown?.video_url,
       });
 
-      // Section 5: Closing Meditation
+      // Section 5: Closing Meditation (duration from database)
       items.push({
         type: 'meditation' as const,
-        script_name: meditation.script_name || 'Body Scan & Gratitude',
-        script_text: meditation.script_text || 'No meditation script available.',
-        duration_seconds: meditation.duration_seconds || 300,
-        breathing_guidance: meditation.breathing_guidance || '',
-        meditation_theme: meditation.meditation_theme || 'body_scan',
-        voiceover_url: meditation.voiceover_url,
-        voiceover_duration: meditation.voiceover_duration,
-        voiceover_enabled: meditation.voiceover_enabled || false,
+        script_name: meditation?.script_name || 'Body Scan & Gratitude',
+        script_text: meditation?.script_text || 'No meditation script available.',
+        duration_seconds: validateDuration(meditation?.duration_seconds, 'Meditation'),
+        breathing_guidance: meditation?.breathing_guidance || '',
+        meditation_theme: meditation?.meditation_theme || 'body_scan',
+        voiceover_url: meditation?.voiceover_url,
+        voiceover_duration: meditation?.voiceover_duration,
+        voiceover_enabled: meditation?.voiceover_enabled || false,
         // Video demonstration (AWS Phase 1)
-        video_url: meditation.video_url,
+        video_url: meditation?.video_url,
       });
 
-      // Section 6: HomeCare Advice
+      // Section 6: HomeCare Advice (duration from database)
       items.push({
         type: 'homecare' as const,
-        advice_name: homecare.advice_name || 'Post-Class Care',
-        advice_text: homecare.advice_text || 'No homecare advice available.',
-        actionable_tips: homecare.actionable_tips || [],
-        duration_seconds: homecare.duration_seconds || 60,
-        focus_area: homecare.focus_area || 'general',
-        voiceover_url: homecare.voiceover_url,
-        voiceover_duration: homecare.voiceover_duration,
-        voiceover_enabled: homecare.voiceover_enabled || false,
+        advice_name: homecare?.advice_name || 'Post-Class Care',
+        advice_text: homecare?.advice_text || 'No homecare advice available.',
+        actionable_tips: homecare?.actionable_tips || [],
+        duration_seconds: validateDuration(homecare?.duration_seconds, 'HomeCare'),
+        focus_area: homecare?.focus_area || 'general',
+        voiceover_url: homecare?.voiceover_url,
+        voiceover_duration: homecare?.voiceover_duration,
+        voiceover_enabled: homecare?.voiceover_enabled || false,
         // Video demonstration (AWS Phase 1)
-        video_url: homecare.video_url,
+        video_url: homecare?.video_url,
       });
 
+      // Calculate total duration from database values
+      const totalDurationSeconds = items.reduce((sum, item) => sum + item.duration_seconds, 0);
+      const totalDurationMinutes = Math.round(totalDurationSeconds / 60);
+
       logger.debug(`[RecordingMode] Generated ${items.length} playback items`);
+      logger.info(`[RecordingMode] Total class duration: ${totalDurationMinutes} minutes (${totalDurationSeconds} seconds) - calculated from database`);
 
       // DEBUG: Check if video_url made it into PlaybackItems
       const hundredPlaybackItem = items.find((item: any) => item.type === 'movement' && item.name === 'The Hundred');
@@ -248,7 +265,7 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
 
         <div className="bg-cream/5 rounded p-4 mb-4 text-sm text-cream/60 space-y-2">
           <p><strong className="text-cream">Order:</strong> The Hundred, Open Leg Rocker, then remaining 32 movements</p>
-          <p><strong className="text-cream">Duration:</strong> 5 minutes per movement (300 seconds)</p>
+          <p><strong className="text-cream">Duration:</strong> Calculated from database (varies per section)</p>
           <p><strong className="text-cream">Sections:</strong> Preparation + Warmup + All 34 Movements + Transitions + Cooldown + Meditation + HomeCare</p>
           <p><strong className="text-cream">Total Items:</strong> ~41 sections (6 framing + 34 movements + transitions)</p>
         </div>
