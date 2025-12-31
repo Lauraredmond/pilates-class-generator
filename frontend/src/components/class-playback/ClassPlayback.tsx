@@ -609,7 +609,7 @@ export function ClassPlayback({
 
         if (response.data && response.data.length > 0) {
           // Shuffle tracks once for variety (Fisher-Yates algorithm)
-          const shuffledTracks = shuffleArray(response.data);
+          const shuffledTracks = shuffleArray<MusicTrack>(response.data);
           const totalDuration = shuffledTracks.reduce((sum: number, t: MusicTrack) => sum + t.duration_seconds, 0);
 
           return {
