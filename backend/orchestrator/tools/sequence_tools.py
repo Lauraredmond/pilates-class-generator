@@ -514,6 +514,88 @@ class SequenceTools:
                 cooldown_copy["type"] = "movement"
                 sequence.append(cooldown_copy)
 
+        # TASK 5: FILL PASS - Add more movements if time permits
+        # Try to fill up to target duration without exceeding it
+        # Only for non-quick-practice classes (12-min has no overhead)
+        if target_duration != 12:
+            # Calculate current sequence duration
+            current_sequence_duration = sum(m.get("duration_seconds", teaching_time_seconds) for m in sequence)
+
+            # Calculate transitions duration (one transition between each movement pair)
+            num_transitions = len(sequence) - 1 if len(sequence) > 1 else 0
+            transitions_duration = num_transitions * (self.TRANSITION_TIME_MINUTES * 60)
+
+            # Calculate overhead from 6 class sections (preparation, warmup, cooldown, etc.)
+            overhead_seconds = overhead_minutes * 60
+
+            # Calculate total duration used so far
+            total_used_seconds = current_sequence_duration + transitions_duration + overhead_seconds
+
+            # Calculate remaining available time
+            target_total_seconds = target_duration * 60
+            remaining_seconds = target_total_seconds - total_used_seconds
+
+            # Minimum time needed for movement + transition
+            min_time_needed = teaching_time_seconds + (self.TRANSITION_TIME_MINUTES * 60)
+
+            logger.info(
+                f"FILL PASS: Current: {total_used_seconds}s / Target: {target_total_seconds}s | "
+                f"Remaining: {remaining_seconds}s (need {min_time_needed}s for movement+transition)"
+            )
+
+            # Fill pass loop: add movements while there's enough time
+            fill_count = 0
+            while remaining_seconds >= min_time_needed:
+                # Try to select another movement using existing safety rules
+                selected = self._select_next_movement(
+                    movements=movements,
+                    current_sequence=sequence,
+                    focus_areas=focus_areas,
+                    pattern_priority=pattern_order,
+                    usage_weights=usage_weights
+                )
+
+                if not selected:
+                    logger.info(f"FILL PASS: No valid movements available (safety rules applied)")
+                    break
+
+                # Add the selected movement
+                selected_copy = selected.copy()
+                if "duration_seconds" not in selected_copy or not selected_copy["duration_seconds"]:
+                    selected_copy["duration_seconds"] = teaching_time_seconds
+                selected_copy["type"] = "movement"
+
+                # Calculate duration this would add (movement + transition)
+                movement_duration = selected_copy["duration_seconds"]
+                transition_duration = self.TRANSITION_TIME_MINUTES * 60
+                additional_duration = movement_duration + transition_duration
+
+                # Check if adding this would exceed target
+                if total_used_seconds + additional_duration > target_total_seconds:
+                    logger.info(
+                        f"FILL PASS: Stopped - adding '{selected['name']}' would exceed target "
+                        f"({total_used_seconds + additional_duration}s > {target_total_seconds}s)"
+                    )
+                    break
+
+                # Safe to add this movement
+                sequence.append(selected_copy)
+                fill_count += 1
+
+                # Update counters
+                total_used_seconds += additional_duration
+                remaining_seconds = target_total_seconds - total_used_seconds
+
+                logger.info(
+                    f"FILL PASS: Added '{selected['name']}' ({movement_duration}s + {transition_duration}s transition) | "
+                    f"Remaining: {remaining_seconds}s"
+                )
+
+            if fill_count > 0:
+                logger.info(f"✅ FILL PASS: Added {fill_count} additional movements to reach target duration")
+            else:
+                logger.info(f"FILL PASS: No additional movements added (target duration reached)")
+
         # DEBUG: Log voiceover fields in final sequence
         logger.info("=" * 80)
         logger.info("🔍 DEBUG: Final sequence (first 3 movements):")
