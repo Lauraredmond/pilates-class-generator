@@ -58,8 +58,9 @@ class SequenceTools:
     }
 
     # Transition time between movements (in minutes)
-    # UPDATED: Database transitions are 20 seconds, not 60 seconds
-    TRANSITION_TIME_MINUTES = 0.33  # 20 seconds average (actual database value)
+    # NOTE: This is calculated dynamically from database in _build_safe_sequence
+    # Kept as class constant for fallback only if database query fails
+    TRANSITION_TIME_MINUTES = 0.33  # 20 seconds fallback (DO NOT USE for calculations)
 
     def __init__(self, supabase_client=None):
         """
@@ -432,7 +433,30 @@ class SequenceTools:
             avg_duration_seconds = minutes_per_movement * 60
             logger.warning(f"No duration_seconds in database - falling back to teaching time: {avg_duration_minutes} min")
 
-        transition_time = self.TRANSITION_TIME_MINUTES
+        # FIX (Task 5): Calculate ACTUAL transition duration from database (dynamic, not hardcoded)
+        # Query all transitions to get average duration_seconds
+        if self.supabase:
+            try:
+                transitions_response = self.supabase.table('transitions').select('duration_seconds').execute()
+                if transitions_response.data:
+                    transition_durations = [t['duration_seconds'] for t in transitions_response.data if t.get('duration_seconds')]
+                    if transition_durations:
+                        avg_transition_seconds = sum(transition_durations) / len(transition_durations)
+                        transition_time = avg_transition_seconds / 60  # Convert to minutes
+                        logger.info(f"Using ACTUAL average transition duration: {transition_time:.2f} min ({avg_transition_seconds:.0f}s) from {len(transition_durations)} transitions")
+                    else:
+                        transition_time = self.TRANSITION_TIME_MINUTES
+                        logger.warning(f"No duration_seconds in transitions - using fallback: {transition_time} min")
+                else:
+                    transition_time = self.TRANSITION_TIME_MINUTES
+                    logger.warning(f"No transitions in database - using fallback: {transition_time} min")
+            except Exception as e:
+                logger.error(f"Error fetching transition durations: {e}")
+                transition_time = self.TRANSITION_TIME_MINUTES
+                logger.warning(f"Database error - using fallback transition time: {transition_time} min")
+        else:
+            transition_time = self.TRANSITION_TIME_MINUTES
+            logger.warning(f"Supabase client not available - using fallback transition time: {transition_time} min")
 
         # Store teaching time for fallback use when setting movement durations
         teaching_time_seconds = int(avg_duration_seconds)
