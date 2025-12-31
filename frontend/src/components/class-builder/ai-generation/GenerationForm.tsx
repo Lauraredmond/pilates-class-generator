@@ -77,7 +77,7 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
     energyLevel: 0.5,
     meditationTheme: 'Mindfulness',
     enableMcpResearch: false,
-    movementMusicStyle: 'IMPRESSIONIST',
+    movementMusicStyle: 'CLASSICAL',
     coolDownMusicStyle: 'BAROQUE',
   });
 

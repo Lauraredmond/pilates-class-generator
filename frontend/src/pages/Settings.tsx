@@ -584,7 +584,7 @@ export function Settings() {
         Configure how the app behaves. To view or edit your personal information, visit your{' '}
         <button
           onClick={() => navigate('/profile')}
-          className="text-burgundy hover:text-burgundy/80 font-semibold underline"
+          className="text-cream hover:text-cream/90 font-semibold underline"
         >
           Profile page
         </button>.

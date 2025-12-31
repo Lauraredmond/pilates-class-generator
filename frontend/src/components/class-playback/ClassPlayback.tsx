@@ -581,6 +581,16 @@ export function ClassPlayback({
     logger.debug(`Playlist switched to ${currentItem?.type === 'cooldown' || currentItem?.type === 'meditation' || currentItem?.type === 'homecare' ? 'cooldown' : 'movement'} music - resetting to track 1`);
   }, [currentPlaylist]);
 
+  // Fisher-Yates shuffle algorithm for randomizing track order
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array]; // Create copy to avoid mutation
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   // Fetch BOTH music playlists from database (movement + cooldown)
   useEffect(() => {
     const fetchPlaylistByStyle = async (musicStyle: string): Promise<MusicPlaylist | null> => {
@@ -598,9 +608,9 @@ export function ClassPlayback({
         });
 
         if (response.data && response.data.length > 0) {
-          // Format as a simple playlist object
-          const tracks = response.data;
-          const totalDuration = tracks.reduce((sum: number, t: MusicTrack) => sum + t.duration_seconds, 0);
+          // Shuffle tracks once for variety (Fisher-Yates algorithm)
+          const shuffledTracks = shuffleArray(response.data);
+          const totalDuration = shuffledTracks.reduce((sum: number, t: MusicTrack) => sum + t.duration_seconds, 0);
 
           return {
             id: `${stylisticPeriod}_AUTO`, // Auto-generated ID
@@ -610,7 +620,7 @@ export function ClassPlayback({
             intended_intensity: 'MEDIUM',
             intended_use: 'PILATES',
             duration_minutes_target: Math.round(totalDuration / 60),
-            tracks: tracks,
+            tracks: shuffledTracks,
           };
         }
 
@@ -888,6 +898,15 @@ export function ClassPlayback({
             totalDuration={currentItem.duration_seconds}
             currentIndex={currentIndex}
             totalItems={totalItems}
+            currentMovementName={
+              currentItem.type === 'movement' ? (currentItem as PlaybackMovement).name :
+              currentItem.type === 'preparation' ? (currentItem as PlaybackPreparation).script_name :
+              currentItem.type === 'warmup' ? (currentItem as PlaybackWarmup).routine_name :
+              currentItem.type === 'cooldown' ? (currentItem as PlaybackCooldown).sequence_name :
+              currentItem.type === 'meditation' ? (currentItem as PlaybackMeditation).script_name :
+              currentItem.type === 'homecare' ? (currentItem as PlaybackHomeCare).advice_name :
+              undefined
+            }
             playlistName={currentPlaylist?.name}
             trackIndex={currentTrackIndex}
             totalTracks={currentPlaylist?.tracks?.length}
