@@ -384,23 +384,24 @@ export function Analytics() {
     );
   }
 
-  const handleExportCSV = () => {
-    const csvData = `Metric,Value
-Total Classes,${stats.totalClasses}
-Total Practice Time (min),${stats.totalPracticeTime}
-Current Streak (days),${stats.currentStreak}
-Favorite Movement,${stats.favoriteMovement}
-Classes This Week,${stats.classesThisWeek}
-Avg Class Duration (min),${stats.avgClassDuration}`;
+  // Export CSV function hidden per user request
+  // const handleExportCSV = () => {
+  //   const csvData = `Metric,Value
+  // Total Classes,${stats.totalClasses}
+  // Total Practice Time (min),${stats.totalPracticeTime}
+  // Current Streak (days),${stats.currentStreak}
+  // Favorite Movement,${stats.favoriteMovement}
+  // Classes This Week,${stats.classesThisWeek}
+  // Avg Class Duration (min),${stats.avgClassDuration}`;
 
-    const blob = new Blob([csvData], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'pilates-analytics.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  //   const blob = new Blob([csvData], { type: 'text/csv' });
+  //   const url = window.URL.createObjectURL(blob);
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.download = 'pilates-analytics.csv';
+  //   a.click();
+  //   window.URL.revokeObjectURL(url);
+  // };
 
   // Prepare chart data
   const practiceFrequencyChartData = practiceFrequency
@@ -592,12 +593,13 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             Track your progress and gain insights into your historical class patterns
           </p>
         </div>
-        <button
+        {/* Export CSV button hidden per user request */}
+        {/* <button
           onClick={handleExportCSV}
           className="px-4 py-2 bg-burgundy text-cream rounded-lg hover:bg-burgundy-dark transition-colors font-semibold"
         >
           Export CSV
-        </button>
+        </button> */}
       </div>
 
       {/* Time Period Filter */}
