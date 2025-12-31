@@ -384,23 +384,24 @@ export function Analytics() {
     );
   }
 
-  const handleExportCSV = () => {
-    const csvData = `Metric,Value
-Total Classes,${stats.totalClasses}
-Total Practice Time (min),${stats.totalPracticeTime}
-Current Streak (days),${stats.currentStreak}
-Favorite Movement,${stats.favoriteMovement}
-Classes This Week,${stats.classesThisWeek}
-Avg Class Duration (min),${stats.avgClassDuration}`;
+  // Export CSV function hidden per user request
+  // const handleExportCSV = () => {
+  //   const csvData = `Metric,Value
+  // Total Classes,${stats.totalClasses}
+  // Total Practice Time (min),${stats.totalPracticeTime}
+  // Current Streak (days),${stats.currentStreak}
+  // Favorite Movement,${stats.favoriteMovement}
+  // Classes This Week,${stats.classesThisWeek}
+  // Avg Class Duration (min),${stats.avgClassDuration}`;
 
-    const blob = new Blob([csvData], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'pilates-analytics.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  //   const blob = new Blob([csvData], { type: 'text/csv' });
+  //   const url = window.URL.createObjectURL(blob);
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.download = 'pilates-analytics.csv';
+  //   a.click();
+  //   window.URL.revokeObjectURL(url);
+  // };
 
   // Prepare chart data
   const practiceFrequencyChartData = practiceFrequency
