@@ -15,6 +15,18 @@ import { GeneratedResults, GeneratedClassResults } from './ai-generation/Generat
 import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
 import { logger } from '../../utils/logger';
 
+/**
+ * Validates duration from database, using 60-second minimal default if NULL/missing
+ * Logs warning when fallback is used
+ */
+function validateDuration(duration: number | null | undefined, sectionName: string): number {
+  if (duration === null || duration === undefined || duration <= 0) {
+    logger.warn(`[AIGenerationPanel] Missing duration for ${sectionName}, using 60-second minimal default`);
+    return 60;
+  }
+  return duration;
+}
+
 export function AIGenerationPanel() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -359,7 +371,7 @@ export function AIGenerationPanel() {
           script_name: (results as any).completeClass.preparation.script_name || 'Pilates Principles',
           narrative: (results as any).completeClass.preparation.narrative || 'No preparation narrative available.',
           key_principles: (results as any).completeClass.preparation.key_principles || [],
-          duration_seconds: (results as any).completeClass.preparation.duration_seconds || 240,
+          duration_seconds: validateDuration((results as any).completeClass.preparation.duration_seconds, 'Preparation'),
           breathing_pattern: (results as any).completeClass.preparation.breathing_pattern || 'Inhale/Exhale',
           breathing_focus: (results as any).completeClass.preparation.breathing_focus || 'Lateral breathing',
           // Voiceover audio fields
@@ -383,7 +395,7 @@ export function AIGenerationPanel() {
             routine_name: warmup.routine_name || 'Full Body Warm-up',
             narrative: warmup.narrative || 'No warmup narrative available.',
             movements: warmup.movements || [],
-            duration_seconds: warmup.duration_seconds || 180,
+            duration_seconds: validateDuration(warmup.duration_seconds, 'Warmup'),
             focus_area: warmup.focus_area || 'full_body',
             // Voiceover audio fields
             voiceover_url: warmup.voiceover_url,
@@ -447,7 +459,7 @@ export function AIGenerationPanel() {
           sequence_name: (results as any).completeClass.cooldown.sequence_name || 'Full Body Cooldown',
           narrative: (results as any).completeClass.cooldown.narrative || 'No cooldown narrative available.',
           stretches: (results as any).completeClass.cooldown.stretches || [],
-          duration_seconds: (results as any).completeClass.cooldown.duration_seconds || 180,
+          duration_seconds: validateDuration((results as any).completeClass.cooldown.duration_seconds, 'Cooldown'),
           target_muscles: (results as any).completeClass.cooldown.target_muscles || [],
           recovery_focus: (results as any).completeClass.cooldown.recovery_focus || 'full_body',
           // Voiceover audio fields
@@ -463,7 +475,7 @@ export function AIGenerationPanel() {
           type: 'meditation' as const,
           script_name: (results as any).completeClass.meditation.script_name || 'Body Scan & Gratitude',
           script_text: (results as any).completeClass.meditation.script_text || 'No meditation script available.',
-          duration_seconds: (results as any).completeClass.meditation.duration_seconds || 300,
+          duration_seconds: validateDuration((results as any).completeClass.meditation.duration_seconds, 'Meditation'),
           breathing_guidance: (results as any).completeClass.meditation.breathing_guidance || '',
           meditation_theme: (results as any).completeClass.meditation.meditation_theme || 'body_scan',
           // Voiceover audio fields
@@ -479,7 +491,7 @@ export function AIGenerationPanel() {
           advice_name: (results as any).completeClass.homecare.advice_name || 'Post-Class Care',
           advice_text: (results as any).completeClass.homecare.advice_text || 'No homecare advice available.',
           actionable_tips: (results as any).completeClass.homecare.actionable_tips || [],
-          duration_seconds: (results as any).completeClass.homecare.duration_seconds || 60,
+          duration_seconds: validateDuration((results as any).completeClass.homecare.duration_seconds, 'HomeCare'),
           focus_area: (results as any).completeClass.homecare.focus_area || 'general',
           // Voiceover audio fields
           voiceover_url: (results as any).completeClass.homecare.voiceover_url,
