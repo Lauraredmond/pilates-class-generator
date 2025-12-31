@@ -414,15 +414,30 @@ class SequenceTools:
             logger.error(f"No time for movements! Target: {target_duration} min, Overhead: {overhead_minutes} min")
             raise ValueError(f"Class duration too short. Need at least {overhead_minutes} minutes for required sections.")
 
-        # STEP 3: Calculate max movements based on teaching time + transitions
-        minutes_per_movement = self.MINUTES_PER_MOVEMENT.get(difficulty, 4)
+        # STEP 3: Calculate max movements based on ACTUAL movement durations + transitions
+        # FIX (Task 5): Use actual database durations instead of hardcoded teaching_time
+        # Calculate average movement duration from available movements
+        actual_durations = [m.get("duration_seconds") for m in movements if m.get("duration_seconds")]
+
+        if actual_durations:
+            # Use average duration from database (e.g., 180s = 3 min for most movements)
+            avg_duration_seconds = sum(actual_durations) / len(actual_durations)
+            avg_duration_minutes = avg_duration_seconds / 60
+            logger.info(f"Using ACTUAL average movement duration: {avg_duration_minutes:.1f} min ({avg_duration_seconds:.0f}s) from {len(actual_durations)} movements")
+        else:
+            # Fallback to teaching time if no duration data available
+            minutes_per_movement = self.MINUTES_PER_MOVEMENT.get(difficulty, 4)
+            avg_duration_minutes = minutes_per_movement
+            avg_duration_seconds = minutes_per_movement * 60
+            logger.warning(f"No duration_seconds in database - falling back to teaching time: {avg_duration_minutes} min")
+
         transition_time = self.TRANSITION_TIME_MINUTES
 
-        # Store teaching time for use when setting movement durations
-        teaching_time_seconds = minutes_per_movement * 60
+        # Store teaching time for fallback use when setting movement durations
+        teaching_time_seconds = int(avg_duration_seconds)
 
-        # Calculate: (available_minutes) = (num_movements * time_per_movement) + ((num_movements - 1) * transition_time)
-        max_movements = int((available_minutes + transition_time) / (minutes_per_movement + transition_time))
+        # Calculate: (available_minutes) = (num_movements * avg_duration) + ((num_movements - 1) * transition_time)
+        max_movements = int((available_minutes + transition_time) / (avg_duration_minutes + transition_time))
 
         # ENFORCE MINIMUM 4 MOVEMENTS FOR 30-MIN CLASSES
         # User requirement: "We will have to go a little past the 30 minute threshold and insist on at least 4 movements for the 30 min class"
@@ -440,7 +455,7 @@ class SequenceTools:
 
         logger.info(
             f"Building sequence: {target_duration} min total - {overhead_minutes} min overhead = {available_minutes} min available / "
-            f"({minutes_per_movement} min/movement + {transition_time} min/transition) = max {max_movements} movements"
+            f"({avg_duration_minutes:.1f} min/movement + {transition_time} min/transition) = max {max_movements} movements"
         )
 
         # SESSION 13: Get movement usage weights for variety enforcement + The Hundred boosting
