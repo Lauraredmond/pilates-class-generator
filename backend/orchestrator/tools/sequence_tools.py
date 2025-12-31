@@ -58,7 +58,9 @@ class SequenceTools:
     }
 
     # Transition time between movements (in minutes)
-    TRANSITION_TIME_MINUTES = 1  # Average transition time based on setup position changes
+    # NOTE: This is calculated dynamically from database in _build_safe_sequence
+    # Kept as class constant for fallback only if database query fails
+    TRANSITION_TIME_MINUTES = 0.33  # 20 seconds fallback (DO NOT USE for calculations)
 
     def __init__(self, supabase_client=None):
         """
@@ -414,15 +416,53 @@ class SequenceTools:
             logger.error(f"No time for movements! Target: {target_duration} min, Overhead: {overhead_minutes} min")
             raise ValueError(f"Class duration too short. Need at least {overhead_minutes} minutes for required sections.")
 
-        # STEP 3: Calculate max movements based on teaching time + transitions
-        minutes_per_movement = self.MINUTES_PER_MOVEMENT.get(difficulty, 4)
-        transition_time = self.TRANSITION_TIME_MINUTES
+        # STEP 3: Calculate max movements based on ACTUAL movement durations + transitions
+        # FIX (Task 5): Use actual database durations instead of hardcoded teaching_time
+        # Calculate average movement duration from available movements
+        actual_durations = [m.get("duration_seconds") for m in movements if m.get("duration_seconds")]
 
-        # Store teaching time for use when setting movement durations
-        teaching_time_seconds = minutes_per_movement * 60
+        if actual_durations:
+            # Use average duration from database (e.g., 180s = 3 min for most movements)
+            avg_duration_seconds = sum(actual_durations) / len(actual_durations)
+            avg_duration_minutes = avg_duration_seconds / 60
+            logger.info(f"Using ACTUAL average movement duration: {avg_duration_minutes:.1f} min ({avg_duration_seconds:.0f}s) from {len(actual_durations)} movements")
+        else:
+            # Fallback to teaching time if no duration data available
+            minutes_per_movement = self.MINUTES_PER_MOVEMENT.get(difficulty, 4)
+            avg_duration_minutes = minutes_per_movement
+            avg_duration_seconds = minutes_per_movement * 60
+            logger.warning(f"No duration_seconds in database - falling back to teaching time: {avg_duration_minutes} min")
 
-        # Calculate: (available_minutes) = (num_movements * time_per_movement) + ((num_movements - 1) * transition_time)
-        max_movements = int((available_minutes + transition_time) / (minutes_per_movement + transition_time))
+        # FIX (Task 5): Calculate ACTUAL transition duration from database (dynamic, not hardcoded)
+        # Query all transitions to get average duration_seconds
+        if self.supabase:
+            try:
+                transitions_response = self.supabase.table('transitions').select('duration_seconds').execute()
+                if transitions_response.data:
+                    transition_durations = [t['duration_seconds'] for t in transitions_response.data if t.get('duration_seconds')]
+                    if transition_durations:
+                        avg_transition_seconds = sum(transition_durations) / len(transition_durations)
+                        transition_time = avg_transition_seconds / 60  # Convert to minutes
+                        logger.info(f"Using ACTUAL average transition duration: {transition_time:.2f} min ({avg_transition_seconds:.0f}s) from {len(transition_durations)} transitions")
+                    else:
+                        transition_time = self.TRANSITION_TIME_MINUTES
+                        logger.warning(f"No duration_seconds in transitions - using fallback: {transition_time} min")
+                else:
+                    transition_time = self.TRANSITION_TIME_MINUTES
+                    logger.warning(f"No transitions in database - using fallback: {transition_time} min")
+            except Exception as e:
+                logger.error(f"Error fetching transition durations: {e}")
+                transition_time = self.TRANSITION_TIME_MINUTES
+                logger.warning(f"Database error - using fallback transition time: {transition_time} min")
+        else:
+            transition_time = self.TRANSITION_TIME_MINUTES
+            logger.warning(f"Supabase client not available - using fallback transition time: {transition_time} min")
+
+        # Store teaching time for fallback use when setting movement durations
+        teaching_time_seconds = int(avg_duration_seconds)
+
+        # Calculate: (available_minutes) = (num_movements * avg_duration) + ((num_movements - 1) * transition_time)
+        max_movements = int((available_minutes + transition_time) / (avg_duration_minutes + transition_time))
 
         # ENFORCE MINIMUM 4 MOVEMENTS FOR 30-MIN CLASSES
         # User requirement: "We will have to go a little past the 30 minute threshold and insist on at least 4 movements for the 30 min class"
@@ -440,7 +480,7 @@ class SequenceTools:
 
         logger.info(
             f"Building sequence: {target_duration} min total - {overhead_minutes} min overhead = {available_minutes} min available / "
-            f"({minutes_per_movement} min/movement + {transition_time} min/transition) = max {max_movements} movements"
+            f"({avg_duration_minutes:.1f} min/movement + {transition_time} min/transition) = max {max_movements} movements"
         )
 
         # SESSION 13: Get movement usage weights for variety enforcement + The Hundred boosting
@@ -513,6 +553,95 @@ class SequenceTools:
                     cooldown_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
                 cooldown_copy["type"] = "movement"
                 sequence.append(cooldown_copy)
+
+        # TASK 5: FILL PASS - Add more movements if time permits
+        # Try to fill up to target duration without exceeding it
+        # Only for non-quick-practice classes (12-min has no overhead)
+        logger.info(f"🔍 FILL PASS CHECK: target_duration={target_duration}, condition={target_duration != 12}")
+        if target_duration != 12:
+            # Calculate current sequence duration
+            current_sequence_duration = sum(m.get("duration_seconds", teaching_time_seconds) for m in sequence)
+
+            # Calculate transitions duration (one transition between each movement pair)
+            num_transitions = len(sequence) - 1 if len(sequence) > 1 else 0
+            transitions_duration = num_transitions * (self.TRANSITION_TIME_MINUTES * 60)
+
+            # Calculate overhead from 6 class sections (preparation, warmup, cooldown, etc.)
+            overhead_seconds = overhead_minutes * 60
+
+            # Calculate total duration used so far
+            total_used_seconds = current_sequence_duration + transitions_duration + overhead_seconds
+
+            # Calculate remaining available time
+            target_total_seconds = target_duration * 60
+            remaining_seconds = target_total_seconds - total_used_seconds
+
+            # FIX: Calculate minimum time needed based on ACTUAL movement durations, not teaching_time
+            # Find shortest movement duration in available pool
+            min_movement_duration = min(
+                (m.get("duration_seconds") or teaching_time_seconds for m in movements),
+                default=teaching_time_seconds
+            )
+            min_time_needed = min_movement_duration + (self.TRANSITION_TIME_MINUTES * 60)
+
+            logger.info(
+                f"FILL PASS: Current: {total_used_seconds}s / Target: {target_total_seconds}s | "
+                f"Remaining: {remaining_seconds}s (need {min_time_needed}s for movement+transition) | "
+                f"Min movement duration: {min_movement_duration}s"
+            )
+
+            # Fill pass loop: add movements while there's enough time
+            fill_count = 0
+            while remaining_seconds >= min_time_needed:
+                # Try to select another movement using existing safety rules
+                selected = self._select_next_movement(
+                    movements=movements,
+                    current_sequence=sequence,
+                    focus_areas=focus_areas,
+                    pattern_priority=pattern_order,
+                    usage_weights=usage_weights
+                )
+
+                if not selected:
+                    logger.info(f"FILL PASS: No valid movements available (safety rules applied)")
+                    break
+
+                # Add the selected movement
+                selected_copy = selected.copy()
+                if "duration_seconds" not in selected_copy or not selected_copy["duration_seconds"]:
+                    selected_copy["duration_seconds"] = teaching_time_seconds
+                selected_copy["type"] = "movement"
+
+                # Calculate duration this would add (movement + transition)
+                movement_duration = selected_copy["duration_seconds"]
+                transition_duration = self.TRANSITION_TIME_MINUTES * 60
+                additional_duration = movement_duration + transition_duration
+
+                # Check if adding this would exceed target
+                if total_used_seconds + additional_duration > target_total_seconds:
+                    logger.info(
+                        f"FILL PASS: Stopped - adding '{selected['name']}' would exceed target "
+                        f"({total_used_seconds + additional_duration}s > {target_total_seconds}s)"
+                    )
+                    break
+
+                # Safe to add this movement
+                sequence.append(selected_copy)
+                fill_count += 1
+
+                # Update counters
+                total_used_seconds += additional_duration
+                remaining_seconds = target_total_seconds - total_used_seconds
+
+                logger.info(
+                    f"FILL PASS: Added '{selected['name']}' ({movement_duration}s + {transition_duration}s transition) | "
+                    f"Remaining: {remaining_seconds}s"
+                )
+
+            if fill_count > 0:
+                logger.info(f"✅ FILL PASS: Added {fill_count} additional movements to reach target duration")
+            else:
+                logger.info(f"FILL PASS: No additional movements added (target duration reached)")
 
         # DEBUG: Log voiceover fields in final sequence
         logger.info("=" * 80)
