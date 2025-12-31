@@ -58,7 +58,8 @@ class SequenceTools:
     }
 
     # Transition time between movements (in minutes)
-    TRANSITION_TIME_MINUTES = 1  # Average transition time based on setup position changes
+    # UPDATED: Database transitions are 20 seconds, not 60 seconds
+    TRANSITION_TIME_MINUTES = 0.33  # 20 seconds average (actual database value)
 
     def __init__(self, supabase_client=None):
         """
