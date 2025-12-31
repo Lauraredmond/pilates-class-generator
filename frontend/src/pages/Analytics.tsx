@@ -592,12 +592,13 @@ Avg Class Duration (min),${stats.avgClassDuration}`;
             Track your progress and gain insights into your historical class patterns
           </p>
         </div>
-        <button
+        {/* Export CSV button hidden per user request */}
+        {/* <button
           onClick={handleExportCSV}
           className="px-4 py-2 bg-burgundy text-cream rounded-lg hover:bg-burgundy-dark transition-colors font-semibold"
         >
           Export CSV
-        </button>
+        </button> */}
       </div>
 
       {/* Time Period Filter */}
