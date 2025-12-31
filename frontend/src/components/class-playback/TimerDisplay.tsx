@@ -8,6 +8,7 @@ interface TimerDisplayProps {
   totalDuration: number;
   currentIndex: number;
   totalItems: number;
+  currentMovementName?: string;
   playlistName?: string;
   trackIndex?: number;
   totalTracks?: number;
@@ -22,6 +23,7 @@ export function TimerDisplay({
   totalDuration,
   currentIndex,
   totalItems,
+  currentMovementName,
   playlistName,
   trackIndex,
   totalTracks,
@@ -37,6 +39,13 @@ export function TimerDisplay({
 
   return (
     <div className="flex flex-col items-center px-6">
+      {/* Current movement name - sticky at top */}
+      {currentMovementName && (
+        <div className="text-sm font-semibold text-cream/80 mb-1 max-w-md truncate text-center w-full">
+          {currentMovementName}
+        </div>
+      )}
+
       {/* Progress indicator and Music Info on same line */}
       <div className="flex items-center justify-between w-full max-w-md mb-2">
         {/* Progress indicator */}
