@@ -30,6 +30,7 @@ interface GenerationFormProps {
 const DURATION_OPTIONS = [
   { value: 10, label: '10 minutes - Quick movement practise' },
   { value: 30, label: '30 minutes - Class excludes relaxation phase' },
+  { value: 45, label: '45 minutes - Full class' },
   { value: 60, label: '60 minutes - Full class' },
 ];
 const DIFFICULTY_OPTIONS: Array<'Beginner' | 'Intermediate' | 'Advanced' | 'Mixed'> = [
@@ -243,10 +244,7 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
           className="w-full flex items-center justify-center gap-3"
           isLoading={isLoading}
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cream text-burgundy text-sm font-bold">1</span>
           <span>Generate Class Plan</span>
         </Button>
       </div>
@@ -254,7 +252,14 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
       {/* Start Class Section */}
       <div className="border-t border-cream/20 pt-6">
         <div className="bg-burgundy-dark border border-cream/30 rounded-lg p-6 text-center">
-          <h3 className="text-sm font-semibold text-cream mb-2">Start Class</h3>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <span className={`flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+              hasGeneratedClass
+                ? 'bg-cream text-burgundy'
+                : 'bg-cream/20 text-cream/40'
+            }`}>2</span>
+            <h3 className="text-sm font-semibold text-cream">Start Class</h3>
+          </div>
           <p className="text-xs text-cream/60 mb-4">
             Begin your timed, narrated class with music
           </p>
@@ -275,7 +280,7 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
           </button>
           {!hasGeneratedClass && (
             <p className="text-xs text-cream/40 mt-2">
-              Button available after generating a class
+              Generate a class first
             </p>
           )}
         </div>
