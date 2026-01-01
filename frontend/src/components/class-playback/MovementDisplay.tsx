@@ -200,6 +200,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
             <video
               ref={videoRef}
               src={video_url}
+              preload="auto"
               controls
               muted
               loop
@@ -303,6 +304,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
               }
             }}
             src={item.video_url}
+            preload="auto"
             controls
             muted
             loop
