@@ -3,7 +3,7 @@
  * Teleprompter-style auto-scrolling narrative display
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PlaybackItem } from './ClassPlayback';
 
 interface MovementDisplayProps {
@@ -14,6 +14,7 @@ interface MovementDisplayProps {
 export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoEnded, setVideoEnded] = useState(false); // Track when video finishes
 
   // Persist scroll state across pause/resume cycles
   const pausedElapsedTimeRef = useRef<number>(0); // Time already scrolled before pause
@@ -63,6 +64,9 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     // Reset pause state refs when new section starts
     pausedElapsedTimeRef.current = 0;
     pauseTimestampRef.current = 0;
+
+    // Reset video ended state when section changes
+    setVideoEnded(false);
   }, [item]);
 
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
@@ -210,9 +214,16 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
               preload="auto"
               controls
               muted
-              loop
               playsInline
               className="w-full h-auto"
+              style={{
+                opacity: videoEnded ? 0 : 1,
+                transition: 'opacity 1s ease-out'
+              }}
+              onEnded={() => {
+                console.log('🎥 DEBUG: Video ended - fading out');
+                setVideoEnded(true);
+              }}
               onError={(e) => {
                 console.error('🎥 DEBUG: Video onError - failed to load:', video_url, e);
                 e.currentTarget.style.display = 'none';
@@ -314,14 +325,21 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
             preload="auto"
             controls
             muted
-            loop
             playsInline
             className="w-full h-auto"
+            style={{
+              opacity: videoEnded ? 0 : 1,
+              transition: 'opacity 1s ease-out'
+            }}
             onLoadStart={() => {
               console.log('🎥 DEBUG: Video onLoadStart - browser is attempting to load');
             }}
             onLoadedData={() => {
               console.log('🎥 DEBUG: Video onLoadedData - video loaded successfully!');
+            }}
+            onEnded={() => {
+              console.log('🎥 DEBUG: Video ended - fading out');
+              setVideoEnded(true);
             }}
             onError={(e) => {
               console.error('🎥 DEBUG: Video onError - failed to load:', item.video_url, e);
