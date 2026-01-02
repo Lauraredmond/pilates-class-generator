@@ -108,7 +108,7 @@ export function FounderStory() {
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
             This is a Minimum Viable Product built to validate product–market fit. 
-            I'm interested in expanding the platform to suit those with more granular instruction, including adaptive movement or programme modifications 
+            I'm interested in expanding the platform with more granular instruction, including adaptive movement or programme modifications 
             for varying mobility levels, enhanced warm-ups and cool-downs, richer cueing visualisations, and clearer movement watch points.
             </p>
             <p>
