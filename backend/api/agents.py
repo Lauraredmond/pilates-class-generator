@@ -815,12 +815,12 @@ Return all 6 sections with complete details (narrative, timing, instructions).
         selected_music_genre = None  # Track for analytics (movement music)
         selected_cooldown_music_genre = None  # Track for analytics (cooldown music)
 
-        # SPECIAL CASE: 12-minute "Quick movement practice" - Skip all 6 sections
+        # SPECIAL CASE: 10-minute "Quick movement practice" - Skip all 6 sections
         # User requirement: "Just 3 movements for daily practice, no warmup/cooldown/prep"
-        is_quick_practice = request.class_plan.target_duration_minutes == 12
+        is_quick_practice = request.class_plan.target_duration_minutes == 10
 
         if is_quick_practice:
-            logger.info("✅ 12-minute quick practice: Skipping all 6 sections (movements only)")
+            logger.info("✅ 10-minute quick practice: Skipping all 6 sections (movements only)")
             preparation = None
             warmup = None
             cooldown = None
