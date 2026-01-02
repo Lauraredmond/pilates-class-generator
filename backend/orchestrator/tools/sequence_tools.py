@@ -47,8 +47,22 @@ class SequenceTools:
         "teaching_time": "Students need 3-5 minutes per movement for proper instruction"
     }
 
-    # Movement family distribution threshold
-    MAX_FAMILY_PERCENTAGE = 40  # No single family should exceed 40% of movements
+    # Movement family distribution threshold (OLD RULE - being replaced)
+    MAX_FAMILY_PERCENTAGE = 40  # Legacy threshold (kept for backward compatibility)
+
+    # NATURAL FAMILY PROPORTIONS (NEW RULE 2 - December 2025)
+    # Based on full 35-movement repertoire distribution
+    # Each family's max = 2x its natural proportion
+    NATURAL_FAMILY_PROPORTIONS = {
+        "supine_abdominal": 0.26,           # 9/35 movements (max: 52%)
+        "back_extension": 0.17,              # 6/35 movements (max: 34%)
+        "inversion": 0.14,                   # 5/35 movements (max: 28%)
+        "rolling": 0.14,                     # 5/35 movements (max: 28%)
+        "hip_extensor": 0.09,                # 3/35 movements (max: 18%)
+        "seated_spinal_articulation": 0.09,  # 3/35 movements (max: 18%)
+        "side_lying": 0.09,                  # 3/35 movements (max: 18%)
+        "other": 0.03                        # 1/35 movements (max: 6%)
+    }
 
     # Teaching time per movement (in minutes) - CRITICAL QUALITY RULE
     MINUTES_PER_MOVEMENT = {
@@ -713,39 +727,73 @@ class SequenceTools:
                         f"Sequence will stop at {len(current_sequence)} movements to avoid muscle repetition."
                     )
 
-        # RULE 2 (HARD CONSTRAINT): Filter by family balance - NO OVERRIDES
-        # No movement family should exceed 40% of total movements
+        # RULE 2 (NEW): Family Balance Correlated with Natural Proportions
+        # Each family should not exceed 2x its natural proportion
+        # If overused, substitute with movement from most underused family first
         if current_sequence and len(current_sequence) >= 2:  # Only enforce after 2+ movements
-            # Calculate current family distribution
-            family_balance = self._calculate_family_balance(current_sequence)
+            # Analyze current family usage vs natural proportions
+            usage_analysis = self._get_family_usage_vs_natural(current_sequence)
 
-            # Find families that are already at/above threshold
-            overrepresented_families = {
-                family for family, pct in family_balance.items()
-                if pct >= self.MAX_FAMILY_PERCENTAGE
+            # Find families that exceed 2x natural proportion
+            overused_families = {
+                family for family, stats in usage_analysis.items()
+                if stats["is_overused"]
             }
 
-            if overrepresented_families:
-                # Filter out movements from overrepresented families
+            if overused_families:
+                # Filter out movements from overused families
                 family_filtered = [
                     m for m in available
-                    if m.get("movement_family") not in overrepresented_families
+                    if m.get("movement_family") not in overused_families
                 ]
 
-                # HARD CONSTRAINT: Always apply filter (no override)
+                # If we filtered out everything, try substitution (Option 3)
+                if not family_filtered:
+                    logger.warning(
+                        f"⚠️  RULE 2: All available movements are from overused families {overused_families}. "
+                        f"Attempting substitution..."
+                    )
+
+                    # SUBSTITUTION LOGIC (Option 3):
+                    # Try to find movement from MOST underused family first
+                    # Fallback to ANY non-overused family if no substitute found
+
+                    # Sort families by deviation (most negative = most underused)
+                    sorted_families = sorted(
+                        usage_analysis.items(),
+                        key=lambda x: x[1]["deviation"]  # Most negative first
+                    )
+
+                    substitute_found = False
+                    for family, stats in sorted_families:
+                        if not stats["is_overused"]:
+                            # Try to find movement from this underused family
+                            candidates = [
+                                m for m in available
+                                if m.get("movement_family") == family
+                            ]
+
+                            if candidates:
+                                # Found substitute from underused family
+                                family_filtered = candidates
+                                substitute_found = True
+                                logger.info(
+                                    f"✅ RULE 2: Substituted with movement from underused family '{family}' "
+                                    f"(current: {stats['current_pct']:.1f}%, natural: {stats['natural_pct']:.1f}%)"
+                                )
+                                break
+
+                    if not substitute_found:
+                        logger.warning(
+                            f"⚠️  RULE 2: No substitute found. Sequence will stop at {len(current_sequence)} movements."
+                        )
+
+                # Apply filter
                 available = family_filtered
                 logger.info(
-                    f"RULE 2 enforced: Filtered out families {overrepresented_families} "
+                    f"RULE 2 enforced: Filtered out overused families {overused_families} "
                     f"({len(available)} movements remaining)"
                 )
-
-                # If filter blocked all movements, sequence generation will stop here
-                # This is correct behavior - we should NOT violate family balance rules
-                if not available:
-                    logger.warning(
-                        f"⚠️  RULE 2 blocked all movements. Overrepresented families: {overrepresented_families}. "
-                        f"Sequence will stop at {len(current_sequence)} movements to maintain family balance."
-                    )
 
         # If focus areas specified, prefer those
         if focus_areas:
@@ -986,6 +1034,48 @@ class SequenceTools:
             logger.error(f"Error calculating family balance: {e}")
             return {}
 
+    def _get_family_usage_vs_natural(self, sequence: List[Dict[str, Any]]) -> Dict[str, Dict[str, float]]:
+        """
+        NEW RULE 2 HELPER: Analyze family usage vs natural proportions
+
+        Returns dict with each family's:
+        - current_pct: % in current sequence
+        - natural_pct: % in full repertoire (35 movements)
+        - max_allowed_pct: 2x natural proportion
+        - deviation: how far over/under natural proportion (positive = overused)
+        - is_overused: True if exceeds 2x threshold
+
+        Example:
+        {
+            "supine_abdominal": {
+                "current_pct": 44.0,
+                "natural_pct": 26.0,
+                "max_allowed_pct": 52.0,
+                "deviation": 18.0,
+                "is_overused": False
+            }
+        }
+        """
+        family_balance = self._calculate_family_balance(sequence)
+        usage_analysis = {}
+
+        for family, natural_proportion in self.NATURAL_FAMILY_PROPORTIONS.items():
+            current_pct = family_balance.get(family, 0.0)
+            natural_pct = natural_proportion * 100  # Convert to percentage
+            max_allowed_pct = natural_pct * 2       # 2x threshold
+            deviation = current_pct - natural_pct   # Positive = overused, Negative = underused
+            is_overused = current_pct > max_allowed_pct
+
+            usage_analysis[family] = {
+                "current_pct": current_pct,
+                "natural_pct": natural_pct,
+                "max_allowed_pct": max_allowed_pct,
+                "deviation": deviation,
+                "is_overused": is_overused
+            }
+
+        return usage_analysis
+
     def _validate_sequence(
         self,
         sequence: List[Dict[str, Any]],
@@ -1000,13 +1090,17 @@ class SequenceTools:
             if load > 40:
                 warnings.append(f"{muscle.title()} load high ({load:.1f}%)")
 
-        # SESSION: Movement Families - Check family balance
+        # SESSION: Movement Families - Check family balance (NEW - 2x natural proportions)
         family_balance = self._calculate_family_balance(sequence)
-        for family, percentage in family_balance.items():
-            if percentage > self.MAX_FAMILY_PERCENTAGE:
+        usage_analysis = self._get_family_usage_vs_natural(sequence)
+
+        # Check if any families exceed 2x their natural proportion
+        for family, stats in usage_analysis.items():
+            if stats["is_overused"]:
                 warnings.append(
-                    f"Movement family '{family}' high ({percentage:.1f}% of movements, "
-                    f"threshold {self.MAX_FAMILY_PERCENTAGE}%)"
+                    f"Movement family '{family}' exceeds 2x natural proportion "
+                    f"(current: {stats['current_pct']:.1f}%, max: {stats['max_allowed_pct']:.1f}%, "
+                    f"deviation: +{stats['deviation']:.1f}%)"
                 )
 
         # Calculate safety score
@@ -1018,7 +1112,8 @@ class SequenceTools:
             "safety_score": safety_score,
             "violations": violations,
             "warnings": warnings,
-            "family_balance": family_balance  # Include family distribution in response
+            "family_balance": family_balance,  # Include family distribution in response
+            "family_usage_analysis": usage_analysis  # NEW: Include detailed family analysis
         }
 
     # ==========================================================================
@@ -1294,14 +1389,25 @@ class SequenceTools:
                             'overlap_pct': round(overlap_pct, 1)
                         })
 
-            # CALCULATE RULE 2 COMPLIANCE: Family balance
+            # CALCULATE RULE 2 COMPLIANCE: Family balance (NEW - 2x natural proportions)
             family_balance = self._calculate_family_balance(sequence)
-            rule2_pass = all(pct < self.MAX_FAMILY_PERCENTAGE for pct in family_balance.values())
+            usage_analysis = self._get_family_usage_vs_natural(sequence)
+
+            # Rule 2 passes if NO families exceed 2x their natural proportion
+            rule2_pass = all(not stats["is_overused"] for stats in usage_analysis.values())
+
+            # Track max family percentage and which families are overused
             rule2_max_family = max(family_balance.values()) if family_balance else 0.0
             rule2_overrepresented = [
-                {'family': family, 'pct': round(pct, 1)}
-                for family, pct in family_balance.items()
-                if pct >= self.MAX_FAMILY_PERCENTAGE
+                {
+                    'family': family,
+                    'current_pct': round(stats['current_pct'], 1),
+                    'natural_pct': round(stats['natural_pct'], 1),
+                    'max_allowed_pct': round(stats['max_allowed_pct'], 1),
+                    'deviation': round(stats['deviation'], 1)
+                }
+                for family, stats in usage_analysis.items()
+                if stats["is_overused"]
             ]
 
             # CALCULATE RULE 3 COMPLIANCE: Repertoire coverage
