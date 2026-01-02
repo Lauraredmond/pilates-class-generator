@@ -230,7 +230,7 @@ async def get_admin_user_id(
         # Check if user is admin
         result = supabase.table("user_profiles")\
             .select("is_admin")\
-            .eq("user_id", user_id)\
+            .eq("id", user_id)\
             .single()\
             .execute()
 
