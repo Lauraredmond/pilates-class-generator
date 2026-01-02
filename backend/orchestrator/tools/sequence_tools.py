@@ -104,9 +104,9 @@ class SequenceTools:
         Returns:
             Dict with sequence, muscle balance, validation, and statistics
         """
-        # Validate inputs (allow 12-min quick practice)
-        if not (12 <= target_duration_minutes <= 120):
-            raise ValueError("Duration must be between 12 and 120 minutes")
+        # Validate inputs (allow 10-min quick practice)
+        if not (10 <= target_duration_minutes <= 120):
+            raise ValueError("Duration must be between 10 and 120 minutes")
 
         if difficulty_level not in ["Beginner", "Intermediate", "Advanced"]:
             raise ValueError("Difficulty must be Beginner, Intermediate, or Advanced")
@@ -235,17 +235,17 @@ class SequenceTools:
         """
         Fetch actual section durations from database to calculate overhead
 
-        For 12-min classes: 0 overhead (quick movement practice - just 3 movements)
+        For 10-min classes: 0 overhead (quick movement practice - just 3 movements)
         For 30-min classes: prep + warmup + cooldown + homecare (no meditation)
         For longer classes: prep + warmup + cooldown + homecare + meditation
 
         Returns:
             Total overhead in minutes (read from database duration_seconds fields)
         """
-        # SPECIAL CASE: 12-minute "Quick movement practice" classes
+        # SPECIAL CASE: 10-minute "Quick movement practice" classes
         # User requirement: "Just 3 movements, no warmup/cooldown/prep/meditation/homecare"
-        if target_duration == 12:
-            logger.info("✅ 12-minute quick practice: 0 overhead (movements only)")
+        if target_duration == 10:
+            logger.info("✅ 10-minute quick practice: 0 overhead (movements only)")
             return 0
 
         # DIAGNOSTIC: Check if Supabase client is available
@@ -472,11 +472,11 @@ class SequenceTools:
             )
             max_movements = 4
 
-        # ENFORCE EXACTLY 3 MOVEMENTS FOR 12-MIN QUICK PRACTICE
+        # ENFORCE EXACTLY 3 MOVEMENTS FOR 10-MIN QUICK PRACTICE
         # User requirement: "Quick movement practice - just 3 movements for daily practice"
-        if target_duration == 12:
+        if target_duration == 10:
             max_movements = 3
-            logger.info("✅ 12-minute quick practice: Enforcing exactly 3 movements")
+            logger.info("✅ 10-minute quick practice: Enforcing exactly 3 movements")
 
         logger.info(
             f"Building sequence: {target_duration} min total - {overhead_minutes} min overhead = {available_minutes} min available / "
@@ -520,9 +520,9 @@ class SequenceTools:
         # Priority: Flexion -> Rotation -> Extension -> Lateral -> Balance
         pattern_order = ["flexion", "rotation", "extension", "lateral", "balance"]
 
-        # For 12-min quick practice: Fill to exactly 3 movements (no cooldown required)
+        # For 10-min quick practice: Fill to exactly 3 movements (no cooldown required)
         # For other classes: Leave room for dedicated cooldown movement
-        target_count = max_movements if target_duration == 12 else (max_movements - 1)
+        target_count = max_movements if target_duration == 10 else (max_movements - 1)
 
         while len(sequence) < target_count:
             selected = self._select_next_movement(
@@ -543,8 +543,8 @@ class SequenceTools:
             selected_copy["type"] = "movement"
             sequence.append(selected_copy)
 
-        # Rule 3: Add dedicated cooldown movement (but NOT for 12-min quick practice)
-        if target_duration != 12:
+        # Rule 3: Add dedicated cooldown movement (but NOT for 10-min quick practice)
+        if target_duration != 10:
             cooldown = self._get_cooldown_movement(movements, sequence)
             if cooldown:
                 cooldown_copy = cooldown.copy()
@@ -556,9 +556,9 @@ class SequenceTools:
 
         # TASK 5: FILL PASS - Add more movements if time permits
         # Try to fill up to target duration without exceeding it
-        # Only for non-quick-practice classes (12-min has no overhead)
-        logger.info(f"🔍 FILL PASS CHECK: target_duration={target_duration}, condition={target_duration != 12}")
-        if target_duration != 12:
+        # Only for non-quick-practice classes (10-min has no overhead)
+        logger.info(f"🔍 FILL PASS CHECK: target_duration={target_duration}, condition={target_duration != 10}")
+        if target_duration != 10:
             # Calculate current sequence duration
             current_sequence_duration = sum(m.get("duration_seconds", teaching_time_seconds) for m in sequence)
 
