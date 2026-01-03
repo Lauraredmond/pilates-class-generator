@@ -262,8 +262,11 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
                 transition: 'opacity 1s ease-out'
               }}
               onEnded={() => {
-                console.log('🎥 DEBUG: Video ended - fading out');
-                setVideoEnded(true);
+                console.log('🎥 DEBUG: Video ended - pausing 3s before fade-out');
+                setTimeout(() => {
+                  console.log('🎥 DEBUG: Starting fade-out after 3s pause');
+                  setVideoEnded(true);
+                }, 3000);
               }}
               onError={(e) => {
                 console.error('🎥 DEBUG: Video onError - failed to load:', video_url, e);
@@ -379,8 +382,11 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
               console.log('🎥 DEBUG: Video onLoadedData - video loaded successfully!');
             }}
             onEnded={() => {
-              console.log('🎥 DEBUG: Video ended - fading out');
-              setVideoEnded(true);
+              console.log('🎥 DEBUG: Video ended - pausing 3s before fade-out');
+              setTimeout(() => {
+                console.log('🎥 DEBUG: Starting fade-out after 3s pause');
+                setVideoEnded(true);
+              }, 3000);
             }}
             onError={(e) => {
               console.error('🎥 DEBUG: Video onError - failed to load:', item.video_url, e);
