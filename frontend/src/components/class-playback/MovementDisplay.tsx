@@ -29,30 +29,44 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   /**
    * Sync video playback with class pause state
    *
-   * IMPORTANT: Video must start AFTER voiceover to avoid stealing media session.
-   * Wait 1.5 seconds to give voiceover time to claim the media session first.
+   * FIX: Start video as soon as it's ready (canplay event) instead of arbitrary delay
    */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
+    const handleCanPlay = () => {
+      if (!isPaused) {
+        console.log('🎥 DEBUG: Video ready to play - starting immediately');
+        video.play().catch(err => {
+          console.error('🎥 DEBUG: Video autoplay failed:', err);
+          // Silently fail - video will have controls for manual play
+        });
+      }
+    };
 
     if (isPaused) {
       // Pause video when class is paused
       video.pause();
       console.log('🎥 DEBUG: Video paused (class paused)');
     } else {
-      // Resume/play video when class is playing
-      // Wait for voiceover to start playing (1.5 seconds), then start video
-      const timer = setTimeout(() => {
-        console.log('🎥 DEBUG: Auto-playing video after voiceover start');
+      // Play video as soon as it's buffered enough
+      // Check if already ready
+      if (video.readyState >= 3) { // HAVE_FUTURE_DATA or better
+        console.log('🎥 DEBUG: Video already buffered - playing immediately');
         video.play().catch(err => {
           console.error('🎥 DEBUG: Video autoplay failed:', err);
-          // Silently fail - video will have controls for manual play
         });
-      }, 1500); // 1.5 second delay - voiceover plays first
-
-      return () => clearTimeout(timer);
+      } else {
+        // Wait for canplay event (fires when video is ready)
+        console.log('🎥 DEBUG: Waiting for video to buffer...');
+        video.addEventListener('canplay', handleCanPlay, { once: true });
+      }
     }
+
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+    };
   }, [item, isPaused]);
 
   // Reset scroll to top ONLY when section changes (not on pause/resume)
