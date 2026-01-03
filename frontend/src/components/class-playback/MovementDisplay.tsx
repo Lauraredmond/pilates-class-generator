@@ -29,19 +29,36 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   /**
    * Sync video playback with class pause state
    *
-   * FIX: Start video as soon as it's ready (canplay event) instead of arbitrary delay
+   * FIX: Delay video start by 7 seconds for movements (to sync with voiceover)
+   * AWS CloudFront videos have problematic first 7s - wait for voiceover to get 7s ahead
    */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    // Determine delay based on section type
+    // Movements: 7 second delay (AWS CloudFront sync issue)
+    // Other sections (prep, warmup): No delay
+    const isMovement = item.type === 'movement';
+    const videoStartDelay = isMovement ? 7000 : 0; // 7 seconds for movements only
+
     const handleCanPlay = () => {
       if (!isPaused) {
-        console.log('🎥 DEBUG: Video ready to play - starting immediately');
-        video.play().catch(err => {
-          console.error('🎥 DEBUG: Video autoplay failed:', err);
-          // Silently fail - video will have controls for manual play
-        });
+        if (videoStartDelay > 0) {
+          console.log(`🎥 DEBUG: Video ready - delaying start by ${videoStartDelay/1000}s (movement sync)`);
+          setTimeout(() => {
+            console.log('🎥 DEBUG: Starting video after delay');
+            video.play().catch(err => {
+              console.error('🎥 DEBUG: Video autoplay failed:', err);
+              // Silently fail - video will have controls for manual play
+            });
+          }, videoStartDelay);
+        } else {
+          console.log('🎥 DEBUG: Video ready to play - starting immediately');
+          video.play().catch(err => {
+            console.error('🎥 DEBUG: Video autoplay failed:', err);
+          });
+        }
       }
     };
 
@@ -50,13 +67,23 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       video.pause();
       console.log('🎥 DEBUG: Video paused (class paused)');
     } else {
-      // Play video as soon as it's buffered enough
+      // Play video after delay (if applicable)
       // Check if already ready
       if (video.readyState >= 3) { // HAVE_FUTURE_DATA or better
-        console.log('🎥 DEBUG: Video already buffered - playing immediately');
-        video.play().catch(err => {
-          console.error('🎥 DEBUG: Video autoplay failed:', err);
-        });
+        if (videoStartDelay > 0) {
+          console.log(`🎥 DEBUG: Video already buffered - delaying start by ${videoStartDelay/1000}s (movement sync)`);
+          setTimeout(() => {
+            console.log('🎥 DEBUG: Starting video after delay');
+            video.play().catch(err => {
+              console.error('🎥 DEBUG: Video autoplay failed:', err);
+            });
+          }, videoStartDelay);
+        } else {
+          console.log('🎥 DEBUG: Video already buffered - playing immediately');
+          video.play().catch(err => {
+            console.error('🎥 DEBUG: Video autoplay failed:', err);
+          });
+        }
       } else {
         // Wait for canplay event (fires when video is ready)
         console.log('🎥 DEBUG: Waiting for video to buffer...');
@@ -347,13 +374,6 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
             }}
             onLoadStart={() => {
               console.log('🎥 DEBUG: Video onLoadStart - browser is attempting to load');
-            }}
-            onLoadedMetadata={(e) => {
-              // WORKAROUND: AWS CloudFront movement videos have 7-second problematic intro
-              // Skip ahead to 7 seconds to compensate for video file issue
-              // This is ONLY for movements - prep/warmup videos don't have this issue
-              console.log('🎥 DEBUG: Video onLoadedMetadata - skipping first 7 seconds (AWS CloudFront workaround)');
-              e.currentTarget.currentTime = 7;
             }}
             onLoadedData={() => {
               console.log('🎥 DEBUG: Video onLoadedData - video loaded successfully!');
