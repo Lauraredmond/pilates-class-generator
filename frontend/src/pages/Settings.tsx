@@ -7,6 +7,7 @@ import { logger } from '../utils/logger';
 import { RecordingModeManager } from '../components/recording-mode/RecordingModeManager';
 import { DebugPanel } from '../components/DebugPanel';
 import { EarlySkipAnalytics } from '../components/settings/EarlySkipAnalytics';
+import { BetaFeedbackDashboard } from '../components/settings/BetaFeedbackDashboard';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -1137,6 +1138,9 @@ export function Settings() {
             <p className="text-cream/60 text-sm mb-6">
               Tools for content creators and developers
             </p>
+
+            {/* Beta Feedback Dashboard */}
+            <BetaFeedbackDashboard />
 
             {/* Sequencing Report Success/Error Messages */}
             {sequencingReportSuccess && (

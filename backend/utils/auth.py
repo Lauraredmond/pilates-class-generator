@@ -203,3 +203,54 @@ def refresh_access_token(refresh_token: str) -> dict:
 
     # Create new token pair
     return create_token_pair(user_id)
+
+
+async def get_admin_user_id(
+    user_id: str = Depends(get_current_user_id)
+) -> str:
+    """
+    Dependency to verify current user is an admin
+
+    Args:
+        user_id: User ID from JWT token (automatically extracted)
+
+    Returns:
+        User ID if user is admin
+
+    Raises:
+        HTTPException: If user is not an admin or database check fails
+    """
+    from supabase import create_client
+
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    try:
+        # Check if user is admin
+        result = supabase.table("user_profiles")\
+            .select("is_admin")\
+            .eq("id", user_id)\
+            .single()\
+            .execute()
+
+        if not result.data or not result.data.get("is_admin"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin access required"
+            )
+
+        return user_id
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Log other errors but don't expose details
+        from utils.logger import get_logger
+        logger = get_logger(__name__)
+        logger.error(f"Admin check failed for user {user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to verify admin status"
+        )
