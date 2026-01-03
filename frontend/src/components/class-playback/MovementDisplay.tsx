@@ -29,30 +29,71 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   /**
    * Sync video playback with class pause state
    *
-   * IMPORTANT: Video must start AFTER voiceover to avoid stealing media session.
-   * Wait 1.5 seconds to give voiceover time to claim the media session first.
+   * FIX: Delay video start by 7 seconds for movements (to sync with voiceover)
+   * AWS CloudFront videos have problematic first 7s - wait for voiceover to get 7s ahead
    */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
+    // Determine delay based on section type
+    // Movements: 7 second delay (AWS CloudFront sync issue)
+    // Other sections (prep, warmup): No delay
+    const isMovement = item.type === 'movement';
+    const videoStartDelay = isMovement ? 7000 : 0; // 7 seconds for movements only
+
+    const handleCanPlay = () => {
+      if (!isPaused) {
+        if (videoStartDelay > 0) {
+          console.log(`🎥 DEBUG: Video ready - delaying start by ${videoStartDelay/1000}s (movement sync)`);
+          setTimeout(() => {
+            console.log('🎥 DEBUG: Starting video after delay');
+            video.play().catch(err => {
+              console.error('🎥 DEBUG: Video autoplay failed:', err);
+              // Silently fail - video will have controls for manual play
+            });
+          }, videoStartDelay);
+        } else {
+          console.log('🎥 DEBUG: Video ready to play - starting immediately');
+          video.play().catch(err => {
+            console.error('🎥 DEBUG: Video autoplay failed:', err);
+          });
+        }
+      }
+    };
 
     if (isPaused) {
       // Pause video when class is paused
       video.pause();
       console.log('🎥 DEBUG: Video paused (class paused)');
     } else {
-      // Resume/play video when class is playing
-      // Wait for voiceover to start playing (1.5 seconds), then start video
-      const timer = setTimeout(() => {
-        console.log('🎥 DEBUG: Auto-playing video after voiceover start');
-        video.play().catch(err => {
-          console.error('🎥 DEBUG: Video autoplay failed:', err);
-          // Silently fail - video will have controls for manual play
-        });
-      }, 1500); // 1.5 second delay - voiceover plays first
-
-      return () => clearTimeout(timer);
+      // Play video after delay (if applicable)
+      // Check if already ready
+      if (video.readyState >= 3) { // HAVE_FUTURE_DATA or better
+        if (videoStartDelay > 0) {
+          console.log(`🎥 DEBUG: Video already buffered - delaying start by ${videoStartDelay/1000}s (movement sync)`);
+          setTimeout(() => {
+            console.log('🎥 DEBUG: Starting video after delay');
+            video.play().catch(err => {
+              console.error('🎥 DEBUG: Video autoplay failed:', err);
+            });
+          }, videoStartDelay);
+        } else {
+          console.log('🎥 DEBUG: Video already buffered - playing immediately');
+          video.play().catch(err => {
+            console.error('🎥 DEBUG: Video autoplay failed:', err);
+          });
+        }
+      } else {
+        // Wait for canplay event (fires when video is ready)
+        console.log('🎥 DEBUG: Waiting for video to buffer...');
+        video.addEventListener('canplay', handleCanPlay, { once: true });
+      }
     }
+
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+    };
   }, [item, isPaused]);
 
   // Reset scroll to top ONLY when section changes (not on pause/resume)
