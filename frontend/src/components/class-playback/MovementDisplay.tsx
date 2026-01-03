@@ -348,6 +348,13 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
             onLoadStart={() => {
               console.log('🎥 DEBUG: Video onLoadStart - browser is attempting to load');
             }}
+            onLoadedMetadata={(e) => {
+              // WORKAROUND: AWS CloudFront movement videos have 7-second problematic intro
+              // Skip ahead to 7 seconds to compensate for video file issue
+              // This is ONLY for movements - prep/warmup videos don't have this issue
+              console.log('🎥 DEBUG: Video onLoadedMetadata - skipping first 7 seconds (AWS CloudFront workaround)');
+              e.currentTarget.currentTime = 7;
+            }}
             onLoadedData={() => {
               console.log('🎥 DEBUG: Video onLoadedData - video loaded successfully!');
             }}
