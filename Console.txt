@@ -1,15 +1,8 @@
-[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
-[Error] Origin https://basslinemvp.netlify.app is not allowed by Access-Control-Allow-Origin. Status code: 503
-[Error] Failed to load resource: Origin https://basslinemvp.netlify.app is not allowed by Access-Control-Allow-Origin. Status code: 503 (Debussy - Arabesque.mp3, line 0)
-[Log] 🎥 DEBUG: Auto-playing video after voiceover start (index-DsgXxQ6y.js, line 16)
-[Error] Origin https://basslinemvp.netlify.app is not allowed by Access-Control-Allow-Origin. Status code: 503
-[Error] Failed to load resource: Origin https://basslinemvp.netlify.app is not allowed by Access-Control-Allow-Origin. Status code: 503 (Debussy - Arabesque.mp3, line 0)
-[Error] Failed to auto-play music after src change: – NotSupportedError: The operation is not supported.
-NotSupportedError: The operation is not supported.
-	error (index-DsgXxQ6y.js:13:5450)
-	(anonymous function) (index-DsgXxQ6y.js:46:14408)
-[Error] Music load error: (2)
-Event
-MediaError
-	error (index-DsgXxQ6y.js:13:5450)
-	(anonymous function) (index-DsgXxQ6y.js:46:13822)
+[Error] Refused to load https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1 because it does not appear in the script-src directive of the Content Security Policy. (x2)
+[Log] 🎥 DEBUG: Video paused (class paused) (index-BvA6bx2S.js, line 16)
+[Error] Failed to load Google Cast SDK
+	error (index-BvA6bx2S.js:13:5449)
+	(anonymous function) (index-BvA6bx2S.js:46:12976)
+[Log] 🎥 DEBUG: Waiting for video to buffer... (index-BvA6bx2S.js, line 16)
+[Log] 🎥 DEBUG: Reset video to 0:00 before playing (index-BvA6bx2S.js, line 16)
+[Log] 🎥 DEBUG: Video ready to play - starting immediately (index-BvA6bx2S.js, line 16)
