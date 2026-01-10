@@ -117,14 +117,8 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     // Reset video ended state when section changes
     setVideoEnded(false);
 
-    // FIX: Reset video playback position to 0:00 when section changes
-    // This ensures videos always start from the beginning (not mid-way through)
-    const video = videoRef.current;
-    if (video) {
-      console.log('🎥 DEBUG: Resetting video position to 0:00 (new section)');
-      video.currentTime = 0;
-      video.load(); // Reload video from beginning
-    }
+    // NOTE: Video reset handled in playback useEffect below (lines 48, 78)
+    // Don't call video.load() here - causes infinite loop!
   }, [item]);
 
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
@@ -380,9 +374,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
                 console.log('🎥 DEBUG: Video element created!');
                 console.log('🎥 DEBUG: Video src attribute:', videoEl.src);
                 console.log('🎥 DEBUG: Video currentSrc:', videoEl.currentSrc);
-                // FIX: Reset position to 0:00 on element creation (defense-in-depth)
-                videoEl.currentTime = 0;
-                console.log('🎥 DEBUG: Reset video position to 0:00 (element created)');
+                // NOTE: Reset handled in playback useEffect (lines 48, 78) to avoid conflicts
               }
             }}
             src={item.video_url}
