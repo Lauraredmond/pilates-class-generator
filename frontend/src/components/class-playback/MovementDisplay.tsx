@@ -44,6 +44,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
     const handleCanPlay = () => {
       if (!isPaused) {
+        // FIX: Always reset to 0:00 before playing (fixes buffering race condition)
+        video.currentTime = 0;
+        console.log('🎥 DEBUG: Reset video to 0:00 before playing');
+
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video ready - delaying start by ${videoStartDelay/1000}s (movement sync)`);
           setTimeout(() => {
@@ -70,6 +74,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       // Play video after delay (if applicable)
       // Check if already ready
       if (video.readyState >= 3) { // HAVE_FUTURE_DATA or better
+        // FIX: Always reset to 0:00 before playing (fixes buffering race condition)
+        video.currentTime = 0;
+        console.log('🎥 DEBUG: Reset video to 0:00 before playing (already buffered)');
+
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video already buffered - delaying start by ${videoStartDelay/1000}s (movement sync)`);
           setTimeout(() => {
@@ -108,6 +116,15 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
     // Reset video ended state when section changes
     setVideoEnded(false);
+
+    // FIX: Reset video playback position to 0:00 when section changes
+    // This ensures videos always start from the beginning (not mid-way through)
+    const video = videoRef.current;
+    if (video) {
+      console.log('🎥 DEBUG: Resetting video position to 0:00 (new section)');
+      video.currentTime = 0;
+      video.load(); // Reload video from beginning
+    }
   }, [item]);
 
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
@@ -363,6 +380,9 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
                 console.log('🎥 DEBUG: Video element created!');
                 console.log('🎥 DEBUG: Video src attribute:', videoEl.src);
                 console.log('🎥 DEBUG: Video currentSrc:', videoEl.currentSrc);
+                // FIX: Reset position to 0:00 on element creation (defense-in-depth)
+                videoEl.currentTime = 0;
+                console.log('🎥 DEBUG: Reset video position to 0:00 (element created)');
               }
             }}
             src={item.video_url}
