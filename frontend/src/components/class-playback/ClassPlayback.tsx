@@ -379,6 +379,32 @@ export function ClassPlayback({
     };
   }, []); // Empty deps = cleanup ONLY runs on component unmount
 
+  // ============================================================================
+  // DERIVED STATE - Declare before use in effects (TypeScript requirement)
+  // ============================================================================
+
+  const currentItem = items[currentIndex];
+  const totalItems = items.length;
+
+  // Get current item's voiceover URL (works for all section types with voiceover_enabled)
+  const currentVoiceover =
+    currentItem && 'voiceover_enabled' in currentItem && currentItem.voiceover_enabled
+      ? currentItem.voiceover_url
+      : undefined;
+
+  // Determine which playlist to use based on section type
+  // Sections 1-3 (preparation, warmup, movements/transitions) → Movement music
+  // Sections 4-6 (cooldown, meditation, homecare) → Cooldown music
+  const currentPlaylist =
+    currentItem?.type === 'cooldown' ||
+    currentItem?.type === 'meditation' ||
+    currentItem?.type === 'homecare'
+      ? cooldownPlaylist
+      : movementPlaylist;
+
+  // Get current track URL from appropriate playlist
+  const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
+
   /**
    * Chromecast State Change Handler
    * Called by CastButton when user connects/disconnects from Chromecast
@@ -600,15 +626,6 @@ export function ClassPlayback({
     startSectionTracking();
   }, [currentIndex, sessionId, user?.id, classId, items]);
 
-  const currentItem = items[currentIndex];
-  const totalItems = items.length;
-
-  // Get current item's voiceover URL (works for all section types with voiceover_enabled)
-  const currentVoiceover =
-    currentItem && 'voiceover_enabled' in currentItem && currentItem.voiceover_enabled
-      ? currentItem.voiceover_url
-      : undefined;
-
   // DEBUG: Log voiceover detection
   useEffect(() => {
     if (currentItem) {
@@ -622,19 +639,6 @@ export function ClassPlayback({
       });
     }
   }, [currentIndex, currentItem]);
-
-  // Determine which playlist to use based on section type
-  // Sections 1-3 (preparation, warmup, movements/transitions) → Movement music
-  // Sections 4-6 (cooldown, meditation, homecare) → Cooldown music
-  const currentPlaylist =
-    currentItem?.type === 'cooldown' ||
-    currentItem?.type === 'meditation' ||
-    currentItem?.type === 'homecare'
-      ? cooldownPlaylist
-      : movementPlaylist;
-
-  // Get current track URL from appropriate playlist
-  const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
 
   // Handle music track advancement when current track ends
   const handleMusicEnded = useCallback(() => {

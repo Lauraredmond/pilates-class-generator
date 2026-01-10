@@ -244,8 +244,19 @@ export function useAudioDucking({
     return () => {
       if (musicElementRef.current) {
         logger.debug('Unmounting: cleaning up music element');
+
+        // Pause playback first
         musicElementRef.current.pause();
-        musicElementRef.current.src = '';
+
+        // Remove event listeners to prevent error logging during cleanup
+        // This prevents MediaError code 4 from appearing in console when exiting class
+        musicElementRef.current.removeEventListener('canplaythrough', () => {});
+        musicElementRef.current.removeEventListener('error', () => {});
+        musicElementRef.current.removeEventListener('ended', () => {});
+
+        // Don't set src = '' as that triggers a new load attempt with empty URL
+        // Just pause and nullify ref - browser will garbage collect
+
         musicElementRef.current = null;
       }
     };
@@ -359,8 +370,20 @@ export function useAudioDucking({
     return () => {
       if (voiceoverElementRef.current) {
         logger.debug('Unmounting: cleaning up voiceover element');
+
+        // Pause playback first
         voiceoverElementRef.current.pause();
-        voiceoverElementRef.current.src = '';
+
+        // Remove event listeners to prevent error logging during cleanup
+        // This prevents MediaError code 4 from appearing in console when exiting class
+        voiceoverElementRef.current.removeEventListener('canplaythrough', () => {});
+        voiceoverElementRef.current.removeEventListener('error', () => {});
+        voiceoverElementRef.current.removeEventListener('play', () => {});
+        voiceoverElementRef.current.removeEventListener('ended', () => {});
+
+        // Don't set src = '' as that triggers a new load attempt with empty URL
+        // Just pause and nullify ref - browser will garbage collect
+
         voiceoverElementRef.current = null;
       }
     };
