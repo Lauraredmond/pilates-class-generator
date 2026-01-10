@@ -989,7 +989,7 @@ export function ClassPlayback({
       {/* Close button */}
       <button
         onClick={handleExitRequest}
-        className="absolute top-4 right-4 p-2 text-cream/60 hover:text-cream transition-smooth z-10"
+        className="absolute top-4 right-4 p-2 text-cream hover:text-cream/80 transition-smooth z-10"
         aria-label="Exit playback"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
