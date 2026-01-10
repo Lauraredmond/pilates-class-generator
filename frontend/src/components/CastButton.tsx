@@ -12,6 +12,31 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
   const castContextRef = useRef<any>(null);
 
   useEffect(() => {
+    // Load Cast SDK dynamically
+    const loadCastSdk = () => {
+      // Check if already loaded
+      if ((window as any).cast) {
+        logger.debug('Cast SDK already loaded');
+        return;
+      }
+
+      // Create script tag
+      const script = document.createElement('script');
+      script.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
+      script.async = true;
+
+      script.onerror = () => {
+        logger.error('Failed to load Google Cast SDK');
+      };
+
+      document.head.appendChild(script);
+      logger.debug('Cast SDK script added to page');
+    };
+
+    loadCastSdk();
+  }, []);
+
+  useEffect(() => {
     // Wait for Cast framework to load
     const initializeCastApi = () => {
       const cast = (window as any).cast;
@@ -87,21 +112,33 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
     }
   };
 
-  // Don't show button if Cast is not available
-  if (!isAvailable) {
-    return null;
-  }
-
+  // Always show button (like Les Mills app) - more discoverable
+  // Gray out if no devices available
   return (
     <button
       onClick={handleCastClick}
+      disabled={!isAvailable && !isCasting}
       className={`p-2 rounded-lg transition-colors ${
         isCasting
           ? 'bg-burgundy text-cream'
-          : 'bg-cream/10 text-cream/70 hover:bg-cream/20'
+          : isAvailable
+          ? 'bg-cream/10 text-cream/70 hover:bg-cream/20'
+          : 'bg-cream/5 text-cream/30 cursor-not-allowed'
       }`}
-      title={isCasting ? 'Connected to TV' : 'Cast to TV'}
-      aria-label={isCasting ? 'Connected to TV' : 'Cast to TV'}
+      title={
+        isCasting
+          ? 'Connected to TV'
+          : isAvailable
+          ? 'Cast to TV'
+          : 'No Cast devices found'
+      }
+      aria-label={
+        isCasting
+          ? 'Connected to TV'
+          : isAvailable
+          ? 'Cast to TV'
+          : 'No Cast devices found'
+      }
     >
       <Cast className="w-6 h-6" />
     </button>
