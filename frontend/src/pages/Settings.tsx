@@ -1284,15 +1284,15 @@ export function Settings() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-900/20 p-3 rounded border border-blue-500/30">
+                      <p className="text-xs text-blue-400 mb-1">Registration Creator rate</p>
+                      <p className="text-xl font-bold text-blue-400">{creatorsReportData.performer_creation_rate.toFixed(1)}%</p>
+                      <p className="text-xs text-cream/50 mt-1">Performers who also create</p>
+                    </div>
                     <div className="bg-green-900/20 p-3 rounded border border-green-500/30">
                       <p className="text-xs text-green-400 mb-1">Creator Engagement Rate</p>
                       <p className="text-xl font-bold text-green-400">{creatorsReportData.creator_engagement_rate.toFixed(1)}%</p>
                       <p className="text-xs text-cream/50 mt-1">Creators who also perform</p>
-                    </div>
-                    <div className="bg-blue-900/20 p-3 rounded border border-blue-500/30">
-                      <p className="text-xs text-blue-400 mb-1">Performer Creation Rate</p>
-                      <p className="text-xl font-bold text-blue-400">{creatorsReportData.performer_creation_rate.toFixed(1)}%</p>
-                      <p className="text-xs text-cream/50 mt-1">Performers who also create</p>
                     </div>
                   </div>
                 </div>
