@@ -10,6 +10,7 @@ import { MovementDisplay } from './MovementDisplay';
 import { PlaybackControls } from './PlaybackControls';
 import { TimerDisplay } from './TimerDisplay';
 import { HealthSafetyModal } from '../modals/HealthSafetyModal';
+import { CastButton } from '../CastButton';
 import { useAudioDucking } from '../../hooks/useAudioDucking';
 import { useAuth } from '../../context/AuthContext';
 import { logger } from '../../utils/logger';
@@ -220,6 +221,10 @@ export function ClassPlayback({
   // Early skip analytics tracking state (December 29, 2025)
   const [currentSectionEventId, setCurrentSectionEventId] = useState<string | null>(null);
 
+  // Chromecast/TV casting state (January 10, 2026)
+  const [isCasting, setIsCasting] = useState(false);
+  const castSessionRef = useRef<any>(null);
+
   // Wake Lock to prevent screen from turning off during class
   const wakeLockRef = useRef<any>(null);
 
@@ -373,6 +378,100 @@ export function ClassPlayback({
       endSession();
     };
   }, []); // Empty deps = cleanup ONLY runs on component unmount
+
+  /**
+   * Chromecast State Change Handler
+   * Called by CastButton when user connects/disconnects from Chromecast
+   */
+  const handleCastStateChange = useCallback((casting: boolean) => {
+    setIsCasting(casting);
+
+    if (casting) {
+      logger.debug('🎥 Casting to TV started');
+      // Get Cast session
+      const cast = (window as any).cast;
+      if (cast && cast.framework) {
+        const context = cast.framework.CastContext.getInstance();
+        castSessionRef.current = context.getCurrentSession();
+      }
+    } else {
+      logger.debug('🎥 Casting to TV ended');
+      castSessionRef.current = null;
+    }
+  }, []);
+
+  /**
+   * Load Media to Cast Receiver
+   * When casting is active, load current audio (music + voiceover) to remote player
+   */
+  useEffect(() => {
+    if (!isCasting || !castSessionRef.current) return;
+
+    const loadMedia = async () => {
+      const cast = (window as any).cast;
+      if (!cast || !cast.framework) return;
+
+      try {
+        const mediaInfo = new cast.framework.messages.MediaInformation();
+        mediaInfo.contentId = currentMusicUrl || '';
+        mediaInfo.contentType = 'audio/mpeg';
+        mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+
+        // Set metadata for TV display
+        const metadata = new cast.framework.messages.GenericMediaMetadata();
+        metadata.title = currentItem.type === 'movement'
+          ? (currentItem as PlaybackMovement).name
+          : currentItem.type === 'preparation'
+          ? (currentItem as PlaybackPreparation).script_name
+          : currentItem.type === 'warmup'
+          ? (currentItem as PlaybackWarmup).routine_name
+          : 'Pilates Class';
+        metadata.subtitle = currentPlaylist?.name || 'Background Music';
+        metadata.images = [
+          new cast.framework.messages.Image('https://basslinemvp.netlify.app/assets/bassline-logo-yellow-transparent.png')
+        ];
+        mediaInfo.metadata = metadata;
+
+        const request = new cast.framework.messages.LoadRequest();
+        request.media = mediaInfo;
+        request.autoplay = !isPaused;
+
+        await castSessionRef.current.loadMedia(request);
+        logger.debug('🎥 Media loaded to Cast receiver');
+      } catch (error) {
+        logger.error('Failed to load media to Cast receiver:', error);
+      }
+    };
+
+    loadMedia();
+  }, [isCasting, currentMusicUrl, currentItem, currentPlaylist, isPaused]);
+
+  /**
+   * Sync Playback State to Cast Receiver
+   * When user pauses/plays locally, sync to remote player
+   */
+  useEffect(() => {
+    if (!isCasting || !castSessionRef.current) return;
+
+    const syncPlaybackState = async () => {
+      try {
+        const remotePlayer = new (window as any).cast.framework.RemotePlayer();
+        const remotePlayerController = new (window as any).cast.framework.RemotePlayerController(remotePlayer);
+
+        if (isPaused && remotePlayer.isPlaying) {
+          remotePlayerController.playOrPause();
+          logger.debug('🎥 Paused remote playback');
+        } else if (!isPaused && !remotePlayer.isPlaying) {
+          remotePlayerController.playOrPause();
+          logger.debug('🎥 Resumed remote playback');
+        }
+      } catch (error) {
+        logger.error('Failed to sync playback state to Cast receiver:', error);
+      }
+    };
+
+    syncPlaybackState();
+  }, [isPaused, isCasting]);
 
   /**
    * Wake Lock API - Keep screen on during class playback
@@ -876,6 +975,11 @@ export function ClassPlayback({
           className="h-full bg-cream transition-all duration-300"
           style={{ width: `${progressPercentage}%` }}
         />
+      </div>
+
+      {/* Cast button (top right, next to close) */}
+      <div className="absolute top-4 right-16 z-10">
+        <CastButton onCastStateChange={handleCastStateChange} />
       </div>
 
       {/* Close button */}
