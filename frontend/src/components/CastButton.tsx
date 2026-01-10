@@ -67,17 +67,25 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
             setIsCasting(isConnected);
             onCastStateChange?.(isConnected);
 
+            // Update isAvailable whenever state changes (device discovery is async)
+            const devicesAvailable = castState !== cast.framework.CastState.NO_DEVICES_AVAILABLE;
+            setIsAvailable(devicesAvailable);
+
             if (isConnected) {
               logger.debug('✅ Connected to Chromecast');
+            } else if (devicesAvailable) {
+              logger.debug('📡 Chromecast device(s) available');
             } else {
-              logger.debug('❌ Disconnected from Chromecast');
+              logger.debug('❌ No Chromecast devices found');
             }
           }
         );
 
-        // Check if Cast is available
+        // Check initial Cast state (may be NO_DEVICES_AVAILABLE during discovery)
         const castState = context.getCastState();
         setIsAvailable(castState !== cast.framework.CastState.NO_DEVICES_AVAILABLE);
+
+        logger.debug(`Initial Cast state: ${castState}`);
 
         logger.debug('🎥 Google Cast initialized successfully');
       } catch (error) {
