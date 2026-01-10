@@ -72,6 +72,12 @@ export function useAudioDucking({
 
   /**
    * Initialize Web Audio API context and gain nodes
+   *
+   * FIX (Jan 2026): iOS PWA AudioContext initialization failure
+   * - iOS PWA has stricter sandbox restrictions than browser
+   * - AudioContext can fail on app launch (before user gesture)
+   * - This breaks ALL audio (music + voiceover) until app removed/re-added
+   * - Fix: Detect failure and provide retry mechanism
    */
   useEffect(() => {
     try {
@@ -94,12 +100,19 @@ export function useAudioDucking({
       musicGainRef.current = musicGain;
       voiceoverGainRef.current = voiceoverGain;
 
-      logger.debug('Web Audio API initialized');
+      logger.debug('Web Audio API initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize Web Audio API:', error);
+
+      // PWA-specific error message (more helpful than generic message)
+      const isPWA = 'standalone' in window.navigator && (window.navigator as any).standalone;
+      const errorMessage = isPWA
+        ? 'Audio initialization failed. Please close and reopen the app to fix audio.'
+        : 'Your browser does not support advanced audio features. Voiceover may not work correctly.';
+
       setState(prev => ({
         ...prev,
-        error: 'Your browser does not support advanced audio features. Voiceover may not work correctly.'
+        error: errorMessage
       }));
     }
 
@@ -556,8 +569,49 @@ export function useAudioDucking({
 
   /**
    * Manual play trigger (for user gesture to bypass autoplay blocking)
+   *
+   * FIX (Jan 2026): iOS PWA AudioContext retry
+   * - If AudioContext failed on app launch, retry here with user gesture
+   * - User gesture provides required permissions for iOS sandbox
    */
   const manualPlay = () => {
+    logger.debug('Manual play triggered by user gesture');
+
+    // RETRY: If AudioContext failed to initialize, try again with user gesture
+    if (!audioContextRef.current) {
+      logger.warn('AudioContext not initialized - retrying with user gesture (PWA fix)');
+
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const context = new AudioContextClass();
+        audioContextRef.current = context;
+
+        // Create gain nodes
+        const musicGain = context.createGain();
+        const voiceoverGain = context.createGain();
+        musicGain.gain.value = musicVolume;
+        voiceoverGain.gain.value = 1.0;
+
+        musicGain.connect(context.destination);
+        voiceoverGain.connect(context.destination);
+
+        musicGainRef.current = musicGain;
+        voiceoverGainRef.current = voiceoverGain;
+
+        logger.debug('AudioContext initialized successfully on retry (PWA fix worked!)');
+        setState(prev => ({ ...prev, error: null }));
+
+        // Continue with playback below (don't return early)
+      } catch (error) {
+        logger.error('AudioContext retry failed:', error);
+        setState(prev => ({
+          ...prev,
+          error: 'Audio still unavailable. Please restart the app.'
+        }));
+        return; // Can't proceed without AudioContext
+      }
+    }
+
     const musicAudio = musicElementRef.current;
     const voiceoverAudio = voiceoverElementRef.current;
 
@@ -565,8 +619,6 @@ export function useAudioDucking({
       logger.error('No music audio element available');
       return;
     }
-
-    logger.debug('Manual play triggered by user gesture');
 
     // Resume AudioContext if suspended
     if (audioContextRef.current?.state === 'suspended') {
