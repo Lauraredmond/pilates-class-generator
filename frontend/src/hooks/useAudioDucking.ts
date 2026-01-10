@@ -245,17 +245,12 @@ export function useAudioDucking({
       if (musicElementRef.current) {
         logger.debug('Unmounting: cleaning up music element');
 
-        // Pause playback first
+        // Pause playback
         musicElementRef.current.pause();
 
-        // Remove event listeners to prevent error logging during cleanup
-        // This prevents MediaError code 4 from appearing in console when exiting class
-        musicElementRef.current.removeEventListener('canplaythrough', () => {});
-        musicElementRef.current.removeEventListener('error', () => {});
-        musicElementRef.current.removeEventListener('ended', () => {});
-
-        // Don't set src = '' as that triggers a new load attempt with empty URL
-        // Just pause and nullify ref - browser will garbage collect
+        // Don't set src = '' as that triggers MediaError code 4
+        // Don't manually remove event listeners - they'll be garbage collected with the element
+        // Just pause and nullify ref - browser handles cleanup
 
         musicElementRef.current = null;
       }
@@ -371,18 +366,12 @@ export function useAudioDucking({
       if (voiceoverElementRef.current) {
         logger.debug('Unmounting: cleaning up voiceover element');
 
-        // Pause playback first
+        // Pause playback
         voiceoverElementRef.current.pause();
 
-        // Remove event listeners to prevent error logging during cleanup
-        // This prevents MediaError code 4 from appearing in console when exiting class
-        voiceoverElementRef.current.removeEventListener('canplaythrough', () => {});
-        voiceoverElementRef.current.removeEventListener('error', () => {});
-        voiceoverElementRef.current.removeEventListener('play', () => {});
-        voiceoverElementRef.current.removeEventListener('ended', () => {});
-
-        // Don't set src = '' as that triggers a new load attempt with empty URL
-        // Just pause and nullify ref - browser will garbage collect
+        // Don't set src = '' as that triggers MediaError code 4
+        // Don't manually remove event listeners - they'll be garbage collected with the element
+        // Just pause and nullify ref - browser handles cleanup
 
         voiceoverElementRef.current = null;
       }
