@@ -150,55 +150,182 @@ export function useAudioDucking({
    * This fixes two bugs:
    * - Music stops when phone screen locks
    * - Voiceover doesn't play on natural section transitions after phone wake
+   *
+   * iOS PWA FIX (Phase 3): Added aggressive AudioContext recovery
+   * - iOS may suspend AudioContext even when visibility doesn't change
+   * - iOS may require multiple resume attempts
+   * - iOS may need audio elements to be re-played after suspend
    */
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         // Page hidden (phone locked or tab switched)
         logger.debug('Page hidden - AudioContext may suspend');
+        logMediaEvent('music', 'Page hidden', {
+          contextState: audioContextRef.current?.state,
+          isPaused: isPausedRef.current
+        });
       } else {
         // Page visible again (phone unlocked or tab focused)
         logger.debug('Page visible - checking AudioContext state');
+        logMediaEvent('music', 'Page visible', {
+          contextState: audioContextRef.current?.state,
+          isPaused: isPausedRef.current,
+          musicPaused: musicElementRef.current?.paused,
+          voiceoverPaused: voiceoverElementRef.current?.paused
+        });
 
-        // Resume AudioContext if suspended
-        if (audioContextRef.current?.state === 'suspended') {
-          logger.debug('AudioContext suspended, resuming...');
-          audioContextRef.current.resume().then(() => {
-            logger.debug('AudioContext resumed after visibility change');
+        // iOS PWA FIX: Aggressive AudioContext resume strategy
+        const attemptResume = async () => {
+          if (!audioContextRef.current) return;
 
-            // Only resume playback if not manually paused
-            if (!isPausedRef.current) {
-              // Resume music if it was playing
-              if (musicElementRef.current && musicElementRef.current.paused) {
-                logger.debug('Resuming music after visibility change');
-                musicElementRef.current.play().catch(err => {
-                  logger.error('Failed to resume music:', err);
-                });
+          // Check if suspended
+          if (audioContextRef.current.state === 'suspended') {
+            logger.debug('AudioContext suspended, resuming...');
+            logMediaEvent('music', 'AudioContext resume attempt', {
+              state: audioContextRef.current.state,
+              isPaused: isPausedRef.current
+            });
+
+            try {
+              await audioContextRef.current.resume();
+              logger.debug('AudioContext resumed after visibility change');
+              logMediaEvent('music', 'AudioContext resumed SUCCESS', {
+                newState: audioContextRef.current.state
+              });
+
+              // iOS PWA FIX: Wait for AudioContext to fully activate
+              // iOS sometimes reports 'running' but isn't ready yet
+              await new Promise(resolve => setTimeout(resolve, 100));
+
+              // Only resume playback if not manually paused
+              if (!isPausedRef.current) {
+                // Resume music if it was playing
+                if (musicElementRef.current && musicElementRef.current.paused && musicElementRef.current.src) {
+                  logger.debug('Resuming music after visibility change');
+                  logMediaEvent('music', 'Resume music after wake', {
+                    src: musicElementRef.current.src,
+                    currentTime: musicElementRef.current.currentTime
+                  });
+
+                  try {
+                    await musicElementRef.current.play();
+                    logMediaEvent('music', 'Music resumed SUCCESS', {});
+                  } catch (err: any) {
+                    logger.error('Failed to resume music:', err);
+                    logMediaEvent('music', 'Music resume FAILED', {
+                      error: err.message,
+                      errorName: err.name
+                    });
+                  }
+                }
+
+                // Resume voiceover if it was playing
+                if (voiceoverElementRef.current && voiceoverElementRef.current.paused && voiceoverElementRef.current.src) {
+                  logger.debug('Resuming voiceover after visibility change');
+                  logMediaEvent('voiceover', 'Resume voiceover after wake', {
+                    src: voiceoverElementRef.current.src,
+                    currentTime: voiceoverElementRef.current.currentTime
+                  });
+
+                  try {
+                    await voiceoverElementRef.current.play();
+                    logMediaEvent('voiceover', 'Voiceover resumed SUCCESS', {});
+                  } catch (err: any) {
+                    logger.error('Failed to resume voiceover:', err);
+                    logMediaEvent('voiceover', 'Voiceover resume FAILED', {
+                      error: err.message,
+                      errorName: err.name
+                    });
+                  }
+                }
               }
-
-              // Resume voiceover if it was playing
-              if (voiceoverElementRef.current && voiceoverElementRef.current.paused) {
-                logger.debug('Resuming voiceover after visibility change');
-                voiceoverElementRef.current.play().catch(err => {
-                  logger.error('Failed to resume voiceover:', err);
-                });
-              }
+            } catch (err: any) {
+              logger.error('Failed to resume AudioContext:', err);
+              logMediaEvent('music', 'AudioContext resume FAILED', {
+                error: err.message,
+                errorName: err.name,
+                state: audioContextRef.current.state
+              });
             }
-          }).catch(err => {
-            logger.error('Failed to resume AudioContext:', err);
-          });
-        }
+          }
+        };
+
+        attemptResume();
       }
     };
 
     // Listen for visibility changes
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // iOS PWA FIX: Also listen for focus event (iOS may not fire visibilitychange reliably)
+    const handleFocus = () => {
+      if (audioContextRef.current?.state === 'suspended') {
+        logger.debug('Window focused with suspended AudioContext - attempting resume');
+        logMediaEvent('music', 'Focus event - AudioContext suspended', {
+          state: audioContextRef.current.state
+        });
+        handleVisibilityChange(); // Reuse visibility change logic
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
     // Cleanup
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
+
+  /**
+   * iOS PWA FIX (Phase 3): Periodic AudioContext health check
+   *
+   * iOS may suspend AudioContext even without visibility changes.
+   * This effect periodically checks AudioContext state and attempts recovery.
+   * Only runs when playback is active (not paused).
+   */
+  useEffect(() => {
+    if (isPaused) return; // Don't check when paused
+
+    const healthCheckInterval = setInterval(() => {
+      if (!audioContextRef.current) return;
+
+      // Check if AudioContext is unexpectedly suspended
+      if (audioContextRef.current.state === 'suspended') {
+        logger.warn('AudioContext unexpectedly suspended - attempting recovery');
+        logMediaEvent('music', 'AudioContext health check FAILED - suspended', {
+          isPaused,
+          musicPaused: musicElementRef.current?.paused,
+          voiceoverPaused: voiceoverElementRef.current?.paused,
+          documentHidden: document.hidden
+        });
+
+        // Attempt resume
+        audioContextRef.current.resume()
+          .then(() => {
+            logger.debug('AudioContext recovered via health check');
+            logMediaEvent('music', 'AudioContext health check RECOVERED', {
+              newState: audioContextRef.current!.state
+            });
+          })
+          .catch((err: any) => {
+            logger.error('AudioContext health check recovery failed:', err);
+            logMediaEvent('music', 'AudioContext health check RECOVERY FAILED', {
+              error: err.message
+            });
+          });
+      } else {
+        // Log healthy state occasionally
+        logMediaEvent('music', 'AudioContext health check OK', {
+          state: audioContextRef.current.state,
+          baseLatency: audioContextRef.current.baseLatency
+        });
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(healthCheckInterval);
+  }, [isPaused]);
 
   /**
    * Create music audio element ONCE on mount (same pattern as voiceover)
