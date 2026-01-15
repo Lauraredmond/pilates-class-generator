@@ -14,6 +14,7 @@ import { CastButton } from '../CastButton';
 import { useAudioDucking } from '../../hooks/useAudioDucking';
 import { useAuth } from '../../context/AuthContext';
 import { logger } from '../../utils/logger';
+import { logMediaEvent } from '../../utils/debug';
 import { API_BASE_URL } from '../../utils/api-config';
 
 // Music API type definitions
@@ -236,6 +237,25 @@ export function ClassPlayback({
       setIsPaused(false); // Start playback if already accepted
     }
   }, [user]);
+
+  // Component mount logging
+  useEffect(() => {
+    logMediaEvent('music', 'ClassPlayback component mounted', {
+      totalItems: items.length,
+      movementMusicStyle,
+      coolDownMusicStyle,
+      classId,
+      isPWA: window.matchMedia('(display-mode: standalone)').matches
+    });
+
+    // Cleanup on unmount
+    return () => {
+      logMediaEvent('music', 'ClassPlayback component unmounted', {
+        finalIndex: currentIndex,
+        totalItemsPlayed: currentIndex + 1
+      });
+    };
+  }, []); // Empty deps = mount/unmount only
 
   // ============================================================================
   // PLAY SESSION TRACKING - December 24, 2025
@@ -512,6 +532,10 @@ export function ClassPlayback({
       // Check if Wake Lock API is supported
       if (!('wakeLock' in navigator)) {
         logger.debug('Wake Lock API not supported on this device');
+        logMediaEvent('music', 'Wake Lock API not supported', {
+          userAgent: navigator.userAgent,
+          isPWA: window.matchMedia('(display-mode: standalone)').matches
+        });
         return;
       }
 
@@ -520,10 +544,17 @@ export function ClassPlayback({
           // Acquire wake lock when playback starts
           wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
           logger.debug('Screen wake lock acquired - screen will stay on during class');
+          logMediaEvent('music', 'Wake Lock ACQUIRED', {
+            isPaused,
+            documentVisible: !document.hidden
+          });
 
           // Listen for wake lock release (can happen if user switches tabs)
           wakeLockRef.current.addEventListener('release', () => {
             logger.debug('Screen wake lock released');
+            logMediaEvent('music', 'Wake Lock RELEASED (browser event)', {
+              reason: 'User switched tabs or visibility changed'
+            });
             wakeLockRef.current = null;
           });
         } else if (isPaused && wakeLockRef.current) {
@@ -531,9 +562,18 @@ export function ClassPlayback({
           await wakeLockRef.current.release();
           wakeLockRef.current = null;
           logger.debug('Screen wake lock released - screen can now sleep');
+          logMediaEvent('music', 'Wake Lock RELEASED (paused)', {
+            isPaused: true
+          });
         }
       } catch (err: any) {
         logger.error(`Failed to acquire wake lock: ${err.message}`);
+        logMediaEvent('music', 'Wake Lock ERROR', {
+          error: err.message,
+          errorName: err.name,
+          isPaused,
+          documentVisible: !document.hidden
+        });
         // Don't show error to user - this is a nice-to-have feature
       }
     };
@@ -545,8 +585,12 @@ export function ClassPlayback({
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch((err: any) => {
           logger.error('Failed to release wake lock on cleanup:', err);
+          logMediaEvent('music', 'Wake Lock RELEASE ERROR (cleanup)', {
+            error: err.message
+          });
         });
         wakeLockRef.current = null;
+        logMediaEvent('music', 'Wake Lock released on component unmount', {});
       }
     };
   }, [isPaused]);
@@ -595,6 +639,13 @@ export function ClassPlayback({
 
       try {
         // Start new section (previous section already ended by handleNext/handlePrevious/unmount)
+        logMediaEvent('music', 'Section tracking START', {
+          sectionType: currentItem.type,
+          sectionIndex: currentIndex,
+          duration: currentItem.duration_seconds,
+          hasVoiceover: 'voiceover_enabled' in currentItem && (currentItem as any).voiceover_enabled
+        });
+
         const response = await axios.post(
           `${API_BASE_URL}/api/analytics/playback/section-start`,
           {
@@ -616,8 +667,14 @@ export function ClassPlayback({
 
         setCurrentSectionEventId(response.data.section_event_id);
         logger.debug(`[EarlySkip] Section started: ${currentItem.type} (event_id: ${response.data.section_event_id})`);
+        logMediaEvent('music', 'Section tracking SUCCESS', {
+          eventId: response.data.section_event_id
+        });
       } catch (error) {
         logger.error('[EarlySkip] Failed to start section tracking (graceful degradation):', error);
+        logMediaEvent('music', 'Section tracking FAILED', {
+          error: error instanceof Error ? error.message : String(error)
+        });
         // Continue playback even if tracking fails
       }
     };
@@ -736,6 +793,10 @@ export function ClassPlayback({
     const fetchBothPlaylists = async () => {
       try {
         setMusicError(null);
+        logMediaEvent('music', 'Fetching playlists START', {
+          movementStyle: movementMusicStyle,
+          cooldownStyle: coolDownMusicStyle
+        });
 
         // Fetch both playlists in parallel
         const [movementPl, cooldownPl] = await Promise.all([
@@ -746,24 +807,49 @@ export function ClassPlayback({
         if (movementPl) {
           setMovementPlaylist(movementPl);
           logger.debug(`Movement playlist loaded: ${movementPl.name} (${movementPl.tracks?.length || 0} tracks)`);
+          logMediaEvent('music', 'Movement playlist LOADED', {
+            playlistName: movementPl.name,
+            trackCount: movementPl.tracks?.length || 0,
+            totalDuration: Math.round(movementPl.tracks?.reduce((sum: number, t: MusicTrack) => sum + t.duration_seconds, 0) / 60) + ' min'
+          });
         } else {
           logger.warn('No movement music playlist available');
+          logMediaEvent('music', 'Movement playlist EMPTY', {
+            requestedStyle: movementMusicStyle
+          });
         }
 
         if (cooldownPl) {
           setCooldownPlaylist(cooldownPl);
           logger.debug(`Cooldown playlist loaded: ${cooldownPl.name} (${cooldownPl.tracks?.length || 0} tracks)`);
+          logMediaEvent('music', 'Cooldown playlist LOADED', {
+            playlistName: cooldownPl.name,
+            trackCount: cooldownPl.tracks?.length || 0,
+            totalDuration: Math.round(cooldownPl.tracks?.reduce((sum: number, t: MusicTrack) => sum + t.duration_seconds, 0) / 60) + ' min'
+          });
         } else {
           logger.warn('No cooldown music playlist available');
+          logMediaEvent('music', 'Cooldown playlist EMPTY', {
+            requestedStyle: coolDownMusicStyle
+          });
         }
 
         if (!movementPl && !cooldownPl) {
           setMusicError('No music playlists available.');
+          logMediaEvent('music', 'BOTH playlists FAILED', {
+            movementStyle: movementMusicStyle,
+            cooldownStyle: coolDownMusicStyle
+          });
         }
 
         setCurrentTrackIndex(0); // Reset to first track when playlists load
       } catch (error: any) {
         logger.error('Error fetching music playlists:', error);
+        logMediaEvent('music', 'Playlist fetch ERROR', {
+          error: error.message,
+          movementStyle: movementMusicStyle,
+          cooldownStyle: coolDownMusicStyle
+        });
         setMusicError('Failed to load music. Class will continue without audio.');
       }
     };
