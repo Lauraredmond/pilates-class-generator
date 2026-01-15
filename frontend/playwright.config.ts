@@ -25,7 +25,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://bassline-dev.netlify.app',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://basslinemvp.netlify.app',
 
     /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
