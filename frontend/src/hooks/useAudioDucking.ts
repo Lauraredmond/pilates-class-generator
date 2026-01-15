@@ -100,6 +100,9 @@ export function useAudioDucking({
       musicGainRef.current = musicGain;
       voiceoverGainRef.current = voiceoverGain;
 
+      // Expose AudioContext globally for debug panel
+      (window as any).__AUDIO_CONTEXT__ = context;
+
       logger.debug('Web Audio API initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize Web Audio API:', error);
