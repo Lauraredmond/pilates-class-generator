@@ -1,9 +1,10 @@
 // Bassline Pilates - Service Worker
 // Battery-friendly caching strategy with smart invalidation
+// v2: Fixed external media resource handling (S3, archive.org, Supabase)
 
-const CACHE_NAME = 'bassline-v1';
-const ASSETS_CACHE = 'bassline-assets-v1';
-const API_CACHE = 'bassline-api-v1';
+const CACHE_NAME = 'bassline-v2';
+const ASSETS_CACHE = 'bassline-assets-v2';
+const API_CACHE = 'bassline-api-v2';
 
 // Critical app shell (cached immediately)
 const APP_SHELL = [
@@ -40,6 +41,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // CRITICAL: Skip service worker for external media resources
+  // Let browser handle S3 videos, S3 music, archive.org music, cast SDK directly
+  if (
+    url.hostname.includes('s3.amazonaws.com') ||
+    url.hostname.includes('s3.us-east-1.amazonaws.com') ||
+    url.hostname.includes('archive.org') ||
+    url.hostname.includes('ia802809.us.archive.org') ||
+    url.hostname.includes('gstatic.com') || // Cast SDK
+    url.hostname.includes('supabase.co') // Supabase Storage (voiceovers)
+  ) {
+    // Do NOT intercept - let browser fetch directly
+    return;
+  }
 
   // Strategy 1: Network-first for API calls (fresh data priority)
   if (url.pathname.startsWith('/api/')) {
