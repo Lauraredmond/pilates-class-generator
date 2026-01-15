@@ -11,6 +11,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { logger } from '../utils/logger';
+import { logMediaEvent } from '../utils/debug';
 
 interface AudioDuckingConfig {
   musicUrl: string;
@@ -104,6 +105,11 @@ export function useAudioDucking({
       (window as any).__AUDIO_CONTEXT__ = context;
 
       logger.debug('Web Audio API initialized successfully');
+      logMediaEvent('music', 'AudioContext initialized', {
+        state: context.state,
+        sampleRate: context.sampleRate,
+        baseLatency: context.baseLatency
+      });
     } catch (error) {
       logger.error('Failed to initialize Web Audio API:', error);
 
@@ -112,6 +118,12 @@ export function useAudioDucking({
       const errorMessage = isPWA
         ? 'Audio initialization failed. Please close and reopen the app to fix audio.'
         : 'Your browser does not support advanced audio features. Voiceover may not work correctly.';
+
+      logMediaEvent('music', 'AudioContext initialization FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+        isPWA,
+        userAgent: navigator.userAgent
+      });
 
       setState(prev => ({
         ...prev,
@@ -213,13 +225,74 @@ export function useAudioDucking({
       musicSourceRef.current = source;
 
       // Event listeners (attached once, work for all tracks)
+      audio.addEventListener('loadstart', () => {
+        logMediaEvent('music', 'loadstart', { src: audio.src });
+      });
+
+      audio.addEventListener('loadedmetadata', () => {
+        logMediaEvent('music', 'loadedmetadata', {
+          duration: audio.duration,
+          networkState: audio.networkState
+        });
+      });
+
+      audio.addEventListener('loadeddata', () => {
+        logMediaEvent('music', 'loadeddata', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('canplay', () => {
+        logMediaEvent('music', 'canplay', { buffered: audio.buffered.length > 0 ? audio.buffered.end(0) : 0 });
+      });
+
       audio.addEventListener('canplaythrough', () => {
         logger.debug('Music track ready (canplaythrough)');
+        logMediaEvent('music', 'canplaythrough', {
+          src: audio.src,
+          readyState: audio.readyState
+        });
         setState(prev => ({ ...prev, musicReady: true }));
+      });
+
+      audio.addEventListener('playing', () => {
+        logMediaEvent('music', 'playing', {
+          currentTime: audio.currentTime,
+          volume: audio.volume
+        });
+      });
+
+      audio.addEventListener('pause', () => {
+        logMediaEvent('music', 'pause', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('waiting', () => {
+        logMediaEvent('music', 'waiting (buffering)', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('stalled', () => {
+        logMediaEvent('music', 'stalled (network issue)', {
+          currentTime: audio.currentTime,
+          networkState: audio.networkState
+        });
       });
 
       audio.addEventListener('error', (e) => {
         logger.error('Music load error:', e, audio.error);
+        const errorDetails = audio.error ? {
+          code: audio.error.code,
+          message: audio.error.message,
+          MEDIA_ERR_ABORTED: audio.error.code === 1,
+          MEDIA_ERR_NETWORK: audio.error.code === 2,
+          MEDIA_ERR_DECODE: audio.error.code === 3,
+          MEDIA_ERR_SRC_NOT_SUPPORTED: audio.error.code === 4
+        } : { message: 'Unknown error' };
+
+        logMediaEvent('music', 'ERROR', {
+          ...errorDetails,
+          src: audio.src,
+          networkState: audio.networkState,
+          readyState: audio.readyState
+        });
+
         setState(prev => ({
           ...prev,
           error: 'Failed to load background music'
@@ -229,14 +302,25 @@ export function useAudioDucking({
       // Call onMusicEnded callback when track finishes (for playlist advancement)
       audio.addEventListener('ended', () => {
         logger.debug('Music track ended - calling onMusicEnded callback');
+        logMediaEvent('music', 'ended', {
+          src: audio.src,
+          duration: audio.duration
+        });
         if (onMusicEndedRef.current) {
           onMusicEndedRef.current();
         }
       });
 
       logger.debug('Music element created successfully (reusable)');
+      logMediaEvent('music', 'element created (reusable)', {
+        crossOrigin: audio.crossOrigin,
+        preload: audio.preload
+      });
     } catch (error) {
       logger.error('Failed to setup music audio element:', error);
+      logMediaEvent('music', 'element creation FAILED', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       setState(prev => ({
         ...prev,
         error: 'Failed to setup background music'
@@ -268,6 +352,7 @@ export function useAudioDucking({
    */
   useEffect(() => {
     logger.debug(`[useAudioDucking] Music URL changed: ${musicUrl || 'none'}`);
+    logMediaEvent('music', 'URL changed', { newUrl: musicUrl || 'none' });
 
     const audio = musicElementRef.current;
     if (!audio) {
@@ -282,6 +367,12 @@ export function useAudioDucking({
 
     // Stop current track and load new one
     logger.debug(`[useAudioDucking] Switching music track to: ${musicUrl}`);
+    logMediaEvent('music', 'switching track', {
+      oldSrc: audio.src,
+      newSrc: musicUrl,
+      wasPlaying: !audio.paused
+    });
+
     audio.pause();
     audio.currentTime = 0;
 
@@ -290,6 +381,7 @@ export function useAudioDucking({
     audio.load(); // Start downloading immediately
 
     logger.debug('Music src updated, downloading...');
+    logMediaEvent('music', 'src updated - loading', { src: musicUrl });
 
     // Auto-play if player is not paused (resume playback after track change)
     if (!isPausedRef.current) {
@@ -330,13 +422,78 @@ export function useAudioDucking({
       voiceoverSourceRef.current = source;
 
       // Event listeners (attached once, work for all voiceovers)
+      audio.addEventListener('loadstart', () => {
+        logMediaEvent('voiceover', 'loadstart', { src: audio.src });
+      });
+
+      audio.addEventListener('loadedmetadata', () => {
+        logMediaEvent('voiceover', 'loadedmetadata', {
+          duration: audio.duration,
+          networkState: audio.networkState
+        });
+      });
+
+      audio.addEventListener('loadeddata', () => {
+        logMediaEvent('voiceover', 'loadeddata', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('canplay', () => {
+        logMediaEvent('voiceover', 'canplay', {
+          buffered: audio.buffered.length > 0 ? audio.buffered.end(0) : 0
+        });
+      });
+
       audio.addEventListener('canplaythrough', () => {
         logger.debug('Voiceover ready (canplaythrough)');
+        logMediaEvent('voiceover', 'canplaythrough', {
+          src: audio.src,
+          readyState: audio.readyState
+        });
         setState(prev => ({ ...prev, voiceoverReady: true, error: null }));
+      });
+
+      audio.addEventListener('playing', () => {
+        logMediaEvent('voiceover', 'playing', {
+          currentTime: audio.currentTime,
+          volume: audio.volume
+        });
+      });
+
+      audio.addEventListener('pause', () => {
+        logMediaEvent('voiceover', 'pause', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('waiting', () => {
+        logMediaEvent('voiceover', 'waiting (buffering)', {
+          currentTime: audio.currentTime
+        });
+      });
+
+      audio.addEventListener('stalled', () => {
+        logMediaEvent('voiceover', 'stalled (network issue)', {
+          currentTime: audio.currentTime,
+          networkState: audio.networkState
+        });
       });
 
       audio.addEventListener('error', (e) => {
         logger.error('Voiceover load error:', e, audio.error);
+        const errorDetails = audio.error ? {
+          code: audio.error.code,
+          message: audio.error.message,
+          MEDIA_ERR_ABORTED: audio.error.code === 1,
+          MEDIA_ERR_NETWORK: audio.error.code === 2,
+          MEDIA_ERR_DECODE: audio.error.code === 3,
+          MEDIA_ERR_SRC_NOT_SUPPORTED: audio.error.code === 4
+        } : { message: 'Unknown error' };
+
+        logMediaEvent('voiceover', 'ERROR', {
+          ...errorDetails,
+          src: audio.src,
+          networkState: audio.networkState,
+          readyState: audio.readyState
+        });
+
         setState(prev => ({
           ...prev,
           error: 'Failed to load voiceover audio'
@@ -346,18 +503,32 @@ export function useAudioDucking({
       // Duck music when voiceover starts
       audio.addEventListener('play', () => {
         logger.debug('Voiceover started - ducking music');
+        logMediaEvent('voiceover', 'play (ducking music)', {
+          targetVolume: duckedVolume
+        });
         duckMusic(duckedVolume);
       });
 
       // Restore music volume when voiceover ends
       audio.addEventListener('ended', () => {
         logger.debug('Voiceover ended - restoring music');
+        logMediaEvent('voiceover', 'ended (restoring music)', {
+          targetVolume: musicVolume,
+          duration: audio.duration
+        });
         duckMusic(musicVolume);
       });
 
       logger.debug('Voiceover element created successfully (reusable)');
+      logMediaEvent('voiceover', 'element created (reusable)', {
+        crossOrigin: audio.crossOrigin,
+        preload: audio.preload
+      });
     } catch (error) {
       logger.error('Failed to setup voiceover audio element:', error);
+      logMediaEvent('voiceover', 'element creation FAILED', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       setState(prev => ({
         ...prev,
         error: 'Failed to setup voiceover audio'
@@ -389,6 +560,7 @@ export function useAudioDucking({
    */
   useEffect(() => {
     logger.debug(`[useAudioDucking] Voiceover URL changed: ${voiceoverUrl || 'none'}`);
+    logMediaEvent('voiceover', 'URL changed', { newUrl: voiceoverUrl || 'none' });
 
     const audio = voiceoverElementRef.current;
     if (!audio) {
@@ -402,6 +574,9 @@ export function useAudioDucking({
     // If no voiceover for this section, pause and clear src
     if (!voiceoverUrl) {
       logger.debug('No voiceover for this section - pausing and clearing src');
+      logMediaEvent('voiceover', 'no voiceover for section - clearing', {
+        restoringMusicVolume: musicVolume
+      });
       audio.pause();
       audio.currentTime = 0;
       audio.src = ''; // Clear src but keep element alive
@@ -412,6 +587,12 @@ export function useAudioDucking({
 
     // Stop current voiceover and load new one
     logger.debug(`[useAudioDucking] Switching voiceover to: ${voiceoverUrl}`);
+    logMediaEvent('voiceover', 'switching voiceover', {
+      oldSrc: audio.src,
+      newSrc: voiceoverUrl,
+      wasPlaying: !audio.paused
+    });
+
     audio.pause();
     audio.currentTime = 0;
 
@@ -420,6 +601,7 @@ export function useAudioDucking({
     audio.load(); // Start downloading immediately
 
     logger.debug('Voiceover src updated, downloading...');
+    logMediaEvent('voiceover', 'src updated - loading', { src: voiceoverUrl });
   }, [voiceoverUrl, musicVolume]);
 
   /**
@@ -430,6 +612,13 @@ export function useAudioDucking({
 
     const currentTime = audioContextRef.current.currentTime;
     const gain = musicGainRef.current.gain;
+
+    logMediaEvent('music', 'volume change (ducking)', {
+      from: gain.value,
+      to: targetVolume,
+      fadeTime,
+      reason: targetVolume < 1.0 ? 'voiceover playing' : 'voiceover ended'
+    });
 
     // Cancel any scheduled changes
     gain.cancelScheduledValues(currentTime);
@@ -455,14 +644,30 @@ export function useAudioDucking({
 
     if (isPaused) {
       // Pause both audio streams
+      logMediaEvent('music', 'PAUSE requested', {
+        musicPaused: musicAudio.paused,
+        voiceoverPaused: voiceoverAudio?.paused ?? true
+      });
       musicAudio.pause();
       if (voiceoverAudio) voiceoverAudio.pause();
       setState(prev => ({ ...prev, isPlaying: false }));
     } else {
+      logMediaEvent('music', 'PLAY requested', {
+        contextState: audioContextRef.current?.state,
+        musicHasSrc: !!musicAudio.src,
+        voiceoverHasSrc: !!voiceoverAudio?.src
+      });
+
       // Resume AudioContext if suspended (browser autoplay policy)
       if (audioContextRef.current?.state === 'suspended') {
+        logMediaEvent('music', 'AudioContext suspended - resuming', {
+          state: audioContextRef.current.state
+        });
         audioContextRef.current.resume().then(() => {
           logger.debug('AudioContext resumed');
+          logMediaEvent('music', 'AudioContext resumed successfully', {
+            newState: audioContextRef.current!.state
+          });
         });
       }
 
@@ -470,6 +675,12 @@ export function useAudioDucking({
       if (musicAudio.src) {
         musicAudio.play().catch(err => {
           logger.error('Music play error:', err);
+          logMediaEvent('music', 'PLAY ERROR', {
+            error: err.message,
+            errorName: err.name,
+            src: musicAudio.src,
+            readyState: musicAudio.readyState
+          });
           setState(prev => ({
             ...prev,
             error: 'Failed to play background music. Click to enable audio.'
@@ -477,12 +688,19 @@ export function useAudioDucking({
         });
       } else {
         logger.debug('Music element has no src yet - skipping play (src will be set shortly)');
+        logMediaEvent('music', 'PLAY skipped (no src yet)', {});
       }
 
       // Play voiceover ONLY if src has been set (prevents race condition)
       if (voiceoverAudio && voiceoverAudio.src) {
         voiceoverAudio.play().catch(err => {
           logger.error('Voiceover play error:', err);
+          logMediaEvent('voiceover', 'PLAY ERROR', {
+            error: err.message,
+            errorName: err.name,
+            src: voiceoverAudio.src,
+            readyState: voiceoverAudio.readyState
+          });
           setState(prev => ({
             ...prev,
             error: 'Failed to play voiceover. Click to enable audio.'
