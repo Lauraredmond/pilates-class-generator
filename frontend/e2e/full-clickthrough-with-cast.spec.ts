@@ -609,75 +609,118 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
           await page.waitForLoadState('networkidle');
         }
       } else {
-        console.log('No Accept button found, checking for Play Class button...');
+        console.log('No Accept button found in pre-generated view, checking Play Class button...');
 
-        // Check if there's a Play Class button on the same page
+        // Check if there's a Play Class button on the page
         const playButton = page.locator('button:has-text("Play Class")');
-        if (await playButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-          console.log('Found Play Class button, clicking it to start playback directly...');
-          await playButton.click();
+        const playButtonVisible = await playButton.isVisible({ timeout: 2000 }).catch(() => false);
 
-          // Wait for playback page
-          await page.waitForURL(/playback/i, { timeout: 10000 }).catch(() => {
-            console.log('Did not navigate to playback, may still be on class-builder');
-          });
-          await page.waitForTimeout(3000);
+        if (playButtonVisible) {
+          const playButtonEnabled = await playButton.isEnabled().catch(() => false);
 
-          // Skip the rest of navigation since we're going straight to playback
-          const currentUrl = page.url();
-          if (currentUrl.includes('/playback')) {
-            console.log('Successfully navigated to playback');
-            // Skip to Cast SDK testing
+          if (playButtonEnabled) {
+            console.log('Found enabled Play Class button, clicking it to start playback directly...');
+            await playButton.click();
+
+            // Wait for playback page
+            await page.waitForURL(/playback/i, { timeout: 10000 }).catch(() => {
+              console.log('Did not navigate to playback, may still be on class-builder');
+            });
             await page.waitForTimeout(3000);
-            console.log('Current URL after navigation:', page.url());
-            // The test will continue to the Debug Chromecast button state step
-            return; // Exit this step early
+
+            // Skip the rest of navigation since we're going straight to playback
+            const currentUrl = page.url();
+            if (currentUrl.includes('/playback')) {
+              console.log('Successfully navigated to playback');
+              // Skip to Cast SDK testing
+              await page.waitForTimeout(3000);
+              console.log('Current URL after navigation:', page.url());
+              // The test will continue to the Debug Chromecast button state step
+              return; // Exit this step early
+            }
+          } else {
+            console.log('Play Class button is disabled (as expected before class is generated)');
+
+            // Check if there's actually a pre-generated class on the page that needs to be generated first
+            const hasGeneratedClass = await page.locator('text="Your Auto-Generated Class"').isVisible({ timeout: 2000 }).catch(() => false);
+
+            if (hasGeneratedClass) {
+              console.log('Class is already generated but not accepted, need to click Generate Class Plan to refresh it');
+
+              // Click Generate Class Plan to regenerate
+              const generateButton = page.locator('button:has-text("Generate Class Plan")');
+              if (await generateButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+                console.log('Clicking Generate Class Plan button...');
+                await generateButton.click();
+
+                // Wait a moment for the generation to complete
+                await page.waitForTimeout(5000);
+
+                // Now look for the Accept button in the refreshed view
+                const acceptButtonAfterGen = page.locator('button:has-text("Accept & Add to Class")');
+                if (await acceptButtonAfterGen.isVisible({ timeout: 5000 }).catch(() => false)) {
+                  console.log('Found Accept button after regeneration, clicking it...');
+                  await acceptButtonAfterGen.click();
+                  await page.waitForTimeout(3000);
+
+                  // Now Play Class button should be enabled
+                  await expect(playButton).toBeEnabled({ timeout: 10000 });
+                  console.log('Play Class button is now enabled, clicking it...');
+                  await playButton.click();
+                } else {
+                  console.log('No Accept button found after regeneration, may be inline update');
+                }
+              }
+            } else {
+              console.log('No pre-generated class, need to generate a new one from scratch');
+
+              // Fill in basic class parameters
+              // Select difficulty (Beginner)
+              const beginnerButton = page.locator('button:has-text("Beginner")').first();
+              if (await beginnerButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+                await beginnerButton.click();
+              }
+
+              // Set duration (30 minutes) - look for slider or input
+              const durationSlider = page.locator('input[type="range"]').first();
+              if (await durationSlider.isVisible({ timeout: 2000 }).catch(() => false)) {
+                await durationSlider.fill('30');
+              }
+
+              // Ensure AI mode is OFF (database mode for faster generation)
+              const aiToggle = page.locator('button[role="switch"], input[type="checkbox"]').filter({ hasText: /AI/i });
+              if (await aiToggle.isVisible({ timeout: 2000 }).catch(() => false)) {
+                const isChecked = await aiToggle.getAttribute('aria-checked');
+                if (isChecked === 'true') {
+                  await aiToggle.click();
+                }
+              }
+
+              // Click Generate button to create the class
+              const generateClassButton = page.locator('button:has-text("Generate"), button:has-text("Create Class")').first();
+              await generateClassButton.click();
+
+              // Wait for class generation modal
+              const resultsModal = page.locator('[role="dialog"], .modal, [class*="modal"]').filter({ hasText: /Generated|Results|Complete/i });
+              await expect(resultsModal).toBeVisible({ timeout: 15000 });
+
+              console.log('Class generated, accepting...');
+
+              // Accept the generated class
+              const acceptButton = page.locator('button:has-text("Accept"), button:has-text("Save"), button:has-text("Add to Library")').first();
+              await acceptButton.click();
+              await page.waitForTimeout(2000);
+
+              // Navigate to classes
+              await page.goto('/classes');
+              await page.waitForLoadState('networkidle');
+            }
           }
+        } else {
+          console.log('No Play Class button found on page, navigating to classes...');
+          await page.goto('/classes');
+          await page.waitForLoadState('networkidle');
         }
-
-        // If no Play button either, try generating a new class
-        console.log('No pre-generated class or Play button found, generating new one...');
-
-        // Fill in basic class parameters
-        // Select difficulty (Beginner)
-        const beginnerButton = page.locator('button:has-text("Beginner")').first();
-        if (await beginnerButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await beginnerButton.click();
-        }
-
-        // Set duration (30 minutes) - look for slider or input
-        const durationSlider = page.locator('input[type="range"]').first();
-        if (await durationSlider.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await durationSlider.fill('30');
-        }
-
-        // Ensure AI mode is OFF (database mode for faster generation)
-        const aiToggle = page.locator('button[role="switch"], input[type="checkbox"]').filter({ hasText: /AI/i });
-        if (await aiToggle.isVisible({ timeout: 2000 }).catch(() => false)) {
-          const isChecked = await aiToggle.getAttribute('aria-checked');
-          if (isChecked === 'true') {
-            await aiToggle.click();
-          }
-        }
-
-        // Click Generate button to create the class
-        const generateClassButton = page.locator('button:has-text("Generate"), button:has-text("Create Class")').first();
-        await generateClassButton.click();
-
-        // Wait for class generation modal
-        const resultsModal = page.locator('[role="dialog"], .modal, [class*="modal"]').filter({ hasText: /Generated|Results|Complete/i });
-        await expect(resultsModal).toBeVisible({ timeout: 15000 });
-
-        console.log('Class generated, accepting...');
-
-        // Accept the generated class
-        const acceptButton = page.locator('button:has-text("Accept"), button:has-text("Save"), button:has-text("Add to Library")').first();
-        await acceptButton.click();
-        await page.waitForTimeout(2000);
-
-        // Navigate to classes
-        await page.goto('/classes');
-        await page.waitForLoadState('networkidle');
       }
 
       // Try multiple strategies to find and click a class
