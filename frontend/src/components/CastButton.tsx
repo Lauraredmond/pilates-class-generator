@@ -61,11 +61,16 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
         const context = cast.framework.CastContext.getInstance();
 
         // Log the default app ID being used
-        console.warn('🎯 [CastButton] Using receiver app ID:', cast.framework.CastContext.DEFAULT_MEDIA_RECEIVER_APP_ID);
+        const appId = cast.framework.CastContext.DEFAULT_MEDIA_RECEIVER_APP_ID || 'CC1AD845';
+        console.warn('🎯 [CastButton] Using receiver app ID:', appId);
 
+        // IMPORTANT: Set options BEFORE any other operations
         context.setOptions({
-          receiverApplicationId: cast.framework.CastContext.DEFAULT_MEDIA_RECEIVER_APP_ID,
+          receiverApplicationId: appId,
           autoJoinPolicy: cast.framework.AutoJoinPolicy.ORIGIN_SCOPED,
+          // Add more detailed options that might help with discovery
+          language: 'en-US',
+          resumeSavedSession: false,
         });
 
         castContextRef.current = context;
@@ -124,10 +129,10 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
       cast?.framework?.AutoJoinPolicy?.ORIGIN_SCOPED;  // ← Check actual property!
 
     if (isFullyLoaded) {
-      logger.debug('[CastButton] Cast SDK fully loaded, initializing immediately');
+      console.warn('✅✅✅ [CastButton] Cast SDK fully loaded, calling initializeCastApi() NOW!');
       initializeCastApi();
     } else {
-      logger.debug('[CastButton] Cast SDK not fully loaded yet, setting up callback and polling...');
+      console.warn('⏳ [CastButton] Cast SDK not fully loaded yet, setting up callback and polling...');
 
       // Wait for Cast framework to be ready via callback
       (window as any)['__onGCastApiAvailable'] = (isAvailable: boolean) => {
