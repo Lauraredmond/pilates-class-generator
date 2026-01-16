@@ -24,6 +24,8 @@
     "test:e2e:clickthrough:dev": "playwright test e2e/full-clickthrough-with-cast.spec.ts --project='dev-chromium' --headed",
     "test:e2e:clickthrough:mobile": "playwright test e2e/full-clickthrough-with-cast.spec.ts --project='dev-mobile-safari' --headed",
     "test:e2e:cast": "playwright test e2e/full-clickthrough-with-cast.spec.ts --grep 'CHROMECAST ONLY' --headed",
+    "test:e2e:comprehensive": "playwright test e2e/comprehensive-app-test.spec.ts --headed",
+    "test:e2e:comprehensive:dev": "playwright test e2e/comprehensive-app-test.spec.ts --project='dev-chromium' --headed",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
     "type-check": "tsc --noEmit",
