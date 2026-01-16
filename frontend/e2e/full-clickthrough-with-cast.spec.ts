@@ -62,6 +62,25 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
       consoleMessages.push(`[PAGE ERROR] ${error.message}`);
     });
 
+    // Capture network requests to see if Cast SDK loads
+    page.on('request', (request) => {
+      if (request.url().includes('gstatic.com') || request.url().includes('cast')) {
+        console.log(`[NETWORK REQUEST] ${request.method()} ${request.url()}`);
+      }
+    });
+
+    page.on('response', (response) => {
+      if (response.url().includes('gstatic.com') || response.url().includes('cast')) {
+        console.log(`[NETWORK RESPONSE] ${response.status()} ${response.url()}`);
+      }
+    });
+
+    page.on('requestfailed', (request) => {
+      if (request.url().includes('gstatic.com') || request.url().includes('cast')) {
+        console.log(`[NETWORK FAILED] ${request.url()} - ${request.failure()?.errorText}`);
+      }
+    });
+
     // Navigate to home page
     await page.goto('/');
     await page.waitForLoadState('networkidle');
