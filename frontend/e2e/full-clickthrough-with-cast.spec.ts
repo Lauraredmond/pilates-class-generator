@@ -530,71 +530,51 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
       // Take a screenshot for debugging
       await page.screenshot({ path: 'screenshots/cast-class-builder-state.png', fullPage: true });
 
-      // Look for any signs of a generated class
-      // Check multiple indicators
-      const classIndicators = [
-        page.locator('text="Your Auto-Generated Class"'),
-        page.locator('text="Movement Sequence"'),
-        page.locator('text="Muscle Group Balance"'),
-        page.locator('button >> text=/Accept/i')
-      ];
+      // Check if the class generation modal/overlay is already displayed
+      const classModal = page.locator('text="Your Auto-Generated Class"');
+      const modalVisible = await classModal.isVisible({ timeout: 3000 }).catch(() => false);
 
-      let hasClassGenerated = false;
-      for (const indicator of classIndicators) {
-        if (await indicator.isVisible({ timeout: 1000 }).catch(() => false)) {
-          hasClassGenerated = true;
-          console.log(`Found class indicator: ${await indicator.textContent()}`);
-          break;
-        }
-      }
+      if (modalVisible) {
+        console.log('Found "Your Auto-Generated Class" modal displayed');
 
-      // Try to find the Accept button with very broad search
-      let acceptExistingButton = null;
-      let hasPreGeneratedClass = false;
-
-      // First try: Look for any button containing the word "Accept"
-      const acceptButtons = await page.locator('button').filter({ hasText: /accept/i }).all();
-      console.log(`Found ${acceptButtons.length} buttons containing "Accept"`);
-
-      for (const btn of acceptButtons) {
-        const text = await btn.textContent();
-        console.log(`  Button text: "${text}"`);
-        if (text && text.toLowerCase().includes('accept')) {
-          acceptExistingButton = btn;
-          hasPreGeneratedClass = true;
-          console.log(`Selected button: "${text}"`);
-          break;
-        }
-      }
-
-      // If still not found, look for the button at the bottom of the page
-      if (!hasPreGeneratedClass && hasClassGenerated) {
-        console.log('Looking for buttons at the bottom of the generated class section...');
-        const bottomButtons = page.locator('button').last();
-        const bottomButtonText = await bottomButtons.textContent().catch(() => '');
-        console.log(`Last button on page: "${bottomButtonText}"`);
-        if (bottomButtonText.toLowerCase().includes('accept')) {
-          acceptExistingButton = bottomButtons;
-          hasPreGeneratedClass = true;
-        }
-      }
-
-      if (hasPreGeneratedClass && acceptExistingButton) {
-        console.log('Found pre-generated class on page, accepting it...');
-
-        // Take screenshot of the pre-generated class
+        // Take screenshot of the modal
         await page.screenshot({ path: 'screenshots/cast-pre-generated-class.png', fullPage: true });
 
-        // Ensure button is in viewport
-        await acceptExistingButton.scrollIntoViewIfNeeded();
-        await page.waitForTimeout(500);
+        // Look for the Accept button within or near the modal
+        // The button might have special characters or be formatted differently
+        const acceptButton = page.locator('button:has-text("Accept & Add to Class"), button:has-text("Accept"), button').filter({ hasText: /accept.*add.*class/i });
 
-        // Click the Accept & Add to Class button
-        await acceptExistingButton.click();
-        console.log('Clicked Accept button');
+        // If not found, try a more general approach
+        let acceptButtonToClick = await acceptButton.first().elementHandle();
 
-        // Wait for save to complete
-        await page.waitForTimeout(3000);
+        if (!acceptButtonToClick) {
+          // Look for all buttons and find the one with Accept text
+          const allButtons = await page.locator('button').all();
+          console.log(`Found ${allButtons.length} total buttons on page`);
+
+          for (const btn of allButtons) {
+            const text = await btn.textContent().catch(() => '');
+            const isVisible = await btn.isVisible().catch(() => false);
+            console.log(`  Button: "${text?.trim()}" (visible: ${isVisible})`);
+
+            if (text && text.includes('Accept') && text.includes('Add') && isVisible) {
+              acceptButtonToClick = await btn.elementHandle();
+              console.log(`Found Accept button with text: "${text}"`);
+              break;
+            }
+          }
+        }
+
+        if (acceptButtonToClick) {
+          console.log('Clicking Accept & Add to Class button...');
+          await acceptButtonToClick.click();
+          console.log('Clicked Accept button');
+
+          // Wait for save to complete
+          await page.waitForTimeout(3000);
+        } else {
+          console.log('ERROR: Could not find Accept & Add to Class button despite modal being visible');
+        }
 
         // Wait to see if it redirects
         await page.waitForTimeout(2000);
