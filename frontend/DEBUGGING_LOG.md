@@ -8,7 +8,7 @@
 - **Base URL**: https://basslinemvp.netlify.app (production)
 - **Playwright Version**: 1.57.0
 - **Browsers Tested**: Chromium, Mobile Chrome
-- **Test Credentials**: laura.bassline@proton.me / Laura101!! (two exclamation marks)
+- **Test Credentials**: [REDACTED - See .env.test for credentials]
 - **Note**: Mobile Safari tests failed (webkit browser not installed)
 
 ### Key Findings
@@ -26,7 +26,7 @@
 - **Note**: AudioContext properly initialized in test environment
 
 #### 3. ✅ FIXED: Authentication Working (January 15, 2026)
-- **Fixed Issue**: Incorrect password in test (was Laura101! should be Laura101!!)
+- **Fixed Issue**: Incorrect password in test (corrected in .env.test)
 - **Login successful**: Now reaching class builder and playback
 - **Medical disclaimer**: Properly handled by answering "No" to pregnancy question
 - **Full flow working**: Login → Generate class → Accept plan → Play class

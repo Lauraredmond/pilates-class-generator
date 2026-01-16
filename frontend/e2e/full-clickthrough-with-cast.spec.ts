@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
  *
  * Setup:
  *   Credentials are stored in frontend/.env.test (gitignored, not committed)
- *   Dev account: laura.bassline@proton.me
+ *   Dev account: [credentials in .env.test]
  *   Password: See .env.test file
  *
  * Usage:
@@ -31,10 +31,10 @@ import { test, expect } from '@playwright/test';
  */
 
 // Load test credentials from .env.test file
-// Default credentials match dev account (laura.bassline@proton.me)
+// Default credentials loaded from environment variables
 const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || 'laura.bassline@proton.me',
-  password: process.env.TEST_USER_PASSWORD || 'Laura101!!',
+  email: process.env.TEST_USER_EMAIL || 'test@example.com',
+  password: process.env.TEST_USER_PASSWORD || 'testpassword',
 };
 
 test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
