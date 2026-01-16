@@ -26,11 +26,11 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
     } catch (error) {
       console.error('❌ [CastButton] Error during initial diagnostics:', error);
     }
-    logger.debug('[CastButton] Component mounted, waiting for Cast SDK...');
+    console.warn('🔍 [CastButton] Component mounted, waiting for Cast SDK...');
 
     // Wait for Cast framework to load
     const initializeCastApi = () => {
-      logger.debug('[CastButton] Attempting to initialize Cast API...');
+      console.warn('🎯🎯🎯 [CastButton ITERATION 10] Attempting to initialize Cast API...');
 
       const cast = (window as any).cast;
 
@@ -101,11 +101,11 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
             setIsAvailable(devicesAvailable);
 
             if (isConnected) {
-              logger.debug('[CastButton] ✅ Connected to Chromecast');
+              console.warn('[CastButton] ✅ Connected to Chromecast');
             } else if (devicesAvailable) {
-              logger.debug('[CastButton] 📡 Chromecast device(s) available');
+              console.warn('[CastButton] 📡 Chromecast device(s) available');
             } else {
-              logger.debug('[CastButton] ❌ No Chromecast devices found');
+              console.warn('[CastButton] ❌ No Chromecast devices found');
             }
           }
         );
@@ -114,10 +114,10 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
         const castState = context.getCastState();
         setIsAvailable(castState !== cast.framework.CastState.NO_DEVICES_AVAILABLE);
 
-        logger.debug(`[CastButton] Initial Cast state: ${castState}`);
-        logger.debug('[CastButton] 🎥 Google Cast initialized successfully');
+        console.warn(`🎯 [CastButton] Initial Cast state: ${castState}`);
+        console.warn('🎯 [CastButton] 🎥 Google Cast initialized successfully');
       } catch (error) {
-        logger.error('[CastButton] Failed to initialize Cast API:', error);
+        console.error('[CastButton] Failed to initialize Cast API:', error);
       }
     };
 
@@ -136,7 +136,7 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
 
       // Wait for Cast framework to be ready via callback
       (window as any)['__onGCastApiAvailable'] = (isAvailable: boolean) => {
-        logger.debug(`[CastButton] __onGCastApiAvailable callback fired: ${isAvailable}`);
+        console.warn(`🔍 [CastButton] __onGCastApiAvailable callback fired: ${isAvailable}`);
         if (isAvailable) {
           // Callback fired, but SDK might still be loading - poll until fully ready
           const pollInterval = setInterval(() => {
@@ -154,7 +154,7 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
           // Clear polling after 5 seconds if still not ready
           setTimeout(() => clearInterval(pollInterval), 5000);
         } else {
-          logger.error('[CastButton] Cast API reported as NOT available');
+          console.error('[CastButton] Cast API reported as NOT available');
         }
       };
 
@@ -182,7 +182,7 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
           cast?.framework?.AutoJoinPolicy?.ORIGIN_SCOPED  // ← Check actual property!
         ) {
           clearInterval(directPollInterval);
-          logger.debug(`[CastButton] Cast SDK detected via polling after ${pollCount} attempts`);
+          console.warn(`🎯 [CastButton] Cast SDK detected via polling after ${pollCount} attempts`);
           initializeCastApi();
         }
       }, 100); // Check every 100ms
@@ -194,7 +194,7 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
     // Timeout safety net: if Cast SDK doesn't load in 10 seconds, log warning
     const timeout = setTimeout(() => {
       if (!castContextRef.current) {
-        logger.warn('[CastButton] Cast SDK did not load within 10 seconds - button will remain disabled');
+        console.warn('[CastButton] Cast SDK did not load within 10 seconds - button will remain disabled');
       }
     }, 10000);
 
@@ -204,7 +204,7 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
   const handleCastClick = () => {
     const cast = (window as any).cast;
     if (!cast || !castContextRef.current) {
-      logger.warn('Cast framework not available');
+      console.warn('Cast framework not available');
       return;
     }
 
@@ -212,7 +212,7 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
       // Open cast dialog
       castContextRef.current.requestSession();
     } catch (error) {
-      logger.error('Failed to request Cast session:', error);
+      console.error('Failed to request Cast session:', error);
     }
   };
 
