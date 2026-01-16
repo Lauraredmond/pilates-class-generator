@@ -1,16 +1,29 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
 /**
  * Playwright E2E Testing Configuration
  * Supports both dev and production environments
  *
+ * Credentials:
+ *   Test credentials loaded from .env.test file (gitignored)
+ *   Dev account: laura.bassline@proton.me
+ *
  * Usage:
  *   npm run test:e2e              # Test production
  *   npm run test:e2e:dev          # Test dev environment
  *   npm run test:e2e:both         # Test both environments
+ *   npm run test:e2e:cast         # Chromecast-only test (fast)
  *
  * See https://playwright.dev/docs/test-configuration
  */
+
+// Load test credentials from .env.test (if exists)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: resolve(__dirname, '.env.test') });
 
 // Determine which environment to test based on env var
 const TEST_ENV = process.env.TEST_ENV || 'production';
