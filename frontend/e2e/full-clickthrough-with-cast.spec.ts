@@ -524,15 +524,32 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
 
       console.log('On class builder page...');
 
-      // Wait for the page to fully render
-      await page.waitForTimeout(3000);
+      // Wait for the page to fully render (give more time for modal to appear)
+      await page.waitForTimeout(5000);
 
       // Take a screenshot for debugging
       await page.screenshot({ path: 'screenshots/cast-class-builder-state.png', fullPage: true });
 
       // FIRST: Check if the "Your Auto-Generated Class" modal/overlay is displayed
-      const classModalText = page.locator('text="Your Auto-Generated Class"');
-      const classModalVisible = await classModalText.isVisible({ timeout: 3000 }).catch(() => false);
+      // Try multiple selectors as the text might be rendered differently
+      const modalSelectors = [
+        'text="Your Auto-Generated Class"',
+        'text=/Your.*Auto.*Generated.*Class/i',
+        'h2:has-text("Your Auto-Generated Class")',
+        ':has-text("Your Auto-Generated Class")',
+        'text="Review the generated sequence"'
+      ];
+
+      let classModalVisible = false;
+      for (const selector of modalSelectors) {
+        const element = page.locator(selector);
+        const isVisible = await element.isVisible({ timeout: 1000 }).catch(() => false);
+        if (isVisible) {
+          classModalVisible = true;
+          console.log(`Found modal with selector: ${selector}`);
+          break;
+        }
+      }
 
       if (classModalVisible) {
         console.log('Found "Your Auto-Generated Class" modal displayed');
@@ -592,18 +609,40 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
           throw new Error('Accept button not found in visible modal');
         }
       } else {
-        console.log('No "Your Auto-Generated Class" modal found, checking for other scenarios...');
+        console.log('No "Your Auto-Generated Class" modal found via text, checking for Accept button directly...');
 
-        // Check if there's a Play Class button on the page
-        const playButton = page.locator('button:has-text("Play Class")');
-        const playButtonVisible = await playButton.isVisible({ timeout: 2000 }).catch(() => false);
+        // Even if we didn't detect the modal text, check if Accept button is visible
+        const acceptButtonDirect = page.locator('button:has-text("Accept & Add to Class")');
+        const acceptButtonDirectVisible = await acceptButtonDirect.isVisible({ timeout: 2000 }).catch(() => false);
 
-        if (playButtonVisible) {
-          const playButtonEnabled = await playButton.isEnabled().catch(() => false);
+        if (acceptButtonDirectVisible) {
+          console.log('Found Accept & Add to Class button directly (modal may be present but text not detected)');
+          await acceptButtonDirect.click();
+          console.log('Clicked Accept button');
+          await page.waitForTimeout(3000);
 
-          if (playButtonEnabled) {
-            console.log('Found enabled Play Class button, clicking it to start playback directly...');
-            await playButton.click();
+          // Check if we're still on class-builder or redirected
+          const currentUrl = page.url();
+          console.log(`Current URL after accepting class: ${currentUrl}`);
+
+          if (!currentUrl.includes('/classes') && !currentUrl.includes('/playback')) {
+            console.log('Not redirected, navigating to classes page...');
+            await page.goto('/classes');
+            await page.waitForLoadState('networkidle');
+          }
+        } else {
+          console.log('No Accept button found, checking for Play Class button...');
+
+          // Check if there's a Play Class button on the page
+          const playButton = page.locator('button:has-text("Play Class")');
+          const playButtonVisible = await playButton.isVisible({ timeout: 2000 }).catch(() => false);
+
+          if (playButtonVisible) {
+            const playButtonEnabled = await playButton.isEnabled().catch(() => false);
+
+            if (playButtonEnabled) {
+              console.log('Found enabled Play Class button, clicking it to start playback directly...');
+              await playButton.click();
 
             // Wait for playback page
             await page.waitForURL(/playback/i, { timeout: 10000 }).catch(() => {
@@ -755,7 +794,7 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
 
       // Wait for Cast SDK to load on playback page
       await page.waitForTimeout(3000);
-      console.log('Current URL after navigation:', page.url())
+      console.log('Current URL after navigation:', page.url());
     });
 
     await test.step('Debug Chromecast button state', async () => {
