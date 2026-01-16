@@ -524,9 +524,49 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
 
       console.log('On class builder page...');
 
-      // Check if there's already a generated class on the page (shows "Accept & Add to Class" button)
-      const acceptExistingButton = page.locator('button:has-text("Accept & Add to Class")');
-      const hasPreGeneratedClass = await acceptExistingButton.isVisible({ timeout: 2000 }).catch(() => false);
+      // Wait a moment for any pre-generated class to fully render
+      await page.waitForTimeout(2000);
+
+      // First check if there's a generated class shown on the page
+      const generatedClassHeader = page.locator('text="Your Auto-Generated Class"');
+      const hasGeneratedClass = await generatedClassHeader.isVisible({ timeout: 2000 }).catch(() => false);
+
+      if (hasGeneratedClass) {
+        console.log('Detected "Your Auto-Generated Class" section is visible');
+      }
+
+      // Look for Accept & Add to Class button
+      // Try multiple selectors for better detection
+      const acceptButtonSelectors = [
+        'button:has-text("Accept & Add to Class")',
+        'button:has-text("Accept") >> nth=1',  // Sometimes there are multiple buttons with "Accept"
+        'button >> text=/Accept.*Add.*Class/i'
+      ];
+
+      let acceptExistingButton = null;
+      let hasPreGeneratedClass = false;
+
+      for (const selector of acceptButtonSelectors) {
+        const button = page.locator(selector);
+        if (await button.isVisible({ timeout: 2000 }).catch(() => false)) {
+          acceptExistingButton = button;
+          hasPreGeneratedClass = true;
+          console.log(`Found Accept button with selector: ${selector}`);
+          break;
+        }
+      }
+
+      // If we couldn't find the button but saw the header, look harder
+      if (!hasPreGeneratedClass && hasGeneratedClass) {
+        console.log('Class is generated but Accept button not found, looking for any button with "Accept"...');
+        const allAcceptButtons = page.locator('button:has-text("Accept")');
+        const count = await allAcceptButtons.count();
+        console.log(`Found ${count} buttons with "Accept" text`);
+        if (count > 0) {
+          acceptExistingButton = allAcceptButtons.last(); // Usually the last one is "Accept & Add to Class"
+          hasPreGeneratedClass = true;
+        }
+      }
 
       if (hasPreGeneratedClass) {
         console.log('Found pre-generated class on page, accepting it...');
@@ -541,10 +581,15 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
         // Wait for save to complete
         await page.waitForTimeout(3000);
 
-        // Sometimes it redirects automatically, sometimes stays on page
+        // Wait to see if it redirects
+        await page.waitForTimeout(2000);
+
+        // Check if we're still on class-builder or redirected
         const currentUrl = page.url();
+        console.log(`Current URL after accepting class: ${currentUrl}`);
+
         if (!currentUrl.includes('/classes') && !currentUrl.includes('/playback')) {
-          // Navigate to classes if not auto-redirected
+          console.log('Not redirected, navigating to classes page...');
           await page.goto('/classes');
           await page.waitForLoadState('networkidle');
         }
