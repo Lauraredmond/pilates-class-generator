@@ -3468,7 +3468,39 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
 **🎯 REMAINING PRIORITY TASKS:**
 
-2. **~~Set Up Dev/QA Environment Pipeline~~** ✅ **COMPLETED** (December 18, 2025)
+2. **Chromecast Integration** (High Priority - Next Session)
+   - **Goal:** Add Google Cast support to enable casting classes to TV/Chromecast
+   - **User Request:** "I'd like to plan how I can test if you can cast my app to chromecast" (January 4, 2026)
+   - **Why Needed:** Les Mills app has cast icon - users expect this feature for TV playback
+   - **Implementation Plan:**
+     1. Add Google Cast SDK to `frontend/index.html` (~5 min)
+     2. Create CastButton React component (~15 min)
+     3. Modify ClassPlayback for remote playback support (~30 min)
+        - Detect when casting is active
+        - Load media to remote player (voiceovers + background music)
+        - Sync playback controls (play/pause/skip) between phone and TV
+        - Handle local vs remote playback modes
+     4. Configure media metadata for TV display (~15 min)
+        - Set class name, movement name, duration on TV
+        - Add thumbnail images (Bassline logo)
+        - Configure media tracks for audio
+     5. Create testing documentation (~20 min)
+        - Requirements: Chromecast device or Google TV
+        - Test steps for mobile browser → TV casting
+        - Verify audio ducking works during voiceovers on TV
+   - **Testing Requirements:**
+     - Chromecast device or Google TV
+     - iPhone/Android on same WiFi as Chromecast
+     - Physical access to both devices for verification
+   - **Technical Notes:**
+     - No native app needed - works in mobile browser (Safari/Chrome)
+     - Audio + Video support (video ready for Phase 2)
+     - Free to implement (Google Cast SDK is free)
+     - Battery-friendly (phone becomes remote control)
+   - **Estimated Time:** ~2 hours (1.5 hours dev + 30 min testing)
+   - **Status:** Plan approved, ready for implementation next session
+
+3. **~~Set Up Dev/QA Environment Pipeline~~** ✅ **COMPLETED** (December 18, 2025)
    - **Status:** Fully operational and tested with successful TEST marker workflow verification
    - **What Was Completed:**
      - ✅ Created `dev` branch with auto-deploy to Netlify dev site
@@ -3491,7 +3523,7 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
      - `/docs/DEV_QA_SETUP_CHECKLIST.md` - Step-by-step checklist
      - `/docs/DEV_QA_WORKFLOW.md` - Quick reference for daily workflow
 
-2. **🤖 Test Automation Implementation Plan** (4-6 hours setup, ongoing benefits)
+4. **🤖 Test Automation Implementation Plan** (4-6 hours setup, ongoing benefits)
    - **User Need:** "Can you always check render logs and Supabase content before asking me to do so?"
    - **Goal:** Reduce manual QA time by 50-70% through proactive automated testing
    - **Implementation:** Multi-phase automation strategy
@@ -3611,17 +3643,17 @@ Class builder modal screen is buggy. Unclear on memory over details but it shoul
 
    **Status:** Phase 1 protocol active immediately, Phase 2 planned post-dev-QA pipeline
 
-3. **~~Fix Playback Crash Bug~~** ✅ **RESOLVED** (December 8, 2025)
+5. **~~Fix Playback Crash Bug~~** ✅ **RESOLVED** (December 8, 2025)
    - **⚠️ NOTE:** User has flagged this as RESOLVED multiple times. Stop suggesting it as a priority task.
    - **Status:** Fixed with null-safe optional chaining in MovementDisplay.tsx
    - **Verification:** All 6 section types render correctly in playback
    - **See:** Session 13 "✅ FIXED: Playback Crash" for complete resolution details
 
-4. **~~Single Movement Video Demo~~** ❌ NOT APPLICABLE ANYMORE
+6. **~~Single Movement Video Demo~~** ❌ NOT APPLICABLE ANYMORE
    - **Status:** Removed from roadmap (December 28, 2025)
    - **Reason:** User decided not to pursue this feature
 
-5. **~~Archive.org Music Migration~~** ❌ NOT APPLICABLE ANYMORE
+7. **~~Archive.org Music Migration~~** ❌ NOT APPLICABLE ANYMORE
    - **Status:** Removed from roadmap (December 28, 2025)
    - **Reason:** Much of this work has been completed or determined unnecessary
 

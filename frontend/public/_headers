@@ -7,7 +7,12 @@
   # Content Security Policy (CSP)
   # Protects against XSS, clickjacking, and other injection attacks
   # Solution to OWASP ZAP findings: CSP failures (Medium Risk)
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://archive.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://pilates-dev-i0jb.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co https://archive.org https://*.archive.org; media-src 'self' https://archive.org https://*.archive.org https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co https://*.cloudfront.net https://pilates-movement-videos.s3.us-east-1.amazonaws.com https://*.s3.us-east-1.amazonaws.com blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self' blob:; manifest-src 'self'; child-src 'none'; upgrade-insecure-requests
+  #
+  # Google Cast SDK Requirements:
+  # - script-src: https://*.gstatic.com (SDK loading)
+  # - connect-src: https://*.google.com, https://*.googleapis.com, https://*.gstatic.com, https://*.googleusercontent.com
+  #   (required for Chromecast device discovery, session management, and receiver app communication)
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://archive.org https://www.gstatic.com https://*.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co; font-src 'self' data:; connect-src 'self' https://pilates-class-generator-api3.onrender.com https://pilates-dev-i0jb.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co https://archive.org https://*.archive.org https://*.google.com https://*.googleapis.com https://*.gstatic.com https://*.googleusercontent.com; media-src 'self' https://archive.org https://*.archive.org https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co https://*.cloudfront.net https://pilates-movement-videos.s3.us-east-1.amazonaws.com https://*.s3.us-east-1.amazonaws.com blob:; frame-src https://*.google.com https://*.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self' blob:; manifest-src 'self'; child-src https://*.google.com https://*.gstatic.com; upgrade-insecure-requests
 
   # Clickjacking Protection
   # Prevents site from being embedded in iframes on other domains
@@ -80,4 +85,4 @@
 # Cache Control for Robots.txt
 /robots.txt
   Cache-Control: public, max-age=86400
-# Force rebuild Mon 15 Dec 2025 19:48:27 GMT
+# Force rebuild Thu 16 Jan 2026 17:58:00 GMT (CSP fix for Cast SDK)

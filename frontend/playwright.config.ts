@@ -1,9 +1,36 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
 /**
  * Playwright E2E Testing Configuration
+ * Supports both dev and production environments
+ *
+ * Credentials:
+ *   Test credentials loaded from .env.test file (gitignored)
+ *   Dev account: [credentials in .env.test]
+ *
+ * Usage:
+ *   npm run test:e2e              # Test production
+ *   npm run test:e2e:dev          # Test dev environment
+ *   npm run test:e2e:both         # Test both environments
+ *   npm run test:e2e:cast         # Chromecast-only test (fast)
+ *
  * See https://playwright.dev/docs/test-configuration
  */
+
+// Load test credentials from .env.test (if exists)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: resolve(__dirname, '.env.test') });
+
+// Determine which environment to test based on env var
+const TEST_ENV = process.env.TEST_ENV || 'production';
+
+const DEV_BASE_URL = 'https://bassline-dev.netlify.app';
+const PROD_BASE_URL = 'https://basslinemvp.netlify.app';
+
 export default defineConfig({
   testDir: './e2e',
 
@@ -24,8 +51,8 @@ export default defineConfig({
 
   /* Shared settings for all the projects below */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://bassline-dev.netlify.app',
+    /* Base URL determined by TEST_ENV */
+    baseURL: TEST_ENV === 'dev' ? DEV_BASE_URL : PROD_BASE_URL,
 
     /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
@@ -37,31 +64,61 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for environment + browser combinations */
   projects: [
+    // Production Environment Tests
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-
-    // Uncomment to test on other browsers:
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    /* Test against mobile viewports */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
+      name: 'prod-chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: PROD_BASE_URL,
+      },
+      testMatch: /.*\.spec\.ts$/, // All test files
+      testIgnore: /.*-dev\.spec\.ts$/, // Skip dev-specific tests
     },
     {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      name: 'prod-mobile-chrome',
+      use: {
+        ...devices['Pixel 5'],
+        baseURL: PROD_BASE_URL,
+      },
+      testMatch: /.*\.spec\.ts$/,
+      testIgnore: /.*-dev\.spec\.ts$/,
+    },
+    {
+      name: 'prod-mobile-safari',
+      use: {
+        ...devices['iPhone 12'],
+        baseURL: PROD_BASE_URL,
+      },
+      testMatch: /.*\.spec\.ts$/,
+      testIgnore: /.*-dev\.spec\.ts$/,
+    },
+
+    // Dev Environment Tests
+    {
+      name: 'dev-chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: DEV_BASE_URL,
+      },
+      testMatch: /.*\.spec\.ts$/, // All test files
+    },
+    {
+      name: 'dev-mobile-chrome',
+      use: {
+        ...devices['Pixel 5'],
+        baseURL: DEV_BASE_URL,
+      },
+      testMatch: /.*\.spec\.ts$/,
+    },
+    {
+      name: 'dev-mobile-safari',
+      use: {
+        ...devices['iPhone 12'],
+        baseURL: DEV_BASE_URL,
+      },
+      testMatch: /.*\.spec\.ts$/,
     },
   ],
 

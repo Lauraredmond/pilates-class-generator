@@ -11,6 +11,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { logger } from '../utils/logger';
+import { logMediaEvent } from '../utils/debug';
 
 interface AudioDuckingConfig {
   musicUrl: string;
@@ -72,6 +73,12 @@ export function useAudioDucking({
 
   /**
    * Initialize Web Audio API context and gain nodes
+   *
+   * FIX (Jan 2026): iOS PWA AudioContext initialization failure
+   * - iOS PWA has stricter sandbox restrictions than browser
+   * - AudioContext can fail on app launch (before user gesture)
+   * - This breaks ALL audio (music + voiceover) until app removed/re-added
+   * - Fix: Detect failure and provide retry mechanism
    */
   useEffect(() => {
     try {
@@ -94,12 +101,33 @@ export function useAudioDucking({
       musicGainRef.current = musicGain;
       voiceoverGainRef.current = voiceoverGain;
 
-      logger.debug('Web Audio API initialized');
+      // Expose AudioContext globally for debug panel
+      (window as any).__AUDIO_CONTEXT__ = context;
+
+      logger.debug('Web Audio API initialized successfully');
+      logMediaEvent('music', 'AudioContext initialized', {
+        state: context.state,
+        sampleRate: context.sampleRate,
+        baseLatency: context.baseLatency
+      });
     } catch (error) {
       logger.error('Failed to initialize Web Audio API:', error);
+
+      // PWA-specific error message (more helpful than generic message)
+      const isPWA = 'standalone' in window.navigator && (window.navigator as any).standalone;
+      const errorMessage = isPWA
+        ? 'Audio initialization failed. Please close and reopen the app to fix audio.'
+        : 'Your browser does not support advanced audio features. Voiceover may not work correctly.';
+
+      logMediaEvent('music', 'AudioContext initialization FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+        isPWA,
+        userAgent: navigator.userAgent
+      });
+
       setState(prev => ({
         ...prev,
-        error: 'Your browser does not support advanced audio features. Voiceover may not work correctly.'
+        error: errorMessage
       }));
     }
 
@@ -122,55 +150,182 @@ export function useAudioDucking({
    * This fixes two bugs:
    * - Music stops when phone screen locks
    * - Voiceover doesn't play on natural section transitions after phone wake
+   *
+   * iOS PWA FIX (Phase 3): Added aggressive AudioContext recovery
+   * - iOS may suspend AudioContext even when visibility doesn't change
+   * - iOS may require multiple resume attempts
+   * - iOS may need audio elements to be re-played after suspend
    */
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         // Page hidden (phone locked or tab switched)
         logger.debug('Page hidden - AudioContext may suspend');
+        logMediaEvent('music', 'Page hidden', {
+          contextState: audioContextRef.current?.state,
+          isPaused: isPausedRef.current
+        });
       } else {
         // Page visible again (phone unlocked or tab focused)
         logger.debug('Page visible - checking AudioContext state');
+        logMediaEvent('music', 'Page visible', {
+          contextState: audioContextRef.current?.state,
+          isPaused: isPausedRef.current,
+          musicPaused: musicElementRef.current?.paused,
+          voiceoverPaused: voiceoverElementRef.current?.paused
+        });
 
-        // Resume AudioContext if suspended
-        if (audioContextRef.current?.state === 'suspended') {
-          logger.debug('AudioContext suspended, resuming...');
-          audioContextRef.current.resume().then(() => {
-            logger.debug('AudioContext resumed after visibility change');
+        // iOS PWA FIX: Aggressive AudioContext resume strategy
+        const attemptResume = async () => {
+          if (!audioContextRef.current) return;
 
-            // Only resume playback if not manually paused
-            if (!isPausedRef.current) {
-              // Resume music if it was playing
-              if (musicElementRef.current && musicElementRef.current.paused) {
-                logger.debug('Resuming music after visibility change');
-                musicElementRef.current.play().catch(err => {
-                  logger.error('Failed to resume music:', err);
-                });
+          // Check if suspended
+          if (audioContextRef.current.state === 'suspended') {
+            logger.debug('AudioContext suspended, resuming...');
+            logMediaEvent('music', 'AudioContext resume attempt', {
+              state: audioContextRef.current.state,
+              isPaused: isPausedRef.current
+            });
+
+            try {
+              await audioContextRef.current.resume();
+              logger.debug('AudioContext resumed after visibility change');
+              logMediaEvent('music', 'AudioContext resumed SUCCESS', {
+                newState: audioContextRef.current.state
+              });
+
+              // iOS PWA FIX: Wait for AudioContext to fully activate
+              // iOS sometimes reports 'running' but isn't ready yet
+              await new Promise(resolve => setTimeout(resolve, 100));
+
+              // Only resume playback if not manually paused
+              if (!isPausedRef.current) {
+                // Resume music if it was playing
+                if (musicElementRef.current && musicElementRef.current.paused && musicElementRef.current.src) {
+                  logger.debug('Resuming music after visibility change');
+                  logMediaEvent('music', 'Resume music after wake', {
+                    src: musicElementRef.current.src,
+                    currentTime: musicElementRef.current.currentTime
+                  });
+
+                  try {
+                    await musicElementRef.current.play();
+                    logMediaEvent('music', 'Music resumed SUCCESS', {});
+                  } catch (err: any) {
+                    logger.error('Failed to resume music:', err);
+                    logMediaEvent('music', 'Music resume FAILED', {
+                      error: err.message,
+                      errorName: err.name
+                    });
+                  }
+                }
+
+                // Resume voiceover if it was playing
+                if (voiceoverElementRef.current && voiceoverElementRef.current.paused && voiceoverElementRef.current.src) {
+                  logger.debug('Resuming voiceover after visibility change');
+                  logMediaEvent('voiceover', 'Resume voiceover after wake', {
+                    src: voiceoverElementRef.current.src,
+                    currentTime: voiceoverElementRef.current.currentTime
+                  });
+
+                  try {
+                    await voiceoverElementRef.current.play();
+                    logMediaEvent('voiceover', 'Voiceover resumed SUCCESS', {});
+                  } catch (err: any) {
+                    logger.error('Failed to resume voiceover:', err);
+                    logMediaEvent('voiceover', 'Voiceover resume FAILED', {
+                      error: err.message,
+                      errorName: err.name
+                    });
+                  }
+                }
               }
-
-              // Resume voiceover if it was playing
-              if (voiceoverElementRef.current && voiceoverElementRef.current.paused) {
-                logger.debug('Resuming voiceover after visibility change');
-                voiceoverElementRef.current.play().catch(err => {
-                  logger.error('Failed to resume voiceover:', err);
-                });
-              }
+            } catch (err: any) {
+              logger.error('Failed to resume AudioContext:', err);
+              logMediaEvent('music', 'AudioContext resume FAILED', {
+                error: err.message,
+                errorName: err.name,
+                state: audioContextRef.current.state
+              });
             }
-          }).catch(err => {
-            logger.error('Failed to resume AudioContext:', err);
-          });
-        }
+          }
+        };
+
+        attemptResume();
       }
     };
 
     // Listen for visibility changes
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // iOS PWA FIX: Also listen for focus event (iOS may not fire visibilitychange reliably)
+    const handleFocus = () => {
+      if (audioContextRef.current?.state === 'suspended') {
+        logger.debug('Window focused with suspended AudioContext - attempting resume');
+        logMediaEvent('music', 'Focus event - AudioContext suspended', {
+          state: audioContextRef.current.state
+        });
+        handleVisibilityChange(); // Reuse visibility change logic
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
     // Cleanup
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
+
+  /**
+   * iOS PWA FIX (Phase 3): Periodic AudioContext health check
+   *
+   * iOS may suspend AudioContext even without visibility changes.
+   * This effect periodically checks AudioContext state and attempts recovery.
+   * Only runs when playback is active (not paused).
+   */
+  useEffect(() => {
+    if (isPaused) return; // Don't check when paused
+
+    const healthCheckInterval = setInterval(() => {
+      if (!audioContextRef.current) return;
+
+      // Check if AudioContext is unexpectedly suspended
+      if (audioContextRef.current.state === 'suspended') {
+        logger.warn('AudioContext unexpectedly suspended - attempting recovery');
+        logMediaEvent('music', 'AudioContext health check FAILED - suspended', {
+          isPaused,
+          musicPaused: musicElementRef.current?.paused,
+          voiceoverPaused: voiceoverElementRef.current?.paused,
+          documentHidden: document.hidden
+        });
+
+        // Attempt resume
+        audioContextRef.current.resume()
+          .then(() => {
+            logger.debug('AudioContext recovered via health check');
+            logMediaEvent('music', 'AudioContext health check RECOVERED', {
+              newState: audioContextRef.current!.state
+            });
+          })
+          .catch((err: any) => {
+            logger.error('AudioContext health check recovery failed:', err);
+            logMediaEvent('music', 'AudioContext health check RECOVERY FAILED', {
+              error: err.message
+            });
+          });
+      } else {
+        // Log healthy state occasionally
+        logMediaEvent('music', 'AudioContext health check OK', {
+          state: audioContextRef.current.state,
+          baseLatency: audioContextRef.current.baseLatency
+        });
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(healthCheckInterval);
+  }, [isPaused]);
 
   /**
    * Create music audio element ONCE on mount (same pattern as voiceover)
@@ -197,13 +352,74 @@ export function useAudioDucking({
       musicSourceRef.current = source;
 
       // Event listeners (attached once, work for all tracks)
+      audio.addEventListener('loadstart', () => {
+        logMediaEvent('music', 'loadstart', { src: audio.src });
+      });
+
+      audio.addEventListener('loadedmetadata', () => {
+        logMediaEvent('music', 'loadedmetadata', {
+          duration: audio.duration,
+          networkState: audio.networkState
+        });
+      });
+
+      audio.addEventListener('loadeddata', () => {
+        logMediaEvent('music', 'loadeddata', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('canplay', () => {
+        logMediaEvent('music', 'canplay', { buffered: audio.buffered.length > 0 ? audio.buffered.end(0) : 0 });
+      });
+
       audio.addEventListener('canplaythrough', () => {
         logger.debug('Music track ready (canplaythrough)');
+        logMediaEvent('music', 'canplaythrough', {
+          src: audio.src,
+          readyState: audio.readyState
+        });
         setState(prev => ({ ...prev, musicReady: true }));
+      });
+
+      audio.addEventListener('playing', () => {
+        logMediaEvent('music', 'playing', {
+          currentTime: audio.currentTime,
+          volume: audio.volume
+        });
+      });
+
+      audio.addEventListener('pause', () => {
+        logMediaEvent('music', 'pause', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('waiting', () => {
+        logMediaEvent('music', 'waiting (buffering)', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('stalled', () => {
+        logMediaEvent('music', 'stalled (network issue)', {
+          currentTime: audio.currentTime,
+          networkState: audio.networkState
+        });
       });
 
       audio.addEventListener('error', (e) => {
         logger.error('Music load error:', e, audio.error);
+        const errorDetails = audio.error ? {
+          code: audio.error.code,
+          message: audio.error.message,
+          MEDIA_ERR_ABORTED: audio.error.code === 1,
+          MEDIA_ERR_NETWORK: audio.error.code === 2,
+          MEDIA_ERR_DECODE: audio.error.code === 3,
+          MEDIA_ERR_SRC_NOT_SUPPORTED: audio.error.code === 4
+        } : { message: 'Unknown error' };
+
+        logMediaEvent('music', 'ERROR', {
+          ...errorDetails,
+          src: audio.src,
+          networkState: audio.networkState,
+          readyState: audio.readyState
+        });
+
         setState(prev => ({
           ...prev,
           error: 'Failed to load background music'
@@ -213,14 +429,25 @@ export function useAudioDucking({
       // Call onMusicEnded callback when track finishes (for playlist advancement)
       audio.addEventListener('ended', () => {
         logger.debug('Music track ended - calling onMusicEnded callback');
+        logMediaEvent('music', 'ended', {
+          src: audio.src,
+          duration: audio.duration
+        });
         if (onMusicEndedRef.current) {
           onMusicEndedRef.current();
         }
       });
 
       logger.debug('Music element created successfully (reusable)');
+      logMediaEvent('music', 'element created (reusable)', {
+        crossOrigin: audio.crossOrigin,
+        preload: audio.preload
+      });
     } catch (error) {
       logger.error('Failed to setup music audio element:', error);
+      logMediaEvent('music', 'element creation FAILED', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       setState(prev => ({
         ...prev,
         error: 'Failed to setup background music'
@@ -231,8 +458,14 @@ export function useAudioDucking({
     return () => {
       if (musicElementRef.current) {
         logger.debug('Unmounting: cleaning up music element');
+
+        // Pause playback
         musicElementRef.current.pause();
-        musicElementRef.current.src = '';
+
+        // Don't set src = '' as that triggers MediaError code 4
+        // Don't manually remove event listeners - they'll be garbage collected with the element
+        // Just pause and nullify ref - browser handles cleanup
+
         musicElementRef.current = null;
       }
     };
@@ -246,6 +479,7 @@ export function useAudioDucking({
    */
   useEffect(() => {
     logger.debug(`[useAudioDucking] Music URL changed: ${musicUrl || 'none'}`);
+    logMediaEvent('music', 'URL changed', { newUrl: musicUrl || 'none' });
 
     const audio = musicElementRef.current;
     if (!audio) {
@@ -260,6 +494,12 @@ export function useAudioDucking({
 
     // Stop current track and load new one
     logger.debug(`[useAudioDucking] Switching music track to: ${musicUrl}`);
+    logMediaEvent('music', 'switching track', {
+      oldSrc: audio.src,
+      newSrc: musicUrl,
+      wasPlaying: !audio.paused
+    });
+
     audio.pause();
     audio.currentTime = 0;
 
@@ -268,6 +508,7 @@ export function useAudioDucking({
     audio.load(); // Start downloading immediately
 
     logger.debug('Music src updated, downloading...');
+    logMediaEvent('music', 'src updated - loading', { src: musicUrl });
 
     // Auto-play if player is not paused (resume playback after track change)
     if (!isPausedRef.current) {
@@ -308,13 +549,78 @@ export function useAudioDucking({
       voiceoverSourceRef.current = source;
 
       // Event listeners (attached once, work for all voiceovers)
+      audio.addEventListener('loadstart', () => {
+        logMediaEvent('voiceover', 'loadstart', { src: audio.src });
+      });
+
+      audio.addEventListener('loadedmetadata', () => {
+        logMediaEvent('voiceover', 'loadedmetadata', {
+          duration: audio.duration,
+          networkState: audio.networkState
+        });
+      });
+
+      audio.addEventListener('loadeddata', () => {
+        logMediaEvent('voiceover', 'loadeddata', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('canplay', () => {
+        logMediaEvent('voiceover', 'canplay', {
+          buffered: audio.buffered.length > 0 ? audio.buffered.end(0) : 0
+        });
+      });
+
       audio.addEventListener('canplaythrough', () => {
         logger.debug('Voiceover ready (canplaythrough)');
+        logMediaEvent('voiceover', 'canplaythrough', {
+          src: audio.src,
+          readyState: audio.readyState
+        });
         setState(prev => ({ ...prev, voiceoverReady: true, error: null }));
+      });
+
+      audio.addEventListener('playing', () => {
+        logMediaEvent('voiceover', 'playing', {
+          currentTime: audio.currentTime,
+          volume: audio.volume
+        });
+      });
+
+      audio.addEventListener('pause', () => {
+        logMediaEvent('voiceover', 'pause', { currentTime: audio.currentTime });
+      });
+
+      audio.addEventListener('waiting', () => {
+        logMediaEvent('voiceover', 'waiting (buffering)', {
+          currentTime: audio.currentTime
+        });
+      });
+
+      audio.addEventListener('stalled', () => {
+        logMediaEvent('voiceover', 'stalled (network issue)', {
+          currentTime: audio.currentTime,
+          networkState: audio.networkState
+        });
       });
 
       audio.addEventListener('error', (e) => {
         logger.error('Voiceover load error:', e, audio.error);
+        const errorDetails = audio.error ? {
+          code: audio.error.code,
+          message: audio.error.message,
+          MEDIA_ERR_ABORTED: audio.error.code === 1,
+          MEDIA_ERR_NETWORK: audio.error.code === 2,
+          MEDIA_ERR_DECODE: audio.error.code === 3,
+          MEDIA_ERR_SRC_NOT_SUPPORTED: audio.error.code === 4
+        } : { message: 'Unknown error' };
+
+        logMediaEvent('voiceover', 'ERROR', {
+          ...errorDetails,
+          src: audio.src,
+          networkState: audio.networkState,
+          readyState: audio.readyState
+        });
+
         setState(prev => ({
           ...prev,
           error: 'Failed to load voiceover audio'
@@ -324,18 +630,32 @@ export function useAudioDucking({
       // Duck music when voiceover starts
       audio.addEventListener('play', () => {
         logger.debug('Voiceover started - ducking music');
+        logMediaEvent('voiceover', 'play (ducking music)', {
+          targetVolume: duckedVolume
+        });
         duckMusic(duckedVolume);
       });
 
       // Restore music volume when voiceover ends
       audio.addEventListener('ended', () => {
         logger.debug('Voiceover ended - restoring music');
+        logMediaEvent('voiceover', 'ended (restoring music)', {
+          targetVolume: musicVolume,
+          duration: audio.duration
+        });
         duckMusic(musicVolume);
       });
 
       logger.debug('Voiceover element created successfully (reusable)');
+      logMediaEvent('voiceover', 'element created (reusable)', {
+        crossOrigin: audio.crossOrigin,
+        preload: audio.preload
+      });
     } catch (error) {
       logger.error('Failed to setup voiceover audio element:', error);
+      logMediaEvent('voiceover', 'element creation FAILED', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       setState(prev => ({
         ...prev,
         error: 'Failed to setup voiceover audio'
@@ -346,8 +666,14 @@ export function useAudioDucking({
     return () => {
       if (voiceoverElementRef.current) {
         logger.debug('Unmounting: cleaning up voiceover element');
+
+        // Pause playback
         voiceoverElementRef.current.pause();
-        voiceoverElementRef.current.src = '';
+
+        // Don't set src = '' as that triggers MediaError code 4
+        // Don't manually remove event listeners - they'll be garbage collected with the element
+        // Just pause and nullify ref - browser handles cleanup
+
         voiceoverElementRef.current = null;
       }
     };
@@ -361,6 +687,7 @@ export function useAudioDucking({
    */
   useEffect(() => {
     logger.debug(`[useAudioDucking] Voiceover URL changed: ${voiceoverUrl || 'none'}`);
+    logMediaEvent('voiceover', 'URL changed', { newUrl: voiceoverUrl || 'none' });
 
     const audio = voiceoverElementRef.current;
     if (!audio) {
@@ -374,6 +701,9 @@ export function useAudioDucking({
     // If no voiceover for this section, pause and clear src
     if (!voiceoverUrl) {
       logger.debug('No voiceover for this section - pausing and clearing src');
+      logMediaEvent('voiceover', 'no voiceover for section - clearing', {
+        restoringMusicVolume: musicVolume
+      });
       audio.pause();
       audio.currentTime = 0;
       audio.src = ''; // Clear src but keep element alive
@@ -384,6 +714,12 @@ export function useAudioDucking({
 
     // Stop current voiceover and load new one
     logger.debug(`[useAudioDucking] Switching voiceover to: ${voiceoverUrl}`);
+    logMediaEvent('voiceover', 'switching voiceover', {
+      oldSrc: audio.src,
+      newSrc: voiceoverUrl,
+      wasPlaying: !audio.paused
+    });
+
     audio.pause();
     audio.currentTime = 0;
 
@@ -392,6 +728,7 @@ export function useAudioDucking({
     audio.load(); // Start downloading immediately
 
     logger.debug('Voiceover src updated, downloading...');
+    logMediaEvent('voiceover', 'src updated - loading', { src: voiceoverUrl });
   }, [voiceoverUrl, musicVolume]);
 
   /**
@@ -402,6 +739,13 @@ export function useAudioDucking({
 
     const currentTime = audioContextRef.current.currentTime;
     const gain = musicGainRef.current.gain;
+
+    logMediaEvent('music', 'volume change (ducking)', {
+      from: gain.value,
+      to: targetVolume,
+      fadeTime,
+      reason: targetVolume < 1.0 ? 'voiceover playing' : 'voiceover ended'
+    });
 
     // Cancel any scheduled changes
     gain.cancelScheduledValues(currentTime);
@@ -427,14 +771,30 @@ export function useAudioDucking({
 
     if (isPaused) {
       // Pause both audio streams
+      logMediaEvent('music', 'PAUSE requested', {
+        musicPaused: musicAudio.paused,
+        voiceoverPaused: voiceoverAudio?.paused ?? true
+      });
       musicAudio.pause();
       if (voiceoverAudio) voiceoverAudio.pause();
       setState(prev => ({ ...prev, isPlaying: false }));
     } else {
+      logMediaEvent('music', 'PLAY requested', {
+        contextState: audioContextRef.current?.state,
+        musicHasSrc: !!musicAudio.src,
+        voiceoverHasSrc: !!voiceoverAudio?.src
+      });
+
       // Resume AudioContext if suspended (browser autoplay policy)
       if (audioContextRef.current?.state === 'suspended') {
+        logMediaEvent('music', 'AudioContext suspended - resuming', {
+          state: audioContextRef.current.state
+        });
         audioContextRef.current.resume().then(() => {
           logger.debug('AudioContext resumed');
+          logMediaEvent('music', 'AudioContext resumed successfully', {
+            newState: audioContextRef.current!.state
+          });
         });
       }
 
@@ -442,6 +802,12 @@ export function useAudioDucking({
       if (musicAudio.src) {
         musicAudio.play().catch(err => {
           logger.error('Music play error:', err);
+          logMediaEvent('music', 'PLAY ERROR', {
+            error: err.message,
+            errorName: err.name,
+            src: musicAudio.src,
+            readyState: musicAudio.readyState
+          });
           setState(prev => ({
             ...prev,
             error: 'Failed to play background music. Click to enable audio.'
@@ -449,12 +815,19 @@ export function useAudioDucking({
         });
       } else {
         logger.debug('Music element has no src yet - skipping play (src will be set shortly)');
+        logMediaEvent('music', 'PLAY skipped (no src yet)', {});
       }
 
       // Play voiceover ONLY if src has been set (prevents race condition)
       if (voiceoverAudio && voiceoverAudio.src) {
         voiceoverAudio.play().catch(err => {
           logger.error('Voiceover play error:', err);
+          logMediaEvent('voiceover', 'PLAY ERROR', {
+            error: err.message,
+            errorName: err.name,
+            src: voiceoverAudio.src,
+            readyState: voiceoverAudio.readyState
+          });
           setState(prev => ({
             ...prev,
             error: 'Failed to play voiceover. Click to enable audio.'
@@ -556,8 +929,49 @@ export function useAudioDucking({
 
   /**
    * Manual play trigger (for user gesture to bypass autoplay blocking)
+   *
+   * FIX (Jan 2026): iOS PWA AudioContext retry
+   * - If AudioContext failed on app launch, retry here with user gesture
+   * - User gesture provides required permissions for iOS sandbox
    */
   const manualPlay = () => {
+    logger.debug('Manual play triggered by user gesture');
+
+    // RETRY: If AudioContext failed to initialize, try again with user gesture
+    if (!audioContextRef.current) {
+      logger.warn('AudioContext not initialized - retrying with user gesture (PWA fix)');
+
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const context = new AudioContextClass();
+        audioContextRef.current = context;
+
+        // Create gain nodes
+        const musicGain = context.createGain();
+        const voiceoverGain = context.createGain();
+        musicGain.gain.value = musicVolume;
+        voiceoverGain.gain.value = 1.0;
+
+        musicGain.connect(context.destination);
+        voiceoverGain.connect(context.destination);
+
+        musicGainRef.current = musicGain;
+        voiceoverGainRef.current = voiceoverGain;
+
+        logger.debug('AudioContext initialized successfully on retry (PWA fix worked!)');
+        setState(prev => ({ ...prev, error: null }));
+
+        // Continue with playback below (don't return early)
+      } catch (error) {
+        logger.error('AudioContext retry failed:', error);
+        setState(prev => ({
+          ...prev,
+          error: 'Audio still unavailable. Please restart the app.'
+        }));
+        return; // Can't proceed without AudioContext
+      }
+    }
+
     const musicAudio = musicElementRef.current;
     const voiceoverAudio = voiceoverElementRef.current;
 
@@ -565,8 +979,6 @@ export function useAudioDucking({
       logger.error('No music audio element available');
       return;
     }
-
-    logger.debug('Manual play triggered by user gesture');
 
     // Resume AudioContext if suspended
     if (audioContextRef.current?.state === 'suspended') {
