@@ -689,6 +689,13 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
                   await expect(playButton).toBeEnabled({ timeout: 10000 });
                   console.log('Play Class button is now enabled, clicking it...');
                   await playButton.click();
+
+                  // Wait for playback to start (ClassPlayback component renders inline)
+                  await page.waitForTimeout(3000);
+                  console.log('Playback should have started inline on class-builder page');
+
+                  // Skip navigation since playback is inline
+                  return; // Exit this step early
                 } else {
                   console.log('No Accept button found after regeneration, may be inline update');
                 }
@@ -720,112 +727,130 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
 
               // Click Generate button to create the class
               const generateClassButton = page.locator('button:has-text("Generate"), button:has-text("Create Class")').first();
+              console.log('Clicking Generate button...');
               await generateClassButton.click();
 
-              // Wait for class to appear (either modal or inline)
-              await page.waitForTimeout(3000);
+              // Wait longer for generation to complete (AI or database mode)
+              console.log('Waiting for class generation to complete (up to 10 seconds)...');
 
-              // Check if "Your Auto-Generated Class" appears anywhere on the page
-              const generatedClassText = await page.locator('text="Your Auto-Generated Class"').isVisible({ timeout: 5000 }).catch(() => false);
+              // Wait for EITHER the modal to appear OR inline results
+              const generationComplete = await Promise.race([
+                // Option 1: Modal appears with "Your Auto-Generated Class"
+                page.locator('text="Your Auto-Generated Class"').waitFor({ state: 'visible', timeout: 10000 }).then(() => 'modal'),
+                // Option 2: Results modal with different text
+                page.locator('[role="dialog"]').filter({ hasText: /sequence|movement|result/i }).waitFor({ state: 'visible', timeout: 10000 }).then(() => 'dialog'),
+                // Option 3: Accept button appears (inline results)
+                page.locator('button:has-text("Accept & Add to Class")').waitFor({ state: 'visible', timeout: 10000 }).then(() => 'accept-button'),
+              ]).catch(() => {
+                console.log('Generation timed out after 10 seconds');
+                return 'timeout';
+              });
 
-              if (generatedClassText) {
-                console.log('Class generated inline (Your Auto-Generated Class visible)');
-              } else {
-                // If not inline, check for modal
-                const resultsModal = page.locator('[role="dialog"], .modal, [class*="modal"]').filter({ hasText: /Generated|Results|Complete/i });
-                const modalAppeared = await resultsModal.isVisible({ timeout: 5000 }).catch(() => false);
+              console.log(`Generation result detected: ${generationComplete}`);
 
-                if (modalAppeared) {
-                  console.log('Class generated in modal');
-                } else {
-                  console.log('Warning: Could not detect class generation result');
-                }
+              if (generationComplete === 'timeout') {
+                console.log('ERROR: Class generation timed out or failed');
+                await page.screenshot({ path: 'screenshots/cast-generation-timeout.png', fullPage: true });
               }
 
-              console.log('Looking for Accept button...');
+              // Now look for Accept button with better detection
+              console.log('Looking for Accept & Add to Class button...');
 
-              // Accept the generated class - look for the exact button text
-              const acceptButton = page.locator('button:has-text("Accept & Add to Class"), button:has-text("Accept")').first();
-              const acceptButtonVisible = await acceptButton.isVisible({ timeout: 5000 }).catch(() => false);
+              // Wait up to 5 seconds for Accept button to be visible
+              const acceptButton = page.locator('button:has-text("Accept & Add to Class")');
+              const acceptButtonVisible = await acceptButton.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false);
 
               if (acceptButtonVisible) {
-                console.log('Found Accept button, clicking it...');
+                console.log('✅ Found Accept button, clicking it...');
                 await acceptButton.click();
-                await page.waitForTimeout(2000);
+
+                // Modal should close automatically within 5 seconds
+                console.log('Waiting for modal to close automatically (up to 5 seconds)...');
+                const modalOverlay = page.locator('.fixed.inset-0.z-50, [role="dialog"]');
+
+                await modalOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {
+                  console.log('⚠️ Modal did not close within 5 seconds');
+                });
+
+                // Double-check if modal is gone
+                const modalStillVisible = await modalOverlay.isVisible({ timeout: 1000 }).catch(() => false);
+                if (modalStillVisible) {
+                  console.log('⚠️ Modal still visible, attempting manual close...');
+                  await page.keyboard.press('Escape');
+                  await page.waitForTimeout(500);
+                } else {
+                  console.log('✅ Modal closed successfully');
+                }
+
+                console.log('Accept button clicked, class saved, modal closed');
               } else {
-                console.log('ERROR: Could not find Accept button after class generation');
-                // Take screenshot for debugging
+                console.log('❌ ERROR: Could not find Accept button after class generation');
                 await page.screenshot({ path: 'screenshots/cast-no-accept-button-error.png', fullPage: true });
               }
 
-              // Navigate to classes
-              await page.goto('/classes');
-              await page.waitForLoadState('networkidle');
+              // After accepting class and modal closing, Play Class button should be accessible
+              console.log('\n=== STARTING PLAYBACK ===');
+
+              // Now find and click Play Class button
+              console.log('Looking for Play Class button...');
+              const playClassButton = page.locator('button:has-text("Play Class")');
+
+              // Wait for button to exist and be enabled
+              const buttonReady = await playClassButton.waitFor({ state: 'visible', timeout: 5000 })
+                .then(() => playClassButton.isEnabled())
+                .catch(() => false);
+
+              if (!buttonReady) {
+                console.log('❌ ERROR: Play Class button not found or not enabled');
+                await page.screenshot({ path: 'screenshots/cast-play-button-not-ready.png', fullPage: true });
+              } else {
+                console.log('✅ Play Class button is ready, clicking it...');
+
+                // Take screenshot before clicking
+                await page.screenshot({ path: 'screenshots/cast-before-play-click.png', fullPage: true });
+
+                // Click with force to bypass any potential overlay issues
+                await playClassButton.click({ force: true });
+
+                // Wait for playback to initialize
+                console.log('Waiting for ClassPlayback component to render (3 seconds)...');
+                await page.waitForTimeout(3000);
+
+                // Take screenshot after clicking to see if playback started
+                await page.screenshot({ path: 'screenshots/cast-after-play-click.png', fullPage: true });
+
+                console.log('Play Class button clicked');
+              }
             }
           }
           } else {
-            console.log('No Play Class button found on page, navigating to classes...');
-            await page.goto('/classes');
-            await page.waitForLoadState('networkidle');
+            console.log('No Play Class button found on page');
+
+            // Since we can't navigate to /playback (route doesn't exist), we need to ensure class is generated
+            console.log('ERROR: Cannot test playback without generating a class first');
           }
         }
       }
 
-      // Try multiple strategies to find and click a class
-      const playSelectors = [
-        '[class*="class-card"]',
-        'button:has-text("Start Class")',
-        'button:has-text("Play")',
-        'button:has-text("View Class")',
-        '[data-testid*="class"]'
-      ];
-
-      let classClicked = false;
-      for (const selector of playSelectors) {
-        const element = page.locator(selector).first();
-        if (await element.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await element.click();
-          classClicked = true;
-          console.log(`Clicked class using selector: ${selector}`);
-          break;
-        }
-      }
-
-      if (!classClicked) {
-        // Alternative: "Training & Nutrition Hub" flow
-        const trainingButton = page.locator('button:has-text("Log my training plan")');
-        if (await trainingButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-          console.log('Classes page shows Training Hub, clicking "Log my training plan"...');
-          await trainingButton.click();
-          await page.waitForTimeout(2000);
-
-          // Now look for class card
-          const classCard = page.locator('[class*="class-card"]').first();
-          if (await classCard.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await classCard.click();
-            classClicked = true;
-          }
-        }
-      }
-
-      if (!classClicked) {
-        console.log('⚠️ Could not find any class to click, attempting direct navigation...');
-        // As a last resort, try navigating directly to a playback URL
-        // This assumes at least one class exists in the system
-        await page.goto('/playback/1');
-      } else {
-        // Wait for playback page to load (URL pattern may include class ID)
-        await page.waitForURL(/playback/i, { timeout: 10000 });
-      }
-
-      // Wait for Cast SDK to load on playback page
+      // No navigation needed - playback happens inline on class-builder page
+      console.log('Staying on class-builder page for inline playback...');
       await page.waitForTimeout(3000);
-      console.log('Current URL after navigation:', page.url());
+      console.log('Current URL:', page.url());
     });
 
     await test.step('Debug Chromecast button state', async () => {
       // Take initial screenshot
       await page.screenshot({ path: 'screenshots/cast-debug-01-initial.png', fullPage: true });
+
+      // First check if ClassPlayback is rendering (look for playback-specific elements)
+      const isPlaybackActive = await page.locator('.absolute.inset-0.bg-burgundy-dark').isVisible({ timeout: 2000 }).catch(() => false) ||
+                              await page.locator('text=/Preparation|Warmup|Movement|Cooldown|Meditation|HomeCare/i').isVisible({ timeout: 2000 }).catch(() => false);
+
+      console.log(`\nClassPlayback component active: ${isPlaybackActive ? '✅ YES' : '❌ NO'}`);
+
+      if (!isPlaybackActive) {
+        console.log('ClassPlayback not rendering - may need to click Play Class button');
+      }
 
       // Check Cast SDK loading
       const castCheck = await page.evaluate(() => {
@@ -857,19 +882,81 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
       console.log(`3. cast.framework exists: ${castCheck.step3_framework ? '✅' : '❌'}`);
       console.log(`4. CastContext: ${JSON.stringify(castCheck.step4_context)}`);
 
-      // Find button
-      const castButton = page.locator('button[aria-label*="Cast"], [class*="cast"]').first();
-      const buttonVisible = await castButton.isVisible({ timeout: 5000 }).catch(() => false);
+      // Try multiple selectors to find the Cast button
+      console.log('\n=== CHECKING CASTBUTTON COMPONENT ===');
 
-      if (buttonVisible) {
-        // Get button state
-        const buttonState = await castButton.evaluate((btn) => ({
-          className: btn.className,
-          disabled: (btn as HTMLButtonElement).disabled,
-          ariaDisabled: btn.getAttribute('aria-disabled'),
-          ariaLabel: btn.getAttribute('aria-label'),
-          textContent: btn.textContent?.trim(),
-        }));
+      // Look for the Cast button multiple ways
+      // 1. By aria-label (most specific)
+      const castButtonByAria = page.locator('button[aria-label="Cast to TV"], button[aria-label="Connected to TV"], button[aria-label="No Cast devices found"]');
+      // 2. By the Cast icon SVG (the lucide-react Cast icon has specific attributes)
+      const castButtonByIcon = page.locator('button:has(svg):has(path[d*="M2 8V6"])');  // Part of Cast icon path
+      // 3. By position (absolute top-4 right-16 z-10 as defined in ClassPlayback.tsx)
+      const castButtonByPosition = page.locator('.absolute.top-4.right-16.z-10 button');
+      // 4. Generic cast class search
+      const castButtonByClass = page.locator('button[class*="cast"], [class*="cast-button"]');
+
+      // Try each selector
+      let castButton = null;
+      let castButtonVisible = false;
+
+      // Try aria-label first
+      castButtonVisible = await castButtonByAria.isVisible({ timeout: 2000 }).catch(() => false);
+      if (castButtonVisible) {
+        castButton = castButtonByAria;
+        console.log('✅ Found CastButton by aria-label');
+      }
+
+      // If not found, try icon selector
+      if (!castButtonVisible) {
+        castButtonVisible = await castButtonByIcon.isVisible({ timeout: 2000 }).catch(() => false);
+        if (castButtonVisible) {
+          castButton = castButtonByIcon;
+          console.log('✅ Found CastButton by Cast icon SVG');
+        }
+      }
+
+      // If still not found, try position selector
+      if (!castButtonVisible) {
+        castButtonVisible = await castButtonByPosition.isVisible({ timeout: 2000 }).catch(() => false);
+        if (castButtonVisible) {
+          castButton = castButtonByPosition;
+          console.log('✅ Found CastButton by position (.absolute.top-4.right-16)');
+        }
+      }
+
+      // If still not found, try class selector
+      if (!castButtonVisible) {
+        castButtonVisible = await castButtonByClass.isVisible({ timeout: 2000 }).catch(() => false);
+        if (castButtonVisible) {
+          castButton = castButtonByClass;
+          console.log('✅ Found CastButton by class name');
+        }
+      }
+
+      if (castButtonVisible && castButton) {
+        console.log('✅ CastButton component is visible on page');
+
+        // Get button state and properties
+        const buttonState = await castButton.evaluate((btn) => {
+          // Get computed styles
+          const styles = window.getComputedStyle(btn);
+          // Check for SVG icon inside button
+          const svgIcon = btn.querySelector('svg');
+          return {
+            className: btn.className,
+            disabled: (btn as HTMLButtonElement).disabled,
+            ariaDisabled: btn.getAttribute('aria-disabled'),
+            ariaLabel: btn.getAttribute('aria-label'),
+            title: btn.getAttribute('title') || '',
+            opacity: styles.opacity,
+            cursor: styles.cursor,
+            backgroundColor: styles.backgroundColor,
+            color: styles.color,
+            hasSvgIcon: !!svgIcon,
+            svgClassName: svgIcon?.getAttribute('class') || '',
+            innerHTML: btn.innerHTML.substring(0, 200) // First 200 chars to see content
+          };
+        });
 
         console.log('\n=== CAST BUTTON STATE ===');
         console.log(JSON.stringify(buttonState, null, 2));
@@ -878,21 +965,45 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
         await castButton.screenshot({ path: 'screenshots/cast-debug-02-button.png' });
 
         // Check if greyed out
-        const isGreyedOut = buttonState.className?.includes('opacity-50') ||
-          buttonState.className?.includes('disabled') ||
-          buttonState.disabled === true;
+        const isGreyedOut = buttonState.disabled ||
+                           buttonState.className?.includes('cursor-not-allowed') ||
+                           buttonState.cursor === 'not-allowed' ||
+                           buttonState.className?.includes('text-cream/30');
 
-        console.log(`\nButton is greyed out: ${isGreyedOut ? '❌ YES (ISSUE)' : '✅ NO (WORKING)'}`);
+        console.log(`\nButton is greyed out: ${isGreyedOut ? '❌ YES (Chromecast not detected)' : '✅ NO (Chromecast available)'}`);
+
+        if (isGreyedOut) {
+          console.log('\n⚠️ TROUBLESHOOTING TIPS:');
+          console.log('1. Ensure Chromecast is powered on');
+          console.log('2. Verify phone/computer and Chromecast are on same WiFi network');
+          console.log('3. Try refreshing the page');
+          console.log('4. Check if Cast SDK loaded properly (see stages above)');
+        }
       } else {
         console.log('❌ CastButton not visible on page');
+        console.log('Possible issues:');
+        console.log('1. Component not rendering in ClassPlayback');
+        console.log('2. CSS hiding the button');
+        console.log('3. Conditional rendering preventing display');
+
+        // Check if the position div exists at all
+        const positionDiv = await page.locator('.absolute.top-4.right-16.z-10').isVisible({ timeout: 2000 }).catch(() => false);
+        console.log(`Div at expected position (.absolute.top-4.right-16.z-10): ${positionDiv ? 'YES' : 'NO'}`);
+
+        // Check for any button near the close button
+        const buttonsNearTop = await page.locator('.absolute.top-4 button').count();
+        console.log(`Number of buttons in top area: ${buttonsNearTop}`);
       }
 
-      // Print all CastButton logs
+      // Print all CastButton logs (production builds won't have debug logs)
+      console.log('\n=== CASTBUTTON CONSOLE LOGS ===');
       if (castButtonLogs.length > 0) {
-        console.log('\n=== CAPTURED [CastButton] LOGS ===');
-        castButtonLogs.forEach(log => console.log(log));
+        console.log('CastButton logs found:');
+        castButtonLogs.forEach(log => console.log(`  ${log}`));
       } else {
-        console.log('\n⚠️ NO [CastButton] logs captured - component may not be initializing');
+        console.log('ℹ️ No [CastButton] debug logs captured');
+        console.log('This is expected - debug logs are disabled in production builds');
+        console.log('The component may still be working correctly');
       }
 
       // Print all Cast-related console messages
