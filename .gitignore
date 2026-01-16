@@ -95,3 +95,7 @@ backend/agents_archive/
 
 # QA Analytics Reports (generated files)
 analytics/muscle_overlap_report_*.md
+
+# Ralph Loop State Files
+.claude/ralph-loop.local.md
+.claude/ralph-tasks/

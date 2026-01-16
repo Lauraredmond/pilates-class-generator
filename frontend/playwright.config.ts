@@ -9,7 +9,7 @@ import { dirname, resolve } from 'path';
  *
  * Credentials:
  *   Test credentials loaded from .env.test file (gitignored)
- *   Dev account: laura.bassline@proton.me
+ *   Dev account: [credentials in .env.test]
  *
  * Usage:
  *   npm run test:e2e              # Test production
