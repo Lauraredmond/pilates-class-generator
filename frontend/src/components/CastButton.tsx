@@ -16,8 +16,9 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
 
   useEffect(() => {
     // CRITICAL: Use direct console.warn() to ensure logs appear in production
+    // CACHE BUSTER: Force rebuild Jan 16 2026 18:16 GMT
     try {
-      console.warn('🔍 [CastButton] Component mounted - Cast SDK check starting...');
+      console.warn('🔍🔍🔍 [CastButton ITERATION 7] Component mounted - Cast SDK check starting...');
       console.warn('🔍 [CastButton] window.cast exists?', !!(window as any).cast);
       console.warn('🔍 [CastButton] window.cast.framework exists?', !!(window as any).cast?.framework);
       console.warn('🔍 [CastButton] window.cast.framework.CastContext exists?', !!(window as any).cast?.framework?.CastContext);
