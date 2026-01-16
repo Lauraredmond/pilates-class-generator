@@ -1,7 +1,15 @@
-[Error] Failed to load resource: the server responded with a status of 500 () (c6db6029-5e98-4d4d-89b9-d6e9de65acb3, line 0)
 [Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – _e
-_e
-	error (index-jefhkpru.js:13:5450)
-	(anonymous function) (index-jefhkpru.js:54:21404)
-[Error] Failed to load resource: the server responded with a status of 500 () (c6db6029-5e98-4d4d-89b9-d6e9de65acb3, line 0)
+[Error] Failed to fetch stats: – ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", …}
+ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}ke
+	(anonymous function) (index-A3dVaXpL.js:48:85817)
+[Error] Failed to load resource: the server responded with a status of 500 () (beta-feedback, line 0)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", …}
+ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}ke
+	error (index-A3dVaXpL.js:13:5449)
+	(anonymous function) (index-A3dVaXpL.js:48:54281)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", …}
+ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}ke
+	(anonymous function) (index-A3dVaXpL.js:48:85817)
+[Error] Failed to load resource: the server responded with a status of 500 () (beta-feedback, line 0)

@@ -44,6 +44,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
     const handleCanPlay = () => {
       if (!isPaused) {
+        // FIX: Always reset to 0:00 before playing (fixes buffering race condition)
+        video.currentTime = 0;
+        console.log('🎥 DEBUG: Reset video to 0:00 before playing');
+
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video ready - delaying start by ${videoStartDelay/1000}s (movement sync)`);
           setTimeout(() => {
@@ -70,6 +74,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       // Play video after delay (if applicable)
       // Check if already ready
       if (video.readyState >= 3) { // HAVE_FUTURE_DATA or better
+        // FIX: Always reset to 0:00 before playing (fixes buffering race condition)
+        video.currentTime = 0;
+        console.log('🎥 DEBUG: Reset video to 0:00 before playing (already buffered)');
+
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video already buffered - delaying start by ${videoStartDelay/1000}s (movement sync)`);
           setTimeout(() => {
@@ -108,6 +116,9 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
     // Reset video ended state when section changes
     setVideoEnded(false);
+
+    // NOTE: Video reset handled in playback useEffect below (lines 48, 78)
+    // Don't call video.load() here - causes infinite loop!
   }, [item]);
 
   // Auto-scroll effect - scrolls upward continuously like a real teleprompter
@@ -363,6 +374,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
                 console.log('🎥 DEBUG: Video element created!');
                 console.log('🎥 DEBUG: Video src attribute:', videoEl.src);
                 console.log('🎥 DEBUG: Video currentSrc:', videoEl.currentSrc);
+                // NOTE: Reset handled in playback useEffect (lines 48, 78) to avoid conflicts
               }
             }}
             src={item.video_url}

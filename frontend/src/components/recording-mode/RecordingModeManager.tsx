@@ -9,8 +9,7 @@ import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
 import { Mic } from 'lucide-react';
 import axios from 'axios';
 import { logger } from '../../utils/logger';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://pilates-class-generator-api3.onrender.com';
+import { API_BASE_URL } from '../../utils/api-config';
 
 interface RecordingModeManagerProps {
   onClose?: () => void;

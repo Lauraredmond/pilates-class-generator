@@ -10,11 +10,12 @@ import { MovementDisplay } from './MovementDisplay';
 import { PlaybackControls } from './PlaybackControls';
 import { TimerDisplay } from './TimerDisplay';
 import { HealthSafetyModal } from '../modals/HealthSafetyModal';
+import { CastButton } from '../CastButton';
 import { useAudioDucking } from '../../hooks/useAudioDucking';
 import { useAuth } from '../../context/AuthContext';
 import { logger } from '../../utils/logger';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://pilates-class-generator-api3.onrender.com';
+import { logMediaEvent } from '../../utils/debug';
+import { API_BASE_URL } from '../../utils/api-config';
 
 // Music API type definitions
 interface MusicTrack {
@@ -220,6 +221,10 @@ export function ClassPlayback({
   // Early skip analytics tracking state (December 29, 2025)
   const [currentSectionEventId, setCurrentSectionEventId] = useState<string | null>(null);
 
+  // Chromecast/TV casting state (January 10, 2026)
+  const [isCasting, setIsCasting] = useState(false);
+  const castSessionRef = useRef<any>(null);
+
   // Wake Lock to prevent screen from turning off during class
   const wakeLockRef = useRef<any>(null);
 
@@ -232,6 +237,25 @@ export function ClassPlayback({
       setIsPaused(false); // Start playback if already accepted
     }
   }, [user]);
+
+  // Component mount logging
+  useEffect(() => {
+    logMediaEvent('music', 'ClassPlayback component mounted', {
+      totalItems: items.length,
+      movementMusicStyle,
+      coolDownMusicStyle,
+      classId,
+      isPWA: window.matchMedia('(display-mode: standalone)').matches
+    });
+
+    // Cleanup on unmount
+    return () => {
+      logMediaEvent('music', 'ClassPlayback component unmounted', {
+        finalIndex: currentIndex,
+        totalItemsPlayed: currentIndex + 1
+      });
+    };
+  }, []); // Empty deps = mount/unmount only
 
   // ============================================================================
   // PLAY SESSION TRACKING - December 24, 2025
@@ -374,6 +398,126 @@ export function ClassPlayback({
     };
   }, []); // Empty deps = cleanup ONLY runs on component unmount
 
+  // ============================================================================
+  // DERIVED STATE - Declare before use in effects (TypeScript requirement)
+  // ============================================================================
+
+  const currentItem = items[currentIndex];
+  const totalItems = items.length;
+
+  // Get current item's voiceover URL (works for all section types with voiceover_enabled)
+  const currentVoiceover =
+    currentItem && 'voiceover_enabled' in currentItem && currentItem.voiceover_enabled
+      ? currentItem.voiceover_url
+      : undefined;
+
+  // Determine which playlist to use based on section type
+  // Sections 1-3 (preparation, warmup, movements/transitions) → Movement music
+  // Sections 4-6 (cooldown, meditation, homecare) → Cooldown music
+  const currentPlaylist =
+    currentItem?.type === 'cooldown' ||
+    currentItem?.type === 'meditation' ||
+    currentItem?.type === 'homecare'
+      ? cooldownPlaylist
+      : movementPlaylist;
+
+  // Get current track URL from appropriate playlist
+  const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
+
+  /**
+   * Chromecast State Change Handler
+   * Called by CastButton when user connects/disconnects from Chromecast
+   */
+  const handleCastStateChange = useCallback((casting: boolean) => {
+    setIsCasting(casting);
+
+    if (casting) {
+      logger.debug('🎥 Casting to TV started');
+      // Get Cast session
+      const cast = (window as any).cast;
+      if (cast && cast.framework) {
+        const context = cast.framework.CastContext.getInstance();
+        castSessionRef.current = context.getCurrentSession();
+      }
+    } else {
+      logger.debug('🎥 Casting to TV ended');
+      castSessionRef.current = null;
+    }
+  }, []);
+
+  /**
+   * Load Media to Cast Receiver
+   * When casting is active, load current audio (music + voiceover) to remote player
+   */
+  useEffect(() => {
+    if (!isCasting || !castSessionRef.current) return;
+
+    const loadMedia = async () => {
+      const cast = (window as any).cast;
+      if (!cast || !cast.framework) return;
+
+      try {
+        const mediaInfo = new cast.framework.messages.MediaInformation();
+        mediaInfo.contentId = currentMusicUrl || '';
+        mediaInfo.contentType = 'audio/mpeg';
+        mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+
+        // Set metadata for TV display
+        const metadata = new cast.framework.messages.GenericMediaMetadata();
+        metadata.title = currentItem.type === 'movement'
+          ? (currentItem as PlaybackMovement).name
+          : currentItem.type === 'preparation'
+          ? (currentItem as PlaybackPreparation).script_name
+          : currentItem.type === 'warmup'
+          ? (currentItem as PlaybackWarmup).routine_name
+          : 'Pilates Class';
+        metadata.subtitle = currentPlaylist?.name || 'Background Music';
+        metadata.images = [
+          new cast.framework.messages.Image('https://basslinemvp.netlify.app/assets/bassline-logo-yellow-transparent.png')
+        ];
+        mediaInfo.metadata = metadata;
+
+        const request = new cast.framework.messages.LoadRequest();
+        request.media = mediaInfo;
+        request.autoplay = !isPaused;
+
+        await castSessionRef.current.loadMedia(request);
+        logger.debug('🎥 Media loaded to Cast receiver');
+      } catch (error) {
+        logger.error('Failed to load media to Cast receiver:', error);
+      }
+    };
+
+    loadMedia();
+  }, [isCasting, currentMusicUrl, currentItem, currentPlaylist, isPaused]);
+
+  /**
+   * Sync Playback State to Cast Receiver
+   * When user pauses/plays locally, sync to remote player
+   */
+  useEffect(() => {
+    if (!isCasting || !castSessionRef.current) return;
+
+    const syncPlaybackState = async () => {
+      try {
+        const remotePlayer = new (window as any).cast.framework.RemotePlayer();
+        const remotePlayerController = new (window as any).cast.framework.RemotePlayerController(remotePlayer);
+
+        if (isPaused && remotePlayer.isPlaying) {
+          remotePlayerController.playOrPause();
+          logger.debug('🎥 Paused remote playback');
+        } else if (!isPaused && !remotePlayer.isPlaying) {
+          remotePlayerController.playOrPause();
+          logger.debug('🎥 Resumed remote playback');
+        }
+      } catch (error) {
+        logger.error('Failed to sync playback state to Cast receiver:', error);
+      }
+    };
+
+    syncPlaybackState();
+  }, [isPaused, isCasting]);
+
   /**
    * Wake Lock API - Keep screen on during class playback
    *
@@ -388,6 +532,10 @@ export function ClassPlayback({
       // Check if Wake Lock API is supported
       if (!('wakeLock' in navigator)) {
         logger.debug('Wake Lock API not supported on this device');
+        logMediaEvent('music', 'Wake Lock API not supported', {
+          userAgent: (navigator as Navigator).userAgent,
+          isPWA: window.matchMedia('(display-mode: standalone)').matches
+        } as Record<string, any>);
         return;
       }
 
@@ -396,10 +544,17 @@ export function ClassPlayback({
           // Acquire wake lock when playback starts
           wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
           logger.debug('Screen wake lock acquired - screen will stay on during class');
+          logMediaEvent('music', 'Wake Lock ACQUIRED', {
+            isPaused,
+            documentVisible: !document.hidden
+          });
 
           // Listen for wake lock release (can happen if user switches tabs)
           wakeLockRef.current.addEventListener('release', () => {
             logger.debug('Screen wake lock released');
+            logMediaEvent('music', 'Wake Lock RELEASED (browser event)', {
+              reason: 'User switched tabs or visibility changed'
+            });
             wakeLockRef.current = null;
           });
         } else if (isPaused && wakeLockRef.current) {
@@ -407,9 +562,18 @@ export function ClassPlayback({
           await wakeLockRef.current.release();
           wakeLockRef.current = null;
           logger.debug('Screen wake lock released - screen can now sleep');
+          logMediaEvent('music', 'Wake Lock RELEASED (paused)', {
+            isPaused: true
+          });
         }
       } catch (err: any) {
         logger.error(`Failed to acquire wake lock: ${err.message}`);
+        logMediaEvent('music', 'Wake Lock ERROR', {
+          error: err.message,
+          errorName: err.name,
+          isPaused,
+          documentVisible: !document.hidden
+        });
         // Don't show error to user - this is a nice-to-have feature
       }
     };
@@ -421,8 +585,12 @@ export function ClassPlayback({
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch((err: any) => {
           logger.error('Failed to release wake lock on cleanup:', err);
+          logMediaEvent('music', 'Wake Lock RELEASE ERROR (cleanup)', {
+            error: err.message
+          });
         });
         wakeLockRef.current = null;
+        logMediaEvent('music', 'Wake Lock released on component unmount', {});
       }
     };
   }, [isPaused]);
@@ -471,6 +639,13 @@ export function ClassPlayback({
 
       try {
         // Start new section (previous section already ended by handleNext/handlePrevious/unmount)
+        logMediaEvent('music', 'Section tracking START', {
+          sectionType: currentItem.type,
+          sectionIndex: currentIndex,
+          duration: currentItem.duration_seconds,
+          hasVoiceover: 'voiceover_enabled' in currentItem && (currentItem as any).voiceover_enabled
+        });
+
         const response = await axios.post(
           `${API_BASE_URL}/api/analytics/playback/section-start`,
           {
@@ -492,23 +667,20 @@ export function ClassPlayback({
 
         setCurrentSectionEventId(response.data.section_event_id);
         logger.debug(`[EarlySkip] Section started: ${currentItem.type} (event_id: ${response.data.section_event_id})`);
+        logMediaEvent('music', 'Section tracking SUCCESS', {
+          eventId: response.data.section_event_id
+        });
       } catch (error) {
         logger.error('[EarlySkip] Failed to start section tracking (graceful degradation):', error);
+        logMediaEvent('music', 'Section tracking FAILED', {
+          error: error instanceof Error ? error.message : String(error)
+        });
         // Continue playback even if tracking fails
       }
     };
 
     startSectionTracking();
   }, [currentIndex, sessionId, user?.id, classId, items]);
-
-  const currentItem = items[currentIndex];
-  const totalItems = items.length;
-
-  // Get current item's voiceover URL (works for all section types with voiceover_enabled)
-  const currentVoiceover =
-    currentItem && 'voiceover_enabled' in currentItem && currentItem.voiceover_enabled
-      ? currentItem.voiceover_url
-      : undefined;
 
   // DEBUG: Log voiceover detection
   useEffect(() => {
@@ -523,19 +695,6 @@ export function ClassPlayback({
       });
     }
   }, [currentIndex, currentItem]);
-
-  // Determine which playlist to use based on section type
-  // Sections 1-3 (preparation, warmup, movements/transitions) → Movement music
-  // Sections 4-6 (cooldown, meditation, homecare) → Cooldown music
-  const currentPlaylist =
-    currentItem?.type === 'cooldown' ||
-    currentItem?.type === 'meditation' ||
-    currentItem?.type === 'homecare'
-      ? cooldownPlaylist
-      : movementPlaylist;
-
-  // Get current track URL from appropriate playlist
-  const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
 
   // Handle music track advancement when current track ends
   const handleMusicEnded = useCallback(() => {
@@ -634,6 +793,10 @@ export function ClassPlayback({
     const fetchBothPlaylists = async () => {
       try {
         setMusicError(null);
+        logMediaEvent('music', 'Fetching playlists START', {
+          movementStyle: movementMusicStyle,
+          cooldownStyle: coolDownMusicStyle
+        });
 
         // Fetch both playlists in parallel
         const [movementPl, cooldownPl] = await Promise.all([
@@ -644,24 +807,49 @@ export function ClassPlayback({
         if (movementPl) {
           setMovementPlaylist(movementPl);
           logger.debug(`Movement playlist loaded: ${movementPl.name} (${movementPl.tracks?.length || 0} tracks)`);
+          logMediaEvent('music', 'Movement playlist LOADED', {
+            playlistName: movementPl.name,
+            trackCount: movementPl.tracks?.length || 0,
+            totalDuration: Math.round(movementPl.tracks?.reduce((sum: number, t: MusicTrack) => sum + t.duration_seconds, 0) / 60) + ' min'
+          });
         } else {
           logger.warn('No movement music playlist available');
+          logMediaEvent('music', 'Movement playlist EMPTY', {
+            requestedStyle: movementMusicStyle
+          });
         }
 
         if (cooldownPl) {
           setCooldownPlaylist(cooldownPl);
           logger.debug(`Cooldown playlist loaded: ${cooldownPl.name} (${cooldownPl.tracks?.length || 0} tracks)`);
+          logMediaEvent('music', 'Cooldown playlist LOADED', {
+            playlistName: cooldownPl.name,
+            trackCount: cooldownPl.tracks?.length || 0,
+            totalDuration: Math.round(cooldownPl.tracks?.reduce((sum: number, t: MusicTrack) => sum + t.duration_seconds, 0) / 60) + ' min'
+          });
         } else {
           logger.warn('No cooldown music playlist available');
+          logMediaEvent('music', 'Cooldown playlist EMPTY', {
+            requestedStyle: coolDownMusicStyle
+          });
         }
 
         if (!movementPl && !cooldownPl) {
           setMusicError('No music playlists available.');
+          logMediaEvent('music', 'BOTH playlists FAILED', {
+            movementStyle: movementMusicStyle,
+            cooldownStyle: coolDownMusicStyle
+          });
         }
 
         setCurrentTrackIndex(0); // Reset to first track when playlists load
       } catch (error: any) {
         logger.error('Error fetching music playlists:', error);
+        logMediaEvent('music', 'Playlist fetch ERROR', {
+          error: error.message,
+          movementStyle: movementMusicStyle,
+          cooldownStyle: coolDownMusicStyle
+        });
         setMusicError('Failed to load music. Class will continue without audio.');
       }
     };
@@ -878,10 +1066,15 @@ export function ClassPlayback({
         />
       </div>
 
+      {/* Cast button (top right, next to close) */}
+      <div className="absolute top-4 right-16 z-10">
+        <CastButton onCastStateChange={handleCastStateChange} />
+      </div>
+
       {/* Close button */}
       <button
         onClick={handleExitRequest}
-        className="absolute top-4 right-4 p-2 text-cream/60 hover:text-cream transition-smooth z-10"
+        className="absolute top-4 right-4 p-2 text-cream hover:text-cream/80 transition-smooth z-10"
         aria-label="Exit playback"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -949,7 +1142,10 @@ export function ClassPlayback({
 
       {/* Exit Confirmation Modal */}
       {showExitConfirm && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+        <div
+          className="absolute inset-0 bg-black/50 flex items-center justify-center z-20"
+          style={{ touchAction: 'manipulation' }}
+        >
           <div className="bg-burgundy-dark border border-cream/30 rounded-lg p-6 max-w-md mx-4">
             <h3 className="text-lg font-semibold text-cream mb-2">Exit Class?</h3>
             <p className="text-sm text-cream/70 mb-6">
@@ -958,13 +1154,17 @@ export function ClassPlayback({
             <div className="flex gap-3">
               <button
                 onClick={handleExitCancel}
-                className="flex-1 px-4 py-2 bg-burgundy border border-cream/30 rounded-lg text-cream hover:border-cream/60 transition-smooth"
+                onTouchEnd={(e) => { e.preventDefault(); handleExitCancel(); }}
+                className="flex-1 px-4 py-2 bg-burgundy border border-cream/30 rounded-lg text-cream hover:border-cream/60 transition-smooth active:scale-95"
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 Continue Class
               </button>
               <button
                 onClick={handleExitConfirm}
-                className="flex-1 px-4 py-2 bg-cream text-burgundy rounded-lg hover:bg-cream/90 transition-smooth"
+                onTouchEnd={(e) => { e.preventDefault(); handleExitConfirm(); }}
+                className="flex-1 px-4 py-2 bg-cream text-burgundy rounded-lg hover:bg-cream/90 transition-smooth active:scale-95"
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 Exit
               </button>
