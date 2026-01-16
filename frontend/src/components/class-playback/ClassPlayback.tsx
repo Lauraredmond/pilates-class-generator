@@ -533,9 +533,9 @@ export function ClassPlayback({
       if (!('wakeLock' in navigator)) {
         logger.debug('Wake Lock API not supported on this device');
         logMediaEvent('music', 'Wake Lock API not supported', {
-          userAgent: navigator.userAgent,
+          userAgent: (navigator as Navigator).userAgent,
           isPWA: window.matchMedia('(display-mode: standalone)').matches
-        });
+        } as Record<string, any>);
         return;
       }
 
