@@ -524,59 +524,74 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
 
       console.log('On class builder page...');
 
-      // Wait a moment for any pre-generated class to fully render
-      await page.waitForTimeout(2000);
+      // Wait for the page to fully render
+      await page.waitForTimeout(3000);
 
-      // First check if there's a generated class shown on the page
-      const generatedClassHeader = page.locator('text="Your Auto-Generated Class"');
-      const hasGeneratedClass = await generatedClassHeader.isVisible({ timeout: 2000 }).catch(() => false);
+      // Take a screenshot for debugging
+      await page.screenshot({ path: 'screenshots/cast-class-builder-state.png', fullPage: true });
 
-      if (hasGeneratedClass) {
-        console.log('Detected "Your Auto-Generated Class" section is visible');
-      }
-
-      // Look for Accept & Add to Class button
-      // Try multiple selectors for better detection
-      const acceptButtonSelectors = [
-        'button:has-text("Accept & Add to Class")',
-        'button:has-text("Accept") >> nth=1',  // Sometimes there are multiple buttons with "Accept"
-        'button >> text=/Accept.*Add.*Class/i'
+      // Look for any signs of a generated class
+      // Check multiple indicators
+      const classIndicators = [
+        page.locator('text="Your Auto-Generated Class"'),
+        page.locator('text="Movement Sequence"'),
+        page.locator('text="Muscle Group Balance"'),
+        page.locator('button >> text=/Accept/i')
       ];
 
-      let acceptExistingButton = null;
-      let hasPreGeneratedClass = false;
-
-      for (const selector of acceptButtonSelectors) {
-        const button = page.locator(selector);
-        if (await button.isVisible({ timeout: 2000 }).catch(() => false)) {
-          acceptExistingButton = button;
-          hasPreGeneratedClass = true;
-          console.log(`Found Accept button with selector: ${selector}`);
+      let hasClassGenerated = false;
+      for (const indicator of classIndicators) {
+        if (await indicator.isVisible({ timeout: 1000 }).catch(() => false)) {
+          hasClassGenerated = true;
+          console.log(`Found class indicator: ${await indicator.textContent()}`);
           break;
         }
       }
 
-      // If we couldn't find the button but saw the header, look harder
-      if (!hasPreGeneratedClass && hasGeneratedClass) {
-        console.log('Class is generated but Accept button not found, looking for any button with "Accept"...');
-        const allAcceptButtons = page.locator('button:has-text("Accept")');
-        const count = await allAcceptButtons.count();
-        console.log(`Found ${count} buttons with "Accept" text`);
-        if (count > 0) {
-          acceptExistingButton = allAcceptButtons.last(); // Usually the last one is "Accept & Add to Class"
+      // Try to find the Accept button with very broad search
+      let acceptExistingButton = null;
+      let hasPreGeneratedClass = false;
+
+      // First try: Look for any button containing the word "Accept"
+      const acceptButtons = await page.locator('button').filter({ hasText: /accept/i }).all();
+      console.log(`Found ${acceptButtons.length} buttons containing "Accept"`);
+
+      for (const btn of acceptButtons) {
+        const text = await btn.textContent();
+        console.log(`  Button text: "${text}"`);
+        if (text && text.toLowerCase().includes('accept')) {
+          acceptExistingButton = btn;
+          hasPreGeneratedClass = true;
+          console.log(`Selected button: "${text}"`);
+          break;
+        }
+      }
+
+      // If still not found, look for the button at the bottom of the page
+      if (!hasPreGeneratedClass && hasClassGenerated) {
+        console.log('Looking for buttons at the bottom of the generated class section...');
+        const bottomButtons = page.locator('button').last();
+        const bottomButtonText = await bottomButtons.textContent().catch(() => '');
+        console.log(`Last button on page: "${bottomButtonText}"`);
+        if (bottomButtonText.toLowerCase().includes('accept')) {
+          acceptExistingButton = bottomButtons;
           hasPreGeneratedClass = true;
         }
       }
 
-      if (hasPreGeneratedClass) {
+      if (hasPreGeneratedClass && acceptExistingButton) {
         console.log('Found pre-generated class on page, accepting it...');
 
         // Take screenshot of the pre-generated class
         await page.screenshot({ path: 'screenshots/cast-pre-generated-class.png', fullPage: true });
 
+        // Ensure button is in viewport
+        await acceptExistingButton.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(500);
+
         // Click the Accept & Add to Class button
         await acceptExistingButton.click();
-        console.log('Clicked "Accept & Add to Class" button');
+        console.log('Clicked Accept button');
 
         // Wait for save to complete
         await page.waitForTimeout(3000);
@@ -594,7 +609,34 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
           await page.waitForLoadState('networkidle');
         }
       } else {
-        console.log('No pre-generated class found, generating new one...');
+        console.log('No Accept button found, checking for Play Class button...');
+
+        // Check if there's a Play Class button on the same page
+        const playButton = page.locator('button:has-text("Play Class")');
+        if (await playButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+          console.log('Found Play Class button, clicking it to start playback directly...');
+          await playButton.click();
+
+          // Wait for playback page
+          await page.waitForURL(/playback/i, { timeout: 10000 }).catch(() => {
+            console.log('Did not navigate to playback, may still be on class-builder');
+          });
+          await page.waitForTimeout(3000);
+
+          // Skip the rest of navigation since we're going straight to playback
+          const currentUrl = page.url();
+          if (currentUrl.includes('/playback')) {
+            console.log('Successfully navigated to playback');
+            // Skip to Cast SDK testing
+            await page.waitForTimeout(3000);
+            console.log('Current URL after navigation:', page.url());
+            // The test will continue to the Debug Chromecast button state step
+            return; // Exit this step early
+          }
+        }
+
+        // If no Play button either, try generating a new class
+        console.log('No pre-generated class or Play button found, generating new one...');
 
         // Fill in basic class parameters
         // Select difficulty (Beginner)
