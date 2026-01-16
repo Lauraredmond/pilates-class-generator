@@ -1,8 +1,8 @@
 import { test, expect, Page } from '@playwright/test';
 
 // Test credentials
-const TEST_EMAIL = 'laura.bassline@proton.me';
-const TEST_PASSWORD = 'Laura101!!';
+const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com';
+const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'testpassword';
 
 // Helper to capture and log all console messages
 function setupConsoleLogging(page: Page) {
