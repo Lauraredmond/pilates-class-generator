@@ -366,6 +366,105 @@ Cast state: NO_DEVICES_AVAILABLE (or NOT_CONNECTED if device found)
 
 ---
 
+## Session 3: Route Investigation & Playback Fix (January 16, 2026)
+
+### Critical Discovery: No /playback Route Exists!
+
+**Problem:** Test was navigating to `/playback/1` but this route doesn't exist in App.tsx
+
+**Finding:** ClassPlayback component exists but:
+- No `/playback` route defined in App.tsx
+- ClassPlayback renders **inline** on class-builder page when `isPlayingClass = true`
+- "Play Class" button in AIGenerationPanel triggers inline rendering
+
+**How Playback Actually Works:**
+1. User generates class on `/class-builder` page
+2. User clicks "Accept & Add to Class"
+3. User clicks "Play Class" button
+4. AIGenerationPanel sets `isPlayingClass = true`
+5. ClassPlayback renders inline (replaces generation form)
+6. User stays on `/class-builder` URL throughout
+
+**Test Updates Made:**
+- ✅ Removed navigation to non-existent `/playback/1`
+- ✅ Updated test to click "Play Class" button
+- ✅ Test stays on class-builder page for inline playback
+- ✅ Added modal closing logic before clicking Play Class
+
+### Current Test Results (January 16, 2026)
+
+**Dev Site (bassline-dev.netlify.app):**
+- Cast SDK script tag exists ✅
+- window.cast object NOT available ❌
+- CastButton component NOT visible ❌
+- ClassPlayback component NOT rendering ❌
+- Test URL stays at `/class-builder` ✅
+
+**Issues Found:**
+1. **Class generation may be failing** - Accept button not found after generation
+2. **Play Class button click not triggering playback** - ClassPlayback doesn't render
+3. **Cast SDK not initializing** - script exists but window.cast undefined
+4. **Production Site:** Cast SDK not loading at all (no script tag)
+
+### Why CastButton Not Visible
+
+**Root Cause Chain:**
+1. ClassPlayback only renders when `isPlayingClass = true`
+2. Play Class button sets `isPlayingClass = true`
+3. But ClassPlayback isn't rendering after button click
+4. CastButton is inside ClassPlayback (lines 1070-1072)
+5. Therefore: No ClassPlayback = No CastButton
+
+**Next Debugging Steps:**
+1. ~~Verify class generation actually succeeds~~ ✅ FIXED
+2. ~~Debug why Play Class button doesn't trigger playback~~ ✅ FIXED
+3. ~~Check if `results` state is populated when clicking Play Class~~ ✅ FIXED
+4. Investigate why window.cast is undefined when script loads ⏳ IN PROGRESS
+
+### Test Improvements Made (January 16, 2026)
+
+**Problems Fixed:**
+1. ✅ Test now waits up to 10 seconds for class generation
+2. ✅ Test properly detects generation modal with Promise.race
+3. ✅ Test waits for modal to auto-close (up to 5 seconds)
+4. ✅ Test successfully clicks Play Class button
+5. ✅ **CastButton now visible!**
+
+**Final Test Results (January 16, 2026):**
+
+```
+✅ Class generation detected: modal
+✅ Accept button clicked
+✅ Modal closed successfully
+✅ Play Class button clicked
+✅ CastButton component visible!
+
+CastButton State:
+{
+  "ariaLabel": "No Cast devices found",
+  "disabled": true,
+  "className": "bg-cream/5 text-cream/30 cursor-not-allowed",
+  "hasSvgIcon": true,
+  "svgClassName": "lucide lucide-cast w-6 h-6"
+}
+
+Button is greyed out: ✅ YES (Expected - no Chromecast detected)
+```
+
+**Conclusion:**
+The CastButton IS working correctly! It's:
+- ✅ Visible on the page
+- ✅ Greyed out because no Chromecast device on network (expected)
+- ✅ Has proper aria-label and disabled state
+- ✅ Shows Cast icon
+
+**Remaining Issue:**
+- ❌ Cast SDK not initializing (window.cast undefined despite script tag)
+- This prevents device discovery even if Chromecast present
+- Next session: Debug why Cast SDK script doesn't create window.cast object
+
+---
+
 ## Session 2: Playwright E2E Testing
 
 ### Date: January 16, 2026
