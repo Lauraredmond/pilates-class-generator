@@ -88,9 +88,13 @@ test.describe('Chromecast Integration', () => {
       await page.waitForTimeout(3000);
     } else {
       // Generate new class (database mode - faster)
-      await page.click('text=Beginner');
-      const durationSlider = page.locator('input[type="range"]').first();
-      await durationSlider.fill('30');
+      // Select difficulty level from dropdown
+      const difficultySelect = page.locator('select').filter({ hasText: /Beginner|Intermediate|Advanced/i }).first();
+      await difficultySelect.selectOption('Beginner');
+
+      // Select duration from dropdown
+      const durationSelect = page.locator('select').filter({ hasText: /minutes/i }).first();
+      await durationSelect.selectOption({ label: /30 minutes/i });
 
       // Ensure AI mode OFF
       const aiToggle = page.locator('button[role="switch"], input[type="checkbox"]').filter({ hasText: /AI/i });
@@ -232,9 +236,13 @@ test.describe('Analytics Page - User Stats', () => {
     await page.waitForLoadState('networkidle');
 
     // Generate class (database mode)
-    await page.click('text=Beginner');
-    const durationSlider = page.locator('input[type="range"]').first();
-    await durationSlider.fill('12'); // Shortest duration for speed
+    // Select difficulty level from dropdown
+    const difficultySelect = page.locator('select').filter({ hasText: /Beginner|Intermediate|Advanced/i }).first();
+    await difficultySelect.selectOption('Beginner');
+
+    // Select duration from dropdown
+    const durationSelect = page.locator('select').filter({ hasText: /minutes/i }).first();
+    await durationSelect.selectOption({ label: /12 minutes/i }); // Shortest duration for speed
 
     const generateBtn = page.locator('button:has-text("Generate"), button:has-text("Create Class")').first();
     await generateBtn.click();
@@ -683,9 +691,13 @@ test.describe('Class Playback - Media & Section Verification', () => {
       await page.waitForTimeout(3000);
     } else {
       // Generate new class (database mode - faster)
-      await page.click('text=Beginner');
-      const durationSlider = page.locator('input[type="range"]').first();
-      await durationSlider.fill('12'); // Short duration for speed
+      // Select difficulty level from dropdown
+      const difficultySelect = page.locator('select').filter({ hasText: /Beginner|Intermediate|Advanced/i }).first();
+      await difficultySelect.selectOption('Beginner');
+
+      // Select duration from dropdown
+      const durationSelect = page.locator('select').filter({ hasText: /minutes/i }).first();
+      await durationSelect.selectOption({ label: /12 minutes/i }); // Short duration for speed
 
       const generateBtn = page.locator('button:has-text("Generate"), button:has-text("Create Class")').first();
       await generateBtn.click();
