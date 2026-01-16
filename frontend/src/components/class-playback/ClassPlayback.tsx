@@ -1142,7 +1142,10 @@ export function ClassPlayback({
 
       {/* Exit Confirmation Modal */}
       {showExitConfirm && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+        <div
+          className="absolute inset-0 bg-black/50 flex items-center justify-center z-20"
+          style={{ touchAction: 'manipulation' }}
+        >
           <div className="bg-burgundy-dark border border-cream/30 rounded-lg p-6 max-w-md mx-4">
             <h3 className="text-lg font-semibold text-cream mb-2">Exit Class?</h3>
             <p className="text-sm text-cream/70 mb-6">
@@ -1151,13 +1154,17 @@ export function ClassPlayback({
             <div className="flex gap-3">
               <button
                 onClick={handleExitCancel}
-                className="flex-1 px-4 py-2 bg-burgundy border border-cream/30 rounded-lg text-cream hover:border-cream/60 transition-smooth"
+                onTouchEnd={(e) => { e.preventDefault(); handleExitCancel(); }}
+                className="flex-1 px-4 py-2 bg-burgundy border border-cream/30 rounded-lg text-cream hover:border-cream/60 transition-smooth active:scale-95"
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 Continue Class
               </button>
               <button
                 onClick={handleExitConfirm}
-                className="flex-1 px-4 py-2 bg-cream text-burgundy rounded-lg hover:bg-cream/90 transition-smooth"
+                onTouchEnd={(e) => { e.preventDefault(); handleExitConfirm(); }}
+                className="flex-1 px-4 py-2 bg-cream text-burgundy rounded-lg hover:bg-cream/90 transition-smooth active:scale-95"
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
                 Exit
               </button>
