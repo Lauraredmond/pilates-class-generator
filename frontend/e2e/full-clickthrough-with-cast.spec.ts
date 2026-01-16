@@ -989,15 +989,26 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
                            buttonState.cursor === 'not-allowed' ||
                            buttonState.className?.includes('text-cream/30');
 
-        console.log(`\nButton is greyed out: ${isGreyedOut ? '❌ YES (Chromecast not detected)' : '✅ NO (Chromecast available)'}`);
+        console.log(`\nButton is greyed out: ${isGreyedOut ? '❌ YES (FAILED - should be white/active after CSP fix)' : '✅ NO (Chromecast devices detectable)'}`);
 
         if (isGreyedOut) {
-          console.log('\n⚠️ TROUBLESHOOTING TIPS:');
-          console.log('1. Ensure Chromecast is powered on');
-          console.log('2. Verify phone/computer and Chromecast are on same WiFi network');
-          console.log('3. Try refreshing the page');
-          console.log('4. Check if Cast SDK loaded properly (see stages above)');
+          console.log('\n❌ CRITICAL: CHROMECAST ICON IS GREYED OUT');
+          console.log('EXPECTED: WHITE/ACTIVE (devices detectable) after CSP fix (commit d3391bbd)');
+          console.log('ACTUAL: GREYED OUT/DISABLED');
+          console.log('\nPossible causes:');
+          console.log('1. CSP fix not deployed to this environment yet');
+          console.log('2. Browser cache needs clearing (old CSP headers cached)');
+          console.log('3. No Chromecast device on test network');
+          console.log('4. Chromecast powered off or in guest-mode only');
+          console.log('5. Different WiFi network (phone vs Chromecast)');
+
+          await page.screenshot({ path: 'screenshots/cast-button-greyed-out-FAILURE.png' });
         }
+
+        // UPDATED EXPECTATION: After CSP fix (commit d3391bbd), icon should be WHITE/ACTIVE
+        // If greyed out, this indicates a problem (CSP not deployed, cache issue, or no device on network)
+        // Test will PASS if icon is white/active, FAIL if greyed out
+        expect(isGreyedOut, 'Cast icon should be WHITE/ACTIVE (not greyed out) after CSP fix - greyed out indicates CSP not deployed or no Chromecast on network').toBe(false);
       } else {
         console.log('❌ CastButton not visible on page');
         console.log('Possible issues:');
