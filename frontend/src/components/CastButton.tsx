@@ -130,15 +130,30 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
       };
 
       // Also poll directly in case callback doesn't fire
+      let pollCount = 0;
       const directPollInterval = setInterval(() => {
         const cast = (window as any).cast;
+        pollCount++;
+
+        // Log detailed SDK state every 2 seconds (every 20 polls)
+        if (pollCount % 20 === 0) {
+          logger.debug(`[CastButton] Polling attempt ${pollCount}: SDK state`, {
+            cast: !!cast,
+            framework: !!cast?.framework,
+            CastContext: !!cast?.framework?.CastContext,
+            AutoJoinPolicy: !!cast?.framework?.AutoJoinPolicy,
+            ORIGIN_SCOPED: !!cast?.framework?.AutoJoinPolicy?.ORIGIN_SCOPED,
+            ORIGIN_SCOPED_value: cast?.framework?.AutoJoinPolicy?.ORIGIN_SCOPED,
+          });
+        }
+
         if (
           cast?.framework?.CastContext &&
           cast?.framework?.AutoJoinPolicy &&
           cast?.framework?.AutoJoinPolicy?.ORIGIN_SCOPED  // ← Check actual property!
         ) {
           clearInterval(directPollInterval);
-          logger.debug('[CastButton] Cast SDK detected via polling');
+          logger.debug(`[CastButton] Cast SDK detected via polling after ${pollCount} attempts`);
           initializeCastApi();
         }
       }, 100); // Check every 100ms
