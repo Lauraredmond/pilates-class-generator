@@ -24,12 +24,20 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
       const cast = (window as any).cast;
 
       // Verify Cast SDK is FULLY loaded (not just partially)
-      if (!cast || !cast.framework || !cast.framework.CastContext || !cast.framework.AutoJoinPolicy) {
+      // CRITICAL: Must check for ORIGIN_SCOPED property, not just AutoJoinPolicy object
+      if (
+        !cast ||
+        !cast.framework ||
+        !cast.framework.CastContext ||
+        !cast.framework.AutoJoinPolicy ||
+        !cast.framework.AutoJoinPolicy.ORIGIN_SCOPED  // ← Check actual property!
+      ) {
         logger.warn('[CastButton] Cast framework not fully loaded yet', {
           cast: !!cast,
           framework: !!cast?.framework,
           CastContext: !!cast?.framework?.CastContext,
           AutoJoinPolicy: !!cast?.framework?.AutoJoinPolicy,
+          ORIGIN_SCOPED: !!cast?.framework?.AutoJoinPolicy?.ORIGIN_SCOPED,  // ← Log this too!
         });
         return;
       }
@@ -86,7 +94,10 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
 
     // Check if Cast SDK is fully loaded (not just partially)
     const cast = (window as any).cast;
-    const isFullyLoaded = cast?.framework?.CastContext && cast?.framework?.AutoJoinPolicy;
+    const isFullyLoaded =
+      cast?.framework?.CastContext &&
+      cast?.framework?.AutoJoinPolicy &&
+      cast?.framework?.AutoJoinPolicy?.ORIGIN_SCOPED;  // ← Check actual property!
 
     if (isFullyLoaded) {
       logger.debug('[CastButton] Cast SDK fully loaded, initializing immediately');
@@ -101,7 +112,11 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
           // Callback fired, but SDK might still be loading - poll until fully ready
           const pollInterval = setInterval(() => {
             const cast = (window as any).cast;
-            if (cast?.framework?.CastContext && cast?.framework?.AutoJoinPolicy) {
+            if (
+              cast?.framework?.CastContext &&
+              cast?.framework?.AutoJoinPolicy &&
+              cast?.framework?.AutoJoinPolicy?.ORIGIN_SCOPED  // ← Check actual property!
+            ) {
               clearInterval(pollInterval);
               initializeCastApi();
             }
@@ -117,7 +132,11 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
       // Also poll directly in case callback doesn't fire
       const directPollInterval = setInterval(() => {
         const cast = (window as any).cast;
-        if (cast?.framework?.CastContext && cast?.framework?.AutoJoinPolicy) {
+        if (
+          cast?.framework?.CastContext &&
+          cast?.framework?.AutoJoinPolicy &&
+          cast?.framework?.AutoJoinPolicy?.ORIGIN_SCOPED  // ← Check actual property!
+        ) {
           clearInterval(directPollInterval);
           logger.debug('[CastButton] Cast SDK detected via polling');
           initializeCastApi();
