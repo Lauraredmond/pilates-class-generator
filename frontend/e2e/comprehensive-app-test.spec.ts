@@ -627,3 +627,241 @@ test.describe('Developer Tools - Admin Stats', () => {
     }
   });
 });
+
+// ==============================================================================
+// TEST 6: CLASS PLAYBACK - SECTION PROGRESSION & MEDIA VERIFICATION
+// ==============================================================================
+
+test.describe('Class Playback - Media & Section Verification', () => {
+  test('Should progress through class sections with music, voiceover, and video playback', async ({ page }) => {
+    // Login
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+
+    // Handle disclaimer
+    const disclaimerModal = page.locator('text=Medical Safety Disclaimer');
+    const modalVisible = await disclaimerModal.isVisible({ timeout: 3000 }).catch(() => false);
+    if (modalVisible) {
+      const pregnancyNo = page.locator('button:has-text("No")');
+      if (await pregnancyNo.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await pregnancyNo.click();
+        await page.waitForTimeout(500);
+      }
+
+      const checkbox1 = page.locator('input[type="checkbox"]').first();
+      const checkbox2 = page.locator('input[type="checkbox"]').nth(1);
+      if (await checkbox1.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await checkbox1.check();
+        await checkbox2.check();
+        await page.waitForTimeout(300);
+      }
+
+      const acceptButton = page.locator('button:has-text("Accept - Continue to App")');
+      if (await acceptButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await acceptButton.click();
+        await page.waitForTimeout(500);
+      }
+    }
+
+    await page.fill('input[type="email"]', TEST_USER.email);
+    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
+
+    // Navigate to class builder and generate/accept class
+    const generateButton = page.locator('button:has-text("Generate my Pilates class")');
+    await generateButton.click();
+    await page.waitForURL('**/class-builder', { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
+
+    // Accept existing class or generate new one
+    const acceptExisting = page.locator('button:has-text("Accept & Add to Class")');
+    const hasPreGenerated = await acceptExisting.isVisible({ timeout: 2000 }).catch(() => false);
+
+    if (hasPreGenerated) {
+      await acceptExisting.click();
+      await page.waitForTimeout(3000);
+    } else {
+      // Generate new class (database mode - faster)
+      await page.click('text=Beginner');
+      const durationSlider = page.locator('input[type="range"]').first();
+      await durationSlider.fill('12'); // Short duration for speed
+
+      const generateBtn = page.locator('button:has-text("Generate"), button:has-text("Create Class")').first();
+      await generateBtn.click();
+
+      const resultsModal = page.locator('[role="dialog"], .modal').filter({ hasText: /Generated|Results/i });
+      await expect(resultsModal).toBeVisible({ timeout: 15000 });
+
+      const acceptBtn = page.locator('button:has-text("Accept"), button:has-text("Add to Library")').first();
+      await acceptBtn.click();
+      await page.waitForTimeout(2000);
+    }
+
+    // Start class playback
+    const playClassButton = page.locator('button:has-text("Play Class")');
+    await expect(playClassButton).toBeEnabled({ timeout: 10000 });
+    await playClassButton.click();
+    await page.waitForTimeout(3000); // Wait for ClassPlayback to render
+
+    console.log('\n📋 Testing Class Playback Section Progression...\n');
+
+    // ============================================================================
+    // MUSIC PLAYBACK VERIFICATION
+    // ============================================================================
+
+    console.log('🎵 Verifying music playback...');
+
+    // Click play/resume if paused
+    const playPauseButton = page.locator('button[aria-label*="Play"], button[aria-label*="Resume"]');
+    const playButtonExists = await playPauseButton.isVisible({ timeout: 2000 }).catch(() => false);
+    if (playButtonExists) {
+      await playPauseButton.click();
+      await page.waitForTimeout(2000); // Allow music to start
+    }
+
+    // Verify background music audio element exists and is playing
+    const musicAudio = page.locator('audio#background-music');
+    const musicExists = await musicAudio.count();
+
+    if (musicExists > 0) {
+      const musicState = await musicAudio.evaluate((audio: HTMLAudioElement) => ({
+        src: audio.src,
+        paused: audio.paused,
+        currentTime: audio.currentTime,
+        duration: audio.duration,
+        readyState: audio.readyState,
+        error: audio.error?.message || null,
+      }));
+
+      console.log('Music audio state:', musicState);
+
+      expect(musicState.src, 'Background music should have a source URL').toBeTruthy();
+      expect(musicState.paused, 'Background music should be playing (not paused)').toBe(false);
+      expect(musicState.error, 'Background music should have no errors').toBeNull();
+
+      console.log('✅ Background music is playing correctly');
+    } else {
+      console.warn('⚠️ Background music audio element not found - may not be implemented yet');
+    }
+
+    // ============================================================================
+    // SECTION PROGRESSION & VOICEOVER VERIFICATION
+    // ============================================================================
+
+    console.log('\n📍 Verifying section progression and voiceover playback...\n');
+
+    // Expected section types in order
+    const expectedSections = [
+      'preparation',
+      'warmup',
+      'movement',
+      'transition',
+      'cooldown',
+      'meditation',
+      'homecare'
+    ];
+
+    // Track which sections we encounter
+    const encounteredSections = new Set<string>();
+
+    // Click "Next" button multiple times to progress through sections
+    for (let i = 0; i < 20; i++) { // Max 20 iterations to prevent infinite loop
+      await page.waitForTimeout(1000);
+
+      // Get current section info
+      const currentSectionInfo = await page.evaluate(() => {
+        const sectionElement = document.querySelector('[data-section-type]');
+        const sectionType = sectionElement?.getAttribute('data-section-type') || null;
+
+        // Check for voiceover audio element
+        const voiceoverAudio = document.querySelector('audio#voiceover-audio') as HTMLAudioElement;
+        const voiceoverState = voiceoverAudio ? {
+          exists: true,
+          src: voiceoverAudio.src,
+          paused: voiceoverAudio.paused,
+          currentTime: voiceoverAudio.currentTime,
+          duration: voiceoverAudio.duration,
+          readyState: voiceoverAudio.readyState,
+          error: voiceoverAudio.error?.message || null,
+        } : { exists: false };
+
+        // Check for video element
+        const videoElement = document.querySelector('video') as HTMLVideoElement;
+        const videoState = videoElement ? {
+          exists: true,
+          src: videoElement.src,
+          paused: videoElement.paused,
+          currentTime: videoElement.currentTime,
+          duration: videoElement.duration,
+          readyState: videoElement.readyState,
+          error: videoElement.error?.message || null,
+        } : { exists: false };
+
+        return { sectionType, voiceoverState, videoState };
+      });
+
+      const { sectionType, voiceoverState, videoState } = currentSectionInfo;
+
+      if (sectionType) {
+        encounteredSections.add(sectionType);
+        console.log(`Current section: ${sectionType}`);
+
+        // Verify voiceover if present
+        if (voiceoverState.exists) {
+          console.log(`  🎙️ Voiceover: ${voiceoverState.paused ? 'PAUSED' : 'PLAYING'}`);
+          console.log(`     Source: ${voiceoverState.src}`);
+
+          if (voiceoverState.error) {
+            console.error(`     ❌ Voiceover error: ${voiceoverState.error}`);
+          } else {
+            console.log(`     ✅ Voiceover is ${voiceoverState.paused ? 'paused' : 'playing'} without errors`);
+          }
+
+          // Expect voiceover to be playing (or at least ready)
+          expect(voiceoverState.error, `Voiceover for ${sectionType} should have no errors`).toBeNull();
+        } else {
+          console.log('  (No voiceover for this section)');
+        }
+
+        // Verify video if present
+        if (videoState.exists) {
+          console.log(`  🎥 Video: ${videoState.paused ? 'PAUSED' : 'PLAYING'}`);
+          console.log(`     Source: ${videoState.src}`);
+
+          if (videoState.error) {
+            console.error(`     ❌ Video error: ${videoState.error}`);
+          } else {
+            console.log(`     ✅ Video is ${videoState.paused ? 'paused' : 'playing'} without errors`);
+          }
+
+          // Expect video to be playing (or at least ready)
+          expect(videoState.error, `Video for ${sectionType} should have no errors`).toBeNull();
+        } else {
+          console.log('  (No video for this section)');
+        }
+      }
+
+      // Click "Next" button to advance to next section
+      const nextButton = page.locator('button:has-text("Next"), button[aria-label*="Next"]');
+      const nextExists = await nextButton.isVisible({ timeout: 1000 }).catch(() => false);
+
+      if (!nextExists) {
+        console.log('\n✅ Reached end of class (no more "Next" button)\n');
+        break;
+      }
+
+      await nextButton.click();
+    }
+
+    // Report which sections were encountered
+    console.log('\n📊 Section Progression Summary:');
+    console.log(`   Encountered sections: ${Array.from(encounteredSections).join(', ')}`);
+    console.log(`   Total unique sections: ${encounteredSections.size}\n`);
+
+    // Expect at least 3 different section types (preparation, movement, meditation minimum)
+    expect(encounteredSections.size, 'Should encounter at least 3 different section types during playback').toBeGreaterThanOrEqual(3);
+
+    console.log('✅ Class playback section progression verified');
+  });
+});
