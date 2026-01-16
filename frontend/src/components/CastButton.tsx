@@ -11,16 +11,15 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
   const [isCasting, setIsCasting] = useState(false);
   const castContextRef = useRef<any>(null);
 
-  // CRITICAL DEBUG: Use console.log (not logger.debug) to ensure it shows on mobile
-  console.log('🎯 [CastButton] Component RENDERED - checking Cast SDK...');
-
   // Note: Cast SDK is loaded via <script> tag in index.html (not dynamically here)
   // This avoids duplicate loading issues
 
   useEffect(() => {
-    console.log('🎯 [CastButton] useEffect FIRED - Component mounted');
-    console.log('🎯 [CastButton] window.cast exists?', !!window.cast);
-    console.log('🎯 [CastButton] window.cast value:', window.cast);
+    // Use logger.warn so it shows up in production (logger.debug is dev-only)
+    logger.warn('[CastButton] Component mounted - Cast SDK check starting...');
+    logger.warn('[CastButton] window.cast exists?', !!(window as any).cast);
+    logger.warn('[CastButton] window.cast.framework exists?', !!(window as any).cast?.framework);
+    logger.warn('[CastButton] window.cast.framework.CastContext exists?', !!(window as any).cast?.framework?.CastContext);
     logger.debug('[CastButton] Component mounted, waiting for Cast SDK...');
 
     // Wait for Cast framework to load
