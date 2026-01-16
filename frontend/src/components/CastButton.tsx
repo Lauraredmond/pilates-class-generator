@@ -15,11 +15,16 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
   // This avoids duplicate loading issues
 
   useEffect(() => {
-    // Use logger.warn so it shows up in production (logger.debug is dev-only)
-    logger.warn('[CastButton] Component mounted - Cast SDK check starting...');
-    logger.warn('[CastButton] window.cast exists?', !!(window as any).cast);
-    logger.warn('[CastButton] window.cast.framework exists?', !!(window as any).cast?.framework);
-    logger.warn('[CastButton] window.cast.framework.CastContext exists?', !!(window as any).cast?.framework?.CastContext);
+    // CRITICAL: Use direct console.warn() to ensure logs appear in production
+    try {
+      console.warn('🔍 [CastButton] Component mounted - Cast SDK check starting...');
+      console.warn('🔍 [CastButton] window.cast exists?', !!(window as any).cast);
+      console.warn('🔍 [CastButton] window.cast.framework exists?', !!(window as any).cast?.framework);
+      console.warn('🔍 [CastButton] window.cast.framework.CastContext exists?', !!(window as any).cast?.framework?.CastContext);
+      console.warn('🔍 [CastButton] Full window.cast object:', (window as any).cast);
+    } catch (error) {
+      console.error('❌ [CastButton] Error during initial diagnostics:', error);
+    }
     logger.debug('[CastButton] Component mounted, waiting for Cast SDK...');
 
     // Wait for Cast framework to load
@@ -140,9 +145,9 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
         const cast = (window as any).cast;
         pollCount++;
 
-        // Log detailed SDK state every 2 seconds (every 20 polls)
+        // Log detailed SDK state every 2 seconds (every 20 polls) - PRODUCTION LOGGING
         if (pollCount % 20 === 0) {
-          logger.debug(`[CastButton] Polling attempt ${pollCount}: SDK state`, {
+          console.warn(`🔍 [CastButton] Polling attempt ${pollCount}: SDK state`, {
             cast: !!cast,
             framework: !!cast?.framework,
             CastContext: !!cast?.framework?.CastContext,
