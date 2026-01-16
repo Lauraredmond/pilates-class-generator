@@ -778,3 +778,247 @@ The test saves screenshots at each step:
 - Netlify auto-deployment may be delayed
 - CastButton component may not be rendering (check for `[CastButton]` logs)
 - CSP may be blocking gstatic.com (check Network tab)
+
+---
+
+## Session 6: CSP Device Discovery Fix (January 16, 2026)
+
+### Date: January 16, 2026 13:37 GMT
+### Status: ✅ FIX APPLIED - Awaiting user verification on real device
+
+### Critical Evidence Provided by User
+
+**Screenshots showing real bug:**
+1. **Les Mills App (13:31:47):** Cast icon WHITE/ENABLED
+   - Proves Chromecast IS active and detectable on network
+   - Same device, same WiFi network
+
+2. **Bassline App (13:35:15):** Cast icon GREYED OUT/DISABLED
+   - Same device, same network, 4 minutes later
+   - Proves Bassline app NOT detecting Chromecast
+
+**This evidence confirmed:** The bug is NOT in component code or SDK loading - it's a network connectivity issue preventing device discovery.
+
+### Root Cause Investigation
+
+**What I Checked:**
+
+1. **Cast SDK Script Tag** (`frontend/public/index.html` line 30)
+   - ✅ Script tag present and correct
+   - ✅ URL: `https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1`
+   - ✅ `loadCastFramework=1` parameter included
+
+2. **CastButton Component Logic** (`frontend/src/components/CastButton.tsx`)
+   - ✅ Uses `DEFAULT_MEDIA_RECEIVER_APP_ID` (correct for generic casting)
+   - ✅ Listens for `CAST_STATE_CHANGED` events
+   - ✅ Updates button state based on device availability
+   - ✅ Initialization logic follows Google's documentation
+
+3. **CSP Configuration** (`frontend/public/_headers` line 10) ⚠️ **BUG FOUND HERE**
+   - ✅ `script-src` includes `https://www.gstatic.com` → SDK can load
+   - ❌ `connect-src` MISSING Google Cast domains → SDK can't discover devices!
+
+### The Bug Explained
+
+**Problem:** Content Security Policy was allowing the Cast SDK to load but BLOCKING device discovery connections.
+
+**Why This Happens:**
+- `script-src`: Controls JavaScript file loading
+  - ✅ Included `https://www.gstatic.com` → Cast SDK loads successfully
+
+- `connect-src`: Controls network connections (XHR, WebSocket, fetch, etc.)
+  - ❌ Did NOT include Google Cast infrastructure domains
+  - ❌ SDK couldn't connect to Google servers for device discovery
+
+**Google Cast SDK Requirements:**
+The Cast SDK needs to connect to multiple Google domains for:
+1. **Device discovery** - Finding Chromecasts on local network via Google servers
+2. **Session management** - Establishing connections to devices
+3. **Receiver communication** - Controlling playback on TV
+
+**Required Domains:**
+- `*.google.com` - Main Google services
+- `*.googleapis.com` - Google API endpoints
+- `*.gstatic.com` - Static content delivery
+- `*.googleusercontent.com` - User content and assets
+
+### Fix Applied (Commit d3391bbd)
+
+**File:** `frontend/public/_headers`
+
+**Changes Made:**
+
+1. Added comprehensive comment documenting Google Cast SDK requirements
+2. Updated `script-src` to include all gstatic subdomains: `https://*.gstatic.com`
+3. Updated `connect-src` to include all 4 required Google Cast domains:
+   - `https://*.google.com`
+   - `https://*.googleapis.com`
+   - `https://*.gstatic.com`
+   - `https://*.googleusercontent.com`
+
+**New CSP Configuration:**
+```
+Content-Security-Policy: default-src 'self';
+script-src 'self' https://archive.org https://www.gstatic.com https://*.gstatic.com;
+style-src 'self' 'unsafe-inline';
+img-src 'self' data: blob: https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co;
+font-src 'self' data:;
+connect-src 'self' https://pilates-class-generator-api3.onrender.com https://pilates-dev-i0jb.onrender.com https://lixvcebtwusmaipodcpc.supabase.co https://hmtvlujowgcbxzmyqwnt.supabase.co https://archive.org https://*.archive.org https://*.google.com https://*.googleapis.com https://*.gstatic.com https://*.googleusercontent.com;
+...
+```
+
+### Expected Impact
+
+**Before Fix:**
+- Cast SDK loads ✅
+- Component renders ✅
+- Device discovery FAILS ❌
+- Cast icon GREYED OUT ❌
+
+**After Fix:**
+- Cast SDK loads ✅
+- Component renders ✅
+- Device discovery WORKS ✅
+- Cast icon WHITE/ENABLED ✅
+
+### User Testing Instructions
+
+**Created File:** `docs/CHROMECAST_CSP_FIX_TEST_INSTRUCTIONS.md`
+
+**Testing Steps:**
+1. **Clear Safari cache** (CRITICAL - old CSP headers cached)
+   - iPhone Settings → Safari → Clear History and Website Data
+
+2. **Navigate to dev site**
+   - URL: https://bassline-dev.netlify.app
+   - NOT production (fix only deployed to dev)
+
+3. **Start class playback**
+   - Login → Class Builder → Generate Class → Play Class
+
+4. **Check Cast button state**
+   - Expected: WHITE/ENABLED (matches Les Mills screenshot)
+   - NOT greyed out anymore
+
+5. **Test device selection**
+   - Click Cast button
+   - Verify Chromecast appears in device list
+   - Test connection (optional)
+
+**Diagnostic Commands:** (if still broken)
+```javascript
+// Run in Web Inspector Console
+console.log('Cast SDK:', typeof window.cast);
+console.log('Cast framework:', typeof window.cast?.framework);
+
+if (window.cast?.framework) {
+  const ctx = window.cast.framework.CastContext.getInstance();
+  console.log('Cast state:', ctx.getCastState());
+}
+```
+
+**Expected Output:**
+```
+Cast SDK: "object"
+Cast framework: "object"
+Cast state: "NOT_CONNECTED"  (device available but not connected)
+```
+
+### Why Playwright Couldn't Detect This
+
+**User Asked:** "I am confused, though, why you couldn't see this yourself when you ran the UI Playwright script"
+
+**Answer:** Playwright has a critical limitation with Google Cast SDK:
+- `window.cast` is **always undefined** in Chromium automation environments
+- Cast SDK requires full Chrome browser with Google services integration
+- Playwright's Chromium build doesn't include these services
+- Network monitoring showed SDK loading (HTTP 200), but couldn't test device discovery
+
+**What Playwright CAN test:**
+- ✅ Script tag exists
+- ✅ Network request succeeds (200 OK)
+- ✅ Component renders
+- ✅ Button state updates
+
+**What Playwright CANNOT test:**
+- ❌ Cast SDK initialization (`window.cast` always undefined)
+- ❌ Device discovery (requires real Chromecast + Google services)
+- ❌ Cast button becoming enabled (requires real device detection)
+
+**The screenshots you provided were CRITICAL** - they provided concrete evidence that:
+1. Chromecast IS working on the network (Les Mills proves it)
+2. Bassline app is NOT detecting it (greyed out icon)
+3. This is a network connectivity issue, not a code issue
+
+This led me to investigate CSP `connect-src`, which Playwright couldn't have tested.
+
+### Commits
+
+**d3391bbd:** fix: Add Google Cast domains to CSP for Chromecast device discovery
+- Updated `frontend/public/_headers` with comprehensive Google Cast CSP configuration
+- Added domains to both `script-src` and `connect-src` directives
+- Documented why each domain is required
+
+### Files Modified
+
+- `frontend/public/_headers` - CSP configuration fix
+- `docs/CHROMECAST_CSP_FIX_TEST_INSTRUCTIONS.md` - User testing guide (NEW)
+- `docs/CHROMECAST_DEBUG_LOG.md` - This session log (NEW)
+
+### Next Steps
+
+**BLOCKING:** User must test on real device with Chromecast
+
+**If Fix Works:**
+- ✅ Cast icon turns white/enabled
+- ✅ Device selection menu appears
+- ✅ Chromecast listed in menu
+- ✅ Connection succeeds
+- → **ISSUE RESOLVED** - Can proceed with additional Cast features
+
+**If Fix Doesn't Work:**
+- Collect console logs (diagnostic commands above)
+- Check for CSP errors (may need more domains)
+- May need different SDK initialization approach
+- User should wait 10 minutes for Netlify CDN cache to expire
+
+### Technical Lessons Learned
+
+1. **CSP has TWO relevant directives for third-party SDKs:**
+   - `script-src`: Allows loading the JavaScript SDK file
+   - `connect-src`: Allows SDK to make network requests
+   - **BOTH must be configured** for full functionality
+
+2. **Playwright limitations with browser-specific SDKs:**
+   - Google Cast SDK requires full Chrome, not Chromium
+   - Automated testing can verify loading, not functionality
+   - Real device testing essential for browser-specific features
+
+3. **User-provided evidence is invaluable:**
+   - Screenshots comparing working vs broken app
+   - Same device, same network, different apps
+   - This evidence pointed directly to network connectivity issue
+
+4. **Cache clearing is critical for CSP changes:**
+   - Old CSP headers cached by browser
+   - Must clear Safari cache before testing
+   - May need to wait for Netlify CDN cache expiry (10 min)
+
+### Success Criteria
+
+**Fix is CONFIRMED when user reports:**
+- ✅ Cast icon is WHITE/ENABLED (not greyed out)
+- ✅ Clicking icon opens device selection menu
+- ✅ Chromecast device appears in menu
+- ✅ No CSP errors in console
+- ✅ Cast state: "NOT_CONNECTED" (device available)
+
+**Fix is INCOMPLETE if:**
+- ❌ Cast icon still greyed out
+- ❌ No device selection menu
+- ❌ CSP errors still appear in console
+- ❌ Chromecast not in device list
+
+**Last Updated:** January 16, 2026 13:50 GMT
+
+**Status:** ✅ FIX COMMITTED AND DEPLOYED - Awaiting user verification
