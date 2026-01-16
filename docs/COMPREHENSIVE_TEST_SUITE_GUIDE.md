@@ -1,7 +1,7 @@
 # Comprehensive Test Suite Guide
 
 **Created:** January 16, 2026
-**Purpose:** E2E testing for Chromecast, Analytics, Admin Features, and AI Toggle Access Control
+**Purpose:** E2E testing for Chromecast, Analytics, Admin Features, AI Toggle Access Control, and Class Playback Media
 
 ---
 
@@ -14,6 +14,7 @@ The comprehensive test suite (`comprehensive-app-test.spec.ts`) validates:
 3. **✅ Admin-Only LLM Logs** - Developer tools visible only to admin users
 4. **✅ AI Toggle Access** - AI toggle visible only to admins, defaults to OFF
 5. **✅ Settings/Developer Tools** - Admin statistics for all users (admin only)
+6. **✅ Class Playback Media** - Section progression, music playback, voiceover playback, video display
 
 ---
 
@@ -134,6 +135,9 @@ npx playwright test comprehensive-app-test.spec.ts --grep "AI Toggle"
 
 # Developer tools only
 npx playwright test comprehensive-app-test.spec.ts --grep "Developer Tools"
+
+# Class playback media verification only
+npx playwright test comprehensive-app-test.spec.ts --grep "Class Playback"
 ```
 
 ---
@@ -277,6 +281,121 @@ Possible causes:
 
 ---
 
+### Test 6: Class Playback - Media & Section Verification
+
+**What It Tests:**
+- Logs in as regular user
+- Generates/accepts a class
+- Starts class playback
+- Verifies music playback (background audio)
+- Clicks "Next" through all class sections
+- Verifies voiceover playback when present
+- Verifies video display when present
+- Tracks section progression
+
+**Expected Results:**
+
+**Music Playback:**
+- ✅ Background music audio element exists (`audio#background-music`)
+- ✅ Music has source URL
+- ✅ Music is playing (not paused)
+- ✅ No audio errors
+
+**Section Progression:**
+- ✅ Test encounters at least 3 different section types
+- ✅ Sections include: preparation, warmup, movement, transition, cooldown, meditation, homecare
+- ✅ "Next" button advances through sections correctly
+- ✅ Test reaches end of class (no more "Next" button)
+
+**Voiceover Playback (when present):**
+- ✅ Voiceover audio element exists (`audio#voiceover-audio`)
+- ✅ Voiceover has source URL
+- ✅ Voiceover plays without errors
+- ✅ Section data-attribute shows correct section type
+
+**Video Display (when present):**
+- ✅ Video element exists (`<video>`)
+- ✅ Video has source URL
+- ✅ Video plays without errors
+- ✅ Video displays for sections with video URLs
+
+**Console Output:**
+```
+📋 Testing Class Playback Section Progression...
+
+🎵 Verifying music playback...
+Music audio state: { src: '...', paused: false, ... }
+✅ Background music is playing correctly
+
+📍 Verifying section progression and voiceover playback...
+
+Current section: preparation
+  🎙️ Voiceover: PLAYING
+     Source: https://...
+     ✅ Voiceover is playing without errors
+
+Current section: warmup
+  (No voiceover for this section)
+
+Current section: movement
+  🎥 Video: PLAYING
+     Source: https://...
+     ✅ Video is playing without errors
+
+...
+
+✅ Reached end of class (no more "Next" button)
+
+📊 Section Progression Summary:
+   Encountered sections: preparation, warmup, movement, transition, cooldown, meditation, homecare
+   Total unique sections: 7
+
+✅ Class playback section progression verified
+```
+
+**If Test Fails:**
+
+**Music not playing:**
+1. Check if music audio element has `id="background-music"`
+2. Verify music playlist selected for class
+3. Check browser console for audio autoplay blocking
+4. Verify Internet Archive music URLs accessible
+5. Check audio element state: `paused`, `readyState`, `error`
+
+**Sections not progressing:**
+1. Verify "Next" button selector: `button:has-text("Next"), button[aria-label*="Next"]`
+2. Check if ClassPlayback component renders section data attributes
+3. Verify section types in playback data
+4. Check class generation included all 6 sections
+
+**Voiceover not playing:**
+1. Check if voiceover audio element has `id="voiceover-audio"`
+2. Verify section has `voiceover_url` field populated
+3. Check Supabase Storage voiceover files accessible
+4. Verify audio ducking hook (`useAudioDucking`) working
+5. Check browser console for CORS errors
+
+**Video not displaying:**
+1. Verify section has `video_url` field populated
+2. Check if video files uploaded to CloudFront CDN
+3. Verify video element renders when `video_url` present
+4. Check browser console for video loading errors
+5. Verify CSP allows video source domain
+
+**How to Debug:**
+```bash
+# Run test with headed mode to see what's happening
+npm run test:e2e:comprehensive -- --headed
+
+# Run only playback test
+npx playwright test comprehensive-app-test.spec.ts --grep "Class Playback" --headed
+
+# Check audio/video element state in browser DevTools
+# Elements tab → Search for audio#background-music, audio#voiceover-audio, video
+```
+
+---
+
 ## Database Setup Commands
 
 ### Add `is_admin` Column to user_profiles
@@ -384,10 +503,16 @@ WHERE email = 'test@example.com';
 - [x] Regular users do NOT see AI toggle
 - [x] Admin users DO see AI toggle (defaults to OFF)
 - [x] Settings page shows admin-only sections for admins
+- [x] Background music plays during class playback
+- [x] Section progression works (Next button advances through sections)
+- [x] Voiceover plays when present (with audio ducking)
+- [x] Video displays when present
 
 ### ⚠️ Acceptable Failures:
 - Chromecast icon greyed out (if no Chromecast on test network) - documents expected behavior
 - Settings/Developer Tools not implemented yet - test documents expected behavior
+- Voiceover not present for all sections - only some sections have voiceovers
+- Video not present for all sections - videos may not be implemented yet
 
 ---
 
