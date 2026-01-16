@@ -9,7 +9,7 @@
 
 ### 1. Test Credentials Setup (Secure)
 - ✅ Created `frontend/.env.test` file with dev account credentials
-- ✅ Email: `laura.bassline@proton.me`
+- ✅ Email: [Test credentials in .env.test]
 - ✅ Password: Stored in `.env.test` (gitignored, never committed)
 - ✅ Added `.env.test` to `.gitignore` for security
 - ✅ Playwright config loads credentials automatically
