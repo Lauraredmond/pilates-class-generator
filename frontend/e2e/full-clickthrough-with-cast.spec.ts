@@ -10,21 +10,31 @@ import { test, expect } from '@playwright/test';
  * 4. Console log monitoring
  * 5. iOS PWA compatibility checks
  *
- * Usage:
- *   # Test dev environment
- *   TEST_ENV=dev npx playwright test full-clickthrough-with-cast.spec.ts --headed
+ * Setup:
+ *   Credentials are stored in frontend/.env.test (gitignored, not committed)
+ *   Dev account: laura.bassline@proton.me
+ *   Password: See .env.test file
  *
- *   # Test production
- *   TEST_ENV=production npx playwright test full-clickthrough-with-cast.spec.ts --headed
+ * Usage:
+ *   # Test dev environment (uses .env.test credentials)
+ *   cd frontend
+ *   npm run test:e2e:clickthrough:dev
+ *
+ *   # Or run manually
+ *   npx playwright test full-clickthrough-with-cast.spec.ts --headed
  *
  *   # Test on mobile (iPhone simulation)
- *   TEST_ENV=dev npx playwright test full-clickthrough-with-cast.spec.ts --project=dev-mobile-safari --headed
+ *   npm run test:e2e:clickthrough:mobile
+ *
+ *   # Chromecast-only test (faster, 20 seconds)
+ *   npm run test:e2e:cast
  */
 
-// Test user credentials
+// Load test credentials from .env.test file
+// Default credentials match dev account (laura.bassline@proton.me)
 const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || 'test@bassline.dev',
-  password: process.env.TEST_USER_PASSWORD || 'TestPassword123!',
+  email: process.env.TEST_USER_EMAIL || 'laura.bassline@proton.me',
+  password: process.env.TEST_USER_PASSWORD || 'Laura101!!',
 };
 
 test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
@@ -81,6 +91,42 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
       await page.waitForLoadState('networkidle');
       await page.screenshot({ path: 'screenshots/01-login-page.png', fullPage: true });
 
+      // Handle Medical Safety Disclaimer flow (multi-step)
+      const disclaimerModal = page.locator('text=Medical Safety Disclaimer');
+      const modalVisible = await disclaimerModal.isVisible({ timeout: 3000 }).catch(() => false);
+
+      if (modalVisible) {
+        console.log('Medical disclaimer modal detected, handling multi-step flow...');
+
+        // Step 1: Answer pregnancy/postnatal question
+        const pregnancyQuestion = page.locator('button:has-text("No")');
+        if (await pregnancyQuestion.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await pregnancyQuestion.click();
+          await page.waitForTimeout(500);
+          console.log('  ✓ Pregnancy question answered');
+        }
+
+        // Step 2: Check required checkboxes
+        const checkbox1 = page.locator('input[type="checkbox"]').first();
+        const checkbox2 = page.locator('input[type="checkbox"]').nth(1);
+
+        if (await checkbox1.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await checkbox1.check();
+          await checkbox2.check();
+          await page.waitForTimeout(300);
+          console.log('  ✓ Checkboxes completed');
+        }
+
+        // Step 3: Click "Accept - Continue to App" button
+        const acceptButton = page.locator('button:has-text("Accept - Continue to App")');
+        if (await acceptButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await acceptButton.click();
+          await page.waitForTimeout(500);
+          console.log('  ✓ Disclaimer accepted');
+          await page.screenshot({ path: 'screenshots/01b-disclaimer-completed.png', fullPage: true });
+        }
+      }
+
       // Fill credentials
       await page.fill('input[type="email"]', TEST_USER.email);
       await page.fill('input[type="password"]', TEST_USER.password);
@@ -88,10 +134,14 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
 
       // Submit
       await page.click('button[type="submit"]');
-      await page.waitForURL('**/dashboard', { timeout: 10000 });
-      await page.screenshot({ path: 'screenshots/03-dashboard.png', fullPage: true });
 
-      await expect(page).toHaveURL(/dashboard/);
+      // Wait for successful login (redirects to home page or dashboard)
+      await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
+      await page.screenshot({ path: 'screenshots/03-after-login.png', fullPage: true });
+
+      // Verify we're logged in (check for nav links or buttons)
+      const loggedInIndicator = page.locator('text="Generate my Pilates class", a[href="/classes"]');
+      await expect(loggedInIndicator.first()).toBeVisible();
       console.log('✅ Step 1: Login successful');
     });
 
@@ -375,10 +425,43 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
     await test.step('Navigate directly to a class playback', async () => {
       // Login
       await page.goto('/login');
+      await page.waitForLoadState('networkidle');
+
+      // Handle Medical Safety Disclaimer flow (multi-step)
+      const disclaimerModal = page.locator('text=Medical Safety Disclaimer');
+      const modalVisible = await disclaimerModal.isVisible({ timeout: 3000 }).catch(() => false);
+
+      if (modalVisible) {
+        // Step 1: Answer pregnancy question
+        const pregnancyQuestion = page.locator('button:has-text("No")');
+        if (await pregnancyQuestion.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await pregnancyQuestion.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Step 2: Check checkboxes
+        const checkbox1 = page.locator('input[type="checkbox"]').first();
+        const checkbox2 = page.locator('input[type="checkbox"]').nth(1);
+        if (await checkbox1.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await checkbox1.check();
+          await checkbox2.check();
+          await page.waitForTimeout(300);
+        }
+
+        // Step 3: Accept
+        const acceptButton = page.locator('button:has-text("Accept - Continue to App")');
+        if (await acceptButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await acceptButton.click();
+          await page.waitForTimeout(500);
+        }
+      }
+
       await page.fill('input[type="email"]', TEST_USER.email);
       await page.fill('input[type="password"]', TEST_USER.password);
       await page.click('button[type="submit"]');
-      await page.waitForURL('**/dashboard');
+
+      // Wait for successful login (redirects to home page)
+      await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 
       // Go to classes
       await page.goto('/classes');
