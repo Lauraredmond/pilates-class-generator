@@ -362,4 +362,130 @@ Cast state: NO_DEVICES_AVAILABLE (or NOT_CONNECTED if device found)
 4. ✅ Review console for `[CastButton]` logs
 5. ✅ Fix any initialization errors found
 
-**Last Updated:** January 10, 2026, 22:00 GMT
+**Last Updated:** January 16, 2026, 15:00 GMT
+
+---
+
+## Session 2: Playwright E2E Testing
+
+### Date: January 16, 2026
+### Status: Test framework ready, awaiting execution
+
+### Test Improvements Made
+
+**File:** `frontend/e2e/full-clickthrough-with-cast.spec.ts`
+
+**Key Updates:**
+1. **Pre-generated class handling** - Test now detects if a class is already generated on the class-builder page and clicks "Accept & Add to Class" instead of trying to generate a new one
+2. **Flexible navigation** - Multiple selectors to find and click class cards on different page layouts
+3. **Training Hub support** - Handles new "Training & Nutrition Hub" UI with "Log my training plan" button
+4. **Comprehensive Cast SDK debugging** - Added 4-stage Cast SDK initialization checks
+
+### Test Scenarios
+
+**FULL CLICKTHROUGH Test:**
+- Complete user journey from login → class generation → playback → exit
+- Comprehensive Chromecast button debugging at playback stage
+- Screenshots captured at every step
+- Console log monitoring for Cast-related messages
+
+**CHROMECAST ONLY Test:**
+- Faster isolated test (20-30 seconds)
+- Skips to playback quickly
+- Focused debugging of Cast SDK initialization
+- Detailed button state analysis
+
+### Cast SDK Debug Stages
+
+The test now checks 4 stages of Cast SDK initialization:
+
+```javascript
+// Stage 1: Script tag exists
+document.querySelector('script[src*="gstatic.com/cv/js/sender"]')
+
+// Stage 2: window.cast object available
+typeof window.cast !== 'undefined'
+
+// Stage 3: cast.framework loaded
+typeof window.cast?.framework !== 'undefined'
+
+// Stage 4: CastContext initialized
+const ctx = cast.framework.CastContext.getInstance();
+ctx.getCastState()
+```
+
+### Test Commands
+
+```bash
+# Full clickthrough with Cast debugging (60-90 seconds)
+cd frontend
+npm run test:e2e:clickthrough:dev
+
+# Fast Chromecast-only test (20-30 seconds)
+npm run test:e2e:cast
+
+# Visual mode to see browser actions
+npx playwright test full-clickthrough-with-cast.spec.ts --headed
+
+# Mobile simulation
+npm run test:e2e:clickthrough:mobile
+```
+
+### Expected Output When Test Runs
+
+```
+=== CAST SDK LOADING STEPS ===
+1. Script tag exists: ✅
+2. window.cast exists: ✅
+3. cast.framework exists: ✅
+4. CastContext: {exists: true, state: "NO_DEVICES_AVAILABLE"}
+
+=== CAST BUTTON STATE ===
+{
+  className: "cast-button opacity-50",
+  disabled: true,
+  ariaDisabled: "true",
+  ariaLabel: "Cast",
+  textContent: "Cast"
+}
+
+Button is greyed out: ❌ YES (ISSUE)
+```
+
+### Test Credentials
+
+- Email: `laura.bassline@proton.me`
+- Password: Stored in `frontend/.env.test` (gitignored)
+- Medical disclaimer: Handled automatically by test
+
+### Screenshots Captured
+
+The test saves screenshots at each step:
+- `screenshots/01-login-page.png`
+- `screenshots/04-class-builder.png`
+- `screenshots/05-pre-generated-class.png` (if class already exists)
+- `screenshots/07-classes-page.png`
+- `screenshots/08-playback-started.png`
+- `screenshots/12-chromecast-debug-complete.png`
+- `screenshots/cast-debug-01-initial.png` (Chromecast-only test)
+- `screenshots/cast-debug-02-button.png` (Close-up of Cast button)
+
+### Next Steps
+
+1. **Run the test** - Execute `npm run test:e2e:cast` to capture current Cast SDK state
+2. **Review console output** - Look for Cast SDK initialization stages
+3. **Check screenshots** - Visual evidence of button state
+4. **Analyze failure point** - Which of the 4 stages is failing?
+
+### Common Failure Points
+
+1. **Stage 1 fails** (No script tag) → Cast SDK not included in HTML
+2. **Stage 2 fails** (No window.cast) → Script blocked by CSP or not loading
+3. **Stage 3 fails** (No framework) → SDK loaded but framework not initialized
+4. **Stage 4 fails** (No context) → Framework loaded but context creation failed
+
+### Known Issues from Previous Session
+
+- Netlify auto-deployment may be delayed
+- CastButton component may not be rendering (check for `[CastButton]` logs)
+- CSP may be blocking gstatic.com (check Network tab)
