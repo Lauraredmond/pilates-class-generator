@@ -54,11 +54,14 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
       }
 
       try {
-        logger.debug('[CastButton] Cast framework fully loaded, creating context...');
+        console.warn('🎯 [CastButton] Cast framework fully loaded, creating context...');
 
         // Initialize Cast context with application ID
         // Using default Media Receiver app (generic audio/video player)
         const context = cast.framework.CastContext.getInstance();
+
+        // Log the default app ID being used
+        console.warn('🎯 [CastButton] Using receiver app ID:', cast.framework.CastContext.DEFAULT_MEDIA_RECEIVER_APP_ID);
 
         context.setOptions({
           receiverApplicationId: cast.framework.CastContext.DEFAULT_MEDIA_RECEIVER_APP_ID,
@@ -66,7 +69,17 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
         });
 
         castContextRef.current = context;
-        logger.debug('[CastButton] Cast context created successfully');
+        console.warn('🎯 [CastButton] Cast context created successfully');
+
+        // Check initial Cast state immediately
+        const initialState = context.getCastState();
+        console.warn('🎯 [CastButton] Initial Cast state:', initialState);
+        console.warn('🎯 [CastButton] Available states:', {
+          NO_DEVICES_AVAILABLE: cast.framework.CastState.NO_DEVICES_AVAILABLE,
+          NOT_CONNECTED: cast.framework.CastState.NOT_CONNECTED,
+          CONNECTING: cast.framework.CastState.CONNECTING,
+          CONNECTED: cast.framework.CastState.CONNECTED,
+        });
 
         // Listen for cast state changes
         context.addEventListener(
