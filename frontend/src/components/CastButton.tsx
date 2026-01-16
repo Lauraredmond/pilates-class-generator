@@ -22,13 +22,20 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
       logger.debug('[CastButton] Attempting to initialize Cast API...');
 
       const cast = (window as any).cast;
-      if (!cast || !cast.framework) {
-        logger.warn('[CastButton] Cast framework not available yet');
+
+      // Verify Cast SDK is FULLY loaded (not just partially)
+      if (!cast || !cast.framework || !cast.framework.CastContext || !cast.framework.AutoJoinPolicy) {
+        logger.warn('[CastButton] Cast framework not fully loaded yet', {
+          cast: !!cast,
+          framework: !!cast?.framework,
+          CastContext: !!cast?.framework?.CastContext,
+          AutoJoinPolicy: !!cast?.framework?.AutoJoinPolicy,
+        });
         return;
       }
 
       try {
-        logger.debug('[CastButton] Cast framework detected, creating context...');
+        logger.debug('[CastButton] Cast framework fully loaded, creating context...');
 
         // Initialize Cast context with application ID
         // Using default Media Receiver app (generic audio/video player)
@@ -77,22 +84,48 @@ export function CastButton({ onCastStateChange }: CastButtonProps) {
       }
     };
 
-    // Check if Cast SDK already loaded
-    if ((window as any).cast && (window as any).cast.framework) {
-      logger.debug('[CastButton] Cast SDK already loaded, initializing immediately');
+    // Check if Cast SDK is fully loaded (not just partially)
+    const cast = (window as any).cast;
+    const isFullyLoaded = cast?.framework?.CastContext && cast?.framework?.AutoJoinPolicy;
+
+    if (isFullyLoaded) {
+      logger.debug('[CastButton] Cast SDK fully loaded, initializing immediately');
       initializeCastApi();
     } else {
-      logger.debug('[CastButton] Cast SDK not loaded yet, setting up callback...');
+      logger.debug('[CastButton] Cast SDK not fully loaded yet, setting up callback and polling...');
 
-      // Wait for Cast framework to be ready
+      // Wait for Cast framework to be ready via callback
       (window as any)['__onGCastApiAvailable'] = (isAvailable: boolean) => {
         logger.debug(`[CastButton] __onGCastApiAvailable callback fired: ${isAvailable}`);
         if (isAvailable) {
-          initializeCastApi();
+          // Callback fired, but SDK might still be loading - poll until fully ready
+          const pollInterval = setInterval(() => {
+            const cast = (window as any).cast;
+            if (cast?.framework?.CastContext && cast?.framework?.AutoJoinPolicy) {
+              clearInterval(pollInterval);
+              initializeCastApi();
+            }
+          }, 100); // Check every 100ms
+
+          // Clear polling after 5 seconds if still not ready
+          setTimeout(() => clearInterval(pollInterval), 5000);
         } else {
           logger.error('[CastButton] Cast API reported as NOT available');
         }
       };
+
+      // Also poll directly in case callback doesn't fire
+      const directPollInterval = setInterval(() => {
+        const cast = (window as any).cast;
+        if (cast?.framework?.CastContext && cast?.framework?.AutoJoinPolicy) {
+          clearInterval(directPollInterval);
+          logger.debug('[CastButton] Cast SDK detected via polling');
+          initializeCastApi();
+        }
+      }, 100); // Check every 100ms
+
+      // Clear polling after 10 seconds
+      setTimeout(() => clearInterval(directPollInterval), 10000);
     }
 
     // Timeout safety net: if Cast SDK doesn't load in 10 seconds, log warning
