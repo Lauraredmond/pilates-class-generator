@@ -530,25 +530,29 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
       // Take a screenshot for debugging
       await page.screenshot({ path: 'screenshots/cast-class-builder-state.png', fullPage: true });
 
-      // Check if the class generation modal/overlay is already displayed
-      const classModal = page.locator('text="Your Auto-Generated Class"');
-      const modalVisible = await classModal.isVisible({ timeout: 3000 }).catch(() => false);
+      // FIRST: Check if the "Your Auto-Generated Class" modal/overlay is displayed
+      const classModalText = page.locator('text="Your Auto-Generated Class"');
+      const classModalVisible = await classModalText.isVisible({ timeout: 3000 }).catch(() => false);
 
-      if (modalVisible) {
+      if (classModalVisible) {
         console.log('Found "Your Auto-Generated Class" modal displayed');
 
         // Take screenshot of the modal
         await page.screenshot({ path: 'screenshots/cast-pre-generated-class.png', fullPage: true });
 
-        // Look for the Accept button within or near the modal
-        // The button might have special characters or be formatted differently
-        const acceptButton = page.locator('button:has-text("Accept & Add to Class"), button:has-text("Accept"), button').filter({ hasText: /accept.*add.*class/i });
+        // Look for the Accept button - try multiple strategies
+        // Strategy 1: Direct text match
+        let acceptButton = page.locator('button:has-text("Accept & Add to Class")');
+        let acceptButtonVisible = await acceptButton.isVisible({ timeout: 2000 }).catch(() => false);
 
-        // If not found, try a more general approach
-        let acceptButtonToClick = await acceptButton.first().elementHandle();
+        if (!acceptButtonVisible) {
+          // Strategy 2: Look for button with both "Accept" and "Add" text
+          acceptButton = page.locator('button').filter({ hasText: /Accept.*Add/i });
+          acceptButtonVisible = await acceptButton.isVisible({ timeout: 2000 }).catch(() => false);
+        }
 
-        if (!acceptButtonToClick) {
-          // Look for all buttons and find the one with Accept text
+        if (!acceptButtonVisible) {
+          // Strategy 3: Look through all buttons
           const allButtons = await page.locator('button').all();
           console.log(`Found ${allButtons.length} total buttons on page`);
 
@@ -558,38 +562,37 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
             console.log(`  Button: "${text?.trim()}" (visible: ${isVisible})`);
 
             if (text && text.includes('Accept') && text.includes('Add') && isVisible) {
-              acceptButtonToClick = await btn.elementHandle();
+              acceptButton = btn;
+              acceptButtonVisible = true;
               console.log(`Found Accept button with text: "${text}"`);
               break;
             }
           }
         }
 
-        if (acceptButtonToClick) {
+        if (acceptButtonVisible) {
           console.log('Clicking Accept & Add to Class button...');
-          await acceptButtonToClick.click();
+          await acceptButton.click();
           console.log('Clicked Accept button');
 
           // Wait for save to complete
           await page.waitForTimeout(3000);
+
+          // Check if we're still on class-builder or redirected
+          const currentUrl = page.url();
+          console.log(`Current URL after accepting class: ${currentUrl}`);
+
+          if (!currentUrl.includes('/classes') && !currentUrl.includes('/playback')) {
+            console.log('Not redirected, navigating to classes page...');
+            await page.goto('/classes');
+            await page.waitForLoadState('networkidle');
+          }
         } else {
           console.log('ERROR: Could not find Accept & Add to Class button despite modal being visible');
-        }
-
-        // Wait to see if it redirects
-        await page.waitForTimeout(2000);
-
-        // Check if we're still on class-builder or redirected
-        const currentUrl = page.url();
-        console.log(`Current URL after accepting class: ${currentUrl}`);
-
-        if (!currentUrl.includes('/classes') && !currentUrl.includes('/playback')) {
-          console.log('Not redirected, navigating to classes page...');
-          await page.goto('/classes');
-          await page.waitForLoadState('networkidle');
+          throw new Error('Accept button not found in visible modal');
         }
       } else {
-        console.log('No Accept button found in pre-generated view, checking Play Class button...');
+        console.log('No "Your Auto-Generated Class" modal found, checking for other scenarios...');
 
         // Check if there's a Play Class button on the page
         const playButton = page.locator('button:has-text("Play Class")');
