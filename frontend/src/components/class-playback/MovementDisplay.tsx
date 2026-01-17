@@ -23,7 +23,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   // DEBUG: Check if video_url exists when rendering movements
   if (item.type === 'movement') {
     console.log('🎥 DEBUG: MovementDisplay received item:', item);
-    console.log('🎥 DEBUG: MovementDisplay video_url:', (item as any).video_url);
+    console.log('🎥 DEBUG: MovementDisplay video_url:', ('video_url' in item ? item.video_url : 'N/A'));
   }
 
   /**
@@ -342,10 +342,12 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     const parts: string[] = [];
 
     // Title
-    parts.push(`${item.name.toUpperCase()}\n\n`);
+    if ('name' in item && item.name) {
+      parts.push(`${item.name.toUpperCase()}\n\n`);
+    }
 
     // Narrative only
-    if (item.narrative) {
+    if ('narrative' in item && item.narrative) {
       parts.push(`${item.narrative}\n\n`);
     }
 
@@ -358,14 +360,14 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
   // DEBUG: Check conditional rendering
   console.log('🎥 DEBUG: About to check if video_url exists...');
-  console.log('🎥 DEBUG: item.video_url value:', item.video_url);
-  console.log('🎥 DEBUG: item.video_url type:', typeof item.video_url);
-  console.log('🎥 DEBUG: Is video_url truthy?:', !!item.video_url);
+  console.log('🎥 DEBUG: item.video_url value:', ('video_url' in item ? item.video_url : 'N/A'));
+  console.log('🎥 DEBUG: item.video_url type:', ('video_url' in item ? typeof item.video_url : 'N/A'));
+  console.log('🎥 DEBUG: Is video_url truthy?:', ('video_url' in item && !!item.video_url));
 
   return (
     <div className="relative h-full">
       {/* Picture-in-picture video (AWS CloudFront) - only for movements with video_url */}
-      {item.video_url && (
+      {'video_url' in item && item.video_url && (
         <div className="absolute top-4 right-4 z-50 w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
           <video
             ref={(videoEl) => {
@@ -401,7 +403,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
               }, 3000);
             }}
             onError={(e) => {
-              console.error('🎥 DEBUG: Video onError - failed to load:', item.video_url, e);
+              console.error('🎥 DEBUG: Video onError - failed to load:', ('video_url' in item ? item.video_url : 'N/A'), e);
               console.error('🎥 DEBUG: Error target:', e.currentTarget);
               console.error('🎥 DEBUG: Error details:', e.nativeEvent);
               // Hide video element on error
@@ -412,7 +414,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       )}
 
       {/* Video coming soon badge - visible on all devices, non-obstructive */}
-      {!item.video_url && item.type === 'movement' && (
+      {!('video_url' in item && item.video_url) && item.type === 'movement' && (
         <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-burgundy/80 text-cream px-3 py-1.5 rounded-full text-xs md:text-sm font-medium shadow-lg backdrop-blur-sm">
           🎥 Video coming soon
         </div>
