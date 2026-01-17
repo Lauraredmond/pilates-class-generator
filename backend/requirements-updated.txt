@@ -95,7 +95,7 @@ postgrest==2.24.0
 propcache==0.4.1
 psycopg2-binary==2.9.9
 py-serializable==2.1.0
-pyasn1==0.6.1
+pyasn1==0.6.2
 pycodestyle==2.11.1
 pycparser==2.23
 pydantic==2.12.4
