@@ -38,10 +38,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     if (!video) return;
 
     // Determine delay based on section type
-    // Movements: 6 second delay (voiceover sync - reduced from 7s per user request)
+    // Movements: 4 second delay (voiceover sync - reduced from 6s per user request)
     // Other sections (prep, warmup): No delay
     const isMovement = item.type === 'movement';
-    const videoStartDelay = isMovement ? 6000 : 0; // 6 seconds for movements only
+    const videoStartDelay = isMovement ? 4000 : 0; // 4 seconds for movements only
 
     const handleCanPlay = () => {
       if (!isPaused) {
@@ -123,6 +123,9 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
     // Reset video ended state when section changes
     setVideoEnded(false);
+
+    // Reset video loading state when section changes (fixes auto-play on new movements)
+    setVideoLoading(false);
 
     // NOTE: Video reset handled in playback useEffect below (lines 48, 78)
     // Don't call video.load() here - causes infinite loop!
@@ -378,13 +381,12 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       {/* Mobile: flex item (stacks vertically), Desktop: absolute positioned (picture-in-picture) */}
       {'video_url' in item && item.video_url && (
         <div className="flex-shrink-0 md:absolute md:top-4 md:right-4 md:z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30 relative">
-          {/* Loading overlay during 6-second sync delay */}
+          {/* Loading overlay during 4-second sync delay */}
           {videoLoading && (
-            <div className="absolute inset-0 bg-burgundy/90 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="absolute inset-0 bg-burgundy flex items-center justify-center z-10">
               <div className="text-center px-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-cream/30 border-t-cream mx-auto mb-3"></div>
-                <p className="text-cream text-sm font-medium">Preparing video...</p>
-                <p className="text-cream/70 text-xs mt-1">Syncing with voiceover</p>
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-cream/30 border-t-cream mx-auto mb-2"></div>
+                <p className="text-cream text-base font-light italic tracking-wide">Video loading...</p>
               </div>
             </div>
           )}
