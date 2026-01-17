@@ -100,6 +100,8 @@ const DEVICES = {
   mobile: [
     { name: 'iPhone 14', viewport: { width: 390, height: 844 } },
     { name: 'iPhone SE', viewport: { width: 375, height: 667 } },
+    { name: 'Pixel 5 (Android)', viewport: { width: 393, height: 851 } },
+    { name: 'Galaxy S21 (Android)', viewport: { width: 360, height: 800 } },
   ],
   laptop: [
     { name: 'MacBook Pro', viewport: { width: 1440, height: 900 } },
@@ -163,10 +165,30 @@ test.describe('Mobile Video Fixes', () => {
         // Check video position
         const video = await page.locator('video').first();
         const narrative = await page.locator('.overflow-y-auto').first();
+        const videoContainer = await page.locator('video').first().locator('..');
+        const parentContainer = await videoContainer.locator('..');
 
         if (await video.isVisible()) {
           const videoBounds = await video.boundingBox();
           const narrativeBounds = await narrative.boundingBox();
+          const videoContainerBounds = await videoContainer.boundingBox();
+          const parentContainerBounds = await parentContainer.boundingBox();
+
+          // Debug logging
+          console.log(`\n📐 ${device.name} LAYOUT DEBUGGING:`);
+          console.log(`Parent container bounds:`, parentContainerBounds);
+          console.log(`Video container bounds:`, videoContainerBounds);
+          console.log(`Video element bounds:`, videoBounds);
+          console.log(`Narrative container bounds:`, narrativeBounds);
+
+          // Check CSS classes
+          const parentClasses = await parentContainer.getAttribute('class');
+          const videoContainerClasses = await videoContainer.getAttribute('class');
+          const narrativeClasses = await narrative.getAttribute('class');
+
+          console.log(`Parent classes:`, parentClasses);
+          console.log(`Video container classes:`, videoContainerClasses);
+          console.log(`Narrative classes:`, narrativeClasses);
 
           // On mobile, video should be inline (not absolute positioned)
           // Narrative should have enough top margin to not overlap
@@ -176,8 +198,15 @@ test.describe('Mobile Video Fixes', () => {
           if (videoBounds && narrativeBounds) {
             // Check that narrative starts below video (with some margin)
             const gap = narrativeBounds.y - (videoBounds.y + videoBounds.height);
+            console.log(`Gap calculation: ${narrativeBounds.y} - (${videoBounds.y} + ${videoBounds.height}) = ${gap}px`);
+
+            if (gap >= 0) {
+              console.log(`✅ ${device.name}: Narrative starts ${gap}px below video`);
+            } else {
+              console.log(`❌ ${device.name}: Narrative OVERLAPS video by ${Math.abs(gap)}px`);
+            }
+
             expect(gap).toBeGreaterThanOrEqual(0);
-            console.log(`✅ ${device.name}: Narrative starts ${gap}px below video`);
           }
         }
       });
