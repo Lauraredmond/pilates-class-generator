@@ -1066,15 +1066,15 @@ export function ClassPlayback({
         />
       </div>
 
-      {/* Cast button (top right, next to close) */}
-      <div className="absolute top-4 right-16 z-10">
+      {/* Cast button (top right, next to close) - z-[100] to stay above video */}
+      <div className="absolute top-4 right-16 z-[100]">
         <CastButton onCastStateChange={handleCastStateChange} />
       </div>
 
-      {/* Close button */}
+      {/* Close button - z-[100] to stay above video (z-50) */}
       <button
         onClick={handleExitRequest}
-        className="absolute top-4 right-4 p-2 text-cream hover:text-cream/80 transition-smooth z-10"
+        className="absolute top-4 right-4 p-2 text-cream hover:text-cream/80 transition-smooth z-[100]"
         aria-label="Exit playback"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
