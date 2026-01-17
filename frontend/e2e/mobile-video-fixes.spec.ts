@@ -318,9 +318,9 @@ test.describe('Mobile Video Fixes', () => {
         expect(initialState.paused).toBeTruthy();
         console.log('✅ Video shows thumbnail initially');
 
-        // Wait for delay period + buffering time (7s delay + 3s buffer = 10s total)
-        console.log('⏳ Waiting 10 seconds for video delay + buffering...');
-        await page.waitForTimeout(10000);
+        // Wait for delay period + buffering time (6s delay + 3s buffer = 9s total)
+        console.log('⏳ Waiting 9 seconds for video delay + buffering...');
+        await page.waitForTimeout(9000);
 
         // Check video state after delay
         const afterDelayState = await video.evaluate((vid: HTMLVideoElement) => ({

@@ -15,6 +15,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoEnded, setVideoEnded] = useState(false); // Track when video finishes
+  const [videoLoading, setVideoLoading] = useState(false); // Track 6-second loading delay
 
   // Persist scroll state across pause/resume cycles
   const pausedElapsedTimeRef = useRef<number>(0); // Time already scrolled before pause
@@ -37,10 +38,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     if (!video) return;
 
     // Determine delay based on section type
-    // Movements: 7 second delay (AWS CloudFront sync issue)
+    // Movements: 6 second delay (voiceover sync - reduced from 7s per user request)
     // Other sections (prep, warmup): No delay
     const isMovement = item.type === 'movement';
-    const videoStartDelay = isMovement ? 7000 : 0; // 7 seconds for movements only
+    const videoStartDelay = isMovement ? 6000 : 0; // 6 seconds for movements only
 
     const handleCanPlay = () => {
       if (!isPaused) {
@@ -50,10 +51,13 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video ready - delaying start by ${videoStartDelay/1000}s (movement sync)`);
+          setVideoLoading(true); // Show loading message during delay
           setTimeout(() => {
             console.log('🎥 DEBUG: Starting video after delay');
+            setVideoLoading(false); // Hide loading message when video starts
             video.play().catch(err => {
               console.error('🎥 DEBUG: Video autoplay failed:', err);
+              setVideoLoading(false); // Hide loading message on error too
               // Silently fail - video will have controls for manual play
             });
           }, videoStartDelay);
@@ -80,10 +84,13 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video already buffered - delaying start by ${videoStartDelay/1000}s (movement sync)`);
+          setVideoLoading(true); // Show loading message during delay
           setTimeout(() => {
             console.log('🎥 DEBUG: Starting video after delay');
+            setVideoLoading(false); // Hide loading message when video starts
             video.play().catch(err => {
               console.error('🎥 DEBUG: Video autoplay failed:', err);
+              setVideoLoading(false); // Hide loading message on error too
             });
           }, videoStartDelay);
         } else {
@@ -370,7 +377,17 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       {/* Picture-in-picture video (AWS CloudFront) - only for movements with video_url */}
       {/* Mobile: flex item (stacks vertically), Desktop: absolute positioned (picture-in-picture) */}
       {'video_url' in item && item.video_url && (
-        <div className="flex-shrink-0 md:absolute md:top-4 md:right-4 md:z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+        <div className="flex-shrink-0 md:absolute md:top-4 md:right-4 md:z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30 relative">
+          {/* Loading overlay during 6-second sync delay */}
+          {videoLoading && (
+            <div className="absolute inset-0 bg-burgundy/90 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="text-center px-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-cream/30 border-t-cream mx-auto mb-3"></div>
+                <p className="text-cream text-sm font-medium">Preparing video...</p>
+                <p className="text-cream/70 text-xs mt-1">Syncing with voiceover</p>
+              </div>
+            </div>
+          )}
           <video
             ref={(videoEl) => {
               videoRef.current = videoEl;
