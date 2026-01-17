@@ -157,8 +157,10 @@ class CreatorsVsPerformersReport(BaseModel):
     creators_only: int  # Created classes but never played >120s
     performers_only: int  # Played classes >120s but never created
     both: int  # Both create and perform
+    inactive_users: int  # Registered but never created or performed
     creator_engagement_rate: float  # % of creators who also perform
     performer_creation_rate: float  # % of performers who also create
+    registration_creator_rate: float  # % of registered users who create classes
     time_series: List[dict]  # Historical data by period
 
 
@@ -2318,9 +2320,15 @@ async def get_creators_vs_performers_report(
         performers_only = performer_user_ids - creator_user_ids
         both = creator_user_ids.intersection(performer_user_ids)
 
+        # Calculate inactive users (registered but never created or performed)
+        all_user_ids = set(user['id'] for user in all_users)
+        active_user_ids = creator_user_ids.union(performer_user_ids)
+        inactive = all_user_ids - active_user_ids
+
         # Calculate engagement rates
         creator_engagement_rate = (len(both) / len(creator_user_ids) * 100) if creator_user_ids else 0.0
         performer_creation_rate = (len(both) / len(performer_user_ids) * 100) if performer_user_ids else 0.0
+        registration_creator_rate = (len(creator_user_ids) / total_users * 100) if total_users else 0.0
 
         # Get historical time series data
         date_ranges, period_labels = _get_date_ranges(period)
@@ -2356,8 +2364,10 @@ async def get_creators_vs_performers_report(
             creators_only=len(creators_only),
             performers_only=len(performers_only),
             both=len(both),
+            inactive_users=len(inactive),
             creator_engagement_rate=round(creator_engagement_rate, 2),
             performer_creation_rate=round(performer_creation_rate, 2),
+            registration_creator_rate=round(registration_creator_rate, 2),
             time_series=time_series
         )
 
@@ -2371,7 +2381,7 @@ async def get_creators_vs_performers_report(
 @router.get("/admin/creators-vs-performers/users", response_model=CreatorsVsPerformersUsersResponse)
 async def get_creators_vs_performers_users(
     admin_user_id: str = Query(..., description="Admin user ID for authorization"),
-    category: str = Query(..., description="User category: creators_only, performers_only, or both"),
+    category: str = Query(..., description="User category: creators_only, performers_only, both, or inactive"),
     limit: int = Query(default=50, ge=1, le=200, description="Number of users to return"),
     offset: int = Query(default=0, ge=0, description="Offset for pagination")
 ):
@@ -2380,7 +2390,7 @@ async def get_creators_vs_performers_users(
     await verify_admin(admin_user_id)
 
     # Validate category parameter
-    valid_categories = {'creators_only', 'performers_only', 'both'}
+    valid_categories = {'creators_only', 'performers_only', 'both', 'inactive'}
     if category not in valid_categories:
         raise HTTPException(
             status_code=400,
@@ -2398,18 +2408,28 @@ async def get_creators_vs_performers_users(
             .execute()
         performer_user_ids = set(record['user_id'] for record in (performers_response.data or []))
 
+        # Get all users for inactive category calculation
+        all_users_response = supabase.table('user_profiles').select('id').execute()
+        all_user_ids = set(user['id'] for user in (all_users_response.data or []))
+
         # Calculate category sets
         creators_only = creator_user_ids - performer_user_ids
         performers_only = performer_user_ids - creator_user_ids
         both = creator_user_ids.intersection(performer_user_ids)
+
+        # Calculate inactive users (registered but never created or performed)
+        active_user_ids = creator_user_ids.union(performer_user_ids)
+        inactive = all_user_ids - active_user_ids
 
         # Select the appropriate user set
         if category == 'creators_only':
             target_user_ids = creators_only
         elif category == 'performers_only':
             target_user_ids = performers_only
-        else:  # both
+        elif category == 'both':
             target_user_ids = both
+        else:  # inactive
+            target_user_ids = inactive
 
         total_count = len(target_user_ids)
 
