@@ -68,20 +68,22 @@ button:focus-visible {
 /* Video container responsive positioning */
 .video-container-responsive {
   /* Mobile: relative positioning, full width */
-  position: relative;
-  width: 100%;
-  margin-top: 1rem;
-  z-index: 10;
+  position: relative !important;
+  width: 100% !important;
+  margin-top: 1rem !important;
+  z-index: 10 !important;
+  top: auto !important;
+  right: auto !important;
 }
 
 /* Desktop: absolute positioning, fixed width */
 @media (min-width: 768px) {
   .video-container-responsive {
-    position: absolute;
-    width: 375px;
-    margin-top: 0;
-    top: 1rem;
-    right: 1rem;
-    z-index: 50;
+    position: absolute !important;
+    width: 375px !important;
+    margin-top: 0 !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 50 !important;
   }
 }
