@@ -296,19 +296,9 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   function renderTeleprompter(narrative: string, video_url?: string) {
     return (
       <div className="relative h-full">
-        {/* Video container with responsive positioning - same as movements */}
+        {/* Video container with responsive positioning - pure CSS approach */}
         {video_url && (
-          <div
-            className="rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30"
-            style={{
-              position: isMobile ? 'relative' : 'absolute',
-              width: isMobile ? '100%' : '375px',
-              marginTop: isMobile ? '1rem' : '0',
-              top: isMobile ? 'auto' : '1rem',
-              right: isMobile ? 'auto' : '1rem',
-              zIndex: isMobile ? 10 : 50,
-            }}
-          >
+          <div className="video-container-responsive rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
             {/* For non-movement sections, play video immediately without thumbnail */}
             <video
               ref={videoRef}
@@ -412,54 +402,11 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   console.log('🎥 DEBUG: item.video_url type:', typeof item.video_url);
   console.log('🎥 DEBUG: Is video_url truthy?:', !!item.video_url);
 
-  // Determine if we're on mobile based on container width
-  // This approach works better with Playwright's viewport simulation
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isMobile, setIsMobile] = useState(true); // Default to mobile for safety
-
-  useEffect(() => {
-    const checkMobile = () => {
-      if (containerRef.current) {
-        // Check the actual rendered width of our container
-        const containerWidth = containerRef.current.offsetWidth;
-        setIsMobile(containerWidth < 768);
-      }
-    };
-
-    // Initial check
-    checkMobile();
-
-    // Check on window resize
-    const handleResize = () => {
-      checkMobile();
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // Also check after a short delay to handle Playwright's viewport setup
-    const timeoutId = setTimeout(checkMobile, 100);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeoutId);
-    };
-  }, [item]); // Re-check when item changes
-
   return (
-    <div ref={containerRef} className="relative h-full">
-      {/* Video container with responsive positioning */}
+    <div className="relative h-full">
+      {/* Video container with responsive positioning - pure CSS approach */}
       {item.video_url && (
-        <div
-          className="rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30"
-          style={{
-            position: isMobile ? 'relative' : 'absolute',
-            width: isMobile ? '100%' : '375px',
-            marginTop: isMobile ? '1rem' : '0',
-            top: isMobile ? 'auto' : '1rem',
-            right: isMobile ? 'auto' : '1rem',
-            zIndex: isMobile ? 10 : 50,
-          }}
-        >
+        <div className="video-container-responsive rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
           {/* Thumbnail with progress bar (shows for 5 seconds) */}
           {syncState.showThumbnail && item.type === 'movement' && (
             <div className="relative w-full aspect-video bg-burgundy-dark">

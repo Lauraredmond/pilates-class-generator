@@ -64,3 +64,24 @@ button:focus-visible {
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-in forwards;
 }
+
+/* Video container responsive positioning */
+.video-container-responsive {
+  /* Mobile: relative positioning, full width */
+  position: relative;
+  width: 100%;
+  margin-top: 1rem;
+  z-index: 10;
+}
+
+/* Desktop: absolute positioning, fixed width */
+@media (min-width: 768px) {
+  .video-container-responsive {
+    position: absolute;
+    width: 375px;
+    margin-top: 0;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+  }
+}
