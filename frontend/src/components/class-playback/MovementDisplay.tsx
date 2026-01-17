@@ -11,7 +11,30 @@ interface MovementDisplayProps {
   isPaused?: boolean; // Pause narrative scroll when H&S modal is shown
 }
 
-// FIX: Use React.memo to prevent re-renders when item content hasn't changed
+// FIX: Custom comparison function for React.memo
+// Compare item.id instead of object reference to prevent infinite re-render loop
+// Parent creates new item objects every render, so shallow comparison fails
+function arePropsEqual(prevProps: MovementDisplayProps, nextProps: MovementDisplayProps): boolean {
+  // Compare item ID instead of object reference
+  const prevId = 'id' in prevProps.item ? prevProps.item.id : null;
+  const nextId = 'id' in nextProps.item ? nextProps.item.id : null;
+
+  // If IDs match and isPaused hasn't changed, props are equal
+  const idsEqual = prevId === nextId;
+  const pausedEqual = prevProps.isPaused === nextProps.isPaused;
+
+  console.log('🎥 DIAGNOSTIC: React.memo comparing props:', {
+    prevId,
+    nextId,
+    idsEqual,
+    pausedEqual,
+    shouldRerender: !(idsEqual && pausedEqual)
+  });
+
+  return idsEqual && pausedEqual;
+}
+
+// FIX: Use React.memo with custom comparison to prevent re-renders when item ID hasn't changed
 // This stops the infinite re-render loop caused by parent creating new item objects
 export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = false }: MovementDisplayProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -510,4 +533,4 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
     </div>
     </div>
   );
-}
+}, arePropsEqual); // Use custom comparison function
