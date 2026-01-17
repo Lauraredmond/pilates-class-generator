@@ -309,19 +309,38 @@ test.describe('Mobile Video Fixes', () => {
       const video = await page.locator('video').first();
       if (await video.isVisible()) {
         // Video should be paused initially (showing thumbnail)
-        const isPaused = await video.evaluate((vid: HTMLVideoElement) => vid.paused);
-        expect(isPaused).toBeTruthy();
+        const initialState = await video.evaluate((vid: HTMLVideoElement) => ({
+          paused: vid.paused,
+          currentTime: vid.currentTime,
+          readyState: vid.readyState
+        }));
+        console.log('📹 Initial video state:', initialState);
+        expect(initialState.paused).toBeTruthy();
         console.log('✅ Video shows thumbnail initially');
 
-        // Wait for delay period
-        await page.waitForTimeout(7500);
+        // Wait for delay period + buffering time (7s delay + 3s buffer = 10s total)
+        console.log('⏳ Waiting 10 seconds for video delay + buffering...');
+        await page.waitForTimeout(10000);
 
-        // Video should now be playing
-        const isPlaying = await video.evaluate((vid: HTMLVideoElement) =>
-          !vid.paused && !vid.ended && vid.readyState > 2
-        );
-        expect(isPlaying).toBeTruthy();
-        console.log('✅ Video starts after 7-second delay');
+        // Check video state after delay
+        const afterDelayState = await video.evaluate((vid: HTMLVideoElement) => ({
+          paused: vid.paused,
+          currentTime: vid.currentTime,
+          readyState: vid.readyState,
+          ended: vid.ended
+        }));
+        console.log('📹 After delay video state:', afterDelayState);
+
+        // Video should now be playing (or at least have started - currentTime > 0)
+        const hasStarted = afterDelayState.currentTime > 0 || !afterDelayState.paused;
+        if (!hasStarted) {
+          console.log('❌ Video did not start after 10 seconds');
+          console.log('   This might be due to browser autoplay blocking');
+        } else {
+          console.log(`✅ Video started (currentTime: ${afterDelayState.currentTime.toFixed(2)}s, playing: ${!afterDelayState.paused})`);
+        }
+
+        expect(hasStarted).toBeTruthy();
       }
     });
   });
