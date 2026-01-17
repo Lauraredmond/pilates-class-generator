@@ -1268,6 +1268,11 @@ export function Settings() {
                       <p className="text-2xl font-bold text-cream">{creatorsReportData.total_users}</p>
                     </div>
                     <div className="bg-burgundy/20 p-3 rounded">
+                      <p className="text-xs text-cream/60 mb-1">Inactive Users</p>
+                      <p className="text-2xl font-bold text-cream">{creatorsReportData.inactive_users}</p>
+                      <p className="text-xs text-cream/50 mt-1">Registered but inactive</p>
+                    </div>
+                    <div className="bg-burgundy/20 p-3 rounded">
                       <p className="text-xs text-cream/60 mb-1">Creators Only</p>
                       <p className="text-2xl font-bold text-cream">{creatorsReportData.creators_only}</p>
                       <p className="text-xs text-cream/50 mt-1">Create but never play</p>
@@ -1286,8 +1291,8 @@ export function Settings() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-blue-900/20 p-3 rounded border border-blue-500/30">
                       <p className="text-xs text-blue-400 mb-1">Registration Creator rate</p>
-                      <p className="text-xl font-bold text-blue-400">{creatorsReportData.performer_creation_rate.toFixed(1)}%</p>
-                      <p className="text-xs text-cream/50 mt-1">Performers who also create</p>
+                      <p className="text-xl font-bold text-blue-400">{creatorsReportData.registration_creator_rate.toFixed(1)}%</p>
+                      <p className="text-xs text-cream/50 mt-1">Registered users who create classes</p>
                     </div>
                     <div className="bg-green-900/20 p-3 rounded border border-green-500/30">
                       <p className="text-xs text-green-400 mb-1">Creator Engagement Rate</p>
@@ -1317,6 +1322,7 @@ export function Settings() {
                       <option value="creators_only">Creators Only ({creatorsReportData.creators_only})</option>
                       <option value="performers_only">Performers Only ({creatorsReportData.performers_only})</option>
                       <option value="both">Both Create & Perform ({creatorsReportData.both})</option>
+                      <option value="inactive">Inactive Users ({creatorsReportData.inactive_users})</option>
                     </select>
                   </div>
 
