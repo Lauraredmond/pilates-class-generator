@@ -280,7 +280,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
                   setVideoEnded(true);
                 }, 3000);
               }}
-              onError((e) => {
+              onError={(e) => {
                 console.error('🎥 DEBUG: Video onError - failed to load:', video_url, e);
                 e.currentTarget.style.display = 'none';
               }}
