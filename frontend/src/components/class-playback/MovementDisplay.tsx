@@ -46,13 +46,26 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   const pausedElapsedTimeRef = useRef<number>(0); // Time already scrolled before pause
   const pauseTimestampRef = useRef<number>(0); // When the pause happened
 
+  // FIX: Mobile Safari autoplay unlock state
+  // Store ref to know if we've successfully unlocked video playback via user gesture
+  const videoUnlockedRef = useRef<boolean>(false);
+
+  // FIX: Detect if we're on mobile Safari (iOS)
+  const isMobileSafari = useCallback(() => {
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua);
+    const isWebkit = /WebKit/.test(ua);
+    return isIOS && isWebkit;
+  }, []);
+
   // FIX: Stable callback ref to prevent infinite re-render loop
   const videoRefCallback = useCallback((videoEl: HTMLVideoElement | null) => {
     videoRef.current = videoEl;
     if (videoEl) {
       console.log('🎥 DIAGNOSTIC: Video element mounted');
+      console.log('🎥 DIAGNOSTIC: Is mobile Safari?', isMobileSafari());
     }
-  }, []);
+  }, [isMobileSafari]);
 
   // DEBUG: Check if video_url exists when rendering movements
   if (item.type === 'movement') {
@@ -84,8 +97,9 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
     // Determine delay based on section type
     // Movements: 4 second delay (voiceover sync - reduced from 6s per user request)
     // Other sections (prep, warmup): No delay
+    // FIX: Mobile Safari - NO delay to maximize autoplay success (gesture chain breaks with setTimeout)
     const isMovement = item.type === 'movement';
-    const videoStartDelay = isMovement ? 4000 : 0; // 4 seconds for movements only
+    const videoStartDelay = (isMovement && !isMobileSafari()) ? 4000 : 0; // 4s desktop only, 0s mobile
 
     const handleCanPlay = () => {
       if (!isPaused) {
@@ -99,18 +113,33 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
           if (!videoLoading) {
             setVideoLoading(true); // Show loading message during delay
           }
-          setTimeout(() => {
+
+          // FIX: Mobile Safari autoplay - Don't use setTimeout, use async/await to maintain gesture chain
+          const playWithDelay = async () => {
+            await new Promise(resolve => setTimeout(resolve, videoStartDelay));
             console.log('🎥 DEBUG: Starting video after delay');
-            setVideoLoading(false); // Hide loading message when video starts
-            video.play().catch(err => {
+            setVideoLoading(false);
+
+            try {
+              await video.play();
+              console.log('🎥 DEBUG: Video autoplay SUCCESS');
+              videoUnlockedRef.current = true; // Mark as unlocked for future videos
+            } catch (err: any) {
               console.error('🎥 DIAGNOSTIC: Video autoplay failed!');
               console.error('🎥 DIAGNOSTIC: Error name:', err.name);
               console.error('🎥 DIAGNOSTIC: Error message:', err.message);
               console.error('🎥 DIAGNOSTIC: Full error:', err);
-              setVideoLoading(false); // Hide loading message on error too
-              // Silently fail - video will have controls for manual play
-            });
-          }, videoStartDelay);
+              setVideoLoading(false);
+
+              // Mobile Safari specific: NotAllowedError means autoplay blocked
+              if (err.name === 'NotAllowedError') {
+                console.log('🎥 FIX: Mobile autoplay blocked - user must click play button');
+                // Video has controls, user can manually play
+              }
+            }
+          };
+
+          playWithDelay();
         } else {
           console.log('🎥 DEBUG: Video ready to play - starting immediately');
           video.play().catch(err => {
@@ -331,6 +360,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
               controls
               muted
               playsInline
+              webkit-playsinline="true"
               className="w-full h-auto"
               style={{
                 opacity: videoEnded ? 0 : 1,
@@ -450,6 +480,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
             controls
             muted
             playsInline
+            webkit-playsinline="true"
             className="w-full h-auto"
             style={{
               opacity: videoEnded ? 0 : 1,
