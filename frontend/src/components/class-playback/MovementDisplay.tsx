@@ -3,7 +3,7 @@
  * Teleprompter-style auto-scrolling narrative display
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { PlaybackItem } from './ClassPlayback';
 
 interface MovementDisplayProps {
@@ -11,7 +11,9 @@ interface MovementDisplayProps {
   isPaused?: boolean; // Pause narrative scroll when H&S modal is shown
 }
 
-export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps) {
+// FIX: Use React.memo to prevent re-renders when item content hasn't changed
+// This stops the infinite re-render loop caused by parent creating new item objects
+export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = false }: MovementDisplayProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoEnded, setVideoEnded] = useState(false); // Track when video finishes
@@ -20,6 +22,14 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   // Persist scroll state across pause/resume cycles
   const pausedElapsedTimeRef = useRef<number>(0); // Time already scrolled before pause
   const pauseTimestampRef = useRef<number>(0); // When the pause happened
+
+  // FIX: Stable callback ref to prevent infinite re-render loop
+  const videoRefCallback = useCallback((videoEl: HTMLVideoElement | null) => {
+    videoRef.current = videoEl;
+    if (videoEl) {
+      console.log('🎥 DIAGNOSTIC: Video element mounted');
+    }
+  }, []);
 
   // DEBUG: Check if video_url exists when rendering movements
   if (item.type === 'movement') {
@@ -34,8 +44,19 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
    * AWS CloudFront videos have problematic first 7s - wait for voiceover to get 7s ahead
    */
   useEffect(() => {
+    console.log('🎥 DIAGNOSTIC: Playback useEffect TRIGGERED');
+    console.log('🎥 DIAGNOSTIC: item.type:', item.type);
+    console.log('🎥 DIAGNOSTIC: item.name:', ('name' in item ? item.name : 'N/A'));
+    console.log('🎥 DIAGNOSTIC: isPaused:', isPaused);
+    console.log('🎥 DIAGNOSTIC: videoRef.current:', videoRef.current ? 'EXISTS' : 'NULL');
+
     const video = videoRef.current;
-    if (!video) return;
+    if (!video) {
+      console.log('🎥 DIAGNOSTIC: videoRef.current is NULL, exiting useEffect early');
+      return;
+    }
+
+    console.log('🎥 DIAGNOSTIC: Video element found, proceeding with playback logic');
 
     // Determine delay based on section type
     // Movements: 4 second delay (voiceover sync - reduced from 6s per user request)
@@ -51,12 +72,18 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video ready - delaying start by ${videoStartDelay/1000}s (movement sync)`);
-          setVideoLoading(true); // Show loading message during delay
+          // FIX: Only set loading state if not already loading (prevents infinite re-render loop)
+          if (!videoLoading) {
+            setVideoLoading(true); // Show loading message during delay
+          }
           setTimeout(() => {
             console.log('🎥 DEBUG: Starting video after delay');
             setVideoLoading(false); // Hide loading message when video starts
             video.play().catch(err => {
-              console.error('🎥 DEBUG: Video autoplay failed:', err);
+              console.error('🎥 DIAGNOSTIC: Video autoplay failed!');
+              console.error('🎥 DIAGNOSTIC: Error name:', err.name);
+              console.error('🎥 DIAGNOSTIC: Error message:', err.message);
+              console.error('🎥 DIAGNOSTIC: Full error:', err);
               setVideoLoading(false); // Hide loading message on error too
               // Silently fail - video will have controls for manual play
             });
@@ -84,7 +111,10 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video already buffered - delaying start by ${videoStartDelay/1000}s (movement sync)`);
-          setVideoLoading(true); // Show loading message during delay
+          // FIX: Only set loading state if not already loading (prevents infinite re-render loop)
+          if (!videoLoading) {
+            setVideoLoading(true); // Show loading message during delay
+          }
           setTimeout(() => {
             console.log('🎥 DEBUG: Starting video after delay');
             setVideoLoading(false); // Hide loading message when video starts
@@ -272,7 +302,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
         {video_url && (
           <div className="flex-shrink-0 md:absolute md:top-4 md:right-4 md:z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
             <video
-              ref={videoRef}
+              ref={videoRefCallback}
               src={video_url}
               preload="auto"
               controls
@@ -391,15 +421,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
             </div>
           )}
           <video
-            ref={(videoEl) => {
-              videoRef.current = videoEl;
-              if (videoEl) {
-                console.log('🎥 DEBUG: Video element created!');
-                console.log('🎥 DEBUG: Video src attribute:', videoEl.src);
-                console.log('🎥 DEBUG: Video currentSrc:', videoEl.currentSrc);
-                // NOTE: Reset handled in playback useEffect (lines 48, 78) to avoid conflicts
-              }
-            }}
+            ref={videoRefCallback}
             src={item.video_url}
             preload="auto"
             controls
