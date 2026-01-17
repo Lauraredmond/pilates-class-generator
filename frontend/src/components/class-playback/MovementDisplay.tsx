@@ -298,13 +298,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       <div className="relative h-full">
         {/* Video container with responsive positioning - same as movements */}
         {video_url && (
-          <div className={`
-            ${/* Mobile: Inline with content (not overlapping) */''}
-            relative w-full mt-4 z-10
-            ${/* Desktop/Laptop: Picture-in-picture (top-right) */''}
-            md:absolute md:top-4 md:right-4 md:z-50 md:w-[375px]
-            rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30
-          `}>
+          <div className="relative w-full mt-4 z-10 md:absolute md:top-4 md:right-4 md:z-50 md:w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
             {/* For non-movement sections, play video immediately without thumbnail */}
             <video
               ref={videoRef}
@@ -412,13 +406,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     <div className="relative h-full">
       {/* Video container with responsive positioning */}
       {item.video_url && (
-        <div className={`
-          ${/* Mobile: Inline with content (not overlapping) */''}
-          relative w-full mt-4 z-10
-          ${/* Desktop/Laptop: Picture-in-picture (top-right) */''}
-          md:absolute md:top-4 md:right-4 md:z-50 md:w-[375px]
-          rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30
-        `}>
+        <div className="relative w-full mt-4 z-10 md:absolute md:top-4 md:right-4 md:z-50 md:w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
           {/* Thumbnail with progress bar (shows for 5 seconds) */}
           {syncState.showThumbnail && item.type === 'movement' && (
             <div className="relative w-full aspect-video bg-burgundy-dark">

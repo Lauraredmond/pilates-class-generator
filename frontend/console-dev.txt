@@ -1,0 +1,19 @@
+================================================================================
+DEV ENVIRONMENT CONSOLE LOG CAPTURE
+Timestamp: 2026-01-15T23:27:18.679Z
+URL: https://bassline-dev.netlify.app/
+================================================================================
+
+=== API CONFIGURATION ===
+[LOG] [API Config] Using backend: https://pilates-dev-i0jb.onrender.com (isDev: true)
+
+=== CONSOLE LOGS ===
+[LOG] [API Config] Using backend: https://pilates-dev-i0jb.onrender.com (isDev: true)
+[LOG] ✅ Service Worker registered: https://bassline-dev.netlify.app/
+
+=== NETWORK REQUESTS ===
+
+=== ERRORS ===
+✅ No errors captured
+
+================================================================================
