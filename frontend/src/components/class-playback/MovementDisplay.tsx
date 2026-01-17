@@ -3,7 +3,7 @@
  * Teleprompter-style auto-scrolling narrative display
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { PlaybackItem } from './ClassPlayback';
 
 interface MovementDisplayProps {
@@ -11,137 +11,209 @@ interface MovementDisplayProps {
   isPaused?: boolean; // Pause narrative scroll when H&S modal is shown
 }
 
-// Thumbnail sync state for better UX
-interface VideoSyncState {
-  showThumbnail: boolean;
-  showVideo: boolean;
-  progress: number;
+// FIX: Custom comparison function for React.memo
+// Compare item.id instead of object reference to prevent infinite re-render loop
+// Parent creates new item objects every render, so shallow comparison fails
+function arePropsEqual(prevProps: MovementDisplayProps, nextProps: MovementDisplayProps): boolean {
+  // Compare item ID instead of object reference
+  const prevId = 'id' in prevProps.item ? prevProps.item.id : null;
+  const nextId = 'id' in nextProps.item ? nextProps.item.id : null;
+
+  // If IDs match and isPaused hasn't changed, props are equal
+  const idsEqual = prevId === nextId;
+  const pausedEqual = prevProps.isPaused === nextProps.isPaused;
+
+  // Removed verbose diagnostic logging - fix verified working
+
+  return idsEqual && pausedEqual;
 }
 
-export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps) {
+// FIX: Use React.memo with custom comparison to prevent re-renders when item ID hasn't changed
+// This stops the infinite re-render loop caused by parent creating new item objects
+export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = false }: MovementDisplayProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoEnded, setVideoEnded] = useState(false); // Track when video finishes
-
-  // Thumbnail sync state for 5-second delay
-  const [syncState, setSyncState] = useState<VideoSyncState>({
-    showThumbnail: true,
-    showVideo: false,
-    progress: 0
-  });
+  const [videoLoading, setVideoLoading] = useState(false); // Track 6-second loading delay
 
   // Persist scroll state across pause/resume cycles
   const pausedElapsedTimeRef = useRef<number>(0); // Time already scrolled before pause
   const pauseTimestampRef = useRef<number>(0); // When the pause happened
 
-  // Track if this is a section change
-  const previousItemRef = useRef<PlaybackItem | null>(null);
+  // FIX: Mobile Safari autoplay unlock state
+  // Store ref to know if we've successfully unlocked video playback via user gesture
+  const videoUnlockedRef = useRef<boolean>(false);
 
-  // DEBUG: Check if video_url exists when rendering movements
-  if (item.type === 'movement') {
-    console.log('🎥 DEBUG: MovementDisplay received item:', item);
-    console.log('🎥 DEBUG: MovementDisplay video_url:', (item as any).video_url);
-  }
+  // Track previous video URL to detect changes
+  const previousVideoUrlRef = useRef<string | undefined>();
+
+  // FIX: Detect if we're on mobile Safari (iOS)
+  const isMobileSafari = useCallback(() => {
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua);
+    const isWebkit = /WebKit/.test(ua);
+    return isIOS && isWebkit;
+  }, []);
+
+  // FIX: Stable callback ref to prevent infinite re-render loop
+  const videoRefCallback = useCallback((videoEl: HTMLVideoElement | null) => {
+    videoRef.current = videoEl;
+  }, []);
+
 
   /**
-   * Thumbnail + Progress Bar Strategy
-   * Shows thumbnail with progress for 5 seconds before video plays
-   * This makes the delay look intentional instead of broken
+   * Sync video playback with class pause state
+   *
+   * FIX: Delay video start by 7 seconds for movements (to sync with voiceover)
+   * AWS CloudFront videos have problematic first 7s - wait for voiceover to get 7s ahead
    */
   useEffect(() => {
-    // Only apply thumbnail strategy to movements with videos
-    const hasVideo = item.video_url && item.type === 'movement';
+    const video = videoRef.current;
+    if (!video) return;
 
-    if (!hasVideo) {
-      // No video - skip thumbnail phase
-      setSyncState({
-        showThumbnail: false,
-        showVideo: false,
-        progress: 0
-      });
-      return;
+    // Determine delay based on section type
+    // Movements: 4 second delay (voiceover sync - reduced from 6s per user request)
+    // Other sections (prep, warmup): No delay
+    // FIX: Mobile Safari - NO delay to maximize autoplay success (gesture chain breaks with setTimeout)
+    const isMovement = item.type === 'movement';
+    const videoStartDelay = (isMovement && !isMobileSafari()) ? 4000 : 0; // 4s desktop only, 0s mobile
+
+    const handleCanPlay = () => {
+      if (!isPaused) {
+        // FIX: Always reset to 0:00 before playing (fixes buffering race condition)
+        video.currentTime = 0;
+        console.log('🎥 DEBUG: Reset video to 0:00 before playing');
+
+        if (videoStartDelay > 0) {
+          console.log(`🎥 DEBUG: Video ready - delaying start by ${videoStartDelay/1000}s (movement sync)`);
+          // FIX: Only set loading state if not already loading (prevents infinite re-render loop)
+          if (!videoLoading) {
+            setVideoLoading(true); // Show loading message during delay
+          }
+
+          // FIX: Mobile Safari autoplay - Don't use setTimeout, use async/await to maintain gesture chain
+          const playWithDelay = async () => {
+            await new Promise(resolve => setTimeout(resolve, videoStartDelay));
+            console.log('🎥 DEBUG: Starting video after delay');
+            setVideoLoading(false);
+
+            try {
+              await video.play();
+              console.log('🎥 DEBUG: Video autoplay SUCCESS');
+              videoUnlockedRef.current = true; // Mark as unlocked for future videos
+            } catch (err: any) {
+              console.error('🎥 DIAGNOSTIC: Video autoplay failed!');
+              console.error('🎥 DIAGNOSTIC: Error name:', err.name);
+              console.error('🎥 DIAGNOSTIC: Error message:', err.message);
+              console.error('🎥 DIAGNOSTIC: Full error:', err);
+              setVideoLoading(false);
+
+              // Mobile Safari specific: NotAllowedError means autoplay blocked
+              if (err.name === 'NotAllowedError') {
+                console.log('🎥 FIX: Mobile autoplay blocked - user must click play button');
+                // Video has controls, user can manually play
+              }
+            }
+          };
+
+          playWithDelay();
+        } else {
+          console.log('🎥 DEBUG: Video ready to play - starting immediately');
+          video.play().catch(err => {
+            console.error('🎥 DEBUG: Video autoplay failed:', err);
+          });
+        }
+      }
+    };
+
+    if (isPaused) {
+      // Pause video when class is paused
+      video.pause();
+      console.log('🎥 DEBUG: Video paused (class paused)');
+    } else {
+      // Play video after delay (if applicable)
+      // Check if already ready
+      if (video.readyState >= 3) { // HAVE_FUTURE_DATA or better
+        // FIX: Always reset to 0:00 before playing (fixes buffering race condition)
+        video.currentTime = 0;
+        console.log('🎥 DEBUG: Reset video to 0:00 before playing (already buffered)');
+
+        if (videoStartDelay > 0) {
+          console.log(`🎥 DEBUG: Video already buffered - delaying start by ${videoStartDelay/1000}s (movement sync)`);
+          // FIX: Only set loading state if not already loading (prevents infinite re-render loop)
+          if (!videoLoading) {
+            setVideoLoading(true); // Show loading message during delay
+          }
+          setTimeout(() => {
+            console.log('🎥 DEBUG: Starting video after delay');
+            setVideoLoading(false); // Hide loading message when video starts
+            video.play().catch(err => {
+              console.error('🎥 DEBUG: Video autoplay failed:', err);
+              setVideoLoading(false); // Hide loading message on error too
+            });
+          }, videoStartDelay);
+        } else {
+          console.log('🎥 DEBUG: Video already buffered - playing immediately');
+          video.play().catch(err => {
+            console.error('🎥 DEBUG: Video autoplay failed:', err);
+          });
+        }
+      } else {
+        // Wait for canplay event (fires when video is ready)
+        console.log('🎥 DEBUG: Waiting for video to buffer...');
+        video.addEventListener('canplay', handleCanPlay, { once: true });
+      }
     }
 
-    // Reset to thumbnail on section change
-    setSyncState({
-      showThumbnail: true,
-      showVideo: false,
-      progress: 0
-    });
-
-    // Don't animate if paused
-    if (isPaused) return;
-
-    // Animate progress bar over 5 seconds
-    const progressInterval = setInterval(() => {
-      setSyncState(prev => {
-        if (prev.progress >= 100) {
-          clearInterval(progressInterval);
-          return prev;
-        }
-        return {
-          ...prev,
-          progress: Math.min(prev.progress + 20, 100)
-        };
-      });
-    }, 1000);
-
-    // Transition to video after 5 seconds
-    const videoTimer = setTimeout(() => {
-      clearInterval(progressInterval);
-      setSyncState({
-        showThumbnail: false,
-        showVideo: true,
-        progress: 100
-      });
-
-      // Start playing video
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(err => {
-          console.error('🎥 Video autoplay failed:', err);
-        });
-      }
-    }, 5000);
-
     return () => {
-      clearInterval(progressInterval);
-      clearTimeout(videoTimer);
+      video.removeEventListener('canplay', handleCanPlay);
     };
   }, [item, isPaused]);
 
   /**
-   * Video auto-play fix for section transitions
-   * Ensures video properly resets and plays when section changes
+   * FIX: Load new video when URL changes (required for browser to fetch new content)
+   * This is separate from playback logic to avoid infinite loops
    */
   useEffect(() => {
-    // Detect section change
-    const sectionChanged = previousItemRef.current !== item;
-    previousItemRef.current = item;
+    const video = videoRef.current;
+    if (!video) return;
 
-    if (!sectionChanged || !videoRef.current || !item.video_url) return;
+    // Extract current video URL based on item type
+    let currentVideoUrl: string | undefined;
 
-    // For non-movement videos (no thumbnail phase), play immediately
-    if (item.type !== 'movement' && !isPaused) {
-      const video = videoRef.current;
-      video.currentTime = 0;
-      video.load(); // Force reload
-
-      // Play when ready
-      const playWhenReady = () => {
-        video.play().catch(err => {
-          console.error('🎥 Video autoplay failed:', err);
-        });
-      };
-
-      if (video.readyState >= 3) {
-        playWhenReady();
-      } else {
-        video.addEventListener('canplay', playWhenReady, { once: true });
-      }
+    if (item.type === 'movement' && 'video_url' in item) {
+      currentVideoUrl = item.video_url;
+    } else if ((item.type === 'preparation' ||
+                item.type === 'warmup' ||
+                item.type === 'cooldown' ||
+                item.type === 'meditation' ||
+                item.type === 'homecare') &&
+               'video_url' in item) {
+      currentVideoUrl = item.video_url;
     }
-    // Movement videos handled by thumbnail timer above
-  }, [item, isPaused]);
+
+    // If URL changed (including undefined -> URL or URL -> undefined)
+    if (previousVideoUrlRef.current !== currentVideoUrl) {
+      if (currentVideoUrl) {
+        // FIX: Call video.load() when URL changes to fetch new content
+
+        // Important: Set src first if not already set (React may not have updated it yet)
+        if (video.src !== currentVideoUrl) {
+          video.src = currentVideoUrl;
+        }
+
+        // Call load() to make browser fetch the new video
+        video.load();
+
+        // Reset states for new video
+        setVideoEnded(false);
+        setVideoLoading(false);
+      }
+
+      // Update the ref for next comparison
+      previousVideoUrlRef.current = currentVideoUrl;
+    }
+  }, [item]); // Only depend on item, not video URL directly
 
   // Reset scroll to top ONLY when section changes (not on pause/resume)
   useEffect(() => {
@@ -155,6 +227,9 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
     // Reset video ended state when section changes
     setVideoEnded(false);
+
+    // Reset video loading state when section changes (fixes auto-play on new movements)
+    setVideoLoading(false);
 
     // NOTE: Video reset handled in playback useEffect below (lines 48, 78)
     // Don't call video.load() here - causes infinite loop!
@@ -295,18 +370,19 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   // Helper function to render teleprompter-style content
   function renderTeleprompter(narrative: string, video_url?: string) {
     return (
-      <div className="relative h-full">
-        {/* Video container with responsive positioning - pure CSS approach */}
+      <div className="flex flex-col md:relative h-full">
+        {/* Picture-in-picture video (AWS CloudFront) - for all sections with video_url */}
+        {/* Mobile: flex item (stacks vertically), Desktop: absolute positioned (picture-in-picture) */}
         {video_url && (
-          <div className="video-container-responsive rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
-            {/* For non-movement sections, play video immediately without thumbnail */}
+          <div className="flex-shrink-0 md:absolute md:top-4 md:right-4 md:z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
             <video
-              ref={videoRef}
+              ref={videoRefCallback}
               src={video_url}
               preload="auto"
               controls
               muted
               playsInline
+              webkit-playsinline="true"
               className="w-full h-auto"
               style={{
                 opacity: videoEnded ? 0 : 1,
@@ -329,8 +405,8 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
         <div
           ref={scrollContainerRef}
-          // Mobile: px-4 py-8 (wider, less vertical padding), Desktop: px-8 py-16 (unchanged)
-          className="h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
+          // Mobile: flex-1 (takes remaining space), Desktop: h-full (absolute sibling to video)
+          className="flex-1 md:h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
           style={{ scrollBehavior: 'auto' }}
         >
           <div className="max-w-4xl w-full">
@@ -382,10 +458,12 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     const parts: string[] = [];
 
     // Title
-    parts.push(`${item.name.toUpperCase()}\n\n`);
+    if ('name' in item && item.name) {
+      parts.push(`${item.name.toUpperCase()}\n\n`);
+    }
 
     // Narrative only
-    if (item.narrative) {
+    if ('narrative' in item && item.narrative) {
       parts.push(`${item.narrative}\n\n`);
     }
 
@@ -398,89 +476,58 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
   // DEBUG: Check conditional rendering
   console.log('🎥 DEBUG: About to check if video_url exists...');
-  console.log('🎥 DEBUG: item.video_url value:', item.video_url);
-  console.log('🎥 DEBUG: item.video_url type:', typeof item.video_url);
-  console.log('🎥 DEBUG: Is video_url truthy?:', !!item.video_url);
+  console.log('🎥 DEBUG: item.video_url value:', ('video_url' in item ? item.video_url : 'N/A'));
+  console.log('🎥 DEBUG: item.video_url type:', ('video_url' in item ? typeof item.video_url : 'N/A'));
+  console.log('🎥 DEBUG: Is video_url truthy?:', ('video_url' in item && !!item.video_url));
 
   return (
-    <div className="relative h-full">
-      {/* Video container with responsive positioning - pure CSS approach */}
-      {item.video_url && (
-        <div className="video-container-responsive rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
-          {/* Thumbnail with progress bar (shows for 5 seconds) */}
-          {syncState.showThumbnail && item.type === 'movement' && (
-            <div className="relative w-full aspect-video bg-burgundy-dark">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center p-4">
-                  <h3 className="text-cream text-lg font-medium mb-2">
-                    {item.name}
-                  </h3>
-                  <p className="text-cream/70 text-sm mb-4">
-                    Preparing demonstration...
-                  </p>
-                  {/* Progress bar */}
-                  <div className="w-48 h-2 bg-cream/20 rounded-full mx-auto overflow-hidden">
-                    <div
-                      className="h-full bg-cream transition-all duration-300 rounded-full"
-                      style={{ width: `${syncState.progress}%` }}
-                    />
-                  </div>
-                  <p className="text-cream/50 text-xs mt-2">
-                    {Math.ceil((100 - syncState.progress) / 20)}s
-                  </p>
-                </div>
+    <div className="flex flex-col md:relative h-full">
+      {/* Picture-in-picture video (AWS CloudFront) - only for movements with video_url */}
+      {/* Mobile: flex item (stacks vertically), Desktop: absolute positioned (picture-in-picture) */}
+      {'video_url' in item && item.video_url && (
+        <div className="flex-shrink-0 md:absolute md:top-4 md:right-4 md:z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30 relative">
+          {/* Loading overlay during 4-second sync delay */}
+          {videoLoading && (
+            <div className="absolute inset-0 bg-burgundy flex items-center justify-center z-10">
+              <div className="text-center px-4">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-cream/30 border-t-cream mx-auto mb-2"></div>
+                <p className="text-cream text-base font-light italic tracking-wide">Video loading...</p>
               </div>
             </div>
           )}
-
-          {/* Video player (shows after thumbnail phase) */}
-          {(syncState.showVideo || item.type !== 'movement') && (
-            <video
-              ref={(videoEl) => {
-                videoRef.current = videoEl;
-                if (videoEl) {
-                  console.log('🎥 DEBUG: Video element created!');
-                  console.log('🎥 DEBUG: Video src attribute:', videoEl.src);
-                  console.log('🎥 DEBUG: Video currentSrc:', videoEl.currentSrc);
-                }
-              }}
-              src={item.video_url}
-              preload="auto"
-              controls
-              muted
-              playsInline
-              className={`w-full h-auto ${syncState.showVideo ? 'animate-fadeIn' : ''}`}
-              style={{
-                opacity: videoEnded ? 0 : 1,
-                transition: 'opacity 1s ease-out'
-              }}
-              onLoadStart={() => {
-                console.log('🎥 DEBUG: Video onLoadStart - browser is attempting to load');
-              }}
-              onLoadedData={() => {
-                console.log('🎥 DEBUG: Video onLoadedData - video loaded successfully!');
-              }}
-              onEnded={() => {
-                console.log('🎥 DEBUG: Video ended - pausing 3s before fade-out');
-                setTimeout(() => {
-                  console.log('🎥 DEBUG: Starting fade-out after 3s pause');
-                  setVideoEnded(true);
-                }, 3000);
-              }}
-              onError={(e) => {
-                console.error('🎥 DEBUG: Video onError - failed to load:', item.video_url, e);
-                console.error('🎥 DEBUG: Error target:', e.currentTarget);
-                console.error('🎥 DEBUG: Error details:', e.nativeEvent);
-                // Hide video element on error
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          )}
+          <video
+            ref={videoRefCallback}
+            src={item.video_url}
+            preload="auto"
+            controls
+            muted
+            playsInline
+            webkit-playsinline="true"
+            className="w-full h-auto"
+            style={{
+              opacity: videoEnded ? 0 : 1,
+              transition: 'opacity 1s ease-out'
+            }}
+            onEnded={() => {
+              console.log('🎥 DEBUG: Video ended - pausing 3s before fade-out');
+              setTimeout(() => {
+                console.log('🎥 DEBUG: Starting fade-out after 3s pause');
+                setVideoEnded(true);
+              }, 3000);
+            }}
+            onError={(e) => {
+              console.error('🎥 DEBUG: Video onError - failed to load:', ('video_url' in item ? item.video_url : 'N/A'), e);
+              console.error('🎥 DEBUG: Error target:', e.currentTarget);
+              console.error('🎥 DEBUG: Error details:', e.nativeEvent);
+              // Hide video element on error
+              e.currentTarget.style.display = 'none';
+            }}
+          />
         </div>
       )}
 
       {/* Video coming soon badge - visible on all devices, non-obstructive */}
-      {!item.video_url && item.type === 'movement' && (
+      {!('video_url' in item && item.video_url) && item.type === 'movement' && (
         <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-burgundy/80 text-cream px-3 py-1.5 rounded-full text-xs md:text-sm font-medium shadow-lg backdrop-blur-sm">
           🎥 Video coming soon
         </div>
@@ -488,8 +535,8 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
       <div
         ref={scrollContainerRef}
-        // Mobile: px-4 py-8 (wider, less vertical padding), Desktop: px-8 py-16 (unchanged)
-        className="h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
+        // Mobile: flex-1 (takes remaining space), Desktop: h-full (absolute sibling to video)
+        className="flex-1 md:h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
         style={{ scrollBehavior: 'auto' }}
       >
         <div className="max-w-4xl w-full">
@@ -533,4 +580,4 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     </div>
     </div>
   );
-}
+}, arePropsEqual); // Use custom comparison function
