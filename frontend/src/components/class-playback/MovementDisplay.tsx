@@ -413,7 +413,12 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   console.log('🎥 DEBUG: Is video_url truthy?:', !!item.video_url);
 
   // Determine if we're on mobile based on viewport width
-  const [isMobile, setIsMobile] = useState(false);
+  // Initialize based on current viewport to avoid flicker
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const viewportWidth = window.visualViewport?.width || document.documentElement.clientWidth || window.innerWidth;
+    return viewportWidth < 768;
+  });
 
   useEffect(() => {
     const checkMobile = () => {
