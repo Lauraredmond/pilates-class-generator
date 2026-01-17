@@ -417,11 +417,18 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      // Use visualViewport for accurate viewport width, fallback to clientWidth
+      const viewportWidth = window.visualViewport?.width || document.documentElement.clientWidth || window.innerWidth;
+      setIsMobile(viewportWidth < 768);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    // Also listen to viewport changes (for mobile zoom, etc.)
+    window.visualViewport?.addEventListener('resize', checkMobile);
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.visualViewport?.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   return (
