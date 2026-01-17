@@ -28,6 +28,7 @@ dotenv.config({ path: resolve(__dirname, '.env.test') });
 // Determine which environment to test based on env var
 const TEST_ENV = process.env.TEST_ENV || 'production';
 
+const LOCAL_BASE_URL = 'http://localhost:5173';
 const DEV_BASE_URL = 'https://bassline-dev.netlify.app';
 const PROD_BASE_URL = 'https://basslinemvp.netlify.app';
 
@@ -66,6 +67,16 @@ export default defineConfig({
 
   /* Configure projects for environment + browser combinations */
   projects: [
+    // Local Development Environment Tests
+    {
+      name: 'local-chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: LOCAL_BASE_URL,
+      },
+      testMatch: /.*\.spec\.ts$/, // All test files
+    },
+
     // Production Environment Tests
     {
       name: 'prod-chromium',
@@ -123,9 +134,9 @@ export default defineConfig({
   ],
 
   /* Run local dev server before starting tests (optional) */
-  // webServer: {
-  //   command: 'npm run dev',
-  //   url: 'http://localhost:5173',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI,
+  },
 });
