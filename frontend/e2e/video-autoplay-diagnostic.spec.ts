@@ -111,6 +111,7 @@ test.describe('Video Auto-Play Diagnostic', () => {
   });
 
   test('DIAGNOSTIC: Track video state during movement transition', async () => {
+    test.setTimeout(120000); // 120 seconds - class generation + monitoring takes time
     console.log('\n========================================');
     console.log('🔍 STARTING DIAGNOSTIC TEST');
     console.log('========================================\n');
