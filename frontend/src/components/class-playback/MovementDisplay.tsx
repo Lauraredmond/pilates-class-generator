@@ -256,11 +256,11 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   // Helper function to render teleprompter-style content
   function renderTeleprompter(narrative: string, video_url?: string) {
     return (
-      <div className="relative h-full">
+      <div className="flex flex-col md:relative h-full">
         {/* Picture-in-picture video (AWS CloudFront) - for all sections with video_url */}
-        {/* Mobile: relative positioned (inline), Desktop: absolute positioned (picture-in-picture) */}
+        {/* Mobile: flex item (stacks vertically), Desktop: absolute positioned (picture-in-picture) */}
         {video_url && (
-          <div className="relative md:absolute top-0 md:top-4 left-0 md:left-auto right-0 md:right-4 z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+          <div className="flex-shrink-0 md:absolute top-0 md:top-4 left-0 md:left-auto right-0 md:right-4 z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
             <video
               ref={videoRef}
               src={video_url}
@@ -280,7 +280,7 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
                   setVideoEnded(true);
                 }, 3000);
               }}
-              onError={(e) => {
+              onError((e) => {
                 console.error('🎥 DEBUG: Video onError - failed to load:', video_url, e);
                 e.currentTarget.style.display = 'none';
               }}
@@ -290,8 +290,8 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
         <div
           ref={scrollContainerRef}
-          // Mobile: px-4 py-8 (wider, less vertical padding), Desktop: px-8 py-16 (unchanged)
-          className="h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
+          // Mobile: flex-1 (takes remaining space), Desktop: h-full (absolute sibling to video)
+          className="flex-1 md:h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
           style={{ scrollBehavior: 'auto' }}
         >
           <div className="max-w-4xl w-full">
@@ -366,11 +366,11 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   console.log('🎥 DEBUG: Is video_url truthy?:', ('video_url' in item && !!item.video_url));
 
   return (
-    <div className="relative h-full">
+    <div className="flex flex-col md:relative h-full">
       {/* Picture-in-picture video (AWS CloudFront) - only for movements with video_url */}
-      {/* Mobile: relative positioned (inline), Desktop: absolute positioned (picture-in-picture) */}
+      {/* Mobile: flex item (stacks vertically), Desktop: absolute positioned (picture-in-picture) */}
       {'video_url' in item && item.video_url && (
-        <div className="relative md:absolute top-0 md:top-4 left-0 md:left-auto right-0 md:right-4 z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+        <div className="flex-shrink-0 md:absolute top-0 md:top-4 left-0 md:left-auto right-0 md:right-4 z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
           <video
             ref={(videoEl) => {
               videoRef.current = videoEl;
@@ -424,8 +424,8 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
 
       <div
         ref={scrollContainerRef}
-        // Mobile: px-4 py-8 (wider, less vertical padding), Desktop: px-8 py-16 (unchanged)
-        className="h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
+        // Mobile: flex-1 (takes remaining space), Desktop: h-full (absolute sibling to video)
+        className="flex-1 md:h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
         style={{ scrollBehavior: 'auto' }}
       >
         <div className="max-w-4xl w-full">
