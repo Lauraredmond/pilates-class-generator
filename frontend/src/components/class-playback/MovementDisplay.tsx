@@ -298,7 +298,17 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
       <div className="relative h-full">
         {/* Video container with responsive positioning - same as movements */}
         {video_url && (
-          <div className="relative w-full mt-4 z-10 md:absolute md:top-4 md:right-4 md:z-50 md:w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+          <div
+            className="rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30"
+            style={{
+              position: isMobile ? 'relative' : 'absolute',
+              width: isMobile ? '100%' : '375px',
+              marginTop: isMobile ? '1rem' : '0',
+              top: isMobile ? 'auto' : '1rem',
+              right: isMobile ? 'auto' : '1rem',
+              zIndex: isMobile ? 10 : 50,
+            }}
+          >
             {/* For non-movement sections, play video immediately without thumbnail */}
             <video
               ref={videoRef}
@@ -402,11 +412,33 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   console.log('🎥 DEBUG: item.video_url type:', typeof item.video_url);
   console.log('🎥 DEBUG: Is video_url truthy?:', !!item.video_url);
 
+  // Determine if we're on mobile based on viewport width
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <div className="relative h-full">
       {/* Video container with responsive positioning */}
       {item.video_url && (
-        <div className="relative w-full mt-4 z-10 md:absolute md:top-4 md:right-4 md:z-50 md:w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+        <div
+          className="rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30"
+          style={{
+            position: isMobile ? 'relative' : 'absolute',
+            width: isMobile ? '100%' : '375px',
+            marginTop: isMobile ? '1rem' : '0',
+            top: isMobile ? 'auto' : '1rem',
+            right: isMobile ? 'auto' : '1rem',
+            zIndex: isMobile ? 10 : 50,
+          }}
+        >
           {/* Thumbnail with progress bar (shows for 5 seconds) */}
           {syncState.showThumbnail && item.type === 'movement' && (
             <div className="relative w-full aspect-video bg-burgundy-dark">
