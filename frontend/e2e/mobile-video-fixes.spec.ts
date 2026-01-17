@@ -164,9 +164,10 @@ test.describe('Mobile Video Fixes', () => {
 
         // Check video position
         const video = await page.locator('video').first();
-        const narrative = await page.locator('.overflow-y-auto').first();
         const videoContainer = await page.locator('video').first().locator('..');
         const parentContainer = await videoContainer.locator('..');
+        // Select narrative as next sibling of video container (not just any .overflow-y-auto)
+        const narrative = await parentContainer.locator('> div.overflow-y-auto').first();
 
         if (await video.isVisible()) {
           const videoBounds = await video.boundingBox();
