@@ -258,8 +258,9 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
     return (
       <div className="relative h-full">
         {/* Picture-in-picture video (AWS CloudFront) - for all sections with video_url */}
+        {/* Mobile: relative positioned (inline), Desktop: absolute positioned (picture-in-picture) */}
         {video_url && (
-          <div className="absolute top-4 right-4 z-50 w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+          <div className="relative md:absolute top-0 md:top-4 left-0 md:left-auto right-0 md:right-4 z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
             <video
               ref={videoRef}
               src={video_url}
@@ -367,8 +368,9 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   return (
     <div className="relative h-full">
       {/* Picture-in-picture video (AWS CloudFront) - only for movements with video_url */}
+      {/* Mobile: relative positioned (inline), Desktop: absolute positioned (picture-in-picture) */}
       {'video_url' in item && item.video_url && (
-        <div className="absolute top-4 right-4 z-50 w-[375px] rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+        <div className="relative md:absolute top-0 md:top-4 left-0 md:left-auto right-0 md:right-4 z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
           <video
             ref={(videoEl) => {
               videoRef.current = videoEl;
