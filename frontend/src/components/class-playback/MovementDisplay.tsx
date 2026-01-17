@@ -412,32 +412,41 @@ export function MovementDisplay({ item, isPaused = false }: MovementDisplayProps
   console.log('🎥 DEBUG: item.video_url type:', typeof item.video_url);
   console.log('🎥 DEBUG: Is video_url truthy?:', !!item.video_url);
 
-  // Determine if we're on mobile based on viewport width
-  // Initialize based on current viewport to avoid flicker
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const viewportWidth = window.visualViewport?.width || document.documentElement.clientWidth || window.innerWidth;
-    return viewportWidth < 768;
-  });
+  // Determine if we're on mobile based on container width
+  // This approach works better with Playwright's viewport simulation
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(true); // Default to mobile for safety
 
   useEffect(() => {
     const checkMobile = () => {
-      // Use visualViewport for accurate viewport width, fallback to clientWidth
-      const viewportWidth = window.visualViewport?.width || document.documentElement.clientWidth || window.innerWidth;
-      setIsMobile(viewportWidth < 768);
+      if (containerRef.current) {
+        // Check the actual rendered width of our container
+        const containerWidth = containerRef.current.offsetWidth;
+        setIsMobile(containerWidth < 768);
+      }
     };
+
+    // Initial check
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    // Also listen to viewport changes (for mobile zoom, etc.)
-    window.visualViewport?.addEventListener('resize', checkMobile);
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-      window.visualViewport?.removeEventListener('resize', checkMobile);
+
+    // Check on window resize
+    const handleResize = () => {
+      checkMobile();
     };
-  }, []);
+
+    window.addEventListener('resize', handleResize);
+
+    // Also check after a short delay to handle Playwright's viewport setup
+    const timeoutId = setTimeout(checkMobile, 100);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
+  }, [item]); // Re-check when item changes
 
   return (
-    <div className="relative h-full">
+    <div ref={containerRef} className="relative h-full">
       {/* Video container with responsive positioning */}
       {item.video_url && (
         <div
