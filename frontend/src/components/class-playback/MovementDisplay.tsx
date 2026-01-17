@@ -23,13 +23,7 @@ function arePropsEqual(prevProps: MovementDisplayProps, nextProps: MovementDispl
   const idsEqual = prevId === nextId;
   const pausedEqual = prevProps.isPaused === nextProps.isPaused;
 
-  console.log('🎥 DIAGNOSTIC: React.memo comparing props:', {
-    prevId,
-    nextId,
-    idsEqual,
-    pausedEqual,
-    shouldRerender: !(idsEqual && pausedEqual)
-  });
+  // Removed verbose diagnostic logging - fix verified working
 
   return idsEqual && pausedEqual;
 }
@@ -50,6 +44,9 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   // Store ref to know if we've successfully unlocked video playback via user gesture
   const videoUnlockedRef = useRef<boolean>(false);
 
+  // Track previous video URL to detect changes
+  const previousVideoUrlRef = useRef<string | undefined>();
+
   // FIX: Detect if we're on mobile Safari (iOS)
   const isMobileSafari = useCallback(() => {
     const ua = navigator.userAgent;
@@ -61,17 +58,8 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   // FIX: Stable callback ref to prevent infinite re-render loop
   const videoRefCallback = useCallback((videoEl: HTMLVideoElement | null) => {
     videoRef.current = videoEl;
-    if (videoEl) {
-      console.log('🎥 DIAGNOSTIC: Video element mounted');
-      console.log('🎥 DIAGNOSTIC: Is mobile Safari?', isMobileSafari());
-    }
-  }, [isMobileSafari]);
+  }, []);
 
-  // DEBUG: Check if video_url exists when rendering movements
-  if (item.type === 'movement') {
-    console.log('🎥 DEBUG: MovementDisplay received item:', item);
-    console.log('🎥 DEBUG: MovementDisplay video_url:', ('video_url' in item ? item.video_url : 'N/A'));
-  }
 
   /**
    * Sync video playback with class pause state
@@ -80,19 +68,8 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
    * AWS CloudFront videos have problematic first 7s - wait for voiceover to get 7s ahead
    */
   useEffect(() => {
-    console.log('🎥 DIAGNOSTIC: Playback useEffect TRIGGERED');
-    console.log('🎥 DIAGNOSTIC: item.type:', item.type);
-    console.log('🎥 DIAGNOSTIC: item.name:', ('name' in item ? item.name : 'N/A'));
-    console.log('🎥 DIAGNOSTIC: isPaused:', isPaused);
-    console.log('🎥 DIAGNOSTIC: videoRef.current:', videoRef.current ? 'EXISTS' : 'NULL');
-
     const video = videoRef.current;
-    if (!video) {
-      console.log('🎥 DIAGNOSTIC: videoRef.current is NULL, exiting useEffect early');
-      return;
-    }
-
-    console.log('🎥 DIAGNOSTIC: Video element found, proceeding with playback logic');
+    if (!video) return;
 
     // Determine delay based on section type
     // Movements: 4 second delay (voiceover sync - reduced from 6s per user request)
@@ -192,6 +169,51 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
       video.removeEventListener('canplay', handleCanPlay);
     };
   }, [item, isPaused]);
+
+  /**
+   * FIX: Load new video when URL changes (required for browser to fetch new content)
+   * This is separate from playback logic to avoid infinite loops
+   */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Extract current video URL based on item type
+    let currentVideoUrl: string | undefined;
+
+    if (item.type === 'movement' && 'video_url' in item) {
+      currentVideoUrl = item.video_url;
+    } else if ((item.type === 'preparation' ||
+                item.type === 'warmup' ||
+                item.type === 'cooldown' ||
+                item.type === 'meditation' ||
+                item.type === 'homecare') &&
+               'video_url' in item) {
+      currentVideoUrl = item.video_url;
+    }
+
+    // If URL changed (including undefined -> URL or URL -> undefined)
+    if (previousVideoUrlRef.current !== currentVideoUrl) {
+      if (currentVideoUrl) {
+        // FIX: Call video.load() when URL changes to fetch new content
+
+        // Important: Set src first if not already set (React may not have updated it yet)
+        if (video.src !== currentVideoUrl) {
+          video.src = currentVideoUrl;
+        }
+
+        // Call load() to make browser fetch the new video
+        video.load();
+
+        // Reset states for new video
+        setVideoEnded(false);
+        setVideoLoading(false);
+      }
+
+      // Update the ref for next comparison
+      previousVideoUrlRef.current = currentVideoUrl;
+    }
+  }, [item]); // Only depend on item, not video URL directly
 
   // Reset scroll to top ONLY when section changes (not on pause/resume)
   useEffect(() => {
@@ -485,12 +507,6 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
             style={{
               opacity: videoEnded ? 0 : 1,
               transition: 'opacity 1s ease-out'
-            }}
-            onLoadStart={() => {
-              console.log('🎥 DEBUG: Video onLoadStart - browser is attempting to load');
-            }}
-            onLoadedData={() => {
-              console.log('🎥 DEBUG: Video onLoadedData - video loaded successfully!');
             }}
             onEnded={() => {
               console.log('🎥 DEBUG: Video ended - pausing 3s before fade-out');
