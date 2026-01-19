@@ -147,33 +147,6 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   }, []);
 
   /**
-   * FIX: Resume video playback when tab becomes visible (Page Visibility API)
-   *
-   * Browser default behavior pauses videos when you switch tabs.
-   * This handler resumes playback when the user returns to the tab.
-   */
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !isPaused) {
-        // Tab became visible and class is not paused - resume video
-        console.log('🎥 DEBUG: Tab visible - resuming video playback');
-        video.play().catch(err => {
-          console.error('🎥 DEBUG: Failed to resume video on tab focus:', err);
-        });
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isPaused]);
-
-  /**
    * UNIFIED: Load video URL + Sync playback with class pause state
    *
    * FIX: Race condition - Load video URL FIRST, then handle playback
