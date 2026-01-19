@@ -172,17 +172,15 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
       });
 
       if (currentVideoUrl) {
-        // Set src if not already set (React may not have updated it yet)
-        if (video.src !== currentVideoUrl) {
-          video.src = currentVideoUrl;
-          console.log('🎥 DEBUG: Set video.src to:', currentVideoUrl);
-        }
+        // ALWAYS set src when URL changes (don't compare - can have trailing slashes, protocols, etc.)
+        video.src = currentVideoUrl;
+        console.log('🎥 DEBUG: Set video.src to:', currentVideoUrl);
 
         // Call load() to make browser fetch the new video
         video.load();
         console.log('🎥 DEBUG: Called video.load() to fetch new video');
 
-        // Reset states for new video
+        // Reset states for new video (clears fade-out from previous section)
         setVideoEnded(false);
         setVideoLoading(false);
       }
