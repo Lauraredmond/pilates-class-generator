@@ -366,26 +366,40 @@ export function AIGenerationPanel() {
   const playbackItems: PlaybackItem[] = results && (results as any).completeClass
     ? [
         // Section 1: Preparation (SKIP for quick practice - only for full classes)
-        ...((results as any).completeClass.preparation ? [{
-          type: 'preparation' as const,
-          script_name: (results as any).completeClass.preparation.script_name || 'Pilates Principles',
-          narrative: (results as any).completeClass.preparation.narrative || 'No preparation narrative available.',
-          key_principles: (results as any).completeClass.preparation.key_principles || [],
-          duration_seconds: validateDuration((results as any).completeClass.preparation.duration_seconds, 'Preparation'),
-          breathing_pattern: (results as any).completeClass.preparation.breathing_pattern || 'Inhale/Exhale',
-          breathing_focus: (results as any).completeClass.preparation.breathing_focus || 'Lateral breathing',
-          // Voiceover audio fields
-          voiceover_url: (results as any).completeClass.preparation.voiceover_url,
-          voiceover_duration: (results as any).completeClass.preparation.voiceover_duration,
-          voiceover_enabled: (results as any).completeClass.preparation.voiceover_enabled || false,
-          // Video demonstration (AWS Phase 1)
-          video_url: (results as any).completeClass.preparation.video_url,
-        }] : []),
+        ...((results as any).completeClass.preparation ? [(() => {
+          const preparation = (results as any).completeClass.preparation;
+          logger.debug('[AIGenerationPanel] Preparation playback item:', {
+            hasPreparation: !!preparation,
+            script_name: preparation?.script_name,
+            video_url: preparation?.video_url,
+            video_url_exists: !!preparation?.video_url,
+            voiceover_url: preparation?.voiceover_url,
+            voiceover_enabled: preparation?.voiceover_enabled,
+          });
+          return {
+            type: 'preparation' as const,
+            script_name: preparation.script_name || 'Pilates Principles',
+            narrative: preparation.narrative || 'No preparation narrative available.',
+            key_principles: preparation.key_principles || [],
+            duration_seconds: validateDuration(preparation.duration_seconds, 'Preparation'),
+            breathing_pattern: preparation.breathing_pattern || 'Inhale/Exhale',
+            breathing_focus: preparation.breathing_focus || 'Lateral breathing',
+            // Voiceover audio fields
+            voiceover_url: preparation.voiceover_url,
+            voiceover_duration: preparation.voiceover_duration,
+            voiceover_enabled: preparation.voiceover_enabled || false,
+            // Video demonstration (AWS Phase 1)
+            video_url: preparation.video_url,
+          };
+        })()] : []),
         // Section 2: Warm-up (SKIP for quick practice - only for full classes)
         ...((results as any).completeClass.warmup ? [(() => {
           const warmup = (results as any).completeClass.warmup;
           logger.debug('[AIGenerationPanel] Warmup playback item:', {
             hasWarmup: !!warmup,
+            routine_name: warmup?.routine_name,
+            video_url: warmup?.video_url,
+            video_url_exists: !!warmup?.video_url,
             voiceover_url: warmup?.voiceover_url,
             voiceover_enabled: warmup?.voiceover_enabled,
             voiceover_duration: warmup?.voiceover_duration,
