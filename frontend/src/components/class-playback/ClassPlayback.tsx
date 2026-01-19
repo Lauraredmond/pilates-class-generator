@@ -1066,10 +1066,10 @@ export function ClassPlayback({
         />
       </div>
 
-      {/* Cast button (top right, next to close) - z-[100] to stay above video */}
-      <div className="absolute top-4 right-16 z-[100]">
+      {/* Cast button - HIDDEN for MVP (nice-to-have feature, not essential) */}
+      {/* <div className="absolute top-4 right-16 z-[100]">
         <CastButton onCastStateChange={handleCastStateChange} />
-      </div>
+      </div> */}
 
       {/* Close button - z-[100] to stay above video (z-50) */}
       <button
