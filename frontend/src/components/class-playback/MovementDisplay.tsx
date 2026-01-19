@@ -35,6 +35,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoEnded, setVideoEnded] = useState(false); // Track when video finishes
   const [videoLoading, setVideoLoading] = useState(false); // Track 6-second loading delay
+  const [isFullscreen, setIsFullscreen] = useState(false); // Track fullscreen state
 
   // Persist scroll state across pause/resume cycles
   const pausedElapsedTimeRef = useRef<number>(0); // Time already scrolled before pause
@@ -60,6 +61,84 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
     videoRef.current = videoEl;
   }, []);
 
+  /**
+   * Handle video end with fullscreen exit support
+   *
+   * FIX: On mobile, when video ends in fullscreen mode, exit fullscreen FIRST
+   * then apply fade-out. CSS opacity doesn't work on fullscreen elements.
+   */
+  const handleVideoEnded = useCallback(async () => {
+    console.log('🎥 DEBUG: Video ended - checking fullscreen state');
+
+    // If in fullscreen, exit it first (async operation)
+    if (isFullscreen) {
+      console.log('🎥 DEBUG: Video ended in fullscreen - exiting fullscreen first');
+      try {
+        // Exit fullscreen (with browser compatibility)
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+          await (document as any).mozCancelFullScreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
+        console.log('🎥 DEBUG: Exited fullscreen successfully');
+
+        // Wait 500ms for fullscreen exit animation to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (err) {
+        console.error('🎥 DEBUG: Failed to exit fullscreen:', err);
+        // Continue with fade-out anyway
+      }
+    }
+
+    // Now apply fade-out (whether we exited fullscreen or not)
+    console.log('🎥 DEBUG: Pausing 3s before fade-out');
+    setTimeout(() => {
+      console.log('🎥 DEBUG: Starting fade-out after 3s pause');
+      setVideoEnded(true);
+    }, 3000);
+  }, [isFullscreen]);
+
+
+  /**
+   * Track fullscreen state for video fade-out handling
+   *
+   * FIX: When video ends in fullscreen mode on mobile, we need to exit fullscreen
+   * BEFORE applying opacity fade-out (CSS doesn't apply to fullscreen elements)
+   */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleFullscreenChange = () => {
+      // Check if ANY element is in fullscreen (browser compatibility)
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+
+      setIsFullscreen(isCurrentlyFullscreen);
+      console.log('🎥 DEBUG: Fullscreen state changed:', isCurrentlyFullscreen);
+    };
+
+    // Listen for fullscreen changes (all browser prefixes)
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
 
   /**
    * Sync video playback with class pause state
@@ -370,11 +449,13 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   // Helper function to render teleprompter-style content
   function renderTeleprompter(narrative: string, video_url?: string) {
     return (
-      <div className="flex flex-col md:relative h-full">
+      <div className="flex flex-col lg:relative h-full">
         {/* Picture-in-picture video (AWS CloudFront) - for all sections with video_url */}
-        {/* Mobile: flex item (stacks vertically), Desktop: absolute positioned (picture-in-picture) */}
+        {/* Mobile portrait + landscape: flex item (stacks vertically) */}
+        {/* Desktop (lg): absolute positioned (picture-in-picture) */}
+        {/* FIX: Use lg: breakpoint (1024px) instead of md: (768px) to avoid landscape mobile issues */}
         {video_url && (
-          <div className="flex-shrink-0 md:absolute md:top-4 md:right-4 md:z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
+          <div className="flex-shrink-0 lg:absolute lg:top-4 lg:right-4 lg:z-50 w-full lg:w-[375px] mb-4 lg:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30">
             <video
               ref={videoRefCallback}
               src={video_url}
@@ -388,13 +469,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
                 opacity: videoEnded ? 0 : 1,
                 transition: 'opacity 1s ease-out'
               }}
-              onEnded={() => {
-                console.log('🎥 DEBUG: Video ended - pausing 3s before fade-out');
-                setTimeout(() => {
-                  console.log('🎥 DEBUG: Starting fade-out after 3s pause');
-                  setVideoEnded(true);
-                }, 3000);
-              }}
+              onEnded={handleVideoEnded}
               onError={(e) => {
                 console.error('🎥 DEBUG: Video onError - failed to load:', video_url, e);
                 e.currentTarget.style.display = 'none';
@@ -405,13 +480,13 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
 
         <div
           ref={scrollContainerRef}
-          // Mobile: flex-1 (takes remaining space), Desktop: h-full (absolute sibling to video)
-          className="flex-1 md:h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
+          // Mobile: flex-1 (takes remaining space), Desktop (lg): h-full (absolute sibling to video)
+          className="flex-1 lg:h-full overflow-y-auto px-4 lg:px-8 py-8 lg:py-16 flex items-start justify-center"
           style={{ scrollBehavior: 'auto' }}
         >
           <div className="max-w-4xl w-full">
-            {/* Mobile: space-y-2 (very tight), Desktop: space-y-8 */}
-            <div className="text-center space-y-2 md:space-y-8">
+            {/* Mobile: space-y-2 (very tight), Desktop (lg): space-y-8 */}
+            <div className="text-center space-y-2 lg:space-y-8">
               {narrative.split('\n').map((line, index) => {
                 // Skip pause marker lines (don't display them)
                 if (line.match(/\[Pause:\s*\d+s\]/i)) {
@@ -420,27 +495,27 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
 
                 if (index === 0 || line.includes(':')) {
                   return (
-                    // Mobile: mb-2, Desktop: mb-8
-                    <h1 key={index} className="text-5xl font-bold text-cream mb-2 md:mb-8 tracking-wide">
+                    // Mobile: mb-2, Desktop (lg): mb-8
+                    <h1 key={index} className="text-5xl font-bold text-cream mb-2 lg:mb-8 tracking-wide">
                       {line}
                     </h1>
                   );
                 }
                 if (line.trim() === '') {
-                  // Mobile: h-2, Desktop: h-8
-                  return <div key={index} className="h-2 md:h-8" />;
+                  // Mobile: h-2, Desktop (lg): h-8
+                  return <div key={index} className="h-2 lg:h-8" />;
                 }
                 if (line.startsWith('•')) {
                   return (
-                    // Mobile: leading-snug px-2 (tighter, wider), Desktop: leading-loose px-8
-                    <p key={index} className="text-3xl text-cream/90 leading-snug md:leading-loose font-light px-2 md:px-8 text-left">
+                    // Mobile: leading-snug px-2 (tighter, wider), Desktop (lg): leading-loose px-8
+                    <p key={index} className="text-3xl text-cream/90 leading-snug lg:leading-loose font-light px-2 lg:px-8 text-left">
                       {line}
                     </p>
                   );
                 }
                 return (
-                  // Mobile: leading-snug px-2 (tighter, wider), Desktop: leading-loose px-8
-                  <p key={index} className="text-4xl text-cream/90 leading-snug md:leading-loose font-light px-2 md:px-8">
+                  // Mobile: leading-snug px-2 (tighter, wider), Desktop (lg): leading-loose px-8
+                  <p key={index} className="text-4xl text-cream/90 leading-snug lg:leading-loose font-light px-2 lg:px-8">
                     {line}
                   </p>
                 );
@@ -481,11 +556,13 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   console.log('🎥 DEBUG: Is video_url truthy?:', ('video_url' in item && !!item.video_url));
 
   return (
-    <div className="flex flex-col md:relative h-full">
+    <div className="flex flex-col lg:relative h-full">
       {/* Picture-in-picture video (AWS CloudFront) - only for movements with video_url */}
-      {/* Mobile: flex item (stacks vertically), Desktop: absolute positioned (picture-in-picture) */}
+      {/* Mobile portrait + landscape: flex item (stacks vertically) */}
+      {/* Desktop (lg): absolute positioned (picture-in-picture) */}
+      {/* FIX: Use lg: breakpoint (1024px) instead of md: (768px) to avoid landscape mobile issues */}
       {'video_url' in item && item.video_url && (
-        <div className="flex-shrink-0 md:absolute md:top-4 md:right-4 md:z-50 w-full md:w-[375px] mb-4 md:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30 relative">
+        <div className="flex-shrink-0 lg:absolute lg:top-4 lg:right-4 lg:z-50 w-full lg:w-[375px] mb-4 lg:mb-0 rounded-lg overflow-hidden shadow-2xl border-2 border-cream/30 relative">
           {/* Loading overlay during 4-second sync delay */}
           {videoLoading && (
             <div className="absolute inset-0 bg-burgundy flex items-center justify-center z-10">
@@ -508,13 +585,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
               opacity: videoEnded ? 0 : 1,
               transition: 'opacity 1s ease-out'
             }}
-            onEnded={() => {
-              console.log('🎥 DEBUG: Video ended - pausing 3s before fade-out');
-              setTimeout(() => {
-                console.log('🎥 DEBUG: Starting fade-out after 3s pause');
-                setVideoEnded(true);
-              }, 3000);
-            }}
+            onEnded={handleVideoEnded}
             onError={(e) => {
               console.error('🎥 DEBUG: Video onError - failed to load:', ('video_url' in item ? item.video_url : 'N/A'), e);
               console.error('🎥 DEBUG: Error target:', e.currentTarget);
@@ -528,20 +599,20 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
 
       {/* Video coming soon badge - visible on all devices, non-obstructive */}
       {!('video_url' in item && item.video_url) && item.type === 'movement' && (
-        <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-burgundy/80 text-cream px-3 py-1.5 rounded-full text-xs md:text-sm font-medium shadow-lg backdrop-blur-sm">
+        <div className="absolute top-2 right-2 lg:top-4 lg:right-4 z-50 bg-burgundy/80 text-cream px-3 py-1.5 rounded-full text-xs lg:text-sm font-medium shadow-lg backdrop-blur-sm">
           🎥 Video coming soon
         </div>
       )}
 
       <div
         ref={scrollContainerRef}
-        // Mobile: flex-1 (takes remaining space), Desktop: h-full (absolute sibling to video)
-        className="flex-1 md:h-full overflow-y-auto px-4 md:px-8 py-8 md:py-16 flex items-start justify-center"
+        // Mobile: flex-1 (takes remaining space), Desktop (lg): h-full (absolute sibling to video)
+        className="flex-1 lg:h-full overflow-y-auto px-4 lg:px-8 py-8 lg:py-16 flex items-start justify-center"
         style={{ scrollBehavior: 'auto' }}
       >
         <div className="max-w-4xl w-full">
-          {/* Mobile: space-y-2 (very tight), Desktop: space-y-8 */}
-          <div className="text-center space-y-2 md:space-y-8">
+          {/* Mobile: space-y-2 (very tight), Desktop (lg): space-y-8 */}
+          <div className="text-center space-y-2 lg:space-y-8">
           {narrative.split('\n').map((line, index) => {
             // Skip pause marker lines (don't display them)
             if (line.match(/\[Pause:\s*\d+s\]/i)) {
@@ -551,8 +622,8 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
             // Title styling
             if (index === 0) {
               return (
-                // Mobile: mb-3, Desktop: mb-12
-                <h1 key={index} className="text-6xl font-bold text-cream mb-3 md:mb-12 tracking-wide">
+                // Mobile: mb-3, Desktop (lg): mb-12
+                <h1 key={index} className="text-6xl font-bold text-cream mb-3 lg:mb-12 tracking-wide">
                   {line}
                 </h1>
               );
@@ -560,14 +631,14 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
 
             // Empty lines create spacing
             if (line.trim() === '') {
-              // Mobile: h-2, Desktop: h-8
-              return <div key={index} className="h-2 md:h-8" />;
+              // Mobile: h-2, Desktop (lg): h-8
+              return <div key={index} className="h-2 lg:h-8" />;
             }
 
             // Regular narrative text
             return (
-              // Mobile: leading-snug px-2 (tighter, wider), Desktop: leading-loose px-8
-              <p key={index} className="text-4xl text-cream/90 leading-snug md:leading-loose font-light px-2 md:px-8">
+              // Mobile: leading-snug px-2 (tighter, wider), Desktop (lg): leading-loose px-8
+              <p key={index} className="text-4xl text-cream/90 leading-snug lg:leading-loose font-light px-2 lg:px-8">
                 {line}
               </p>
             );
