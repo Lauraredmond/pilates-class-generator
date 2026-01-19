@@ -141,36 +141,73 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   }, []);
 
   /**
-   * Sync video playback with class pause state
+   * UNIFIED: Load video URL + Sync playback with class pause state
    *
-   * FIX: Delay video start by 7 seconds for movements (to sync with voiceover)
-   * AWS CloudFront videos have problematic first 7s - wait for voiceover to get 7s ahead
+   * FIX: Race condition - Load video URL FIRST, then handle playback
+   * This prevents trying to play the wrong video when transitioning between sections
    */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    // STEP 1: Extract current video URL based on item type
+    let currentVideoUrl: string | undefined;
+
+    if (item.type === 'movement' && 'video_url' in item) {
+      currentVideoUrl = item.video_url;
+    } else if ((item.type === 'preparation' ||
+                item.type === 'warmup' ||
+                item.type === 'cooldown' ||
+                item.type === 'meditation' ||
+                item.type === 'homecare') &&
+               'video_url' in item) {
+      currentVideoUrl = item.video_url;
+    }
+
+    // STEP 2: If URL changed, load the new video FIRST (before playback logic)
+    if (previousVideoUrlRef.current !== currentVideoUrl) {
+      console.log('🎥 DEBUG: Video URL changed!', {
+        from: previousVideoUrlRef.current,
+        to: currentVideoUrl
+      });
+
+      if (currentVideoUrl) {
+        // Set src if not already set (React may not have updated it yet)
+        if (video.src !== currentVideoUrl) {
+          video.src = currentVideoUrl;
+          console.log('🎥 DEBUG: Set video.src to:', currentVideoUrl);
+        }
+
+        // Call load() to make browser fetch the new video
+        video.load();
+        console.log('🎥 DEBUG: Called video.load() to fetch new video');
+
+        // Reset states for new video
+        setVideoEnded(false);
+        setVideoLoading(false);
+      }
+
+      // Update the ref for next comparison
+      previousVideoUrlRef.current = currentVideoUrl;
+    }
+
+    // STEP 3: Now handle playback logic (pause/play)
     // Determine delay based on section type
-    // Movements: 4 second delay (voiceover sync - reduced from 6s per user request)
-    // Other sections (prep, warmup): No delay
-    // FIX: Mobile Safari - NO delay to maximize autoplay success (gesture chain breaks with setTimeout)
     const isMovement = item.type === 'movement';
-    const videoStartDelay = (isMovement && !isMobileSafari()) ? 4000 : 0; // 4s desktop only, 0s mobile
+    const videoStartDelay = (isMovement && !isMobileSafari()) ? 4000 : 0;
 
     const handleCanPlay = () => {
       if (!isPaused) {
-        // FIX: Always reset to 0:00 before playing (fixes buffering race condition)
+        // Reset to 0:00 before playing
         video.currentTime = 0;
         console.log('🎥 DEBUG: Reset video to 0:00 before playing');
 
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video ready - delaying start by ${videoStartDelay/1000}s (movement sync)`);
-          // FIX: Only set loading state if not already loading (prevents infinite re-render loop)
           if (!videoLoading) {
-            setVideoLoading(true); // Show loading message during delay
+            setVideoLoading(true);
           }
 
-          // FIX: Mobile Safari autoplay - Don't use setTimeout, use async/await to maintain gesture chain
           const playWithDelay = async () => {
             await new Promise(resolve => setTimeout(resolve, videoStartDelay));
             console.log('🎥 DEBUG: Starting video after delay');
@@ -179,18 +216,12 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
             try {
               await video.play();
               console.log('🎥 DEBUG: Video autoplay SUCCESS');
-              videoUnlockedRef.current = true; // Mark as unlocked for future videos
+              videoUnlockedRef.current = true;
             } catch (err: any) {
-              console.error('🎥 DIAGNOSTIC: Video autoplay failed!');
-              console.error('🎥 DIAGNOSTIC: Error name:', err.name);
-              console.error('🎥 DIAGNOSTIC: Error message:', err.message);
-              console.error('🎥 DIAGNOSTIC: Full error:', err);
+              console.error('🎥 DIAGNOSTIC: Video autoplay failed!', err);
               setVideoLoading(false);
-
-              // Mobile Safari specific: NotAllowedError means autoplay blocked
               if (err.name === 'NotAllowedError') {
                 console.log('🎥 FIX: Mobile autoplay blocked - user must click play button');
-                // Video has controls, user can manually play
               }
             }
           };
@@ -211,24 +242,21 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
       console.log('🎥 DEBUG: Video paused (class paused)');
     } else {
       // Play video after delay (if applicable)
-      // Check if already ready
       if (video.readyState >= 3) { // HAVE_FUTURE_DATA or better
-        // FIX: Always reset to 0:00 before playing (fixes buffering race condition)
         video.currentTime = 0;
         console.log('🎥 DEBUG: Reset video to 0:00 before playing (already buffered)');
 
         if (videoStartDelay > 0) {
           console.log(`🎥 DEBUG: Video already buffered - delaying start by ${videoStartDelay/1000}s (movement sync)`);
-          // FIX: Only set loading state if not already loading (prevents infinite re-render loop)
           if (!videoLoading) {
-            setVideoLoading(true); // Show loading message during delay
+            setVideoLoading(true);
           }
           setTimeout(() => {
             console.log('🎥 DEBUG: Starting video after delay');
-            setVideoLoading(false); // Hide loading message when video starts
+            setVideoLoading(false);
             video.play().catch(err => {
               console.error('🎥 DEBUG: Video autoplay failed:', err);
-              setVideoLoading(false); // Hide loading message on error too
+              setVideoLoading(false);
             });
           }, videoStartDelay);
         } else {
@@ -238,7 +266,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
           });
         }
       } else {
-        // Wait for canplay event (fires when video is ready)
+        // Wait for canplay event
         console.log('🎥 DEBUG: Waiting for video to buffer...');
         video.addEventListener('canplay', handleCanPlay, { once: true });
       }
@@ -247,52 +275,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
     return () => {
       video.removeEventListener('canplay', handleCanPlay);
     };
-  }, [item, isPaused]);
-
-  /**
-   * FIX: Load new video when URL changes (required for browser to fetch new content)
-   * This is separate from playback logic to avoid infinite loops
-   */
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    // Extract current video URL based on item type
-    let currentVideoUrl: string | undefined;
-
-    if (item.type === 'movement' && 'video_url' in item) {
-      currentVideoUrl = item.video_url;
-    } else if ((item.type === 'preparation' ||
-                item.type === 'warmup' ||
-                item.type === 'cooldown' ||
-                item.type === 'meditation' ||
-                item.type === 'homecare') &&
-               'video_url' in item) {
-      currentVideoUrl = item.video_url;
-    }
-
-    // If URL changed (including undefined -> URL or URL -> undefined)
-    if (previousVideoUrlRef.current !== currentVideoUrl) {
-      if (currentVideoUrl) {
-        // FIX: Call video.load() when URL changes to fetch new content
-
-        // Important: Set src first if not already set (React may not have updated it yet)
-        if (video.src !== currentVideoUrl) {
-          video.src = currentVideoUrl;
-        }
-
-        // Call load() to make browser fetch the new video
-        video.load();
-
-        // Reset states for new video
-        setVideoEnded(false);
-        setVideoLoading(false);
-      }
-
-      // Update the ref for next comparison
-      previousVideoUrlRef.current = currentVideoUrl;
-    }
-  }, [item]); // Only depend on item, not video URL directly
+  }, [item, isPaused]); // Depend on both item and isPaused
 
   // Reset scroll to top ONLY when section changes (not on pause/resume)
   useEffect(() => {
