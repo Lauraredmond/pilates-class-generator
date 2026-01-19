@@ -10,7 +10,7 @@ import { MovementDisplay } from './MovementDisplay';
 import { PlaybackControls } from './PlaybackControls';
 import { TimerDisplay } from './TimerDisplay';
 import { HealthSafetyModal } from '../modals/HealthSafetyModal';
-import { CastButton } from '../CastButton';
+// import { CastButton } from '../CastButton'; // Hidden for MVP
 import { useAudioDucking } from '../../hooks/useAudioDucking';
 import { useAuth } from '../../context/AuthContext';
 import { logger } from '../../utils/logger';
@@ -221,9 +221,9 @@ export function ClassPlayback({
   // Early skip analytics tracking state (December 29, 2025)
   const [currentSectionEventId, setCurrentSectionEventId] = useState<string | null>(null);
 
-  // Chromecast/TV casting state (January 10, 2026)
-  const [isCasting, setIsCasting] = useState(false);
-  const castSessionRef = useRef<any>(null);
+  // Chromecast/TV casting state (January 10, 2026) - HIDDEN FOR MVP
+  // const [isCasting, setIsCasting] = useState(false);
+  // const castSessionRef = useRef<any>(null);
 
   // Wake Lock to prevent screen from turning off during class
   const wakeLockRef = useRef<any>(null);
@@ -424,10 +424,8 @@ export function ClassPlayback({
   // Get current track URL from appropriate playlist
   const currentMusicUrl = currentPlaylist?.tracks?.[currentTrackIndex]?.audio_url || '';
 
-  /**
-   * Chromecast State Change Handler
-   * Called by CastButton when user connects/disconnects from Chromecast
-   */
+  // CHROMECAST FUNCTIONALITY - HIDDEN FOR MVP
+  /*
   const handleCastStateChange = useCallback((casting: boolean) => {
     setIsCasting(casting);
 
@@ -445,10 +443,6 @@ export function ClassPlayback({
     }
   }, []);
 
-  /**
-   * Load Media to Cast Receiver
-   * When casting is active, load current audio (music + voiceover) to remote player
-   */
   useEffect(() => {
     if (!isCasting || !castSessionRef.current) return;
 
@@ -462,7 +456,6 @@ export function ClassPlayback({
         mediaInfo.contentType = 'audio/mpeg';
         mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
 
-        // Set metadata for TV display
         const metadata = new cast.framework.messages.GenericMediaMetadata();
         metadata.title = currentItem.type === 'movement'
           ? (currentItem as PlaybackMovement).name
@@ -491,10 +484,6 @@ export function ClassPlayback({
     loadMedia();
   }, [isCasting, currentMusicUrl, currentItem, currentPlaylist, isPaused]);
 
-  /**
-   * Sync Playback State to Cast Receiver
-   * When user pauses/plays locally, sync to remote player
-   */
   useEffect(() => {
     if (!isCasting || !castSessionRef.current) return;
 
@@ -517,6 +506,7 @@ export function ClassPlayback({
 
     syncPlaybackState();
   }, [isPaused, isCasting]);
+  */
 
   /**
    * Wake Lock API - Keep screen on during class playback
