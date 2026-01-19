@@ -48,6 +48,9 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   // Track previous video URL to detect changes
   const previousVideoUrlRef = useRef<string | undefined>();
 
+  // FIX: Track fade-out timeout to cancel it when section changes (race condition fix)
+  const fadeOutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // FIX: Detect if we're on mobile Safari (iOS)
   const isMobileSafari = useCallback(() => {
     const ua = navigator.userAgent;
@@ -96,9 +99,12 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
 
     // Now apply fade-out (whether we exited fullscreen or not)
     console.log('🎥 DEBUG: Pausing 3s before fade-out');
-    setTimeout(() => {
+
+    // FIX: Store timeout ID so we can cancel it if section changes before it fires
+    fadeOutTimeoutRef.current = setTimeout(() => {
       console.log('🎥 DEBUG: Starting fade-out after 3s pause');
       setVideoEnded(true);
+      fadeOutTimeoutRef.current = null;
     }, 3000);
   }, [isFullscreen]);
 
@@ -139,6 +145,33 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
     };
   }, []);
+
+  /**
+   * FIX: Resume video playback when tab becomes visible (Page Visibility API)
+   *
+   * Browser default behavior pauses videos when you switch tabs.
+   * This handler resumes playback when the user returns to the tab.
+   */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !isPaused) {
+        // Tab became visible and class is not paused - resume video
+        console.log('🎥 DEBUG: Tab visible - resuming video playback');
+        video.play().catch(err => {
+          console.error('🎥 DEBUG: Failed to resume video on tab focus:', err);
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isPaused]);
 
   /**
    * UNIFIED: Load video URL + Sync playback with class pause state
@@ -284,6 +317,13 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
     // Reset pause state refs when new section starts
     pausedElapsedTimeRef.current = 0;
     pauseTimestampRef.current = 0;
+
+    // FIX: Cancel any pending fade-out from previous section (race condition fix)
+    if (fadeOutTimeoutRef.current) {
+      console.log('🎥 DEBUG: Cancelling pending fade-out from previous section');
+      clearTimeout(fadeOutTimeoutRef.current);
+      fadeOutTimeoutRef.current = null;
+    }
 
     // Reset video ended state when section changes
     setVideoEnded(false);
