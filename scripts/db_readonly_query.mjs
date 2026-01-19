@@ -90,15 +90,19 @@ function formatResults(rows, fields) {
 /**
  * Execute read-only query
  */
-async function executeQuery(sql) {
+async function executeQuery(sql, dbType = 'dev') {
   // Validate connection string
-  const connectionString = process.env.DB_READONLY_URL;
+  const envVar = dbType === 'prod' ? 'DB_PROD_READONLY_URL' : 'DB_DEV_READONLY_URL';
+  const connectionString = process.env[envVar];
   if (!connectionString) {
-    console.error('❌ ERROR: DB_READONLY_URL not found in .env.local');
+    console.error(`❌ ERROR: ${envVar} not found in .env.local`);
     console.error('Please ensure .env.local exists with:');
-    console.error('DB_READONLY_URL=postgresql://claude_readonly:PASSWORD@db.gntqrebxmpdjyuxztwww.supabase.co:5432/postgres?sslmode=require');
+    console.error('DB_DEV_READONLY_URL=postgresql://postgres:PASSWORD@db.xxxxx.supabase.co:5432/postgres');
+    console.error('DB_PROD_READONLY_URL=postgresql://claude_readonly:PASSWORD@db.xxxxx.supabase.co:5432/postgres');
     process.exit(1);
   }
+
+  console.error(`🔗 Connecting to: ${dbType.toUpperCase()} database\n`);
 
   // Validate query safety
   try {
@@ -146,16 +150,29 @@ async function executeQuery(sql) {
 }
 
 // Main
-const sql = process.argv[2];
+const args = process.argv.slice(2);
+let dbType = 'dev'; // default to dev
+let sql = null;
+
+// Parse arguments
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--prod') {
+    dbType = 'prod';
+  } else if (args[i] === '--dev') {
+    dbType = 'dev';
+  } else {
+    sql = args[i];
+  }
+}
 
 if (!sql) {
-  console.error('Usage: node scripts/db_readonly_query.mjs "SELECT ..."');
+  console.error('Usage: node scripts/db_readonly_query.mjs [--dev|--prod] "SELECT ..."');
   console.error('');
   console.error('Examples:');
-  console.error('  node scripts/db_readonly_query.mjs "SELECT * FROM movements LIMIT 5"');
-  console.error('  node scripts/db_readonly_query.mjs "SELECT COUNT(*) FROM class_history"');
-  console.error('  node scripts/db_readonly_query.mjs "\\d movements"  # Describe table (psql command)');
+  console.error('  node scripts/db_readonly_query.mjs "SELECT * FROM movements LIMIT 5"  # queries DEV by default');
+  console.error('  node scripts/db_readonly_query.mjs --dev "SELECT COUNT(*) FROM class_history"');
+  console.error('  node scripts/db_readonly_query.mjs --prod "SELECT * FROM warmup_routines LIMIT 5"');
   process.exit(1);
 }
 
-executeQuery(sql);
+executeQuery(sql, dbType);
