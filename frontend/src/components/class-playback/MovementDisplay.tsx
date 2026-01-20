@@ -178,6 +178,12 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
       });
 
       if (currentVideoUrl) {
+        // FIX: Force video visible IMMEDIATELY (don't wait for React state update)
+        // This prevents race condition where videoEnded state hasn't updated yet
+        video.style.opacity = '1';
+        video.style.transition = 'none'; // Disable transition for instant visibility
+        console.log('🎥 DEBUG: Forced video opacity to 1 (override fade-out)');
+
         // ALWAYS set src when URL changes (don't compare - can have trailing slashes, protocols, etc.)
         video.src = currentVideoUrl;
         console.log('🎥 DEBUG: Set video.src to:', currentVideoUrl);
@@ -189,6 +195,11 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
         // Reset states for new video (clears fade-out from previous section)
         setVideoEnded(false);
         setVideoLoading(false);
+
+        // Re-enable transition after a frame (for future fade-outs)
+        setTimeout(() => {
+          video.style.transition = 'opacity 1s ease-out';
+        }, 50);
       }
 
       // Update the ref for next comparison
