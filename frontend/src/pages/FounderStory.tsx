@@ -128,7 +128,7 @@ export function FounderStory() {
               Founder, Bassline Pilates
             </p>
             <p className="text-cream/40 text-sm mt-4">
-              Version 1.874
+              Version 1.888
             </p>
           </div>
         </section>
