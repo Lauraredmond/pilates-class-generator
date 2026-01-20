@@ -15,17 +15,54 @@ interface MovementDisplayProps {
 // Compare item.id instead of object reference to prevent infinite re-render loop
 // Parent creates new item objects every render, so shallow comparison fails
 function arePropsEqual(prevProps: MovementDisplayProps, nextProps: MovementDisplayProps): boolean {
-  // Compare item ID instead of object reference
-  const prevId = 'id' in prevProps.item ? prevProps.item.id : null;
-  const nextId = 'id' in nextProps.item ? nextProps.item.id : null;
+  // FIX: Compare by type first (movements have IDs, framing sections don't)
+  if (prevProps.item.type !== nextProps.item.type) {
+    return false; // Different types = different items
+  }
 
-  // If IDs match and isPaused hasn't changed, props are equal
-  const idsEqual = prevId === nextId;
+  // For movements: compare by ID
+  if (prevProps.item.type === 'movement') {
+    const prevId = 'id' in prevProps.item ? prevProps.item.id : null;
+    const nextId = 'id' in nextProps.item ? nextProps.item.id : null;
+    const idsEqual = prevId === nextId;
+    const pausedEqual = prevProps.isPaused === nextProps.isPaused;
+    return idsEqual && pausedEqual;
+  }
+
+  // For framing sections (prep, warmup, cooldown, meditation, homecare):
+  // Compare by unique name field since they don't have IDs
+  let prevName: string | undefined;
+  let nextName: string | undefined;
+
+  if (prevProps.item.type === 'preparation') {
+    prevName = 'script_name' in prevProps.item ? prevProps.item.script_name : undefined;
+    nextName = 'script_name' in nextProps.item ? nextProps.item.script_name : undefined;
+  } else if (prevProps.item.type === 'warmup') {
+    prevName = 'routine_name' in prevProps.item ? prevProps.item.routine_name : undefined;
+    nextName = 'routine_name' in nextProps.item ? nextProps.item.routine_name : undefined;
+  } else if (prevProps.item.type === 'cooldown') {
+    prevName = 'sequence_name' in prevProps.item ? prevProps.item.sequence_name : undefined;
+    nextName = 'sequence_name' in nextProps.item ? nextProps.item.sequence_name : undefined;
+  } else if (prevProps.item.type === 'meditation') {
+    prevName = 'script_name' in prevProps.item ? prevProps.item.script_name : undefined;
+    nextName = 'script_name' in nextProps.item ? nextProps.item.script_name : undefined;
+  } else if (prevProps.item.type === 'homecare') {
+    prevName = 'advice_name' in prevProps.item ? prevProps.item.advice_name : undefined;
+    nextName = 'advice_name' in nextProps.item ? nextProps.item.advice_name : undefined;
+  } else if (prevProps.item.type === 'transition') {
+    // For transitions: compare by from_position + to_position
+    const prevFrom = 'from_position' in prevProps.item ? prevProps.item.from_position : undefined;
+    const nextFrom = 'from_position' in nextProps.item ? nextProps.item.from_position : undefined;
+    const prevTo = 'to_position' in prevProps.item ? prevProps.item.to_position : undefined;
+    const nextTo = 'to_position' in nextProps.item ? nextProps.item.to_position : undefined;
+    const transitionsEqual = prevFrom === nextFrom && prevTo === nextTo;
+    const pausedEqual = prevProps.isPaused === nextProps.isPaused;
+    return transitionsEqual && pausedEqual;
+  }
+
+  const namesEqual = prevName === nextName;
   const pausedEqual = prevProps.isPaused === nextProps.isPaused;
-
-  // Removed verbose diagnostic logging - fix verified working
-
-  return idsEqual && pausedEqual;
+  return namesEqual && pausedEqual;
 }
 
 // FIX: Use React.memo with custom comparison to prevent re-renders when item ID hasn't changed
