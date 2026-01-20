@@ -87,6 +87,12 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
       const meditation = meditationResponse.data[0];
       const homecare = homecareResponse.data[0];
 
+      // DEBUG: Log what backend actually returns for warmup
+      console.log('🎥 DEBUG: Warmup from backend API:', warmup);
+      console.log('🎥 DEBUG: Warmup.narrative:', warmup?.narrative);
+      console.log('🎥 DEBUG: Warmup.video_url:', warmup?.video_url);
+      console.log('🎥 DEBUG: Warmup.voiceover_url:', warmup?.voiceover_url);
+
       // Build playback items array
       const items: PlaybackItem[] = [];
 
