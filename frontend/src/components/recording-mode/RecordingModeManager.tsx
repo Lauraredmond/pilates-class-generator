@@ -4,7 +4,7 @@
  * for systematic voiceover recording
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
 import { Mic } from 'lucide-react';
 import axios from 'axios';
@@ -33,7 +33,21 @@ export function RecordingModeManager({ onClose }: RecordingModeManagerProps) {
   const [playbackItems, setPlaybackItems] = useState<PlaybackItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // Debug component lifecycle
+  useEffect(() => {
+    console.log('🔍 DEBUG: RecordingModeManager MOUNTED');
+    return () => {
+      console.log('🔍 DEBUG: RecordingModeManager UNMOUNTING');
+    };
+  }, []);
+
+  // Debug state changes
+  useEffect(() => {
+    console.log('🔍 DEBUG: isPlaying changed:', isPlaying, 'playbackItems.length:', playbackItems.length);
+  }, [isPlaying, playbackItems]);
+
   const handleStartRecordingMode = async () => {
+    console.log('🔍 DEBUG: handleStartRecordingMode CALLED - Stack trace:', new Error().stack);
     setIsGenerating(true);
     setError(null);
 

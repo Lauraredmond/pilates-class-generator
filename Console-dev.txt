@@ -1,15 +1,179 @@
-[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", …}
-ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}ke
-	(anonymous function) (index-A3dVaXpL.js:48:85817)
-[Error] Failed to load resource: the server responded with a status of 500 () (beta-feedback, line 0)
-[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", …}
-ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}ke
-	error (index-A3dVaXpL.js:13:5449)
-	(anonymous function) (index-A3dVaXpL.js:48:54281)
-[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", …}
-ke {stack: "Yx@https://bassline-dev.netlify.app/assets/index-A…-dev.netlify.app/assets/index-A3dVaXpL.js:12:2111", message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: Object, …}ke
-	(anonymous function) (index-A3dVaXpL.js:48:85817)
-[Error] Failed to load resource: the server responded with a status of 500 () (beta-feedback, line 0)
+[Warning] 10 console messages are not shown.
+[Log] [Media:music] URL changed – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] element created (reusable) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] URL changed – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] switching voiceover – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] src updated - loading – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] PAUSE requested – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Fetching playlists START – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] loadstart – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] 🎥 DEBUG: Waiting for video to buffer... (eruda-BOxshzV9.js, line 92)
+[Log] [Media:music] PLAY requested – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] PLAY skipped (no src yet) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] play (ducking music) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] volume change (ducking) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] waiting (buffering) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Wake Lock ACQUIRED – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] loadedmetadata – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] loadeddata – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] canplay – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] playing – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] canplaythrough – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Section tracking START – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Movement playlist LOADED – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Cooldown playlist LOADED – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] URL changed – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] switching track – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] src updated - loading – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] waiting (buffering) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] loadstart – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Section tracking SUCCESS – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] loadedmetadata – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] loadeddata – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] canplay – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] playing – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] canplaythrough – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] 🎥 DEBUG: Reset video to 0:00 before playing (eruda-BOxshzV9.js, line 92)
+[Log] 🎥 DEBUG: Video ready to play - starting immediately (eruda-BOxshzV9.js, line 92)
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] pause – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] ended (restoring music) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] volume change (ducking) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] 🎥 DEBUG: Video ended - checking fullscreen state (eruda-BOxshzV9.js, line 92)
+[Log] 🎥 DEBUG: Pausing 3s before fade-out (eruda-BOxshzV9.js, line 92)
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] 🎥 DEBUG: Starting fade-out after 3s pause (eruda-BOxshzV9.js, line 92)
+[Log] [Media:music] Section tracking START – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] URL changed – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] switching voiceover – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] src updated - loading – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] play (ducking music) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] volume change (ducking) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] waiting (buffering) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] loadstart – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] loadedmetadata – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] loadeddata – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] canplay – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] playing – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] canplaythrough – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Section tracking SUCCESS – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] AudioContext health check OK – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Wake Lock RELEASED (browser event) – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Wake Lock released on component unmount – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] 🎥 DEBUG: Video URL changed! – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] 🎥 DEBUG: Called video.load() to fetch new video (eruda-BOxshzV9.js, line 92)
+[Log] 🎥 DEBUG: Video paused (class paused) (eruda-BOxshzV9.js, line 92)
+[Log] [Media:music] PAUSE requested – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] pause – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:voiceover] pause – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Page hidden – Object (eruda-BOxshzV9.js, line 92)
+Object
+[Log] [Media:music] Page visible – Object (eruda-BOxshzV9.js, line 92)
+Object
