@@ -108,6 +108,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
    * then apply fade-out. CSS opacity doesn't work on fullscreen elements.
    */
   const handleVideoEnded = useCallback(async () => {
+    console.log('🎥 ✅ VIDEO ENDED EVENT FIRED! Video naturally reached its end');
     console.log('🎥 DEBUG: Video ended - checking fullscreen state');
 
     // If in fullscreen, exit it first (async operation)
@@ -257,6 +258,14 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
           video.load();
           console.log('🎥 DEBUG: Called video.load() to fetch new video');
 
+          // Log video duration when it loads
+          video.addEventListener('loadedmetadata', () => {
+            console.log(`🎥 📊 VIDEO LOADED: Duration = ${video.duration}s, Section duration = ${item.duration_seconds}s`);
+            if (video.duration > item.duration_seconds) {
+              console.log('🎥 ⚠️ WARNING: Video is LONGER than section - won\'t reach natural end!');
+            }
+          }, { once: true });
+
           // Reset states for new video (clears fade-out from previous section)
           setVideoEnded(false);
           setVideoLoading(false);
@@ -370,9 +379,12 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
 
     // FIX: Cancel any pending fade-out from previous section (race condition fix)
     if (fadeOutTimeoutRef.current) {
+      console.log('🎥 ⚠️ FADE CANCELLED: Section changed before fade-out completed');
       console.log('🎥 DEBUG: Cancelling pending fade-out from previous section');
       clearTimeout(fadeOutTimeoutRef.current);
       fadeOutTimeoutRef.current = null;
+    } else {
+      console.log('🎥 INFO: New section starting (no pending fade to cancel)');
     }
 
     // Reset video ended state when section changes
