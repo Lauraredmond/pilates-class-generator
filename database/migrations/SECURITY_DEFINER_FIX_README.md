@@ -31,13 +31,10 @@ Migration `020_fix_security_definer_warnings.sql` fixes these issues by:
    - `update_music_tracks_updated_at` (trigger function)
    - `update_updated_at_column` (trigger function)
 
-3. **Recreates 6 views without SECURITY DEFINER**:
-   - `early_skip_statistics`
-   - `movement_skip_leaderboard`
-   - `platform_quality_metrics`
-   - `section_type_skip_summary`
-   - `user_play_statistics`
-   - `user_quality_statistics`
+3. **Views are fine as-is** (no changes needed):
+   - Views don't use SECURITY DEFINER
+   - They reference correct tables: `playback_section_events`, `class_quality_log`, `user_profiles`, `class_play_sessions`
+   - No modifications required
 
 ## How to Apply the Migration
 
@@ -45,7 +42,7 @@ Migration `020_fix_security_definer_warnings.sql` fixes these issues by:
 
 1. Go to your Supabase project dashboard
 2. Navigate to **SQL Editor**
-3. Copy the contents of `020_fix_security_definer_warnings.sql`
+3. Copy the contents of `020_fix_security_definer_warnings_SIMPLE.sql`
 4. Paste and click **Run**
 5. Check the output for any errors
 
@@ -53,8 +50,10 @@ Migration `020_fix_security_definer_warnings.sql` fixes these issues by:
 
 ```bash
 cd database
-supabase db push --file migrations/020_fix_security_definer_warnings.sql
+supabase db push --file migrations/020_fix_security_definer_warnings_SIMPLE.sql
 ```
+
+**Important:** Use the `_SIMPLE.sql` version - it only changes function security settings without modifying function logic or views.
 
 ## Testing After Migration
 
