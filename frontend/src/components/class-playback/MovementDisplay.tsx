@@ -479,7 +479,6 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
     if (!item.duration_seconds) return; // No duration, can't time fade
 
     const sectionDuration = item.duration_seconds * 1000; // Convert to ms
-    const fadeStartTime = sectionDuration - 4000; // Start fade 4s before end
 
     // Only apply timing-based fade if we have a video
     const hasVideo = (item.type === 'movement' ||
