@@ -507,19 +507,51 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
       if (remaining <= 4000 && remaining > 3900 && !fadeOutTimeoutRef.current) {
         console.log('🎥 🎬 SECTION-BASED FADE: Starting fade sequence (4s before section end)');
 
-        // Set timeout for fade (wait 3s, then fade)
-        fadeOutTimeoutRef.current = setTimeout(() => {
-          console.log('🎥 🎬 SECTION-BASED FADE: Applying fade-out now');
-          setVideoEnded(true);
-          fadeOutTimeoutRef.current = null;
-        }, 3000);
+        // FIX: Exit fullscreen FIRST if we're in it (so fade is visible)
+        if (isFullscreen) {
+          console.log('🎥 🎬 EXITING FULLSCREEN before fade (for visibility)');
+          const exitFullscreen = async () => {
+            try {
+              if (document.exitFullscreen) {
+                await document.exitFullscreen();
+              } else if ((document as any).webkitExitFullscreen) {
+                await (document as any).webkitExitFullscreen();
+              } else if ((document as any).mozCancelFullScreen) {
+                await (document as any).mozCancelFullScreen();
+              } else if ((document as any).msExitFullscreen) {
+                await (document as any).msExitFullscreen();
+              }
+              // Wait for fullscreen exit animation
+              await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (err) {
+              console.error('🎥 Failed to exit fullscreen for fade:', err);
+            }
+          };
+
+          // Exit fullscreen, then apply fade after delay
+          exitFullscreen().then(() => {
+            // Now set timeout for fade (wait 2.5s more, then fade)
+            fadeOutTimeoutRef.current = setTimeout(() => {
+              console.log('🎥 🎬 SECTION-BASED FADE: Applying fade-out now (after fullscreen exit)');
+              setVideoEnded(true);
+              fadeOutTimeoutRef.current = null;
+            }, 2500);
+          });
+        } else {
+          // Not in fullscreen, apply fade normally
+          fadeOutTimeoutRef.current = setTimeout(() => {
+            console.log('🎥 🎬 SECTION-BASED FADE: Applying fade-out now');
+            setVideoEnded(true);
+            fadeOutTimeoutRef.current = null;
+          }, 3000);
+        }
       }
     }, 100); // Check every 100ms for precision
 
     return () => {
       clearInterval(checkTimer);
     };
-  }, [item, isPaused]);
+  }, [item, isPaused, isFullscreen]);
 
   // Handle different section types
   if (item.type === 'transition') {
