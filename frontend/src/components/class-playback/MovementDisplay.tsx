@@ -214,30 +214,59 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
         to: currentVideoUrl
       });
 
-      if (currentVideoUrl) {
-        // FIX: Force video visible IMMEDIATELY (don't wait for React state update)
-        // This prevents race condition where videoEnded state hasn't updated yet
-        video.style.opacity = '1';
-        video.style.transition = 'none'; // Disable transition for instant visibility
-        console.log('🎥 DEBUG: Forced video opacity to 1 (override fade-out)');
+      // FIX: Exit fullscreen if we're in it when transitioning to new section
+      // This ensures graceful return to normal size video for next section
+      const exitFullscreenIfNeeded = async () => {
+        if (isFullscreen) {
+          console.log('🎥 DEBUG: Exiting fullscreen before loading new section video');
+          try {
+            if (document.exitFullscreen) {
+              await document.exitFullscreen();
+            } else if ((document as any).webkitExitFullscreen) {
+              await (document as any).webkitExitFullscreen();
+            } else if ((document as any).mozCancelFullScreen) {
+              await (document as any).mozCancelFullScreen();
+            } else if ((document as any).msExitFullscreen) {
+              await (document as any).msExitFullscreen();
+            }
+            console.log('🎥 DEBUG: Successfully exited fullscreen for section transition');
 
-        // ALWAYS set src when URL changes (don't compare - can have trailing slashes, protocols, etc.)
-        video.src = currentVideoUrl;
-        console.log('🎥 DEBUG: Set video.src to:', currentVideoUrl);
+            // Wait a moment for fullscreen exit animation to complete
+            await new Promise(resolve => setTimeout(resolve, 300));
+          } catch (err) {
+            console.error('🎥 DEBUG: Failed to exit fullscreen on section change:', err);
+            // Continue loading new video anyway
+          }
+        }
+      };
 
-        // Call load() to make browser fetch the new video
-        video.load();
-        console.log('🎥 DEBUG: Called video.load() to fetch new video');
+      // Exit fullscreen first, then load new video
+      exitFullscreenIfNeeded().then(() => {
+        if (currentVideoUrl) {
+          // FIX: Force video visible IMMEDIATELY (don't wait for React state update)
+          // This prevents race condition where videoEnded state hasn't updated yet
+          video.style.opacity = '1';
+          video.style.transition = 'none'; // Disable transition for instant visibility
+          console.log('🎥 DEBUG: Forced video opacity to 1 (override fade-out)');
 
-        // Reset states for new video (clears fade-out from previous section)
-        setVideoEnded(false);
-        setVideoLoading(false);
+          // ALWAYS set src when URL changes (don't compare - can have trailing slashes, protocols, etc.)
+          video.src = currentVideoUrl;
+          console.log('🎥 DEBUG: Set video.src to:', currentVideoUrl);
 
-        // Re-enable transition after a frame (for future fade-outs)
-        setTimeout(() => {
-          video.style.transition = 'opacity 1s ease-out';
-        }, 50);
-      }
+          // Call load() to make browser fetch the new video
+          video.load();
+          console.log('🎥 DEBUG: Called video.load() to fetch new video');
+
+          // Reset states for new video (clears fade-out from previous section)
+          setVideoEnded(false);
+          setVideoLoading(false);
+
+          // Re-enable transition after a frame (for future fade-outs)
+          setTimeout(() => {
+            video.style.transition = 'opacity 1s ease-out';
+          }, 50);
+        }
+      });
 
       // Update the ref for next comparison
       previousVideoUrlRef.current = currentVideoUrl;
@@ -327,7 +356,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
     return () => {
       video.removeEventListener('canplay', handleCanPlay);
     };
-  }, [item, isPaused]); // Depend on both item and isPaused
+  }, [item, isPaused, isFullscreen]); // Depend on item, isPaused, and isFullscreen
 
   // Reset scroll to top ONLY when section changes (not on pause/resume)
   useEffect(() => {
