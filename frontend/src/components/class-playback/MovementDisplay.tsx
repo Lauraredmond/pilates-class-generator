@@ -88,6 +88,9 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   // FIX: Track fade-out timeout to cancel it when section changes (race condition fix)
   const fadeOutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // NEW: Track section start time for timing-based fade
+  const sectionStartTimeRef = useRef<number>(Date.now());
+
   // FIX: Detect if we're on mobile Safari (iOS)
   const isMobileSafari = useCallback(() => {
     const ua = navigator.userAgent;
@@ -393,6 +396,10 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
     // Reset video loading state when section changes (fixes auto-play on new movements)
     setVideoLoading(false);
 
+    // NEW: Reset section start time when section changes
+    sectionStartTimeRef.current = Date.now();
+    console.log(`🎥 ⏱️ SECTION TIMER: Started for ${item.duration_seconds}s section`);
+
     // NOTE: Video reset handled in playback useEffect below (lines 48, 78)
     // Don't call video.load() here - causes infinite loop!
   }, [item]);
@@ -463,6 +470,55 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
         // Save the elapsed time when cancelling (happens on pause)
         pausedElapsedTimeRef.current = lastElapsed;
       }
+    };
+  }, [item, isPaused]);
+
+  // NEW: Section timing-based fade out (more reliable than video end event)
+  useEffect(() => {
+    if (isPaused) return; // Don't run timer when paused
+    if (!item.duration_seconds) return; // No duration, can't time fade
+
+    const sectionDuration = item.duration_seconds * 1000; // Convert to ms
+    const fadeStartTime = sectionDuration - 4000; // Start fade 4s before end
+
+    // Only apply timing-based fade if we have a video
+    const hasVideo = (item.type === 'movement' ||
+                     item.type === 'preparation' ||
+                     item.type === 'warmup' ||
+                     item.type === 'cooldown' ||
+                     item.type === 'meditation' ||
+                     item.type === 'homecare') &&
+                    'video_url' in item && item.video_url;
+
+    if (!hasVideo) {
+      console.log('🎥 INFO: No video for this section, skipping timing-based fade');
+      return;
+    }
+
+    const checkTimer = setInterval(() => {
+      const elapsed = Date.now() - sectionStartTimeRef.current;
+      const remaining = sectionDuration - elapsed;
+
+      // Log every 5 seconds for debugging
+      if (Math.floor(elapsed / 1000) % 5 === 0) {
+        console.log(`🎥 ⏱️ TIMER: ${Math.floor(elapsed / 1000)}s elapsed, ${Math.floor(remaining / 1000)}s remaining`);
+      }
+
+      // Start fade 4 seconds before section ends
+      if (remaining <= 4000 && remaining > 3900 && !fadeOutTimeoutRef.current) {
+        console.log('🎥 🎬 SECTION-BASED FADE: Starting fade sequence (4s before section end)');
+
+        // Set timeout for fade (wait 3s, then fade)
+        fadeOutTimeoutRef.current = setTimeout(() => {
+          console.log('🎥 🎬 SECTION-BASED FADE: Applying fade-out now');
+          setVideoEnded(true);
+          fadeOutTimeoutRef.current = null;
+        }, 3000);
+      }
+    }, 100); // Check every 100ms for precision
+
+    return () => {
+      clearInterval(checkTimer);
     };
   }, [item, isPaused]);
 
