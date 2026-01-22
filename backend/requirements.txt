@@ -48,7 +48,7 @@ xlrd==2.0.1
 httpx>=0.28
 websockets>=15.0.0
 email-validator>=2.0.0
-aiohttp==3.13.3
+aiohttp==3.12.14
 
 # Testing
 pytest==7.4.4
