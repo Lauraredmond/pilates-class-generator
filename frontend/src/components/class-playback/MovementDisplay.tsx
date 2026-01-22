@@ -88,6 +88,9 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
   // FIX: Track fade-out timeout to cancel it when section changes (race condition fix)
   const fadeOutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // NEW: Track section start time for timing-based fade
+  const sectionStartTimeRef = useRef<number>(Date.now());
+
   // FIX: Detect if we're on mobile Safari (iOS)
   const isMobileSafari = useCallback(() => {
     const ua = navigator.userAgent;
@@ -108,6 +111,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
    * then apply fade-out. CSS opacity doesn't work on fullscreen elements.
    */
   const handleVideoEnded = useCallback(async () => {
+    console.log('🎥 ✅ VIDEO ENDED EVENT FIRED! Video naturally reached its end');
     console.log('🎥 DEBUG: Video ended - checking fullscreen state');
 
     // If in fullscreen, exit it first (async operation)
@@ -214,30 +218,67 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
         to: currentVideoUrl
       });
 
-      if (currentVideoUrl) {
-        // FIX: Force video visible IMMEDIATELY (don't wait for React state update)
-        // This prevents race condition where videoEnded state hasn't updated yet
-        video.style.opacity = '1';
-        video.style.transition = 'none'; // Disable transition for instant visibility
-        console.log('🎥 DEBUG: Forced video opacity to 1 (override fade-out)');
+      // FIX: Exit fullscreen if we're in it when transitioning to new section
+      // This ensures graceful return to normal size video for next section
+      const exitFullscreenIfNeeded = async () => {
+        if (isFullscreen) {
+          console.log('🎥 DEBUG: Exiting fullscreen before loading new section video');
+          try {
+            if (document.exitFullscreen) {
+              await document.exitFullscreen();
+            } else if ((document as any).webkitExitFullscreen) {
+              await (document as any).webkitExitFullscreen();
+            } else if ((document as any).mozCancelFullScreen) {
+              await (document as any).mozCancelFullScreen();
+            } else if ((document as any).msExitFullscreen) {
+              await (document as any).msExitFullscreen();
+            }
+            console.log('🎥 DEBUG: Successfully exited fullscreen for section transition');
 
-        // ALWAYS set src when URL changes (don't compare - can have trailing slashes, protocols, etc.)
-        video.src = currentVideoUrl;
-        console.log('🎥 DEBUG: Set video.src to:', currentVideoUrl);
+            // Wait a moment for fullscreen exit animation to complete
+            await new Promise(resolve => setTimeout(resolve, 300));
+          } catch (err) {
+            console.error('🎥 DEBUG: Failed to exit fullscreen on section change:', err);
+            // Continue loading new video anyway
+          }
+        }
+      };
 
-        // Call load() to make browser fetch the new video
-        video.load();
-        console.log('🎥 DEBUG: Called video.load() to fetch new video');
+      // Exit fullscreen first, then load new video
+      exitFullscreenIfNeeded().then(() => {
+        if (currentVideoUrl) {
+          // FIX: Force video visible IMMEDIATELY (don't wait for React state update)
+          // This prevents race condition where videoEnded state hasn't updated yet
+          video.style.opacity = '1';
+          video.style.transition = 'none'; // Disable transition for instant visibility
+          console.log('🎥 DEBUG: Forced video opacity to 1 (override fade-out)');
 
-        // Reset states for new video (clears fade-out from previous section)
-        setVideoEnded(false);
-        setVideoLoading(false);
+          // ALWAYS set src when URL changes (don't compare - can have trailing slashes, protocols, etc.)
+          video.src = currentVideoUrl;
+          console.log('🎥 DEBUG: Set video.src to:', currentVideoUrl);
 
-        // Re-enable transition after a frame (for future fade-outs)
-        setTimeout(() => {
-          video.style.transition = 'opacity 1s ease-out';
-        }, 50);
-      }
+          // Call load() to make browser fetch the new video
+          video.load();
+          console.log('🎥 DEBUG: Called video.load() to fetch new video');
+
+          // Log video duration when it loads
+          video.addEventListener('loadedmetadata', () => {
+            console.log(`🎥 📊 VIDEO LOADED: Duration = ${video.duration}s, Section duration = ${item.duration_seconds}s`);
+            if (video.duration > item.duration_seconds) {
+              console.log('🎥 ⚠️ WARNING: Video is LONGER than section - won\'t reach natural end!');
+            }
+          }, { once: true });
+
+          // Reset states for new video (clears fade-out from previous section)
+          setVideoEnded(false);
+          setVideoLoading(false);
+
+          // Re-enable transition after a frame (for future fade-outs)
+          setTimeout(() => {
+            video.style.transition = 'opacity 1s ease-out';
+          }, 50);
+        }
+      });
 
       // Update the ref for next comparison
       previousVideoUrlRef.current = currentVideoUrl;
@@ -327,7 +368,7 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
     return () => {
       video.removeEventListener('canplay', handleCanPlay);
     };
-  }, [item, isPaused]); // Depend on both item and isPaused
+  }, [item, isPaused, isFullscreen]); // Depend on item, isPaused, and isFullscreen
 
   // Reset scroll to top ONLY when section changes (not on pause/resume)
   useEffect(() => {
@@ -341,9 +382,12 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
 
     // FIX: Cancel any pending fade-out from previous section (race condition fix)
     if (fadeOutTimeoutRef.current) {
+      console.log('🎥 ⚠️ FADE CANCELLED: Section changed before fade-out completed');
       console.log('🎥 DEBUG: Cancelling pending fade-out from previous section');
       clearTimeout(fadeOutTimeoutRef.current);
       fadeOutTimeoutRef.current = null;
+    } else {
+      console.log('🎥 INFO: New section starting (no pending fade to cancel)');
     }
 
     // Reset video ended state when section changes
@@ -351,6 +395,10 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
 
     // Reset video loading state when section changes (fixes auto-play on new movements)
     setVideoLoading(false);
+
+    // NEW: Reset section start time when section changes
+    sectionStartTimeRef.current = Date.now();
+    console.log(`🎥 ⏱️ SECTION TIMER: Started for ${item.duration_seconds}s section`);
 
     // NOTE: Video reset handled in playback useEffect below (lines 48, 78)
     // Don't call video.load() here - causes infinite loop!
@@ -424,6 +472,86 @@ export const MovementDisplay = memo(function MovementDisplay({ item, isPaused = 
       }
     };
   }, [item, isPaused]);
+
+  // NEW: Section timing-based fade out (more reliable than video end event)
+  useEffect(() => {
+    if (isPaused) return; // Don't run timer when paused
+    if (!item.duration_seconds) return; // No duration, can't time fade
+
+    const sectionDuration = item.duration_seconds * 1000; // Convert to ms
+
+    // Only apply timing-based fade if we have a video
+    const hasVideo = (item.type === 'movement' ||
+                     item.type === 'preparation' ||
+                     item.type === 'warmup' ||
+                     item.type === 'cooldown' ||
+                     item.type === 'meditation' ||
+                     item.type === 'homecare') &&
+                    'video_url' in item && item.video_url;
+
+    if (!hasVideo) {
+      console.log('🎥 INFO: No video for this section, skipping timing-based fade');
+      return;
+    }
+
+    const checkTimer = setInterval(() => {
+      const elapsed = Date.now() - sectionStartTimeRef.current;
+      const remaining = sectionDuration - elapsed;
+
+      // Log every 5 seconds for debugging
+      if (Math.floor(elapsed / 1000) % 5 === 0) {
+        console.log(`🎥 ⏱️ TIMER: ${Math.floor(elapsed / 1000)}s elapsed, ${Math.floor(remaining / 1000)}s remaining`);
+      }
+
+      // Start fade 4 seconds before section ends
+      if (remaining <= 4000 && remaining > 3900 && !fadeOutTimeoutRef.current) {
+        console.log('🎥 🎬 SECTION-BASED FADE: Starting fade sequence (4s before section end)');
+
+        // FIX: Exit fullscreen FIRST if we're in it (so fade is visible)
+        if (isFullscreen) {
+          console.log('🎥 🎬 EXITING FULLSCREEN before fade (for visibility)');
+          const exitFullscreen = async () => {
+            try {
+              if (document.exitFullscreen) {
+                await document.exitFullscreen();
+              } else if ((document as any).webkitExitFullscreen) {
+                await (document as any).webkitExitFullscreen();
+              } else if ((document as any).mozCancelFullScreen) {
+                await (document as any).mozCancelFullScreen();
+              } else if ((document as any).msExitFullscreen) {
+                await (document as any).msExitFullscreen();
+              }
+              // Wait for fullscreen exit animation
+              await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (err) {
+              console.error('🎥 Failed to exit fullscreen for fade:', err);
+            }
+          };
+
+          // Exit fullscreen, then apply fade after delay
+          exitFullscreen().then(() => {
+            // Now set timeout for fade (wait 2.5s more, then fade)
+            fadeOutTimeoutRef.current = setTimeout(() => {
+              console.log('🎥 🎬 SECTION-BASED FADE: Applying fade-out now (after fullscreen exit)');
+              setVideoEnded(true);
+              fadeOutTimeoutRef.current = null;
+            }, 2500);
+          });
+        } else {
+          // Not in fullscreen, apply fade normally
+          fadeOutTimeoutRef.current = setTimeout(() => {
+            console.log('🎥 🎬 SECTION-BASED FADE: Applying fade-out now');
+            setVideoEnded(true);
+            fadeOutTimeoutRef.current = null;
+          }, 3000);
+        }
+      }
+    }, 100); // Check every 100ms for precision
+
+    return () => {
+      clearInterval(checkTimer);
+    };
+  }, [item, isPaused, isFullscreen]);
 
   // Handle different section types
   if (item.type === 'transition') {

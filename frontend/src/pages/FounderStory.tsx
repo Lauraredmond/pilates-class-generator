@@ -1,3 +1,5 @@
+import { APP_VERSION } from '../utils/version';
+
 export function FounderStory() {
   return (
     <div className="max-w-5xl mx-auto">
@@ -42,9 +44,9 @@ export function FounderStory() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-            I created this two step fitness app to help people discover the reward and accessibility of fitness. 
-            By combining human support, dynamic exercise planning, and music as an enhancer, the platform is built to make fitness more enjoyable 
-            — and ultimately, more sustainable.
+            I created this two step fitness app to help people discover the reward and accessibility of fitness.
+            By combining human support, dynamic exercise planning, and music as an enhancer, the platform is built to make fitness more enjoyable
+            – and ultimately, more sustainable.
             </p>
             <p>
             I have known too many who've discovered powerfully rewarding exercise regimes which they could have known earlier. 
@@ -61,16 +63,16 @@ export function FounderStory() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-            When I was in school, I used to feel incredibly nervous on physical education (PE) days. Everyone in my class was really sporty — but I just wasn't. It wasn't something I could laugh off either. It was excruciatingly embarrassing for me, and I dreaded those days. Because sports were the only fitness channel offered in school, I gave up on all forms of exercise as soon as I left at 18.
+            When I was in school, I used to feel incredibly nervous on physical education (PE) days. Everyone in my class was really sporty – but I just wasn't. It wasn't something I could laugh off either. It was excruciatingly embarrassing for me, and I dreaded those days. Because sports were the only fitness channel offered in school, I gave up on all forms of exercise as soon as I left at 18.
             </p>
             <p>
-            Cut to age 19, when I had a rude awakening — I realised my fitness was starting to dwindle. I decided to do the unthinkable and join an institution I felt I had no business being in: I signed up for the college gym and tried a cardio class.
+            Cut to age 19, when I had a rude awakening – I realised my fitness was starting to dwindle. I decided to do the unthinkable and join an institution I felt I had no business being in: I signed up for the college gym and tried a cardio class.
             </p>
             <p>
             Over the weeks that followed, I fell in love with the fitness formats the gym had to offer. That step I took at 19 changed my life and laid the path for a lifelong love affair with exercise. I only wish I had discovered alternative methods earlier.
             </p>
             <p>
-            It's for that reason I want to help others experience the transformative effects of exercise and movement — and discover that there's more than one way to fall in love with fitness.
+            It's for that reason I want to help others experience the transformative effects of exercise and movement – and discover that there's more than one way to fall in love with fitness.
             </p>
           </div>
         </section>
@@ -128,7 +130,7 @@ export function FounderStory() {
               Founder, Bassline Pilates
             </p>
             <p className="text-cream/40 text-sm mt-4">
-              Version 1.888
+              Version {APP_VERSION}
             </p>
           </div>
         </section>
