@@ -79,9 +79,9 @@ git push origin main --force
 ---
 
 **Core Architecture:**
-- FastAPI backend with AI agents
-- React frontend (pixel-perfect copy of existing MVP)
-- Supabase PostgreSQL database
+- FastAPI backend with AI agents (hosted on Render.com - $9/month paid tier)
+- React frontend (pixel-perfect copy of existing MVP) (hosted on Netlify - $9/month Personal plan)
+- Supabase PostgreSQL database (free tier)
 - MCP Playwright server for web research
 - **Jentic StandardAgent + Arazzo Engine** (integrated from GitHub)
 - Four specialized AI agents (sequence, music, meditation, research)
@@ -114,6 +114,26 @@ git push origin main --force
 - **Month 1 (January):** Monitor build minutes weekly in Netlify dashboard
 - **If hit 800 minutes by day 20:** Upgrade to Pro immediately
 - **Month 2-3:** If usage consistently <700 min → Stay on Personal; if >900 min → Upgrade to Pro
+
+---
+
+## ✅ COMPLETED: Render Backend - Paid Tier (February 2, 2026) ✅
+
+**Status:** COMPLETED - User on Render.com Paid Tier ($9/month)
+
+**Context:** Backend services hosted on Render.com paid tier for production reliability
+
+**Benefits of Paid Tier:**
+- No sleep/spin-down delays (always-on service)
+- Better performance and reliability for beta testers
+- Priority support
+- More generous resource limits
+
+**Total Monthly Infrastructure Costs:**
+- Frontend (Netlify Personal): $9/month
+- Backend (Render Paid): $9/month
+- Database (Supabase): $0 (free tier)
+- **Total: $18/month**
 
 ---
 
@@ -1612,7 +1632,9 @@ git checkout a53672e -- frontend/src/components/class-builder/ai-generation/Gene
    - **Environments:**
      - **Dev:** `dev` branch → https://bassline-dev.netlify.app + https://pilates-dev-i0jb.onrender.com
      - **Production/QA:** `main` branch → https://basslinemvp.netlify.app + https://pilates-class-generator-api3.onrender.com
-   - **Cost:** $0/month (dev uses free tiers)
+   - **Cost:**
+     - Dev environment: $0/month (uses Render free tier)
+     - Production environment: $9/month (uses Render paid tier for better performance)
    - **Workflow Verified:**
      1. Make changes in `dev` branch → auto-deploys to dev
      2. Test fixes safely in dev environment
