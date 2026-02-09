@@ -101,7 +101,7 @@ export function Analytics() {
         musicGenreDistResponse, // Music genre distribution
         durationDistResponse, // Class duration distribution
       ] = await Promise.all([
-        analyticsApi.getSummary(user.id),
+        analyticsApi.getSummary(user.id, timePeriod),
         analyticsApi.getMovementHistory(user.id, timePeriod),
         analyticsApi.getMuscleGroupHistory(user.id, timePeriod),
         analyticsApi.getPracticeFrequency(user.id, timePeriod),

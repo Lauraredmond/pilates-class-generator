@@ -96,7 +96,8 @@ export const classPlansApi = {
 };
 
 export const analyticsApi = {
-  getSummary: (userId: string) => api.get(`/api/analytics/summary/${userId}`),
+  getSummary: (userId: string, period?: string) =>
+    api.get(`/api/analytics/summary/${userId}`, { params: { period } }),
   getMovementHistory: (userId: string, period?: string) =>
     api.get(`/api/analytics/movement-history/${userId}`, { params: { period } }),
   getMuscleGroupHistory: (userId: string, period?: string) =>
