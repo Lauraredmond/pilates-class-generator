@@ -568,18 +568,18 @@ export function Analytics() {
   const classDurationDistributionChartData = classDurationDistribution
     ? {
         labels: classDurationDistribution.period_labels,
-        datasets: classDurationDistribution.durations.map((duration: number, idx: number) => ({
-          label: `${duration} min`,
-          data: classDurationDistribution.duration_counts[String(duration)],
-          backgroundColor: [
-            '#cd8b76',  // 12 min - Terracotta (lightest)
-            '#b8927d',  // 30 min - Medium beige
-            '#8b2635',  // 45 min - Primary burgundy
-            '#5c1a26',  // 60 min - Dark burgundy
-            '#3d1118',  // 75 min - Very dark burgundy
-            '#2a0d12',  // 90 min - Deepest burgundy (darkest)
-          ][idx % 6],
-        })),
+        datasets: classDurationDistribution.durations
+          .filter((duration: number) => duration !== 75 && duration !== 90)  // Remove 75 and 90 min
+          .map((duration: number, idx: number) => ({
+            label: duration === 12 ? '10 min' : `${duration} min`,  // Map 12 to 10 in label
+            data: classDurationDistribution.duration_counts[String(duration)],
+            backgroundColor: [
+              '#cd8b76',  // 10 min - Terracotta (lightest)
+              '#b8927d',  // 30 min - Medium beige
+              '#8b2635',  // 45 min - Primary burgundy
+              '#5c1a26',  // 60 min - Dark burgundy
+            ][idx % 4],
+          })),
       }
     : null;
 
