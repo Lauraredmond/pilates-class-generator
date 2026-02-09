@@ -894,7 +894,7 @@ export function Analytics() {
                 )
               </span>
               <span className="text-sm font-normal italic text-cream/60">
-                Muscle group activation count
+                Muscle group activation count across sessions
               </span>
             </div>
           </CardTitle>
