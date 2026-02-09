@@ -814,12 +814,19 @@ export function Analytics() {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>
-            Movement History (
-            {timePeriod === 'day' && 'Daily'}
-            {timePeriod === 'week' && 'Weekly'}
-            {timePeriod === 'month' && 'Monthly'}
-            {timePeriod === 'total' && 'All Time'}
-            )
+            <div className="flex flex-col gap-1">
+              <span>
+                Movement History (
+                {timePeriod === 'day' && 'Daily'}
+                {timePeriod === 'week' && 'Weekly'}
+                {timePeriod === 'month' && 'Monthly'}
+                {timePeriod === 'total' && 'All Time'}
+                )
+              </span>
+              <span className="text-sm font-normal italic text-cream/60">
+                Movement coverage count across sessions
+              </span>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardBody className="p-6">
@@ -877,12 +884,19 @@ export function Analytics() {
       <Card>
         <CardHeader>
           <CardTitle>
-            Muscle Group History (
-            {timePeriod === 'day' && 'Daily'}
-            {timePeriod === 'week' && 'Weekly'}
-            {timePeriod === 'month' && 'Monthly'}
-            {timePeriod === 'total' && 'All Time'}
-            )
+            <div className="flex flex-col gap-1">
+              <span>
+                Muscle Group History (
+                {timePeriod === 'day' && 'Daily'}
+                {timePeriod === 'week' && 'Weekly'}
+                {timePeriod === 'month' && 'Monthly'}
+                {timePeriod === 'total' && 'All Time'}
+                )
+              </span>
+              <span className="text-sm font-normal italic text-cream/60">
+                Muscle group activation count
+              </span>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardBody className="p-6">
