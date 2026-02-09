@@ -218,13 +218,21 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
         <div>
           <label className="block text-sm font-semibold text-cream mb-2">
             Cool Down Music
+            {formData.duration === 10 && (
+              <span className="text-xs text-cream/40 ml-2">(Not applicable for 10-min quick practice)</span>
+            )}
           </label>
           <select
             value={formData.coolDownMusicStyle}
             onChange={(e) =>
               setFormData({ ...formData, coolDownMusicStyle: e.target.value })
             }
-            className="w-full h-12 px-4 bg-burgundy-dark border border-cream/30 rounded-lg text-cream focus:border-cream/60 focus:outline-none transition-smooth"
+            disabled={formData.duration === 10}
+            className={`w-full h-12 px-4 border rounded-lg transition-smooth ${
+              formData.duration === 10
+                ? 'bg-burgundy-dark/50 border-cream/10 text-cream/30 cursor-not-allowed'
+                : 'bg-burgundy-dark border-cream/30 text-cream focus:border-cream/60 focus:outline-none'
+            }`}
           >
             {COOLDOWN_MUSIC_STYLES.map((style) => (
               <option key={style.value} value={style.value}>
@@ -232,6 +240,11 @@ export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGe
               </option>
             ))}
           </select>
+          {formData.duration === 10 && (
+            <p className="text-xs text-cream/50 mt-2 italic">
+              10-minute quick practice has no cooldown sections
+            </p>
+          )}
         </div>
       </div>
 
