@@ -1946,17 +1946,21 @@ async def get_music_genre_distribution(
 
         classes = classes_response.data or []
 
-        # Count total usage per genre (count each class only once)
-        # Use music_genre as the primary music selection for the class
+        # Count total usage per genre
+        # For 10-min classes: Only music_genre is set (no cooldown)
+        # For 30/60-min classes: BOTH music_genre AND cooldown_music_genre are set
         for class_item in classes:
             movement_music = class_item.get('music_genre')
+            cooldown_music = class_item.get('cooldown_music_genre')
 
-            # Count only the primary music genre (movement music)
-            # This ensures each class is counted exactly once
+            # Count movement music (sections 1-3: prep, warmup, movements)
             if movement_music and movement_music in genre_counts:
                 genre_counts[movement_music] += 1
 
-            # Note: We don't count cooldown_music_genre separately anymore
+            # Count cooldown music (sections 4-6: cooldown, meditation, homecare)
+            # This is only set for 30/60-min classes (NULL for 10-min quick practice)
+            if cooldown_music and cooldown_music in genre_counts:
+                genre_counts[cooldown_music] += 1
             # to avoid double-counting classes that have both fields
 
         # Sort ALL genres by count (descending) - include genres with 0 count
