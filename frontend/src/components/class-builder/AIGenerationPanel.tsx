@@ -291,6 +291,8 @@ export function AIGenerationPanel() {
         movements_snapshot: results.sequence.movements,  // Full sequence (movements + transitions)
         muscle_balance: results.sequence.muscle_balance,
         class_name: 'Automatically Generated Class',
+        music_genre: lastFormData.movementMusicStyle,  // Add music genre for analytics
+        cooldown_music_genre: lastFormData.coolDownMusicStyle,  // Add cooldown music for analytics
       });
 
       logger.debug('[AIGenerationPanel] Class saved to database', {

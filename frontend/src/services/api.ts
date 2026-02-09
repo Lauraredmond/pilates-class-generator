@@ -92,6 +92,8 @@ export const classPlansApi = {
     movements_snapshot: any[];
     muscle_balance: any;
     class_name?: string;
+    music_genre?: string;  // Analytics: Movement music (sections 1-3)
+    cooldown_music_genre?: string;  // Analytics: Cooldown music (sections 4-6)
   }) => api.post('/api/classes/save-completed', data),
 };
 

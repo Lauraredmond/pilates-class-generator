@@ -994,6 +994,30 @@ async def generate_class(request: ClassGenerationRequest):
 # SAVE COMPLETED CLASS - Session 13: Movement Variety
 # ==============================================================================
 
+def normalize_music_genre(frontend_value: str) -> str:
+    """
+    Normalize music genre from frontend format to analytics format
+
+    Frontend sends: UPPERCASE with underscores (e.g., "IMPRESSIONIST", "CELTIC_TRADITIONAL")
+    Analytics expects: Title case with spaces (e.g., "Impressionist", "Celtic Traditional")
+    """
+    if not frontend_value:
+        return None
+
+    # Mapping from frontend values to analytics values
+    genre_mapping = {
+        'BAROQUE': 'Baroque',
+        'CLASSICAL': 'Classical',
+        'ROMANTIC': 'Romantic',
+        'IMPRESSIONIST': 'Impressionist',
+        'MODERN': 'Modern',
+        'CONTEMPORARY': 'Contemporary/Postmodern',
+        'CELTIC_TRADITIONAL': 'Celtic Traditional',
+    }
+
+    return genre_mapping.get(frontend_value, frontend_value.title())
+
+
 class SaveCompletedClassRequest(BaseModel):
     """Request to save a completed class to database"""
     user_id: str
@@ -1002,6 +1026,8 @@ class SaveCompletedClassRequest(BaseModel):
     movements_snapshot: List[dict]  # Full sequence with movements + transitions
     muscle_balance: dict
     class_name: Optional[str] = "Automatically Generated Class"
+    music_genre: Optional[str] = None  # Analytics: Movement music (sections 1-3)
+    cooldown_music_genre: Optional[str] = None  # Analytics: Cooldown music (sections 4-6)
 
 
 class SaveCompletedClassResponse(BaseModel):
@@ -1117,9 +1143,29 @@ async def save_completed_class(request: SaveCompletedClassRequest):
             .limit(1) \
             .execute()
 
+        # Normalize music genres for analytics
+        normalized_music_genre = normalize_music_genre(request.music_genre) if request.music_genre else None
+        normalized_cooldown_genre = normalize_music_genre(request.cooldown_music_genre) if request.cooldown_music_genre else None
+
+        if normalized_music_genre:
+            logger.info(f"Movement music genre: {request.music_genre} → {normalized_music_genre}")
+        if normalized_cooldown_genre:
+            logger.info(f"Cooldown music genre: {request.cooldown_music_genre} → {normalized_cooldown_genre}")
+
         if existing_history.data:
             class_history_id = existing_history.data[0]['id']
             logger.info(f"✅ Found existing class_history record (ID: {class_history_id})")
+
+            # UPDATE existing record with music genres (they were generated but not saved)
+            if normalized_music_genre or normalized_cooldown_genre:
+                update_data = {}
+                if normalized_music_genre:
+                    update_data['music_genre'] = normalized_music_genre
+                if normalized_cooldown_genre:
+                    update_data['cooldown_music_genre'] = normalized_cooldown_genre
+
+                supabase.table('class_history').update(update_data).eq('id', class_history_id).execute()
+                logger.info(f"✅ Updated class_history with music genres: {update_data}")
         else:
             # Fallback: If no existing record found (shouldn't happen), create one
             logger.warning(f"⚠️ No existing class_history found - creating new one (this shouldn't happen)")
@@ -1134,6 +1180,8 @@ async def save_completed_class(request: SaveCompletedClassRequest):
                 'difficulty_rating': None,
                 'muscle_groups_targeted': unique_muscle_groups,
                 'total_movements_taught': len(movements_only),
+                'music_genre': normalized_music_genre,  # Save music genres
+                'cooldown_music_genre': normalized_cooldown_genre,
                 'created_at': now.isoformat()
             }
             history_response = supabase.table('class_history').insert(class_history_entry).execute()
