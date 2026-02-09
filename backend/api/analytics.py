@@ -351,16 +351,38 @@ def _get_date_ranges(period: TimePeriod) -> tuple[List[tuple[date, date]], List[
 
 # Endpoints
 @router.get("/summary/{user_id}", response_model=UserAnalyticsSummary)
-async def get_user_analytics_summary(user_id: str):
-    """Get summary analytics for a user"""
+async def get_user_analytics_summary(
+    user_id: str,
+    period: Optional[TimePeriod] = Query(default=None, description="Time period filter")
+):
+    """Get summary analytics for a user with optional time period filtering"""
     try:
         user_uuid = _convert_to_uuid(user_id)
 
-        response = supabase.table('class_history') \
+        # Start with base query
+        query = supabase.table('class_history') \
             .select('*') \
-            .eq('user_id', user_uuid) \
-            .order('taught_date', desc=True) \
-            .execute()
+            .eq('user_id', user_uuid)
+
+        # Apply period filter if specified
+        if period and period != TimePeriod.TOTAL:
+            today = date.today()
+            if period == TimePeriod.DAY:
+                # Show week when filtering by day
+                start_date = today - timedelta(days=7)
+            elif period == TimePeriod.WEEK:
+                # Show month when filtering by week
+                start_date = today - timedelta(days=30)
+            elif period == TimePeriod.MONTH:
+                # Show year when filtering by month
+                start_date = today - timedelta(days=365)
+            else:
+                start_date = None
+
+            if start_date:
+                query = query.gte('taught_date', start_date.isoformat())
+
+        response = query.order('taught_date', desc=True).execute()
 
         classes = response.data or []
         total_classes = len(classes)
@@ -1924,18 +1946,18 @@ async def get_music_genre_distribution(
 
         classes = classes_response.data or []
 
-        # Count total usage per genre (count BOTH movement and cooldown music)
+        # Count total usage per genre (count each class only once)
+        # Use music_genre as the primary music selection for the class
         for class_item in classes:
             movement_music = class_item.get('music_genre')
-            cooldown_music = class_item.get('cooldown_music_genre')
 
-            # Count movement music genre
+            # Count only the primary music genre (movement music)
+            # This ensures each class is counted exactly once
             if movement_music and movement_music in genre_counts:
                 genre_counts[movement_music] += 1
 
-            # Count cooldown music genre (separate count - 2 selections per class)
-            if cooldown_music and cooldown_music in genre_counts:
-                genre_counts[cooldown_music] += 1
+            # Note: We don't count cooldown_music_genre separately anymore
+            # to avoid double-counting classes that have both fields
 
         # Sort ALL genres by count (descending) - include genres with 0 count
         sorted_genres = sorted(
