@@ -1938,9 +1938,9 @@ async def get_music_genre_distribution(
         genre_counts = {genre: 0 for genre in all_genres}
 
         # Fetch ALL class history (no date filter - total usage)
-        # Select BOTH music_genre (movements) and cooldown_music_genre (cooldown)
+        # Select music genres AND duration to filter out cooldown for 10-min classes
         classes_response = supabase.table('class_history') \
-            .select('music_genre, cooldown_music_genre') \
+            .select('music_genre, cooldown_music_genre, actual_duration_minutes') \
             .eq('user_id', user_uuid) \
             .execute()
 
@@ -1952,16 +1952,16 @@ async def get_music_genre_distribution(
         for class_item in classes:
             movement_music = class_item.get('music_genre')
             cooldown_music = class_item.get('cooldown_music_genre')
+            duration = class_item.get('actual_duration_minutes', 0)
 
             # Count movement music (sections 1-3: prep, warmup, movements)
             if movement_music and movement_music in genre_counts:
                 genre_counts[movement_music] += 1
 
             # Count cooldown music (sections 4-6: cooldown, meditation, homecare)
-            # This is only set for 30/60-min classes (NULL for 10-min quick practice)
-            if cooldown_music and cooldown_music in genre_counts:
+            # ONLY count for classes > 10 minutes (10-min quick practice has no cooldown)
+            if cooldown_music and cooldown_music in genre_counts and duration > 10:
                 genre_counts[cooldown_music] += 1
-            # to avoid double-counting classes that have both fields
 
         # Sort ALL genres by count (descending) - include genres with 0 count
         sorted_genres = sorted(
