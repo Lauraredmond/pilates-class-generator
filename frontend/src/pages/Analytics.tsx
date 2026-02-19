@@ -646,12 +646,11 @@ export function Analytics() {
                 </svg>
               </div>
             </div>
-            {timePeriod !== 'total' && (
+            {timePeriod !== 'total' && timePeriod !== 'day' && (
               <p className="text-cream/50 text-xs mt-3">
                 +{stats.classesThisWeek}{' '}
-                {timePeriod === 'day' && 'this week'}
                 {timePeriod === 'week' && 'this month'}
-                {timePeriod === 'month' && 'this year'}
+                {timePeriod === 'month' && 'in last 7 days'}
               </p>
             )}
           </CardBody>
