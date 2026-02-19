@@ -391,22 +391,22 @@ async def get_user_analytics_summary(
         top_movements_data = await _get_top_movements_with_coverage(user_id)
 
         # Calculate comparison period count based on selected filter
-        # By Day → classes this week, By Week → classes this month, By Month → classes this year
+        # By Day → no comparison (redundant with 7-day view), By Week → this month, By Month → last 7 days
         today = date.today()
         classes_this_week = 0
 
         if period and period != TimePeriod.TOTAL:
+            comparison_start = None
+
             if period == TimePeriod.DAY:
-                # Show classes this week
-                comparison_start = today - timedelta(days=today.weekday())
+                # No comparison needed - already showing 7 days
+                comparison_start = None
             elif period == TimePeriod.WEEK:
                 # Show classes this month
                 comparison_start = today.replace(day=1)
             elif period == TimePeriod.MONTH:
-                # Show classes this year
-                comparison_start = today.replace(month=1, day=1)
-            else:
-                comparison_start = None
+                # Show classes in last 7 days (recent activity indicator)
+                comparison_start = today - timedelta(days=6)  # Last 7 days including today
 
             if comparison_start and classes:
                 for c in classes:
