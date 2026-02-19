@@ -183,6 +183,12 @@ export function Analytics() {
         beginAtZero: true,
         ticks: { color: '#f5f1e8' },
         grid: { color: 'rgba(245, 241, 232, 0.1)' },
+        title: {
+          display: true,
+          text: 'Number of Classes',
+          color: '#f5f1e8',
+          font: { size: 12 }
+        }
       },
       x: {
         ticks: { color: '#f5f1e8' },

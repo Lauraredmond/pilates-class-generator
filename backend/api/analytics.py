@@ -359,28 +359,20 @@ async def get_user_analytics_summary(
     try:
         user_uuid = _convert_to_uuid(user_id)
 
-        # Start with base query
+        # Use the same date ranges as the charts for consistency
+        # Get date ranges matching what the charts display
+        date_ranges, _ = _get_date_ranges(period if period else TimePeriod.TOTAL)
+
+        # Get the earliest date from the ranges
+        earliest_date = date_ranges[0][0]
+        latest_date = date_ranges[-1][1]
+
+        # Query with date range filter
         query = supabase.table('class_history') \
             .select('*') \
-            .eq('user_id', user_uuid)
-
-        # Apply period filter if specified
-        if period and period != TimePeriod.TOTAL:
-            today = date.today()
-            if period == TimePeriod.DAY:
-                # Show week when filtering by day
-                start_date = today - timedelta(days=7)
-            elif period == TimePeriod.WEEK:
-                # Show month when filtering by week
-                start_date = today - timedelta(days=30)
-            elif period == TimePeriod.MONTH:
-                # Show year when filtering by month
-                start_date = today - timedelta(days=365)
-            else:
-                start_date = None
-
-            if start_date:
-                query = query.gte('taught_date', start_date.isoformat())
+            .eq('user_id', user_uuid) \
+            .gte('taught_date', earliest_date.isoformat()) \
+            .lte('taught_date', latest_date.isoformat())
 
         response = query.order('taught_date', desc=True).execute()
 
