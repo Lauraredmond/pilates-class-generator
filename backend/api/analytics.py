@@ -390,21 +390,35 @@ async def get_user_analytics_summary(
         # Get top 3 movements with coverage percentage
         top_movements_data = await _get_top_movements_with_coverage(user_id)
 
-        # Classes this week
+        # Calculate comparison period count based on selected filter
+        # By Day → classes this week, By Week → classes this month, By Month → classes this year
         today = date.today()
-        week_start = today - timedelta(days=today.weekday())
         classes_this_week = 0
-        if classes:
-            for c in classes:
-                taught_date_str = c.get('taught_date')
-                if taught_date_str:
-                    try:
-                        class_date = datetime.fromisoformat(taught_date_str).date()
-                        if class_date >= week_start:
-                            classes_this_week += 1
-                    except (ValueError, TypeError):
-                        logger.warning(f"Invalid taught_date format: {taught_date_str}")
-                        continue
+
+        if period and period != TimePeriod.TOTAL:
+            if period == TimePeriod.DAY:
+                # Show classes this week
+                comparison_start = today - timedelta(days=today.weekday())
+            elif period == TimePeriod.WEEK:
+                # Show classes this month
+                comparison_start = today.replace(day=1)
+            elif period == TimePeriod.MONTH:
+                # Show classes this year
+                comparison_start = today.replace(month=1, day=1)
+            else:
+                comparison_start = None
+
+            if comparison_start and classes:
+                for c in classes:
+                    taught_date_str = c.get('taught_date')
+                    if taught_date_str:
+                        try:
+                            class_date = datetime.fromisoformat(taught_date_str).date()
+                            if class_date >= comparison_start:
+                                classes_this_week += 1
+                        except (ValueError, TypeError):
+                            logger.warning(f"Invalid taught_date format: {taught_date_str}")
+                            continue
 
         return UserAnalyticsSummary(
             total_classes=total_classes,
