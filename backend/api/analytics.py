@@ -664,12 +664,14 @@ async def get_practice_frequency(
         # Initialize counts
         class_counts = [0] * len(date_ranges)
 
-        # Fetch class history
+        # Fetch class history with exact date range matching summary endpoint
         earliest_date = date_ranges[0][0]
+        latest_date = date_ranges[-1][1]
         classes_response = supabase.table('class_history') \
             .select('taught_date') \
             .eq('user_id', user_uuid) \
             .gte('taught_date', earliest_date.isoformat()) \
+            .lte('taught_date', latest_date.isoformat()) \
             .execute()
 
         classes = classes_response.data or []
@@ -2057,12 +2059,14 @@ async def get_class_duration_distribution(
         # Use string keys for JSON serialization
         duration_counts = {str(duration): [0] * len(date_ranges) for duration in standard_durations}
 
-        # Fetch class history
+        # Fetch class history with exact date range matching summary endpoint
         earliest_date = date_ranges[0][0]
+        latest_date = date_ranges[-1][1]
         classes_response = supabase.table('class_history') \
             .select('taught_date, actual_duration_minutes') \
             .eq('user_id', user_uuid) \
             .gte('taught_date', earliest_date.isoformat()) \
+            .lte('taught_date', latest_date.isoformat()) \
             .execute()
 
         classes = classes_response.data or []
