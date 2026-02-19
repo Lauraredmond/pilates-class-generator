@@ -639,7 +639,14 @@ export function Analytics() {
                 </svg>
               </div>
             </div>
-            <p className="text-cream/50 text-xs mt-3">+{stats.classesThisWeek} this week</p>
+            {timePeriod !== 'total' && (
+              <p className="text-cream/50 text-xs mt-3">
+                +{stats.classesThisWeek}{' '}
+                {timePeriod === 'day' && 'this week'}
+                {timePeriod === 'week' && 'this month'}
+                {timePeriod === 'month' && 'this year'}
+              </p>
+            )}
           </CardBody>
         </Card>
 
