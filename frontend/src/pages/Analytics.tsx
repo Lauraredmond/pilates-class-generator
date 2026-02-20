@@ -651,9 +651,10 @@ export function Analytics() {
                 </svg>
               </div>
             </div>
-            {timePeriod !== 'total' && timePeriod !== 'day' && (
+            {timePeriod !== 'total' && (
               <p className="text-cream/50 text-xs mt-3">
                 {stats.classesThisWeek >= 0 ? '+' : ''}{stats.classesThisWeek}{' '}
+                {timePeriod === 'day' && 'classes this week'}
                 {timePeriod === 'week' && 'classes this week'}
                 {timePeriod === 'month' && 'classes this month'}
               </p>
