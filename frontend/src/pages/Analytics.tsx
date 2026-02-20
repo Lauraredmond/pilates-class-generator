@@ -181,7 +181,14 @@ export function Analytics() {
     scales: {
       y: {
         beginAtZero: true,
-        ticks: { color: '#f5f1e8' },
+        ticks: {
+          color: '#f5f1e8',
+          stepSize: 1,
+          callback: function(value: any) {
+            // Only show integer labels on y-axis
+            return Number.isInteger(value) ? value : null;
+          }
+        },
         grid: { color: 'rgba(245, 241, 232, 0.1)' },
         title: {
           display: true,
