@@ -637,7 +637,12 @@ export function Analytics() {
           <CardBody className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-cream/60 text-sm font-medium">Total Classes</p>
+                <p className="text-cream/60 text-sm font-medium">
+                  {timePeriod === 'day' && 'Total classes this week'}
+                  {timePeriod === 'week' && 'Total classes this month'}
+                  {timePeriod === 'month' && 'Total classes this year'}
+                  {timePeriod === 'total' && 'Total classes completed overall'}
+                </p>
                 <p className="text-4xl font-bold text-cream mt-2">{stats.totalClasses}</p>
               </div>
               <div className="h-16 w-16 rounded-full bg-burgundy/30 flex items-center justify-center">
