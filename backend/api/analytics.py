@@ -391,34 +391,43 @@ async def get_user_analytics_summary(
         top_movements_data = await _get_top_movements_with_coverage(user_id)
 
         # Calculate comparison period count based on selected filter
-        # By Day → no comparison (redundant with 7-day view), By Week → this month, By Month → last 7 days
-        today = date.today()
+        # By Day → no comparison, By Week → last week vs previous week, By Month → last month vs previous month
         classes_this_week = 0
 
-        if period and period != TimePeriod.TOTAL:
-            comparison_start = None
+        if period and period != TimePeriod.TOTAL and period != TimePeriod.DAY:
+            # Get the last two periods for comparison
+            # For Week: compare most recent week to the week before
+            # For Month: compare most recent month to the month before
 
-            if period == TimePeriod.DAY:
-                # No comparison needed - already showing 7 days
-                comparison_start = None
-            elif period == TimePeriod.WEEK:
-                # Show classes this month
-                comparison_start = today.replace(day=1)
-            elif period == TimePeriod.MONTH:
-                # Show classes in last 7 days (recent activity indicator)
-                comparison_start = today - timedelta(days=6)  # Last 7 days including today
+            if len(date_ranges) >= 2:
+                # Most recent period (last in the ranges)
+                current_period_start, current_period_end = date_ranges[-1]
+                # Previous period (second to last)
+                previous_period_start, previous_period_end = date_ranges[-2]
 
-            if comparison_start and classes:
+                current_period_count = 0
+                previous_period_count = 0
+
                 for c in classes:
                     taught_date_str = c.get('taught_date')
                     if taught_date_str:
                         try:
                             class_date = datetime.fromisoformat(taught_date_str).date()
-                            if class_date >= comparison_start:
-                                classes_this_week += 1
+
+                            # Count classes in current period
+                            if current_period_start <= class_date <= current_period_end:
+                                current_period_count += 1
+
+                            # Count classes in previous period
+                            if previous_period_start <= class_date <= previous_period_end:
+                                previous_period_count += 1
+
                         except (ValueError, TypeError):
                             logger.warning(f"Invalid taught_date format: {taught_date_str}")
                             continue
+
+                # Calculate difference (can be positive or negative)
+                classes_this_week = current_period_count - previous_period_count
 
         return UserAnalyticsSummary(
             total_classes=total_classes,

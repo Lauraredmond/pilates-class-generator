@@ -648,9 +648,9 @@ export function Analytics() {
             </div>
             {timePeriod !== 'total' && timePeriod !== 'day' && (
               <p className="text-cream/50 text-xs mt-3">
-                +{stats.classesThisWeek}{' '}
-                {timePeriod === 'week' && 'this month'}
-                {timePeriod === 'month' && 'in last 7 days'}
+                {stats.classesThisWeek >= 0 ? '+' : ''}{stats.classesThisWeek}{' '}
+                {timePeriod === 'week' && 'classes this week'}
+                {timePeriod === 'month' && 'classes this month'}
               </p>
             )}
           </CardBody>
