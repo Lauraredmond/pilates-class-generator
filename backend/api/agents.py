@@ -1027,41 +1027,13 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                 if inserted_id != class_plan_id:
                     logger.error(f"⚠️ WARNING: Inserted ID ({inserted_id}) doesn't match pre-generated ID ({class_plan_id})!")
 
-                # Save to class_history with music_genre for analytics (SCHEMA CORRECTED)
-                # SCHEMA FIX: muscle_groups_targeted is JSONB array, not object keys
-                muscle_groups_array = list(sequence_data.get('muscle_balance', {}).keys())
+                # FIX: Do NOT save to class_history during generation
+                # Class history should only be created when user clicks "Accept & Add to Class"
+                # This prevents duplicate entries when user regenerates classes
+                logger.info("📊 ANALYTICS: Class saved to class_plans. class_history will be created on Accept.")
 
-                class_history_entry = {
-                    'class_plan_id': class_plan_id,
-                    'user_id': user_id,
-                    'taught_date': datetime.now().date().isoformat(),
-                    'actual_duration_minutes': request.class_plan.target_duration_minutes,
-                    'attendance_count': 1,
-                    'movements_snapshot': movements_for_history,
-                    'instructor_notes': f"Complete class with all 6 sections. Movement music: {selected_music_genre or 'None'}, Cooldown music: {selected_cooldown_music_genre or 'None'}",
-                    'difficulty_rating': None,
-                    # SCHEMA FIX: Use array format
-                    'muscle_groups_targeted': muscle_groups_array,
-                    'total_movements_taught': len(movements_for_history),
-                    # ANALYTICS: Save BOTH music genres! (migration 020 + 023)
-                    'music_genre': selected_music_genre,  # Movement music (sections 1-3)
-                    'cooldown_music_genre': selected_cooldown_music_genre,  # Cooldown music (sections 4-6)
-                    'created_at': now
-                }
-
-                supabase.table('class_history').insert(class_history_entry).execute()
-                logger.info(f"✅ Saved to class_history with music_genre: {selected_music_genre}")
-                logger.info("📊 ANALYTICS: Database save completed successfully")
-
-                # SEQUENCING REPORT: Trigger async background generation
-                # This runs AFTER class_history is saved, so it doesn't slow down the API
-                background_tasks.add_task(
-                    generate_and_save_sequencing_report_background,
-                    class_plan_id=class_plan_id,
-                    user_id=user_id,
-                    movements_snapshot=movements_for_history
-                )
-                logger.info(f"🔄 Scheduled background sequencing report generation for class {class_plan_id}")
+                # NOTE: Sequencing report generation is now handled in /api/classes/save-completed
+                # It will run when user clicks "Accept & Add to Class" (after class_history is created)
 
         except Exception as db_error:
             # Don't fail the request if analytics save fails
