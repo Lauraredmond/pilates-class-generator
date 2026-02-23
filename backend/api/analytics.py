@@ -321,7 +321,15 @@ def _get_date_ranges(period: TimePeriod) -> tuple[List[tuple[date, date]], List[
             week_end = today - timedelta(days=i * 7)
             week_start = week_end - timedelta(days=6)
             ranges.append((week_start, week_end))
-            labels.append(f"Week {4-i}")
+
+            # Format as date ranges (e.g., "Feb 16-22" or "Jan 26-Feb 1")
+            if week_start.month == week_end.month:
+                # Same month: "Feb 16-22"
+                label = f"{week_start.strftime('%b')} {week_start.day}-{week_end.day}"
+            else:
+                # Different months: "Jan 26-Feb 1"
+                label = f"{week_start.strftime('%b')} {week_start.day}-{week_end.strftime('%b')} {week_end.day}"
+            labels.append(label)
         ranges.reverse()
         labels.reverse()
 
