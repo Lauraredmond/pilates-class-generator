@@ -1850,20 +1850,25 @@ async def get_class_sequencing_report(user_id: str):
 
 class MusicGenreDistributionData(BaseModel):
     """
-    Music genre favorites ranked by total usage
+    Music genre favorites ranked by total usage with movement/cooldown breakdown
 
-    OpenAPI Schema for horizontal bar chart showing user's favorite music genres
-    sorted by usage (most to least used)
+    OpenAPI Schema for stacked horizontal bar chart showing user's favorite music genres
+    sorted by total usage (most to least used), with separate counts for movement and cooldown music
     """
     genres: List[str] = Field(
         ...,
         description="Music genres sorted by usage (most to least). Only includes genres with at least 1 class.",
         example=["Classical", "Baroque", "Jazz", "Romantic"]
     )
-    counts: List[int] = Field(
+    movement_counts: List[int] = Field(
         ...,
-        description="Total number of classes for each genre (aligned with genres list)",
-        example=[12, 8, 5, 3]
+        description="Number of classes using this genre for movement sections (prep, warmup, movements)",
+        example=[8, 5, 3, 2]
+    )
+    cooldown_counts: List[int] = Field(
+        ...,
+        description="Number of classes using this genre for cooldown sections (cooldown, meditation, homecare)",
+        example=[4, 3, 2, 1]
     )
 
 
@@ -1959,8 +1964,9 @@ async def get_music_genre_distribution(
             'Jazz'
         ]
 
-        # Initialize counts for all genres
-        genre_counts = {genre: 0 for genre in all_genres}
+        # Initialize separate counts for movement and cooldown
+        movement_counts_dict = {genre: 0 for genre in all_genres}
+        cooldown_counts_dict = {genre: 0 for genre in all_genres}
 
         # Fetch ALL class history (no date filter - total usage)
         # Select music genres AND duration to filter out cooldown for 10-min classes
@@ -1971,7 +1977,7 @@ async def get_music_genre_distribution(
 
         classes = classes_response.data or []
 
-        # Count total usage per genre
+        # Count movement and cooldown separately
         # For 10-min classes: Only music_genre is set (no cooldown)
         # For 30/60-min classes: BOTH music_genre AND cooldown_music_genre are set
         for class_item in classes:
@@ -1980,28 +1986,30 @@ async def get_music_genre_distribution(
             duration = class_item.get('actual_duration_minutes', 0)
 
             # Count movement music (sections 1-3: prep, warmup, movements)
-            if movement_music and movement_music in genre_counts:
-                genre_counts[movement_music] += 1
+            if movement_music and movement_music in movement_counts_dict:
+                movement_counts_dict[movement_music] += 1
 
             # Count cooldown music (sections 4-6: cooldown, meditation, homecare)
             # ONLY count for classes > 10 minutes (10-min quick practice has no cooldown)
-            if cooldown_music and cooldown_music in genre_counts and duration > 10:
-                genre_counts[cooldown_music] += 1
+            if cooldown_music and cooldown_music in cooldown_counts_dict and duration > 10:
+                cooldown_counts_dict[cooldown_music] += 1
 
-        # Sort ALL genres by count (descending) - include genres with 0 count
+        # Sort ALL genres by TOTAL usage (movement + cooldown) descending
         sorted_genres = sorted(
-            [(genre, count) for genre, count in genre_counts.items()],
+            [(genre, movement_counts_dict[genre] + cooldown_counts_dict[genre]) for genre in all_genres],
             key=lambda x: x[1],
             reverse=True
         )
 
-        # Extract sorted genres and counts (includes all 8 genres, even if 0)
+        # Extract sorted genres and their separate counts (includes all 8 genres, even if 0)
         genres = [item[0] for item in sorted_genres]
-        counts = [item[1] for item in sorted_genres]
+        movement_counts = [movement_counts_dict[genre] for genre in genres]
+        cooldown_counts = [cooldown_counts_dict[genre] for genre in genres]
 
         return MusicGenreDistributionData(
             genres=genres,
-            counts=counts
+            movement_counts=movement_counts,
+            cooldown_counts=cooldown_counts
         )
 
     except Exception as e:
