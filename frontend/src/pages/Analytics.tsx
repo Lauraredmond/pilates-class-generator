@@ -334,23 +334,31 @@ export function Analytics() {
     },
   };
 
-  // Horizontal Bar Chart Options - Music Genre Favorites
+  // Horizontal Stacked Bar Chart Options - Music Genre Favorites with Movement/Cooldown Breakdown
   const horizontalBarChartOptions = {
     indexAxis: 'y' as const,  // Horizontal bars
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { display: false },  // No legend needed for single dataset
+      legend: {
+        display: true,  // Show legend for Movement vs Cooldown
+        position: 'top' as const,
+        labels: { color: '#f5f1e8' }
+      },
       tooltip: {
+        mode: 'index' as const,
+        intersect: false,
         callbacks: {
           label: function(context: any) {
-            return `Classes: ${context.parsed.x}`;
+            const label = context.dataset.label || '';
+            return `${label}: ${context.parsed.x} classes`;
           }
         }
       },
     },
     scales: {
       x: {
+        stacked: true,  // Enable stacking
         beginAtZero: true,
         ticks: {
           color: '#f5f1e8',
@@ -369,6 +377,7 @@ export function Analytics() {
         }
       },
       y: {
+        stacked: true,  // Enable stacking
         ticks: {
           color: '#f5f1e8',
           font: { size: 12 }
@@ -556,24 +565,20 @@ export function Analytics() {
       }
     : null;
 
-  // Music Genre Favorites - Horizontal Ranked Bar Chart
+  // Music Genre Favorites - Stacked Horizontal Bar Chart (Movement + Cooldown)
   const musicGenreDistributionChartData = musicGenreDistribution
     ? {
-        labels: musicGenreDistribution.genres,  // Already sorted by usage
+        labels: musicGenreDistribution.genres,  // Already sorted by total usage
         datasets: [
           {
-            label: 'Classes',
-            data: musicGenreDistribution.counts,
-            backgroundColor: [
-              '#8b2635',  // #1 Most used - Primary burgundy
-              '#cd8b76',  // #2 - Terracotta
-              '#5c1a26',  // #3 - Dark burgundy
-              '#e3a57a',  // #4 - Light peach
-              '#3d1118',  // #5 - Very dark burgundy
-              '#f5f1e8',  // #6 - Cream
-              '#d94d5c',  // #7 - Bright coral red
-              '#b8927d',  // #8 - Medium beige
-            ],
+            label: 'Movement',
+            data: musicGenreDistribution.movement_counts,
+            backgroundColor: '#8b2635',  // Primary burgundy - darker for movement music
+          },
+          {
+            label: 'Cooldown',
+            data: musicGenreDistribution.cooldown_counts,
+            backgroundColor: '#cd8b76',  // Terracotta - lighter for cooldown music
           },
         ],
       }
