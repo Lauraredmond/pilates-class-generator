@@ -1,7 +1,7 @@
 # FastAPI and ASGI server
 fastapi==0.124.2  # Security: CVE-2024-24762 fixed
 uvicorn[standard]==0.27.0
-python-multipart==0.0.20  # Security: CVE-2024-24762, CVE-2024-53981 fixed
+python-multipart==0.0.22  # Security: CVE-2024-24762, CVE-2024-53981 fixed
 
 # Database and ORM
 supabase==2.24.0
@@ -18,7 +18,7 @@ python-jose[cryptography]==3.5.0  # Security: CVE-2024-33663, CVE-2024-33664 fix
 passlib[bcrypt]==1.7.4
 bcrypt==4.1.3
 python-dotenv==1.0.0
-cryptography==46.0.3  # Security: CVE-2024-26130, CVE-2023-50782, CVE-2024-0727 fixed
+cryptography==46.0.5  # Security: CVE-2024-26130, CVE-2023-50782, CVE-2024-0727 fixed
 
 # AI and ML
 openai>=1.100.2  # Updated for standard-agent compatibility
