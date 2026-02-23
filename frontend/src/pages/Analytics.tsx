@@ -304,11 +304,6 @@ export function Analytics() {
         stacked: true,
         ticks: {
           color: '#f5f1e8',
-          stepSize: 1,
-          callback: function(value: any) {
-            // Only show integer labels on x-axis
-            return Number.isInteger(value) ? value : null;
-          }
         },
         grid: { color: 'rgba(245, 241, 232, 0.1)' },
       },
