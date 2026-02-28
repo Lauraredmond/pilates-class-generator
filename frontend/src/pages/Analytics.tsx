@@ -644,21 +644,14 @@ export function Analytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardBody className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-cream/60 text-sm font-medium">
-                  {timePeriod === 'day' && 'Total classes this week'}
-                  {timePeriod === 'week' && 'Total classes this month'}
-                  {timePeriod === 'month' && 'Total classes this year'}
-                  {timePeriod === 'total' && 'Total classes completed overall'}
-                </p>
-                <p className="text-4xl font-bold text-cream mt-2">{stats.totalClasses}</p>
-              </div>
-              <div className="h-16 w-16 rounded-full bg-burgundy/30 flex items-center justify-center">
-                <svg className="w-8 h-8 text-cream" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
+            <div>
+              <p className="text-cream/60 text-sm font-medium">
+                {timePeriod === 'day' && 'Total classes this week'}
+                {timePeriod === 'week' && 'Total classes this month'}
+                {timePeriod === 'month' && 'Total classes this year'}
+                {timePeriod === 'total' && 'Total classes completed overall'}
+              </p>
+              <p className="text-4xl font-bold text-cream mt-2">{stats.totalClasses}</p>
             </div>
             {timePeriod !== 'total' && timePeriod !== 'day' && (
               <p className="text-cream/50 text-xs mt-3">
@@ -672,18 +665,11 @@ export function Analytics() {
 
         <Card>
           <CardBody className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-cream/60 text-sm font-medium">Practise Time</p>
-                <p className="text-4xl font-bold text-cream mt-2">
-                  {Math.floor(stats.totalPracticeTime / 60)}h {stats.totalPracticeTime % 60}m
-                </p>
-              </div>
-              <div className="h-16 w-16 rounded-full bg-burgundy/30 flex items-center justify-center">
-                <svg className="w-8 h-8 text-cream" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+            <div>
+              <p className="text-cream/60 text-sm font-medium">Practise Time</p>
+              <p className="text-4xl font-bold text-cream mt-2">
+                {Math.floor(stats.totalPracticeTime / 60)}h {stats.totalPracticeTime % 60}m
+              </p>
             </div>
             <p className="text-cream/50 text-xs mt-3">~{stats.avgClassDuration} min avg</p>
           </CardBody>
@@ -691,16 +677,9 @@ export function Analytics() {
 
         <Card>
           <CardBody className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-cream/60 text-sm font-medium">Current Streak</p>
-                <p className="text-4xl font-bold text-cream mt-2">{stats.currentStreak} days</p>
-              </div>
-              <div className="h-16 w-16 rounded-full bg-burgundy/30 flex items-center justify-center">
-                <svg className="w-8 h-8 text-cream" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-                </svg>
-              </div>
+            <div>
+              <p className="text-cream/60 text-sm font-medium">Current Streak</p>
+              <p className="text-4xl font-bold text-cream mt-2">{stats.currentStreak} days</p>
             </div>
             <p className="text-cream/50 text-xs mt-3">Keep it up!</p>
           </CardBody>
