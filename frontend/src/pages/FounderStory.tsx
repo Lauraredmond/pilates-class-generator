@@ -137,7 +137,7 @@ export function FounderStory() {
       </div>
 
       {/* Call to Action */}
-      <div className="mt-16 text-center pb-12">
+      <div className="mt-16 text-center">
         <div className="inline-block bg-energy-gradient rounded-2xl p-8 shadow-2xl">
           <h3 className="text-2xl font-bold text-cream mb-4">
             Ready to Experience Bassline Pilates?
