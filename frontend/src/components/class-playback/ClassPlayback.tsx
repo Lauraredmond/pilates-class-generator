@@ -1064,10 +1064,11 @@ export function ClassPlayback({
       {/* Close button - z-[100] to stay above video (z-50) */}
       <button
         onClick={handleExitRequest}
-        className="absolute top-4 right-4 p-2 text-cream hover:text-cream/80 transition-smooth z-[100]"
+        className="absolute top-2 right-2 p-3 text-cream hover:text-cream/80 transition-smooth z-[100] bg-black/30 rounded-full backdrop-blur-sm"
         aria-label="Exit playback"
+        style={{ minWidth: '44px', minHeight: '44px' }}
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
