@@ -35,7 +35,12 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-premium-texture flex flex-col">
       {/* Header - Logo with Back Button (hidden on home page) */}
       {!isHomePage && (
-        <header className="bg-burgundy-dark/80 backdrop-blur-sm border-b border-cream/20 sticky top-0 z-50">
+        <header
+          className="bg-burgundy-dark/80 backdrop-blur-sm border-b border-cream/20 sticky top-0 z-50"
+          style={{
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+          }}
+        >
           <div className="container mx-auto px-4 py-3 flex items-center justify-center">
             <div className="group relative flex items-center gap-3">
               {/* Back Button - Always Visible */}
@@ -68,7 +73,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-6 pb-24">
+      <main className="flex-1 container mx-auto px-4 py-6 pb-20">
         {children}
       </main>
 
