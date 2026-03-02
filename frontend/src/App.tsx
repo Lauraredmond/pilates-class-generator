@@ -22,6 +22,7 @@ import { BetaAgreement } from './pages/BetaAgreement';
 import { SecurityDisclosure } from './pages/SecurityDisclosure';
 import { DataDuringBeta } from './pages/DataDuringBeta';
 import { HealthSafety } from './pages/HealthSafety';
+import { NavTest } from './pages/NavTest';
 // PWA version management
 import { checkAppVersion, logPWAStatus } from './utils/pwaVersion';
 
@@ -135,6 +136,9 @@ function App() {
         <Route path="/security" element={<SecurityDisclosure />} />
         <Route path="/data-during-beta" element={<DataDuringBeta />} />
         <Route path="/safety" element={<HealthSafety />} />
+
+        {/* Temporary test route for navigation bar fix */}
+        <Route path="/nav-test" element={<Layout><NavTest /></Layout>} />
 
         {/* Protected routes (with layout) */}
         <Route path="/" element={

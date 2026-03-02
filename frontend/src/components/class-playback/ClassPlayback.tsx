@@ -973,7 +973,9 @@ export function ClassPlayback({
     onComplete?.();
   }, [onComplete, sessionId, playDuration, totalItems]);
 
-  const handleExitRequest = useCallback(() => {
+  const handleExitRequest = useCallback((e?: React.MouseEvent | React.TouchEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     if (!isPaused && currentIndex > 0) {
       setShowExitConfirm(true);
     } else {
@@ -1064,9 +1066,19 @@ export function ClassPlayback({
       {/* Close button - z-[100] to stay above video (z-50) */}
       <button
         onClick={handleExitRequest}
-        className="absolute top-2 right-2 p-3 text-cream hover:text-cream/80 transition-smooth z-[100] bg-black/30 rounded-full backdrop-blur-sm"
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          handleExitRequest(e);
+        }}
+        className="absolute top-2 right-2 p-3 text-cream hover:text-cream/80 transition-smooth z-[100] bg-black/40 rounded-full backdrop-blur-sm active:bg-black/60 active:scale-95"
         aria-label="Exit playback"
-        style={{ minWidth: '44px', minHeight: '44px' }}
+        style={{
+          minWidth: '44px',
+          minHeight: '44px',
+          touchAction: 'manipulation',
+          WebkitTapHighlightColor: 'transparent',
+          userSelect: 'none'
+        }}
       >
         <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

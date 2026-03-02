@@ -592,7 +592,627 @@ const displayName =
 
 ---
 
+---
+
+## Detailed Implementation Reference (Archived February 12, 2026)
+
+This section contains detailed implementation guidance, development workflows, and comprehensive documentation that was previously in the main CLAUDE.md file. This content is preserved for reference but no longer needed for daily development.
+
+### Dual Project Goals (Strategic Context)
+
+**This project serves TWO equally important strategic objectives:**
+
+**Goal 1: Build Production-Ready Pilates Platform**
+- **Objective**: Launch functional MVP to community for customer traction
+- **Approach**: Working production code that users can actually use
+- **Timeline**: Production-ready now, deploy immediately
+- **Quality Standard**: Real features, real integration, real value
+
+**Goal 2: Learn Jentic Architecture Through Implementation**
+- **Objective**: Deep understanding of Jentic's StandardAgent + Arazzo Engine
+- **Context**: Jentic is a CLIENT of Bassline (requires intimate codebase knowledge)
+- **Approach**: Learn by doing - integrate real Jentic code, not stubs
+- **Timeline**: Parallel with production - learning while building
+
+**CRITICAL DECISION POINT:**
+- ❌ **NOT** "learn first, then build later"
+- ❌ **NOT** "build first, refactor later"
+- ✅ **YES** "build AND learn simultaneously using real Jentic code"
+
+**IMPLEMENTATION STRATEGY:**
+- Use real Jentic libraries from GitHub (not stubs, not placeholders)
+- Heavy educational annotations throughout code ("JENTIC PATTERN" vs "BASSLINE CUSTOM")
+- Production quality while learning architecture patterns
+- Deploy fully functional integration
+- **🎯 CRITICAL: Standardize code using Jentic patterns for maximum scalability**
+  - Leverage StandardAgent and Arazzo Engine to their fullest potential
+  - Standardized code = easily scalable code
+  - Replace custom implementations with Jentic patterns wherever possible
+  - Document all deviations from Jentic standards with clear justification
+
+---
+
+### Infrastructure Status (Completed December 2025)
+
+**Netlify Build Minutes - Upgrade Decision (December 28, 2025):**
+- **Status:** COMPLETED - User upgraded to Personal Plan ($9/month)
+- **Context:** Netlify account hit 100% of Free plan build minutes (300 min/month)
+- **Monitoring:** Track build minutes weekly, upgrade to Pro if consistently >900 min/month
+
+**Render Backend - Paid Tier (February 2, 2026):**
+- **Status:** COMPLETED - User on Render.com Paid Tier ($9/month)
+- **Benefits:** No sleep/spin-down, better performance, priority support
+- **Total Monthly Cost:** $18/month (Netlify $9 + Render $9 + Supabase $0)
+
+---
+
+### Recent Completed Work (December 31, 2025)
+
+**Fix pass_status Logic Mismatch:**
+- **Problem:** QA Report and Sequencing Report showing different pass/fail results
+- **Resolution:** User confirmed resolved - reports match correctly
+- **Commits:** a3bb3308 (formula fix), ece7d8b7 (movement family balance), 77696c8e (pass_status checks both rules)
+
+**Recording Mode & AI Classes Use Database Durations:**
+- **Problem:** Hardcoded duration fallbacks overriding database values
+- **Fix:** Created validateDuration() helper, removed hardcoded fallbacks
+- **Commit:** 08629e9e
+- **Files:** RecordingModeManager.tsx, AIGenerationPanel.tsx
+
+---
+
+### Documentation & Task Management Rules
+
+**CRITICAL: Single Source of Truth**
+- ONLY use CLAUDE.md for documenting future tasks
+- DO NOT create NEXT_SESSION_NOTES.md, TODO.md, BACKLOG.md
+- WHY: Multiple task files cause confusion across sessions
+
+**How to document tasks:**
+1. Add high-priority items to "NEXT SESSION PRIORITY" section
+2. Add medium-priority items to "Future Plans / Enhancement Roadmap"
+3. Mark tasks as ✅ COMPLETED when done
+4. Remove completed tasks from priority lists
+
+---
+
+### Multi-Agent Development Workflow
+
+**IMPORTANT: Use parallel test agents proactively for complex debugging**
+
+**When to Use:**
+1. Debugging Complex Issues (API + Console + Database)
+2. Testing After Changes (Response + Rendering + Integrity)
+3. Validating Implementations (Structure + Functionality + Compliance)
+4. Research and Analysis (Codebase + Documentation + Implementation)
+
+**How to Launch:**
+```typescript
+// Single message with multiple Task tool calls
+Task(subagent_type: "general-purpose", description: "Test movements API endpoint")
+Task(subagent_type: "general-purpose", description: "Check browser console logs")
+Task(subagent_type: "general-purpose", description: "Verify Zustand store structure")
+```
+
+**Best Practices:**
+1. Launch agents early (don't wait until stuck)
+2. Run in parallel (single message with multiple Task calls)
+3. Clear descriptions (each agent needs specific task)
+4. Trust agent outputs (deep context and expertise)
+5. Combine findings (synthesize multi-agent results)
+
+---
+
+### Development Commands (Complete Reference)
+
+**Backend (FastAPI):**
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn api.main:app --reload --port 8000
+pytest tests/ -v
+pytest tests/test_sequences.py::test_validate_sequence -v
+alembic upgrade head
+alembic revision --autogenerate -m "description"
+npx @modelcontextprotocol/server-playwright  # MCP Playwright
+```
+
+**Frontend (React):**
+```bash
+cd frontend
+npm install
+npm run dev
+npm test
+npm test -- ClassBuilder.test.tsx
+npm run build
+npm run type-check
+npm run lint
+```
+
+**Database (Supabase):**
+```bash
+cd database
+supabase db push
+supabase db reset  # development only
+supabase gen types typescript --local > ../frontend/src/types/supabase.ts
+supabase test db
+```
+
+**Docker (Full Stack):**
+```bash
+docker-compose up -d
+docker-compose logs -f
+docker-compose down
+docker-compose up -d --build  # after dependencies change
+```
+
+**Redis (AI Response Caching):**
+```bash
+brew install redis
+redis-server
+redis-cli ping  # verify: PONG
+redis-cli monitor  # watch cache activity
+redis-cli FLUSHDB  # clear cache
+```
+
+---
+
+### Architecture Overview (Detailed)
+
+**Backend Structure (`/backend`):**
+```
+backend/
+├── api/                    # FastAPI routes
+│   ├── main.py            # Entry point
+│   ├── auth.py            # Authentication
+│   ├── classes.py         # Class planning
+│   ├── movements.py       # Movement CRUD
+│   └── users.py           # User management
+├── agents/                 # AI agents
+│   ├── base_agent.py      # Base with EU AI Act compliance
+│   ├── sequence_agent.py  # Movement sequencing
+│   ├── music_agent.py     # Music recommendations
+│   ├── meditation_agent.py # Meditation generation
+│   └── research_agent.py  # MCP Playwright
+├── models/                 # Pydantic schemas
+├── services/               # Business logic
+└── utils/                  # Shared utilities
+```
+
+**Frontend Structure (`/frontend`):**
+```
+frontend/
+├── src/
+│   ├── components/        # React components
+│   ├── pages/             # Page-level components
+│   ├── hooks/             # Custom React hooks
+│   ├── services/          # API clients
+│   └── utils/             # Frontend utilities
+```
+
+**Database Structure:**
+- **Core:** movement_details, movement_muscles, sequence_rules, class_plans, user_preferences
+- **Compliance:** users, pii_tokens, ai_decision_log, bias_monitoring
+- **Functions:** validate_sequence(), calculate_muscle_balance(), tokenize_pii()
+
+---
+
+### Domain Knowledge (Pilates Expertise)
+
+**34 Classical Pilates Movements:**
+- **Beginner (14):** The Hundred, Roll Up, Roll Over, Single Leg Circle, Rolling Like a Ball, Single/Double Leg Stretch, Spine Stretch Forward, Open Leg Rocker, Corkscrew, The Saw, Swan Dive, Single/Double Leg Kick
+- **Intermediate (10):** Neck Pull, Scissors, Bicycle, Shoulder Bridge, Spine Twist, Jack Knife, Side Kick Series, Teaser
+- **Advanced (10):** Hip Twist, Swimming, Leg Pull Front/Back, Side Bend, Boomerang, Seal, Control Balance, Push Up, Rocking
+
+**Critical Sequencing Rules (Never Violate):**
+1. Warm-up first - breathing and gentle movements
+2. Spinal progression - flexion before extension (anatomical safety)
+3. Balance muscle groups - don't overwork one area
+4. Complexity progression - simple to complex within session
+5. Cool-down required - stretching and breathing
+
+**Movement Attributes:**
+- Name, Difficulty, Primary Muscles, Movement Pattern
+- Duration, Breathing Pattern, Prerequisites
+- Contraindications, Setup Instructions, Execution Notes
+- Modifications, Watch Out Points, Visual Cues
+
+**Data migrated from:** `Pilates_Summary_Spreadsheet_teachingTracker_v10.xlsm`
+
+---
+
+### MCP Playwright Integration
+
+**Setup:**
+```bash
+npx @modelcontextprotocol/server-playwright
+```
+
+**Configuration (`config/mcp_config.yaml`):**
+```yaml
+mcp_servers:
+  playwright:
+    command: "npx"
+    args: ["@modelcontextprotocol/server-playwright"]
+    capabilities:
+      - web_navigation
+      - screenshot_capture
+      - content_extraction
+      - form_interaction
+    rate_limits:
+      requests_per_minute: 30
+      concurrent_sessions: 3
+```
+
+**Usage:**
+```python
+from services.mcp_client import MCPClient
+
+mcp = MCPClient()
+
+# Research movement cues
+cues = await mcp.research_movement_cues(
+    movement_name="The Hundred",
+    trusted_sites=["pilatesmethod.com", "balancedbody.com"]
+)
+
+# Find warm-up exercises
+warmups = await mcp.find_warmup_sequence(
+    target_muscles=["core", "hip_flexors"],
+    duration=5
+)
+```
+
+All MCP results cached in Redis with source attribution for EU AI Act compliance.
+
+---
+
+### Excel Database Synchronization
+
+**Migration from Excel:**
+```bash
+cd backend
+python scripts/migrate_excel.py --excel-path "/path/to/spreadsheet.xlsm" --validate
+```
+
+**Bi-directional Sync:**
+```python
+from services.excel_sync import ExcelSyncService
+
+sync = ExcelSyncService()
+await sync.sync_from_excel("/path/to/updated_spreadsheet.xlsm")
+await sync.export_to_excel("/path/to/output_spreadsheet.xlsm")
+```
+
+---
+
+### Security and Compliance
+
+**PII Tokenization:**
+```python
+from utils.pii_tokenizer import tokenize_pii, detokenize_pii
+
+tokenized_email = tokenize_pii(user_email)
+await db.users.insert({"email_token": tokenized_email})
+email = detokenize_pii(db_record["email_token"])
+```
+
+**EU AI Act Compliance:**
+- All AI decisions logged to `ai_decision_log` table
+- Input parameters, model output, reasoning, confidence scores
+- Bias monitoring runs daily: `python scripts/check_model_drift.py --alert-threshold 0.15`
+
+**GDPR Compliance:**
+```python
+await export_user_data(user_id, format="json")
+await delete_user_account(user_id, reason="user_request")
+```
+
+---
+
+### Testing Strategy
+
+**Backend:**
+```bash
+pytest tests/ -v --cov=backend --cov-report=html
+pytest tests/test_sequences.py -v
+pytest tests/test_agents.py -v
+pytest tests/test_mcp.py -v
+pytest tests/test_compliance.py -v
+```
+
+**Frontend:**
+```bash
+npm test
+npm test -- --watch
+npm test -- ClassBuilder.test.tsx
+npm test -- --testPathPattern=integration
+```
+
+**Database:**
+```bash
+supabase test db
+supabase db reset && supabase db push
+```
+
+---
+
+### Important Implementation Notes
+
+**When Working on Sequencing Logic:**
+- Always validate against safety rules (`services/safety_validator.py`)
+- Test with real data from Excel
+- Check muscle balance (`calculate_muscle_balance()`)
+- Preserve spinal progression (flexion before extension)
+- Document rule violations
+
+**When Working on AI Agents:**
+- Inherit from base_agent.py (compliance logging)
+- Use small models (GPT-3.5-turbo for cost efficiency)
+- Implement graceful degradation
+- Log all decisions (EU AI Act transparency)
+- Test bias monitoring
+
+**When Working on Frontend:**
+- Match MVP exactly (no improvements/modernization)
+- Copy existing styles (same colors, fonts, layout)
+- Preserve UX patterns (same drag-and-drop)
+- Test on same browsers
+- Avoid adding features
+
+**🚨 CRITICAL: When Working on Class Builder Modal:**
+- **ALWAYS reference `/docs/Visual_regression_baseline.md`**
+- Movement count: ~9 movements (NOT all 34)
+- Transitions: ~8 with specific styling (bg-burgundy/50, italic, left border, arrow icon)
+- Muscle balance from database (NOT generic)
+- Balance Score calculated (NOT NaN)
+- Before committing: verify ALL specifications match
+
+**When Working with MCP:**
+- Cache aggressively (24-hour TTL)
+- Rate limit carefully (max 30 req/min)
+- Attribute sources (always include URLs)
+- Validate quality (use quality scoring)
+- Handle failures gracefully
+
+**When Working with Excel Data:**
+- Preserve business logic (formulas → database functions)
+- Document macros (VBA → Python)
+- Test sync carefully (bi-directional conflicts)
+- Validate integrity (check required columns)
+- Backup before migration
+
+---
+
+### Common Development Workflows
+
+**Adding a New Movement:**
+1. Add to Excel spreadsheet (source of truth)
+2. Run sync: `python scripts/sync_excel.py`
+3. Verify in database (check `movement_details`)
+4. Update frontend cache
+5. Test sequencing (ensure respects safety rules)
+
+**Modifying Sequencing Rules:**
+1. Update rule in `database/functions/validate_sequence.sql`
+2. Write test case in `tests/test_sequences.py`
+3. Apply migration: `alembic upgrade head`
+4. Update documentation (add to CLAUDE.md)
+5. Test with agent (verify agent respects new rule)
+
+**Adding MCP Research Capability:**
+1. Identify research need
+2. Add method to `services/mcp_client.py`
+3. Implement caching in Redis
+4. Add quality scoring
+5. Test with real queries
+6. Integrate into research agent
+
+**Deploying Changes:**
+1. Run full test suite: `pytest && npm test`
+2. Check compliance: `python scripts/check_compliance.py`
+3. Build frontend: `npm run build`
+4. Apply migrations: `alembic upgrade head`
+5. Deploy backend: Update Docker container
+6. Deploy frontend: Upload to hosting
+7. Monitor logs: Check for errors in first hour
+
+---
+
+### External Resources
+
+**Documentation:**
+- FastAPI: https://fastapi.tiangolo.com/
+- React: https://react.dev/
+- Supabase: https://supabase.com/docs
+- MCP Protocol: https://modelcontextprotocol.io/
+- EU AI Act: https://artificialintelligenceact.eu/
+
+**Domain Knowledge:**
+- Pilates Method Alliance: https://www.pilatesmethod.com/
+- Balanced Body University: https://www.pilates.com/
+- Classical Pilates: Reference 34 movements in Excel database
+
+**Project Files:**
+- Excel Database: `/Users/lauraredmond/Documents/Bassline/Admin/7. Product/Design Documentation/Pilates_Summary_Spreadsheet_teachingTracker_v10.xlsm`
+- MCP Integration Plan: `/Users/lauraredmond/Documents/Bassline/Admin/7. Product/Design Documentation/MCP_Excel_Integration_Plan.md`
+
+---
+
+### Troubleshooting Guide
+
+**Sequence Validation Failing:**
+- Problem: Valid sequence rejected by safety validator
+- Solution: Check `ai_decision_log` table for rejection reason
+- Most common: spinal progression rule (flexion must precede extension)
+
+**MCP Playwright Not Responding:**
+- Problem: Research agent timeouts
+- Solutions:
+  1. Check MCP server running: `ps aux | grep playwright`
+  2. Restart server: `npx @modelcontextprotocol/server-playwright`
+  3. Check rate limits in `config/mcp_config.yaml`
+  4. Clear Redis cache: `redis-cli FLUSHDB`
+
+**Excel Sync Conflicts:**
+- Problem: Bi-directional sync shows conflicts
+- Solution: Excel is source of truth - use `sync_from_excel()` to override database
+- Review conflicts in sync UI before applying
+
+**Frontend Not Matching MVP:**
+- Problem: UI looks different from original MVP
+- Solutions:
+  1. Compare screenshots side-by-side
+  2. Check CSS matches exactly
+  3. Test drag-and-drop behavior
+  4. Verify same browser/device
+
+**AI Agent Bias Detected:**
+- Problem: Model drift monitoring alerts
+- Solutions:
+  1. Review `bias_monitoring` table for metrics
+  2. Check if training data changed
+  3. Consider retraining or model version update
+  4. Document in compliance logs
+
+---
+
+### Performance Considerations
+
+**Database Queries:**
+- Use indexes on `movement_details.difficulty` and `primary_muscles`
+- Cache frequently accessed movements in Redis (TTL: 1 hour)
+- Use database functions for complex sequencing (faster than Python)
+
+**Frontend Rendering:**
+- Virtualize long movement lists (react-window)
+- Debounce drag-and-drop events
+- Lazy load movement details
+- Cache API responses in React Query
+
+**MCP Research:**
+- Cache all research results (TTL: 24 hours)
+- Batch requests when possible
+- Use quality scoring to filter early
+- Implement request pooling (max 3 concurrent)
+
+---
+
+### Prioritized Enhancement Roadmap (Detailed)
+
+*See main CLAUDE.md for current priorities. Detailed roadmap preserved below for reference.*
+
+**Priority 0: Security**
+- Git History Cleanup for Exposed Secrets (DEFERRED - old keys likely invalid)
+- Complete documentation in `/Admin/10. Testing/1. Security/Cryptography & Secrets Management/`
+
+**Priority 1: Voiceover Support (✅ COMPLETED December 18, 2025)**
+- All 6 sections now have voiceover: preparation, warmup, cooldown, meditation, homecare, transitions
+- Audio: MP3, 22050 Hz, 145 kbps, Mono
+- Storage: Supabase Storage `voiceovers/` bucket
+- Music ducking: 20% during voiceover, 100% after
+
+**Priority 2: Chromecast Integration (High Priority - Next Session)**
+- Goal: Enable casting classes to TV/Chromecast
+- Implementation: Google Cast SDK, CastButton component, remote playback support
+- Testing: Requires Chromecast device + same WiFi
+- Estimated Time: ~2 hours
+
+**Priority 3: Dev/QA Environment (✅ COMPLETED December 18, 2025)**
+- Dev: `dev` branch → https://bassline-dev.netlify.app
+- Production: `main` branch → https://basslinemvp.netlify.app
+- Documented: `/docs/DEV_QA_WORKFLOW.md`
+
+**Priority 4: Test Automation (4-6 hours)**
+- Phase 1: Proactive remote diagnostics (ACTIVE)
+- Phase 2: MCP Playwright E2E testing (PLANNED)
+- Phase 3: CI/CD integration (POST-MVP)
+- Performance testing: k6 load testing before beta launch
+
+**Priority 5: Restrict AI Mode to Admins + Cost Reduction**
+- Admin-only AI toggle (add `is_admin` field)
+- Redis caching for AI responses (70-80% cost reduction)
+- Cache: preparation scripts, homecare advice, MCP research
+- Estimated Time: 4-5 hours
+
+**Priority 6: Update Class Builder Appearance**
+- Remove "Manual Build" option
+- Add Cian's logos to header
+- Update branding/styling
+- Estimated Time: 2-3 hours
+
+**Priority 7: Add Nutrition Tracker (15-20 hours)**
+- Data Source: `/Admin/7. Product/Nutrition/Nutrition Information-Table-LRAdjusted.xlsx`
+- Create food database table
+- Rest day plan (formula from Numbers sheet)
+- Training day plan (different macro targets)
+- Mobile-first meal logging interface
+
+**Priority 8: Baseline Wellness Routine Button**
+- Add button to dashboard (placeholder initially)
+- Future: Full wellness routine builder
+- Estimated Time: 1-2 hours (placeholder), 40+ hours (full)
+
+**Priority 9: Replace "Generate" with "Founder Story"**
+- Move to extreme right of nav bar
+- Laura's Pilates journey page
+- Estimated Time: 2-3 hours
+
+**Priority 10: Replace "Classes" with "Wellness Space"**
+- Holistic reframe including nutrition, routines, analytics
+- Estimated Time: 2 hours (icon/name), ongoing (features)
+
+**Priority 11: Retry Supabase User Confirmation**
+- Test current email confirmation flow
+- Check SMTP, verify with multiple providers
+- Estimated Time: 1 hour (testing), 2-3 hours (fixes)
+
+**Priority 12: Advanced Delivery Modes (20-60+ hours)**
+- Audio Narration: TTS integration (ElevenLabs, OpenAI, Google Cloud)
+- Visual Demonstrations: Video clips, still images, animations (MAYBE - lower priority)
+- User preference toggle: text only, text+audio, text+visual, all three
+
+**Priority 13: Rigorous Supabase Content Review (6-8 hours)**
+- Export all movements, compare with Excel source
+- Verify 34 classical movements accurate
+- Check movement_muscles junction table
+- Review all class section content
+- Create migration script for discrepancies
+
+**Priority 14: Infrastructure Roadmap (Strategic Planning)**
+- Phase 1: Audio on Supabase ($0.15/month) - NOW
+- Phase 2: Video on AWS with $1K credits (~11.7 months free)
+- Phase 3: Migrate to Cloudflare R2 (free egress, 82% cost savings)
+- Phase 4: Scale on R2 with flat costs
+- Documentation: `INFRASTRUCTURE_ROADMAP.md`, `CDN_OPTIMIZATION_GUIDE.md`, `MOBILE_WEB_APP_ASSESSMENT.md`
+
+**Priority 15: EU AI Act Compliance Dashboard (12-15 hours)**
+- Decision transparency view
+- Bias monitoring dashboard
+- Audit trail interface
+- Research source tracking
+- Fix GDPR data export (HTTP 500 error)
+
+**Priority 16: Security Testing (8-10 hours)**
+- Penetration testing (API, auth, injection, rate limits)
+- Dependency audits (npm audit, pip-audit, CVEs)
+- PII tokenization audit
+- Compliance verification
+- API security (JWT, CORS, key rotation)
+
+**Priority 17: Privacy Policy & Legal Docs (12-15 hours)**
+- GDPR-compliant privacy policy
+- Terms of service
+- Cookie consent banner
+- Age verification (16+ requirement)
+- AI transparency statement
+- Legal review checklist
+
+---
+
 ## End of Archive
+
+**Last Updated:** February 12, 2026
 
 **For current operating instructions, see:** `CLAUDE.md`
 
