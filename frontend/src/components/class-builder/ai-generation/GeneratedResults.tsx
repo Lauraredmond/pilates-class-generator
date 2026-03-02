@@ -123,8 +123,8 @@ export function GeneratedResults({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-card-texture border border-cream/30 rounded-lg shadow-card w-full max-w-4xl max-h-[90vh] flex flex-col m-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 pb-24 md:pb-4">
+      <div className="bg-card-texture border border-cream/30 rounded-lg shadow-card w-full max-w-4xl max-h-[75vh] md:max-h-[90vh] flex flex-col">
         {/* Modal Header */}
         <div className="p-6 border-b border-cream/30">
           <div className="flex items-center justify-between">
