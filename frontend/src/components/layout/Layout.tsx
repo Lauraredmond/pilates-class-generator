@@ -68,7 +68,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-6 pb-10">
+      <main className="flex-1 container mx-auto px-4 py-6 pb-24">
         {children}
       </main>
 
@@ -76,7 +76,6 @@ export function Layout({ children }: LayoutProps) {
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 bg-burgundy-dark/95 backdrop-blur-sm border-t border-cream/20 z-50"
         style={{
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           WebkitBackfaceVisibility: 'hidden',
           WebkitTransform: 'translateZ(0)',
         }}
@@ -101,12 +100,7 @@ export function Layout({ children }: LayoutProps) {
       </nav>
 
       {/* Desktop Bottom Navigation - Fixed */}
-      <nav
-        className="hidden md:block fixed bottom-0 left-0 right-0 bg-burgundy-dark/95 backdrop-blur-sm border-t border-cream/20 z-50"
-        style={{
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        }}
-      >
+      <nav className="hidden md:block fixed bottom-0 left-0 right-0 bg-burgundy-dark/95 backdrop-blur-sm border-t border-cream/20 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-center gap-2">
           {navItems.map(({ path, icon: Icon, label }) => {
             const isActive = location.pathname === path;
