@@ -1070,17 +1070,17 @@ export function ClassPlayback({
           e.preventDefault();
           handleExitRequest(e);
         }}
-        className="absolute top-2 right-2 p-3 text-cream hover:text-cream/80 transition-smooth z-[100] bg-black/40 rounded-full backdrop-blur-sm active:bg-black/60 active:scale-95"
+        className="absolute top-6 right-4 p-5 text-cream hover:text-cream/80 transition-smooth z-[100] bg-black/50 rounded-full backdrop-blur-sm active:bg-black/70 active:scale-95"
         aria-label="Exit playback"
         style={{
-          minWidth: '44px',
-          minHeight: '44px',
+          minWidth: '60px',
+          minHeight: '60px',
           touchAction: 'manipulation',
           WebkitTapHighlightColor: 'transparent',
           userSelect: 'none'
         }}
       >
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
