@@ -32,7 +32,7 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   return (
-    <div className="min-h-[100svh] bg-premium-texture flex flex-col">
+    <div className="min-h-screen bg-premium-texture flex flex-col">
       {/* Header - Logo with Back Button (hidden on home page) */}
       {!isHomePage && (
         <header className="bg-burgundy-dark/80 backdrop-blur-sm border-b border-cream/20 sticky top-0 z-50">
@@ -68,26 +68,12 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 container mx-auto px-4 pb-[calc(106px+env(safe-area-inset-bottom))] ${
-        isHomePage
-          ? 'pt-[calc(29px+env(safe-area-inset-top))]'
-          : 'pt-[calc(39px+env(safe-area-inset-top))]'
-      }`}>
+      <main className="flex-1 container mx-auto px-4 py-6 pb-24">
         {children}
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 bg-burgundy-dark/95 backdrop-blur-sm border-t border-cream/20 z-50"
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          WebkitBackfaceVisibility: 'hidden',
-          WebkitTransform: 'translate3d(0,0,0)',
-          transform: 'translate3d(0,0,0)',
-          willChange: 'transform',
-        }}
-      >
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-burgundy-dark/95 backdrop-blur-sm border-t border-cream/20 z-50">
         <div className="flex items-center justify-around py-1.5 px-1">
           {navItems.map(({ path, icon: Icon, shortLabel }) => {
             const isActive = location.pathname === path;
@@ -108,17 +94,7 @@ export function Layout({ children }: LayoutProps) {
       </nav>
 
       {/* Desktop Bottom Navigation - Fixed */}
-      <nav
-        className="hidden md:block fixed bottom-0 left-0 right-0 bg-burgundy-dark/95 backdrop-blur-sm border-t border-cream/20 z-50"
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          WebkitBackfaceVisibility: 'hidden',
-          WebkitTransform: 'translate3d(0,0,0)',
-          transform: 'translate3d(0,0,0)',
-          willChange: 'transform',
-        }}
-      >
+      <nav className="hidden md:block fixed bottom-0 left-0 right-0 bg-burgundy-dark/95 backdrop-blur-sm border-t border-cream/20 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-center gap-2">
           {navItems.map(({ path, icon: Icon, label }) => {
             const isActive = location.pathname === path;
