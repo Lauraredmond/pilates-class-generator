@@ -71,7 +71,7 @@ export function Layout({ children }: LayoutProps) {
       <main
         className={`flex-1 container mx-auto px-4 ${
           isHomePage
-            ? 'pt-[calc(24px+env(safe-area-inset-top)+110px)] pb-[calc(96px+env(safe-area-inset-bottom))]'
+            ? 'pt-[calc(24px+env(safe-area-inset-top))] pb-[calc(96px+env(safe-area-inset-bottom))]'
             : 'py-6 pb-24'
         }`}
       >
