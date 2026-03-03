@@ -68,13 +68,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main Content */}
-      <main
-        className={`flex-1 container mx-auto px-4 ${
-          isHomePage
-            ? 'pt-[calc(24px+env(safe-area-inset-top))] pb-[calc(96px+env(safe-area-inset-bottom))]'
-            : 'py-6 pb-24'
-        }`}
-      >
+      <main className="flex-1 container mx-auto px-4 pt-[calc(24px+env(safe-area-inset-top))] pb-[calc(96px+env(safe-area-inset-bottom))]">
         {children}
       </main>
 
