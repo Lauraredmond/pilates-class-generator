@@ -5,7 +5,7 @@ export function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pt-[calc(env(safe-area-inset-top)+12px)]">
       {/* Bassline Logo - Centered */}
       <div className="flex justify-center mb-8">
         <div className="group relative">
