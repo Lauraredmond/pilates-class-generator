@@ -68,7 +68,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 pt-12 pb-14">
+      <main className="flex-1 container mx-auto px-4 py-6 pb-24">
         {children}
       </main>
 
