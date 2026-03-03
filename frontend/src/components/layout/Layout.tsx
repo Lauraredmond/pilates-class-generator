@@ -32,7 +32,7 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-premium-texture flex flex-col">
+    <div className="min-h-[100svh] bg-premium-texture flex flex-col">
       {/* Header - Logo with Back Button (hidden on home page) */}
       {!isHomePage && (
         <header className="bg-burgundy-dark/80 backdrop-blur-sm border-b border-cream/20 sticky top-0 z-50">
@@ -68,7 +68,13 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-6 pb-24">
+      <main
+        className={`flex-1 container mx-auto px-4 ${
+          isHomePage
+            ? 'pt-[calc(24px+env(safe-area-inset-top)+110px)] pb-[calc(96px+env(safe-area-inset-bottom))]'
+            : 'py-6 pb-24'
+        }`}
+      >
         {children}
       </main>
 
