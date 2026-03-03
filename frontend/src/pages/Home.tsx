@@ -21,7 +21,7 @@ export function Home() {
       </div>
 
       {/* Hero Image */}
-      <div className="relative w-full h-48 md:h-64 lg:h-80 rounded-xl overflow-hidden mb-6 shadow-glow">
+      <div className="relative w-full h-48 md:h-64 lg:h-80 rounded-xl overflow-hidden mb-4 shadow-glow">
         <img
           src="/assets/hero-empowered-woman.jpg"
           alt="Empowered woman at the height of her fitness journey"
@@ -31,7 +31,7 @@ export function Home() {
       </div>
 
       {/* Main Action Buttons */}
-      <div className="space-y-4 mb-8">
+      <div className="space-y-3 mb-5">
         {/* New Primary Button */}
         <Button
           className="w-full"
@@ -54,7 +54,7 @@ export function Home() {
       </div>
 
       {/* Mission Statement */}
-      <div className="mb-8">
+      <div>
         <p className="text-cream/90 text-center leading-relaxed italic text-[12px] tracking-wide">
           <span className="block mb-2 bg-gradient-to-r from-yellow-200 via-cream to-yellow-100 bg-clip-text text-transparent drop-shadow-sm">
             Bassline helps you progress quickly between instructor-led sessions, accelerating your competence in classical Pilates technique.
