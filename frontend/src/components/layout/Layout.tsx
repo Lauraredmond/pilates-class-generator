@@ -68,10 +68,10 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 container mx-auto px-4 pb-[calc(101px+env(safe-area-inset-bottom))] ${
+      <main className={`flex-1 container mx-auto px-4 pb-[calc(106px+env(safe-area-inset-bottom))] ${
         isHomePage
-          ? 'pt-[calc(24px+env(safe-area-inset-top))]'
-          : 'pt-[calc(34px+env(safe-area-inset-top))]'
+          ? 'pt-[calc(29px+env(safe-area-inset-top))]'
+          : 'pt-[calc(39px+env(safe-area-inset-top))]'
       }`}>
         {children}
       </main>
