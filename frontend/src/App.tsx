@@ -46,10 +46,10 @@ function App() {
     const acceptedDate = localStorage.getItem('medical_disclaimer_accepted_date');
 
     if (accepted === 'true' && acceptedDate) {
-      // Check if acceptance is still valid (within 30 days)
+      // Check if acceptance is still valid (within 90 days)
       const daysSinceAcceptance = (Date.now() - parseInt(acceptedDate)) / (1000 * 60 * 60 * 24);
 
-      if (daysSinceAcceptance < 30) {
+      if (daysSinceAcceptance < 90) {
         setDisclaimerAccepted(true);
       } else {
         // Expired - clear and require re-acceptance

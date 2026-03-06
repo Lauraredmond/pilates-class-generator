@@ -46,56 +46,6 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
             </p>
           </div>
 
-          {/* Pregnancy & Early Postnatal Guidance */}
-          <div className="bg-amber-50 p-5 rounded border-2 border-amber-400">
-            <h3 className="font-semibold text-amber-900 mb-3 text-lg flex items-center gap-2">
-              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Important: Pregnancy & Early Postnatal Guidance
-            </h3>
-            <div className="space-y-3 text-sm text-amber-900">
-              <p>
-                This application is designed for general Pilates practice and may not be appropriate during pregnancy or the early postnatal period (first 12 weeks after giving birth).
-              </p>
-              <p>
-                <strong>During pregnancy:</strong> Many Pilates movements require modifications during pregnancy. These movements may involve lying on your back, deep abdominal work, or prone positions that may not be suitable. We recommend seeking guidance from a qualified prenatal Pilates instructor who can provide appropriate modifications for your stage of pregnancy.
-              </p>
-              <p>
-                <strong>Early postnatal (0-12 weeks):</strong> Your body needs time to heal after giving birth. We recommend waiting until at least 12 weeks postpartum and completing your postnatal check with your doctor or midwife before beginning Pilates practice.
-              </p>
-              <p className="bg-amber-100 p-3 rounded border border-amber-300">
-                If you are pregnant or in the early postnatal period, please consult your healthcare provider before using this application. They can advise you on when it's appropriate to begin and whether you need specialized prenatal or postnatal instruction.
-              </p>
-            </div>
-          </div>
-
-          {/* Postnatal Abdominal Separation Guidance */}
-          <div className="bg-amber-50 p-5 rounded border-2 border-amber-400">
-            <h3 className="font-semibold text-amber-900 mb-3 text-lg flex items-center gap-2">
-              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Important: Postnatal Abdominal Separation (Diastasis Recti)
-            </h3>
-            <div className="space-y-3 text-sm text-amber-900">
-              <p>
-                If you have postnatal abdominal separation (diastasis recti), we recommend consulting your GP or a women's health physiotherapist before using this application.
-              </p>
-              <p>
-                Many Pilates movements require strong abdominal wall function, and your healthcare provider can help you determine:
-              </p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Whether general Pilates practice is appropriate for you at this time</li>
-                <li>Which movements to modify or avoid</li>
-                <li>When it's safe to progress your practice</li>
-                <li>If you would benefit from specialized postnatal rehabilitation first</li>
-              </ul>
-              <p className="bg-amber-100 p-3 rounded border border-amber-300">
-                We recommend consulting your GP or a women's health physiotherapist for proper assessment and personalized postnatal exercise guidance. They can help ensure your Pilates practice supports your recovery.
-              </p>
-            </div>
-          </div>
 
           {/* Key Points */}
           <div className="bg-burgundy/5 p-4 rounded border border-burgundy/20">
@@ -105,7 +55,7 @@ export function HealthSafetyModal({ onAccept, onDecline }: HealthSafetyModalProp
                 <svg className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>You have consulted a doctor if you have any medical conditions, are pregnant, or in early postnatal period</span>
+                <span>You have consulted a doctor if you have any medical conditions</span>
               </li>
               <li className="flex items-start gap-2">
                 <svg className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
