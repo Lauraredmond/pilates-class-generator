@@ -336,14 +336,31 @@ def _get_date_ranges(period: TimePeriod) -> tuple[List[tuple[date, date]], List[
     elif period == TimePeriod.MONTH:
         # Last 12 months
         for i in range(12):
-            # Calculate first and last day of month
+            # Calculate the target month and year by going back i months from today
+            year = today.year
+            month = today.month - i
+
+            # Handle year rollback when month goes below 1
+            while month <= 0:
+                month += 12
+                year -= 1
+
+            # Calculate first day of the month
+            month_start = date(year, month, 1)
+
+            # Calculate last day of the month
             if i == 0:
+                # For current month, use today as the end date
                 month_end = today
             else:
-                temp_date = today.replace(day=1) - timedelta(days=i * 30)
-                month_end = (temp_date.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+                # For other months, calculate the actual last day
+                # Go to next month's first day and subtract one day
+                if month == 12:
+                    next_month_first = date(year + 1, 1, 1)
+                else:
+                    next_month_first = date(year, month + 1, 1)
+                month_end = next_month_first - timedelta(days=1)
 
-            month_start = month_end.replace(day=1)
             ranges.append((month_start, month_end))
             labels.append(month_end.strftime("%b %Y"))  # Jan 2025, Dec 2024...
         ranges.reverse()
