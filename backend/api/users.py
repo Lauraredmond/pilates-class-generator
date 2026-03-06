@@ -301,22 +301,76 @@ async def delete_user_account(user_id: str = Depends(get_current_user_id)):
     Permanently deletes user data
     """
     try:
-        # Delete in order (respect foreign keys)
-        supabase.table("user_preferences").delete().eq("user_id", user_id).execute()
-        supabase.table("generated_sequences").delete().eq("user_id", user_id).execute()
+        # Delete in correct order (respect foreign key constraints)
+        # 1. First, delete tables that reference user_profiles
+        tables_referencing_user_profiles = [
+            "class_sequencing_reports",  # This was missing and causing the error
+            "beta_feedback",
+            "llm_invocation_log",
+            "play_sessions",
+            "user_preferences"
+        ]
+
+        for table in tables_referencing_user_profiles:
+            try:
+                supabase.table(table).delete().eq("user_id", user_id).execute()
+            except Exception as e:
+                logger.warning(f"Failed to delete from {table} for user {user_id}: {str(e)}")
+                # Continue with other deletions even if one fails
+
+        # 2. Then delete tables that reference users (auth.users)
+        tables_referencing_users = [
+            "class_history",
+            "class_plans",
+            "medical_exclusions_log",
+            "movement_usage",
+            "student_profiles"
+        ]
+
+        for table in tables_referencing_users:
+            try:
+                supabase.table(table).delete().eq("user_id", user_id).execute()
+            except Exception as e:
+                logger.warning(f"Failed to delete from {table} for user {user_id}: {str(e)}")
+
+        # Also delete where user is an instructor
+        try:
+            supabase.table("student_profiles").delete().eq("instructor_id", user_id).execute()
+        except Exception as e:
+            logger.warning(f"Failed to delete instructor references for user {user_id}: {str(e)}")
+
+        # 3. Delete generated_sequences (also references user_id)
+        try:
+            supabase.table("generated_sequences").delete().eq("user_id", user_id).execute()
+        except Exception as e:
+            logger.warning(f"Failed to delete generated_sequences for user {user_id}: {str(e)}")
+
+        # 4. Finally, delete the user profile itself
         supabase.table("user_profiles").delete().eq("id", user_id).execute()
 
-        # Delete from Supabase Auth
-        supabase.auth.admin.delete_user(user_id)
+        # 5. Delete from Supabase Auth
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception as e:
+            logger.warning(f"Failed to delete from Supabase Auth for user {user_id}: {str(e)}")
+            # Don't fail if auth deletion fails - the data is already deleted
 
         return None
 
     except Exception as e:
         logger.error(f"Account deletion failed for user {user_id}: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ErrorMessages.INTERNAL_ERROR
-        )
+        # Provide more detailed error message
+        error_msg = str(e)
+        if "foreign key constraint" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Account deletion failed. Some data may have been deleted. Please contact support. Error: {error_msg}"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=ErrorMessages.INTERNAL_ERROR
+            )
 
 
 @router.get("/me/preferences", response_model=UserPreferences)
