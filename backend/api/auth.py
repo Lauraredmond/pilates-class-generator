@@ -110,14 +110,14 @@ class UserResponse(BaseModel):
     full_name: Optional[str] = None
     created_at: datetime
     last_login: Optional[datetime] = None
+    # User type: standard, coach, or admin
+    user_type: Optional[str] = Field("standard", description="User type: standard, coach, or admin")
     # Profile fields
     age_range: Optional[str] = None
     gender_identity: Optional[str] = None
     country: Optional[str] = None
     pilates_experience: Optional[str] = None
     goals: Optional[list[str]] = None
-    # Admin flag (Session 10: Admin LLM Observability)
-    is_admin: Optional[bool] = None
     # Legal acceptance timestamps (Session: Legal policy integration)
     accepted_safety_at: Optional[str] = None
 
@@ -196,6 +196,8 @@ async def register(user_data: UserCreate, request: Request):
             "hashed_password": hashed_password,
             "created_at": datetime.utcnow().isoformat(),
             "last_login": datetime.utcnow().isoformat(),
+            # User type: standard, coach, or admin
+            "user_type": user_data.user_type if user_data.user_type else "standard",
             # New profile fields
             "age_range": user_data.age_range,
             "gender_identity": user_data.gender_identity,
@@ -530,12 +532,12 @@ async def get_current_user(request: Request, user_id: str = Depends(get_current_
             full_name=user.get("full_name"),
             created_at=user["created_at"],
             last_login=user.get("last_login"),
+            user_type=user.get("user_type", "standard"),
             age_range=user.get("age_range"),
             gender_identity=user.get("gender_identity"),
             country=user.get("country"),
             pilates_experience=user.get("pilates_experience"),
             goals=user.get("goals", []),
-            is_admin=user.get("is_admin", False),
             accepted_safety_at=user.get("accepted_safety_at")
         )
 
@@ -608,12 +610,12 @@ async def update_profile(
             full_name=user.get("full_name"),
             created_at=user["created_at"],
             last_login=user.get("last_login"),
+            user_type=user.get("user_type", "standard"),
             age_range=user.get("age_range"),
             gender_identity=user.get("gender_identity"),
             country=user.get("country"),
             pilates_experience=user.get("pilates_experience"),
             goals=user.get("goals", []),
-            is_admin=user.get("is_admin", False),
             accepted_safety_at=user.get("accepted_safety_at")
         )
 
@@ -916,10 +918,10 @@ async def update_preferences(
         if preferences_data.use_ai_agent is not None:
             # ADMIN-ONLY: AI Agent toggle restricted to admins for cost control
             # Check if user is admin before allowing AI toggle
-            user_result = supabase.table("user_profiles").select("is_admin").eq("id", user_id).execute()
-            is_admin = user_result.data[0].get("is_admin", False) if user_result.data else False
+            user_result = supabase.table("user_profiles").select("user_type").eq("id", user_id).execute()
+            user_type = user_result.data[0].get("user_type", "standard") if user_result.data else "standard"
 
-            if not is_admin:
+            if user_type != "admin":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="AI Agent toggle is restricted to administrators. Contact support to upgrade your account."
