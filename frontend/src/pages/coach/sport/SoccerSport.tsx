@@ -25,7 +25,6 @@ export function SoccerSport() {
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
 
   // New state for tabs and selection
@@ -118,7 +117,7 @@ export function SoccerSport() {
   };
 
   // Helper functions for selection and expansion
-  const toggleExerciseSelection = (exerciseId: string, event: React.MouseEvent) => {
+  const toggleExerciseSelection = (exerciseId: string, event: React.ChangeEvent<HTMLInputElement>) => {
     event.stopPropagation();
     const newSelected = new Set(selectedExercises);
     if (newSelected.has(exerciseId)) {
