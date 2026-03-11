@@ -19,6 +19,7 @@ export function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [userType, setUserType] = useState<'standard' | 'coach'>('standard');
   const [ageRange, setAgeRange] = useState('');
   const [genderIdentity, setGenderIdentity] = useState('');
   const [country, setCountry] = useState('');
@@ -84,6 +85,7 @@ export function Register() {
         email,
         password,
         fullName: fullName || undefined,
+        userType: userType,
         ageRange: ageRange || undefined,
         genderIdentity: genderIdentity || undefined,
         country: country || undefined,
@@ -306,6 +308,57 @@ export function Register() {
                   </p>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* User Type Selection */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-burgundy border-b border-burgundy/20 pb-2">
+              I am a... <span className="text-red-500">*</span>
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                userType === 'standard'
+                  ? 'border-burgundy bg-burgundy/5'
+                  : 'border-charcoal/20 hover:border-charcoal/30'
+              }`}>
+                <input
+                  type="radio"
+                  name="userType"
+                  value="standard"
+                  checked={userType === 'standard'}
+                  onChange={() => setUserType('standard')}
+                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Practitioner</div>
+                  <div className="text-sm text-charcoal/60 mt-1">
+                    I want to practice Pilates for my personal health and wellness
+                  </div>
+                </div>
+              </label>
+
+              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                userType === 'coach'
+                  ? 'border-burgundy bg-burgundy/5'
+                  : 'border-charcoal/20 hover:border-charcoal/30'
+              }`}>
+                <input
+                  type="radio"
+                  name="userType"
+                  value="coach"
+                  checked={userType === 'coach'}
+                  onChange={() => setUserType('coach')}
+                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Coach</div>
+                  <div className="text-sm text-charcoal/60 mt-1">
+                    I coach sports teams and want to integrate Pilates into my training programmes
+                  </div>
+                </div>
+              </label>
             </div>
           </div>
 

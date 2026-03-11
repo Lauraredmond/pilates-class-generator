@@ -16,8 +16,8 @@ interface User {
   country?: string;
   pilates_experience?: string;
   goals?: string[];
-  // Admin flag (Session 10: Admin LLM Observability)
-  is_admin?: boolean;
+  // User type: standard (practitioner), coach, or admin
+  user_type?: 'standard' | 'coach' | 'admin';
   // Legal acceptance timestamps (Session: Legal policy integration)
   accepted_safety_at?: string;
 }
@@ -26,6 +26,7 @@ interface RegistrationData {
   email: string;
   password: string;
   fullName?: string;
+  userType?: 'standard' | 'coach';
   ageRange?: string;
   genderIdentity?: string;
   country?: string;
@@ -214,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.email,
         password: data.password,
         full_name: data.fullName,
+        user_type: data.userType || 'standard',
         age_range: data.ageRange,
         gender_identity: data.genderIdentity,
         country: data.country,

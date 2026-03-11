@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
 
 export function Home() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="max-w-4xl mx-auto pt-[calc(env(safe-area-inset-top)+12px)]">
@@ -51,6 +53,18 @@ export function Home() {
         >
           Generate my Pilates class
         </Button>
+
+        {/* Coach Tools Button - Only visible for coach users */}
+        {user?.user_type === 'coach' && (
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() => navigate('/coach-hub')}
+            variant="secondary"
+          >
+            Coach Tools
+          </Button>
+        )}
       </div>
 
       {/* Mission Statement */}
