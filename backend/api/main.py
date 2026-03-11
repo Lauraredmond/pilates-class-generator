@@ -10,7 +10,7 @@ from loguru import logger
 import time
 
 # Import routers
-from api import movements, agents, classes, analytics, soundcloud_auth, soundcloud_api, auth, users, compliance, music, beta_errors, class_sections, movement_levels, feedback, debug, admin
+from api import movements, agents, classes, analytics, soundcloud_auth, soundcloud_api, auth, users, compliance, music, beta_errors, class_sections, movement_levels, feedback, debug, admin, coach, admin_extended
 
 app = FastAPI(
     title="Pilates Class Planner API",
@@ -92,6 +92,8 @@ app.include_router(class_sections.router, tags=["Class Sections"])  # Session 11
 app.include_router(beta_errors.router, prefix="/api", tags=["Beta Errors"])  # Beta error tracking (admin only)
 app.include_router(feedback.router, tags=["Feedback"])  # Beta tester feedback & queries
 app.include_router(admin.router, tags=["Admin"])  # Admin-only endpoints (feedback management, diagnostics)
+app.include_router(coach.router, tags=["Coach"])  # Coach endpoints for sport-specific training
+app.include_router(admin_extended.router, tags=["Admin"])  # Extended admin endpoints for platform management
 app.include_router(debug.router, tags=["Debug"])  # TEMPORARY: Debug endpoints - REMOVE BEFORE PRODUCTION!
 
 
