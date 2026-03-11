@@ -957,7 +957,7 @@ export function Analytics() {
       </Card>
 
       {/* Session 10: Admin LLM Usage Logs - Admin Only Section */}
-      {user?.is_admin && (
+      {user?.user_type === 'admin' && (
         <AdminLLMUsageLogs userId={user.id} />
       )}
     </div>
