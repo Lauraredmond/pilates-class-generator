@@ -38,7 +38,78 @@ ALTER COLUMN user_type SET DEFAULT 'standard';
 COMMENT ON COLUMN user_profiles.user_type IS 'User type: standard (practitioner), coach, or admin. Replaces the old is_admin boolean field.';
 
 -- =====================================================
--- STEP 2: Remove is_admin field (if it exists)
+-- STEP 2: Update RLS policies that depend on is_admin
+-- =====================================================
+
+-- Drop existing policies that use is_admin
+DROP POLICY IF EXISTS "Admins can update all feedback" ON beta_feedback;
+DROP POLICY IF EXISTS "Admins can view all feedback" ON beta_feedback;
+DROP POLICY IF EXISTS "Admins can view all invocation logs" ON llm_invocation_log;
+DROP POLICY IF EXISTS "Admins can view all reports" ON class_sequencing_reports;
+DROP POLICY IF EXISTS "Admins can view all section events" ON playback_section_events;
+
+-- Recreate policies using user_type instead of is_admin
+CREATE POLICY "Admins can update all feedback" ON beta_feedback
+  FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_profiles
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can view all feedback" ON beta_feedback
+  FOR SELECT
+  TO authenticated
+  USING (
+    user_id = auth.uid() OR
+    EXISTS (
+      SELECT 1 FROM user_profiles
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can view all invocation logs" ON llm_invocation_log
+  FOR SELECT
+  TO authenticated
+  USING (
+    user_id = auth.uid() OR
+    EXISTS (
+      SELECT 1 FROM user_profiles
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can view all reports" ON class_sequencing_reports
+  FOR SELECT
+  TO authenticated
+  USING (
+    user_id = auth.uid() OR
+    EXISTS (
+      SELECT 1 FROM user_profiles
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can view all section events" ON playback_section_events
+  FOR SELECT
+  TO authenticated
+  USING (
+    user_id = auth.uid() OR
+    EXISTS (
+      SELECT 1 FROM user_profiles
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
+    )
+  );
+
+-- =====================================================
+-- STEP 3: Remove is_admin field (now safe after updating policies)
 -- =====================================================
 
 -- Drop the is_admin column if it exists
@@ -46,7 +117,7 @@ ALTER TABLE user_profiles
 DROP COLUMN IF EXISTS is_admin;
 
 -- =====================================================
--- STEP 3: Create sport_exercises table for exercise data
+-- STEP 4: Create sport_exercises table for exercise data
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS sport_exercises (
@@ -72,7 +143,7 @@ CREATE INDEX idx_sport_exercises_sport ON sport_exercises(sport);
 CREATE INDEX idx_sport_exercises_category ON sport_exercises(sport, category);
 
 -- =====================================================
--- STEP 4: Create coach_sport_sessions table
+-- STEP 5: Create coach_sport_sessions table
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS coach_sport_sessions (
@@ -94,7 +165,7 @@ CREATE INDEX idx_coach_sport_sessions_sport ON coach_sport_sessions(sport);
 CREATE INDEX idx_coach_sport_sessions_date ON coach_sport_sessions(session_date);
 
 -- =====================================================
--- STEP 5: Enable Row Level Security (RLS)
+-- STEP 6: Enable Row Level Security (RLS)
 -- =====================================================
 
 -- Enable RLS on both tables
@@ -102,7 +173,7 @@ ALTER TABLE sport_exercises ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coach_sport_sessions ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
--- STEP 6: Create RLS Policies
+-- STEP 7: Create RLS Policies for new tables
 -- =====================================================
 
 -- Sport exercises are publicly readable but only admins can modify
@@ -117,8 +188,8 @@ CREATE POLICY "Only admins can insert sport exercises" ON sport_exercises
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM user_profiles
-      WHERE user_id = auth.uid()
-      AND user_type = 'admin'
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
     )
   );
 
@@ -128,8 +199,8 @@ CREATE POLICY "Only admins can update sport exercises" ON sport_exercises
   USING (
     EXISTS (
       SELECT 1 FROM user_profiles
-      WHERE user_id = auth.uid()
-      AND user_type = 'admin'
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
     )
   );
 
@@ -139,8 +210,8 @@ CREATE POLICY "Only admins can delete sport exercises" ON sport_exercises
   USING (
     EXISTS (
       SELECT 1 FROM user_profiles
-      WHERE user_id = auth.uid()
-      AND user_type = 'admin'
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
     )
   );
 
@@ -152,8 +223,8 @@ CREATE POLICY "Coaches can view their own sessions" ON coach_sport_sessions
     coach_id = auth.uid() OR
     EXISTS (
       SELECT 1 FROM user_profiles
-      WHERE user_id = auth.uid()
-      AND user_type = 'admin'
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
     )
   );
 
@@ -164,8 +235,8 @@ CREATE POLICY "Coaches can create their own sessions" ON coach_sport_sessions
     coach_id = auth.uid() AND
     EXISTS (
       SELECT 1 FROM user_profiles
-      WHERE user_id = auth.uid()
-      AND user_type IN ('coach', 'admin')
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type IN ('coach', 'admin')
     )
   );
 
@@ -176,8 +247,8 @@ CREATE POLICY "Coaches can update their own sessions" ON coach_sport_sessions
     coach_id = auth.uid() OR
     EXISTS (
       SELECT 1 FROM user_profiles
-      WHERE user_id = auth.uid()
-      AND user_type = 'admin'
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
     )
   );
 
@@ -188,13 +259,13 @@ CREATE POLICY "Coaches can delete their own sessions" ON coach_sport_sessions
     coach_id = auth.uid() OR
     EXISTS (
       SELECT 1 FROM user_profiles
-      WHERE user_id = auth.uid()
-      AND user_type = 'admin'
+      WHERE user_profiles.id = auth.uid()
+      AND user_profiles.user_type = 'admin'
     )
   );
 
 -- =====================================================
--- STEP 7: Grant necessary permissions
+-- STEP 8: Grant necessary permissions
 -- =====================================================
 
 -- Grant permissions to authenticated users
@@ -202,7 +273,7 @@ GRANT SELECT ON sport_exercises TO authenticated;
 GRANT ALL ON coach_sport_sessions TO authenticated;
 
 -- =====================================================
--- STEP 8: Create helper function to check user type
+-- STEP 9: Create helper function to check user type
 -- =====================================================
 
 CREATE OR REPLACE FUNCTION get_user_type(user_id UUID)
@@ -213,14 +284,14 @@ DECLARE
 BEGIN
   SELECT user_type INTO user_type_val
   FROM user_profiles
-  WHERE user_profiles.user_id = $1;
+  WHERE user_profiles.id = $1;
 
   RETURN COALESCE(user_type_val, 'standard');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- =====================================================
--- STEP 9: Add trigger to update updated_at timestamp
+-- STEP 10: Add trigger to update updated_at timestamp
 -- =====================================================
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -258,3 +329,9 @@ CREATE TRIGGER update_coach_sport_sessions_updated_at BEFORE UPDATE ON coach_spo
 -- FROM pg_tables
 -- WHERE schemaname = 'public'
 -- AND tablename IN ('sport_exercises', 'coach_sport_sessions');
+
+-- Check that is_admin column is removed
+-- SELECT column_name
+-- FROM information_schema.columns
+-- WHERE table_name = 'user_profiles'
+-- AND column_name = 'is_admin';  -- Should return 0 rows
