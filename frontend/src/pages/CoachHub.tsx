@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
@@ -6,7 +5,6 @@ import { Button } from '../components/ui/Button';
 export function CoachHub() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedSport, setSelectedSport] = useState<string | null>(null);
 
   // Redirect if not a coach
   if (!user || user.user_type !== 'coach') {
