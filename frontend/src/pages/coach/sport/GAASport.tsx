@@ -25,8 +25,12 @@ export function GAASport() {
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // New state for tabs and selections
+  const [activeTab, setActiveTab] = useState<'library' | 'session'>('library');
+  const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
+  const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
 
   // Redirect if not a coach or admin
   if (!user || (user.user_type !== 'coach' && user.user_type !== 'admin')) {
@@ -112,9 +116,28 @@ export function GAASport() {
     );
   };
 
+  const toggleExerciseSelection = (exerciseId: string) => {
+    const newSelected = new Set(selectedExercises);
+    if (newSelected.has(exerciseId)) {
+      newSelected.delete(exerciseId);
+    } else {
+      newSelected.add(exerciseId);
+    }
+    setSelectedExercises(newSelected);
+  };
+
+  const toggleExerciseExpansion = (exerciseId: string) => {
+    setExpandedExercise(expandedExercise === exerciseId ? null : exerciseId);
+  };
+
+  // Get selected exercises for session builder
+  const getSelectedExercisesList = () => {
+    return exercises.filter(e => selectedExercises.has(e.id));
+  };
+
   return (
     <div className="min-h-screen bg-burgundy">
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-cream mb-2">
@@ -126,204 +149,288 @@ export function GAASport() {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-cream rounded-xl shadow-xl p-6">
-          {/* Search and Filters */}
-          <div className="mb-6">
-            {/* Search Bar */}
-            <div className="relative mb-4">
-              <input
-                type="text"
-                placeholder="Search exercises..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 bg-white text-charcoal rounded-lg border border-charcoal/20 focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20 placeholder-charcoal/50"
-              />
-              <svg
-                className="absolute right-3 top-3.5 w-5 h-5 text-charcoal/40"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        <div className="bg-cream rounded-xl shadow-xl">
+          {/* Tab Navigation */}
+          <div className="border-b border-burgundy/20">
+            <div className="flex">
+              <button
+                onClick={() => setActiveTab('library')}
+                className={`flex-1 px-6 py-4 text-lg font-semibold transition-all ${
+                  activeTab === 'library'
+                    ? 'bg-white text-burgundy border-b-4 border-burgundy'
+                    : 'text-charcoal/60 hover:text-burgundy hover:bg-white/50'
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-
-            {/* Category Filters */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    selectedCategory === category
-                      ? 'bg-burgundy text-cream shadow-md'
-                      : 'bg-white text-charcoal border border-charcoal/20 hover:bg-burgundy/10'
-                  }`}
-                >
-                  {category === 'all' ? 'All Exercises' : category}
-                </button>
-              ))}
+                Library
+              </button>
+              <button
+                onClick={() => setActiveTab('session')}
+                className={`flex-1 px-6 py-4 text-lg font-semibold transition-all relative ${
+                  activeTab === 'session'
+                    ? 'bg-white text-burgundy border-b-4 border-burgundy'
+                    : 'text-charcoal/60 hover:text-burgundy hover:bg-white/50'
+                }`}
+              >
+                Session Builder
+                {selectedExercises.size > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center w-6 h-6 text-xs text-white bg-burgundy rounded-full">
+                    {selectedExercises.size}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Exercise List */}
-          <div className="space-y-3">
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-flex items-center gap-3 text-burgundy">
-                  <svg className="animate-spin h-8 w-8" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span className="text-lg">Loading exercises...</span>
-                </div>
-              </div>
-            ) : filteredExercises.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-charcoal/60 text-lg">No exercises found matching your search.</p>
-              </div>
-            ) : (
-              filteredExercises.map(exercise => (
-                <div
-                  key={exercise.id}
-                  onClick={() => setSelectedExercise(exercise)}
-                  className="bg-white rounded-lg border border-charcoal/10 p-4 hover:shadow-md hover:border-burgundy/30 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-burgundy group-hover:text-burgundy/80 transition-colors">
-                          {exercise.exercise_name}
-                        </h3>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${getCategoryColor(exercise.category)}`}>
-                          {exercise.category}
-                        </span>
-                      </div>
-                      <p className="text-sm text-charcoal/70 line-clamp-2">
-                        {exercise.description}
-                      </p>
-                      {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {exercise.muscle_groups.slice(0, 3).map(muscle => (
-                            <span
-                              key={muscle}
-                              className="text-xs bg-burgundy/10 text-burgundy px-2 py-1 rounded"
-                            >
-                              {muscle}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="ml-4 flex flex-col items-end gap-1">
-                      {renderStars(exercise.relevance_score)}
-                      <span className="text-xs text-charcoal/50">Relevance</span>
-                    </div>
+          <div className="p-6">
+            {/* Library Tab */}
+            {activeTab === 'library' && (
+              <>
+                {/* Search and Filters */}
+                <div className="mb-6">
+                  {/* Search Bar */}
+                  <div className="relative mb-4">
+                    <input
+                      type="text"
+                      placeholder="Search exercises..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full px-4 py-3 bg-white text-charcoal rounded-lg border border-charcoal/20 focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20 placeholder-charcoal/50"
+                    />
+                    <svg
+                      className="absolute right-3 top-3.5 w-5 h-5 text-charcoal/40"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* Category Filters */}
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map(category => (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                          selectedCategory === category
+                            ? 'bg-burgundy text-cream shadow-md'
+                            : 'bg-white text-charcoal border border-charcoal/20 hover:bg-burgundy/10'
+                        }`}
+                      >
+                        {category === 'all' ? 'All Exercises' : category}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
 
-          {/* Back Button */}
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => navigate('/coach-hub')}
-              className="px-6 py-3 bg-white text-burgundy font-medium rounded-lg hover:bg-burgundy hover:text-cream transition-all border border-burgundy"
-            >
-              ← Back to Coach Hub
-            </button>
+                {/* Exercise List */}
+                <div className="space-y-3">
+                  {loading ? (
+                    <div className="text-center py-12">
+                      <div className="inline-flex items-center gap-3 text-burgundy">
+                        <svg className="animate-spin h-8 w-8" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span className="text-lg">Loading exercises...</span>
+                      </div>
+                    </div>
+                  ) : filteredExercises.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-charcoal/60 text-lg">No exercises found matching your search.</p>
+                    </div>
+                  ) : (
+                    filteredExercises.map(exercise => (
+                      <div key={exercise.id} className="bg-white rounded-lg border border-charcoal/10 overflow-hidden">
+                        <div className="p-4">
+                          <div className="flex items-start gap-3">
+                            {/* Checkbox */}
+                            <div className="mt-1">
+                              <input
+                                type="checkbox"
+                                id={`checkbox-${exercise.id}`}
+                                checked={selectedExercises.has(exercise.id)}
+                                onChange={() => toggleExerciseSelection(exercise.id)}
+                                className="w-5 h-5 rounded border-burgundy text-burgundy focus:ring-burgundy cursor-pointer"
+                              />
+                            </div>
+
+                            {/* Exercise Content */}
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h3
+                                      onClick={() => toggleExerciseExpansion(exercise.id)}
+                                      className="text-lg font-semibold text-burgundy hover:text-burgundy/80 cursor-pointer transition-colors"
+                                    >
+                                      {exercise.exercise_name}
+                                    </h3>
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${getCategoryColor(exercise.category)}`}>
+                                      {exercise.category}
+                                    </span>
+                                  </div>
+
+                                  {/* Always visible short description */}
+                                  <p className="text-sm text-charcoal/70 line-clamp-2">
+                                    {exercise.description}
+                                  </p>
+
+                                  {/* Muscle groups */}
+                                  {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                      {exercise.muscle_groups.slice(0, 3).map(muscle => (
+                                        <span
+                                          key={muscle}
+                                          className="text-xs bg-burgundy/10 text-burgundy px-2 py-1 rounded"
+                                        >
+                                          {muscle}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Stars */}
+                                <div className="ml-4 flex flex-col items-end gap-1">
+                                  {renderStars(exercise.relevance_score)}
+                                  <span className="text-xs text-charcoal/50">Relevance</span>
+                                </div>
+                              </div>
+
+                              {/* Expanded Details */}
+                              {expandedExercise === exercise.id && (
+                                <div className="mt-4 pt-4 border-t border-charcoal/10 space-y-3">
+                                  <div>
+                                    <h4 className="font-semibold text-burgundy text-sm mb-1">Pilates Technique</h4>
+                                    <p className="text-sm text-charcoal/80">{exercise.description}</p>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="font-semibold text-burgundy text-sm mb-1">GAA/Hurling Connection</h4>
+                                    <p className="text-sm text-charcoal/80">{exercise.sport_relevance}</p>
+                                  </div>
+
+                                  {exercise.variations?.u12mod && (
+                                    <div>
+                                      <h4 className="font-semibold text-burgundy text-sm mb-1">U12 Modifications</h4>
+                                      <p className="text-sm text-charcoal/80">{exercise.variations.u12mod}</p>
+                                    </div>
+                                  )}
+
+                                  {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
+                                    <div>
+                                      <h4 className="font-semibold text-burgundy text-sm mb-1">Muscle Groups</h4>
+                                      <div className="flex flex-wrap gap-1">
+                                        {exercise.muscle_groups.map(muscle => (
+                                          <span
+                                            key={muscle}
+                                            className="bg-burgundy/10 text-burgundy px-2 py-1 rounded text-xs"
+                                          >
+                                            {muscle}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Session Builder Tab */}
+            {activeTab === 'session' && (
+              <div>
+                {selectedExercises.size === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-charcoal/60">
+                      <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <p className="text-lg font-medium mb-2">No exercises selected yet</p>
+                      <p className="text-sm">Go to the Library tab and select exercises to build your session</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="mb-4 p-3 bg-burgundy/5 rounded-lg border border-burgundy/20">
+                      <p className="text-sm text-charcoal/70">
+                        <span className="font-semibold text-burgundy">{selectedExercises.size}</span> exercises selected for this session
+                      </p>
+                    </div>
+
+                    {getSelectedExercisesList().map((exercise, index) => (
+                      <div key={exercise.id} className="bg-white rounded-lg border border-charcoal/10 p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg font-semibold text-charcoal/40">
+                                {index + 1}.
+                              </span>
+                              <h3 className="text-lg font-semibold text-burgundy">
+                                {exercise.exercise_name}
+                              </h3>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${getCategoryColor(exercise.category)}`}>
+                                {exercise.category}
+                              </span>
+                            </div>
+
+                            {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
+                              <div className="mt-2 ml-7 flex flex-wrap gap-1">
+                                {exercise.muscle_groups.map(muscle => (
+                                  <span
+                                    key={muscle}
+                                    className="text-xs bg-burgundy/10 text-burgundy px-2 py-1 rounded"
+                                  >
+                                    {muscle}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => toggleExerciseSelection(exercise.id)}
+                            className="text-burgundy hover:text-burgundy/60 transition-colors"
+                            title="Remove from session"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Back Button */}
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => navigate('/coach-hub')}
+                className="px-6 py-3 bg-white text-burgundy font-medium rounded-lg hover:bg-burgundy hover:text-cream transition-all border border-burgundy"
+              >
+                ← Back to Coach Hub
+              </button>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Exercise Detail Modal */}
-      {selectedExercise && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-cream rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-burgundy mb-2">
-                    {selectedExercise.exercise_name}
-                  </h2>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full text-white ${getCategoryColor(selectedExercise.category)}`}>
-                      {selectedExercise.category}
-                    </span>
-                    {renderStars(selectedExercise.relevance_score)}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedExercise(null)}
-                  className="text-burgundy hover:text-burgundy/60 text-3xl leading-none"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-burgundy mb-2">Description</h3>
-                  <p className="text-charcoal/80">{selectedExercise.description}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-burgundy mb-2">GAA/Hurling Relevance</h3>
-                  <p className="text-charcoal/80">{selectedExercise.sport_relevance}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-burgundy mb-2">Injury Prevention</h3>
-                  <p className="text-charcoal/80">{selectedExercise.injury_prevention}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-burgundy mb-2">Position-Specific Application</h3>
-                  <p className="text-charcoal/80">{selectedExercise.position_specific}</p>
-                </div>
-
-                {selectedExercise.variations?.u12mod && (
-                  <div>
-                    <h3 className="font-semibold text-burgundy mb-2">U12 Modifications</h3>
-                    <p className="text-charcoal/80">{selectedExercise.variations.u12mod}</p>
-                  </div>
-                )}
-
-                {selectedExercise.muscle_groups && selectedExercise.muscle_groups.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-burgundy mb-2">Muscle Groups</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedExercise.muscle_groups.map(muscle => (
-                        <span
-                          key={muscle}
-                          className="bg-burgundy/10 text-burgundy px-3 py-1 rounded-full text-sm"
-                        >
-                          {muscle}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => setSelectedExercise(null)}
-                  className="px-6 py-3 bg-burgundy text-cream font-semibold rounded-lg hover:bg-burgundy/90 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

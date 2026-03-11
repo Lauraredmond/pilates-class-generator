@@ -28,6 +28,11 @@ export function RugbySport() {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // New state for tabs and selection
+  const [activeTab, setActiveTab] = useState<'library' | 'session'>('library');
+  const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
+  const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
+
   // Redirect if not a coach or admin
   if (!user || (user.user_type !== 'coach' && user.user_type !== 'admin')) {
     navigate('/');
@@ -112,6 +117,32 @@ export function RugbySport() {
     );
   };
 
+  // Helper functions for selection and expansion
+  const toggleExerciseSelection = (exerciseId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    const newSelected = new Set(selectedExercises);
+    if (newSelected.has(exerciseId)) {
+      newSelected.delete(exerciseId);
+    } else {
+      newSelected.add(exerciseId);
+    }
+    setSelectedExercises(newSelected);
+  };
+
+  const toggleExerciseExpansion = (exerciseId: string) => {
+    setExpandedExercise(expandedExercise === exerciseId ? null : exerciseId);
+  };
+
+  const removeFromSession = (exerciseId: string) => {
+    const newSelected = new Set(selectedExercises);
+    newSelected.delete(exerciseId);
+    setSelectedExercises(newSelected);
+  };
+
+  const getSelectedExercisesList = () => {
+    return exercises.filter(e => selectedExercises.has(e.id));
+  };
+
   return (
     <div className="min-h-screen bg-burgundy">
       <div className="max-w-5xl mx-auto px-4 py-8">
@@ -127,6 +158,33 @@ export function RugbySport() {
 
         {/* Main Content Card */}
         <div className="bg-cream rounded-xl shadow-xl p-6">
+          {/* Tab Navigation */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setActiveTab('library')}
+              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+                activeTab === 'library'
+                  ? 'bg-burgundy text-cream shadow-md'
+                  : 'bg-white text-charcoal border border-charcoal/20 hover:bg-burgundy/10'
+              }`}
+            >
+              Library
+            </button>
+            <button
+              onClick={() => setActiveTab('session')}
+              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+                activeTab === 'session'
+                  ? 'bg-burgundy text-cream shadow-md'
+                  : 'bg-white text-charcoal border border-charcoal/20 hover:bg-burgundy/10'
+              }`}
+            >
+              Session Builder {selectedExercises.size > 0 && `(${selectedExercises.size})`}
+            </button>
+          </div>
+
+          {/* Library Tab */}
+          {activeTab === 'library' && (
+            <>
           {/* Position Focus Info */}
           <div className="bg-white rounded-lg p-4 mb-6 border border-burgundy/20">
             <h3 className="text-sm font-semibold text-burgundy mb-3">Position-Specific Focus</h3>
@@ -208,46 +266,144 @@ export function RugbySport() {
               </div>
             ) : (
               filteredExercises.map(exercise => (
-                <div
-                  key={exercise.id}
-                  onClick={() => setSelectedExercise(exercise)}
-                  className="bg-white rounded-lg border border-charcoal/10 p-4 hover:shadow-md hover:border-burgundy/30 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-burgundy group-hover:text-burgundy/80 transition-colors">
-                          {exercise.exercise_name}
-                        </h3>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${getCategoryColor(exercise.category)}`}>
-                          {exercise.category}
-                        </span>
-                      </div>
-                      <p className="text-sm text-charcoal/70 line-clamp-2">
-                        {exercise.description}
-                      </p>
-                      {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {exercise.muscle_groups.slice(0, 3).map(muscle => (
-                            <span
-                              key={muscle}
-                              className="text-xs bg-burgundy/10 text-burgundy px-2 py-1 rounded"
-                            >
-                              {muscle}
+                <div key={exercise.id} className="bg-white rounded-lg border border-charcoal/10 overflow-hidden">
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      {/* Checkbox */}
+                      <input
+                        type="checkbox"
+                        checked={selectedExercises.has(exercise.id)}
+                        onChange={(e) => toggleExerciseSelection(exercise.id, e)}
+                        className="mt-1 h-5 w-5 rounded border-charcoal/30 text-burgundy focus:ring-burgundy"
+                      />
+
+                      {/* Exercise Content */}
+                      <div className="flex-1">
+                        <div
+                          onClick={() => toggleExerciseExpansion(exercise.id)}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-semibold text-burgundy hover:text-burgundy/80 transition-colors">
+                              {exercise.exercise_name}
+                            </h3>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${getCategoryColor(exercise.category)}`}>
+                              {exercise.category}
                             </span>
-                          ))}
+                          </div>
+
+                          {/* Collapsed View */}
+                          {expandedExercise !== exercise.id && (
+                            <p className="text-sm text-charcoal/70 line-clamp-2">
+                              {exercise.description}
+                            </p>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="ml-4 flex flex-col items-end gap-1">
-                      {renderStars(exercise.relevance_score)}
-                      <span className="text-xs text-charcoal/50">Relevance</span>
+
+                        {/* Expanded View */}
+                        {expandedExercise === exercise.id && (
+                          <div className="space-y-3 mt-3 pb-2">
+                            <div>
+                              <h4 className="font-semibold text-burgundy text-sm mb-1">Pilates Technique</h4>
+                              <p className="text-sm text-charcoal/80">{exercise.description}</p>
+                            </div>
+
+                            <div>
+                              <h4 className="font-semibold text-burgundy text-sm mb-1">Rugby Connection</h4>
+                              <p className="text-sm text-charcoal/80">{exercise.sport_relevance}</p>
+                            </div>
+
+                            {exercise.variations?.u12_modification && (
+                              <div>
+                                <h4 className="font-semibold text-burgundy text-sm mb-1">U12 Modifications</h4>
+                                <p className="text-sm text-charcoal/80">{exercise.variations.u12_modification}</p>
+                              </div>
+                            )}
+
+                            {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
+                              <div>
+                                <h4 className="font-semibold text-burgundy text-sm mb-1">Muscle Groups</h4>
+                                <div className="flex flex-wrap gap-1">
+                                  {exercise.muscle_groups.map(muscle => (
+                                    <span
+                                      key={muscle}
+                                      className="text-xs bg-burgundy/10 text-burgundy px-2 py-1 rounded"
+                                    >
+                                      {muscle}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Stars */}
+                      <div className="flex flex-col items-end gap-1">
+                        {renderStars(exercise.relevance_score)}
+                        <span className="text-xs text-charcoal/50">Relevance</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
+
+            </>
+          )}
+
+          {/* Session Builder Tab */}
+          {activeTab === 'session' && (
+            <div className="space-y-3">
+              <div className="mb-4 p-3 bg-white rounded-lg border border-charcoal/20">
+                <p className="text-sm text-charcoal/70">
+                  {selectedExercises.size === 0
+                    ? "No exercises selected yet. Go to the Library tab and select exercises to build your session."
+                    : `${selectedExercises.size} exercise${selectedExercises.size === 1 ? '' : 's'} selected for your rugby training session.`
+                  }
+                </p>
+              </div>
+
+              {getSelectedExercisesList().map((exercise, index) => (
+                <div key={exercise.id} className="bg-white rounded-lg border border-charcoal/10 p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-lg font-bold text-burgundy/60">#{index + 1}</span>
+                        <h3 className="text-lg font-semibold text-burgundy">
+                          {exercise.exercise_name}
+                        </h3>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${getCategoryColor(exercise.category)}`}>
+                          {exercise.category}
+                        </span>
+                      </div>
+                      <p className="text-sm text-charcoal/70">
+                        {exercise.description}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => removeFromSession(exercise.id)}
+                      className="text-burgundy hover:text-burgundy/60 text-2xl leading-none ml-4"
+                      title="Remove from session"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {selectedExercises.size > 0 && (
+                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-600 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Note:</strong> Session builder is in preview mode.
+                    Sessions are not yet saved but this feature will be available soon.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Back Button */}
           <div className="mt-8 text-center">
@@ -261,101 +417,6 @@ export function RugbySport() {
         </div>
       </div>
 
-      {/* Exercise Detail Modal */}
-      {selectedExercise && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-cream rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-burgundy mb-2">
-                    {selectedExercise.exercise_name}
-                  </h2>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full text-white ${getCategoryColor(selectedExercise.category)}`}>
-                      {selectedExercise.category}
-                    </span>
-                    {renderStars(selectedExercise.relevance_score)}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedExercise(null)}
-                  className="text-burgundy hover:text-burgundy/60 text-3xl leading-none"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-burgundy mb-2">Technical Description</h3>
-                  <p className="text-charcoal/80">{selectedExercise.description}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-burgundy mb-2">Rugby-Specific Benefits</h3>
-                  <p className="text-charcoal/80">{selectedExercise.sport_relevance}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-burgundy mb-2">Injury Prevention Focus</h3>
-                  <p className="text-charcoal/80">{selectedExercise.injury_prevention}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-burgundy mb-2">Position-Specific Application</h3>
-                  <p className="text-charcoal/80">{selectedExercise.position_specific}</p>
-                </div>
-
-                {selectedExercise.variations && Object.keys(selectedExercise.variations).length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-burgundy mb-2">Variations</h3>
-                    {Object.entries(selectedExercise.variations).map(([key, value]) => (
-                      <div key={key} className="mb-2">
-                        <span className="text-charcoal/60 capitalize">{key.replace('_', ' ')}:</span>
-                        <p className="text-charcoal/80 ml-2">{String(value)}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {selectedExercise.muscle_groups && selectedExercise.muscle_groups.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-burgundy mb-2">Primary Muscle Groups</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedExercise.muscle_groups.map(muscle => (
-                        <span
-                          key={muscle}
-                          className="bg-burgundy/10 text-burgundy px-3 py-1 rounded-full text-sm"
-                        >
-                          {muscle}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Rugby-specific safety note */}
-                <div className="p-3 bg-yellow-50 border border-yellow-600 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Safety Note:</strong> Ensure proper warm-up before attempting this exercise,
-                    especially for players returning from injury or during pre-season preparation.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => setSelectedExercise(null)}
-                  className="px-6 py-3 bg-burgundy text-cream font-semibold rounded-lg hover:bg-burgundy/90 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
