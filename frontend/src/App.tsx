@@ -23,6 +23,13 @@ import { SecurityDisclosure } from './pages/SecurityDisclosure';
 import { DataDuringBeta } from './pages/DataDuringBeta';
 import { HealthSafety } from './pages/HealthSafety';
 import { NavTest } from './pages/NavTest';
+// Coach pages
+import { CoachHub } from './pages/CoachHub';
+import { GAASport } from './pages/coach/sport/GAASport';
+import { SoccerSport } from './pages/coach/sport/SoccerSport';
+import { RugbySport } from './pages/coach/sport/RugbySport';
+// Admin pages
+import { AdminPanel } from './pages/AdminPanel';
 // PWA version management
 import { checkAppVersion, logPWAStatus } from './utils/pwaVersion';
 
@@ -194,6 +201,45 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <BetaFeedback />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        {/* Coach routes */}
+        <Route path="/coach-hub" element={
+          <ProtectedRoute>
+            <Layout>
+              <CoachHub />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/coach/sport/gaa" element={
+          <ProtectedRoute>
+            <Layout>
+              <GAASport />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/coach/sport/soccer" element={
+          <ProtectedRoute>
+            <Layout>
+              <SoccerSport />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/coach/sport/rugby" element={
+          <ProtectedRoute>
+            <Layout>
+              <RugbySport />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        {/* Admin routes */}
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <Layout>
+              <AdminPanel />
             </Layout>
           </ProtectedRoute>
         } />

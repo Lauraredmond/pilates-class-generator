@@ -65,6 +65,18 @@ export function Home() {
             Coach Tools
           </Button>
         )}
+
+        {/* Admin Panel Button - Visible only for admin users */}
+        {user?.user_type === 'admin' && (
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() => navigate('/admin')}
+            variant="secondary"
+          >
+            Admin Panel
+          </Button>
+        )}
       </div>
 
       {/* Mission Statement */}
