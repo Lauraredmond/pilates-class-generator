@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { Button } from '../../../components/ui/Button';
-// TODO: Implement API endpoints for coach functionality
-// import axios from 'axios';
-// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 interface Exercise {
   id: string;
@@ -14,6 +13,7 @@ interface Exercise {
   sport_relevance: string;
   injury_prevention: string;
   position_specific: string;
+  relevance_score?: number;
   variations?: any;
   muscle_groups?: string[];
 }
@@ -22,7 +22,9 @@ export function GAASport() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,119 +38,227 @@ export function GAASport() {
     fetchExercises();
   }, []);
 
+  useEffect(() => {
+    filterExercises();
+  }, [exercises, selectedCategory, searchTerm]);
+
   const fetchExercises = async () => {
     try {
-      // TODO: Create API endpoint for fetching sport exercises
-      // For now, using empty array until backend endpoint is created
-      // const response = await axios.get(`${API_BASE_URL}/api/coach/exercises/gaa`);
-      // setExercises(response.data);
-      setExercises([]);
+      const response = await axios.get(`${API_BASE_URL}/api/coach/exercises/gaa`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      setExercises(response.data);
     } catch (error) {
       console.error('Error fetching exercises:', error);
+      // Fallback data for development
+      setExercises([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const filterExercises = () => {
+    let filtered = [...exercises];
+
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(e => e.category === selectedCategory);
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(e =>
+        e.exercise_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        e.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Sort by relevance score (highest first)
+    filtered.sort((a, b) => (b.relevance_score || 3) - (a.relevance_score || 3));
+
+    setFilteredExercises(filtered);
+  };
+
   const categories = ['all', ...new Set(exercises.map(e => e.category))];
-  const filteredExercises = selectedCategory === 'all'
-    ? exercises
-    : exercises.filter(e => e.category === selectedCategory);
+
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      'Core Stability': 'bg-yellow-500',
+      'Flexibility': 'bg-green-500',
+      'Power & Agility': 'bg-orange-500',
+      'Lower Body Strength': 'bg-blue-500',
+      'Upper Body Strength': 'bg-purple-500',
+      'Balance & Coordination': 'bg-pink-500',
+      'Full Body Integration': 'bg-red-500'
+    };
+    return colors[category] || 'bg-gray-500';
+  };
+
+  const renderStars = (score: number = 3) => {
+    return (
+      <div className="flex gap-0.5">
+        {[...Array(5)].map((_, i) => (
+          <svg
+            key={i}
+            className={`w-4 h-4 ${i < score ? 'text-yellow-400 fill-current' : 'text-gray-600'}`}
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+          </svg>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-burgundy">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-green-950 to-black">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-cream mb-2">GAA & Hurling Programme</h1>
-          <p className="text-cream/70">
-            Pilates exercises tailored for hurling and Gaelic football performance
+          <h1 className="text-4xl font-bold text-yellow-400 mb-2">
+            🏐 Pilates for GAA & Hurling
+          </h1>
+          <p className="text-gray-300">
+            Sport-specific Pilates exercises to enhance your game performance
           </p>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-cream rounded-lg shadow-xl p-6">
-          {/* Category Filter */}
-          <div className="mb-6">
-            <div className="flex flex-wrap gap-2">
-              {categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    selectedCategory === category
-                      ? 'bg-burgundy text-cream'
-                      : 'bg-white text-burgundy border border-burgundy/20 hover:bg-burgundy/10'
-                  }`}
-                >
-                  {category === 'all' ? 'All Exercises' : category}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Exercise Grid */}
-          {loading ? (
-            <div className="text-center py-8 text-charcoal/60">Loading exercises...</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredExercises.map(exercise => (
-                <div
-                  key={exercise.id}
-                  className="bg-white rounded-lg shadow-card p-4 border border-charcoal/10 hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => setSelectedExercise(exercise)}
-                >
-                  <h3 className="font-semibold text-burgundy mb-2">
-                    {exercise.exercise_name}
-                  </h3>
-                  <p className="text-xs text-charcoal/60 mb-2">
-                    Category: {exercise.category}
-                  </p>
-                  <p className="text-sm text-charcoal/80 line-clamp-3">
-                    {exercise.description}
-                  </p>
-                  {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {exercise.muscle_groups.slice(0, 3).map(muscle => (
-                        <span
-                          key={muscle}
-                          className="text-xs bg-burgundy/10 text-burgundy px-2 py-1 rounded"
-                        >
-                          {muscle}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Back Button */}
-          <div className="mt-8 text-center">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/coach-hub')}
-              className="text-burgundy hover:text-burgundy/80"
+        {/* Search and Filters */}
+        <div className="bg-black/40 backdrop-blur-sm rounded-xl p-6 mb-6 border border-green-900/30">
+          {/* Search Bar */}
+          <div className="relative mb-4">
+            <input
+              type="text"
+              placeholder="Search exercises..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-900/50 text-gray-100 rounded-lg border border-gray-700 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 placeholder-gray-500"
+            />
+            <svg
+              className="absolute right-3 top-3.5 w-5 h-5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              ← Back to Coach Hub
-            </Button>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
           </div>
+
+          {/* Category Filters */}
+          <div className="flex flex-wrap gap-2">
+            {categories.map(category => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  selectedCategory === category
+                    ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/30'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
+                }`}
+              >
+                {category === 'all' ? 'All Exercises' : category}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Exercise List */}
+        <div className="space-y-3">
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center gap-3 text-yellow-400">
+                <svg className="animate-spin h-8 w-8" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-lg">Loading exercises...</span>
+              </div>
+            </div>
+          ) : filteredExercises.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">No exercises found matching your search.</p>
+            </div>
+          ) : (
+            filteredExercises.map(exercise => (
+              <div
+                key={exercise.id}
+                onClick={() => setSelectedExercise(exercise)}
+                className="bg-black/40 backdrop-blur-sm border border-gray-800 rounded-lg p-4 hover:border-yellow-400/50 hover:bg-black/60 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-100 group-hover:text-yellow-400 transition-colors">
+                        {exercise.exercise_name}
+                      </h3>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full text-black ${getCategoryColor(exercise.category)}`}>
+                        {exercise.category}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-400 line-clamp-2">
+                      {exercise.description}
+                    </p>
+                    {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {exercise.muscle_groups.slice(0, 3).map(muscle => (
+                          <span
+                            key={muscle}
+                            className="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded border border-gray-700"
+                          >
+                            {muscle}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="ml-4 flex flex-col items-end gap-2">
+                    {renderStars(exercise.relevance_score)}
+                    <span className="text-xs text-gray-500">Relevance</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Back Button */}
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => navigate('/coach-hub')}
+            className="px-6 py-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors border border-gray-700"
+          >
+            ← Back to Coach Hub
+          </button>
         </div>
       </div>
 
       {/* Exercise Detail Modal */}
       {selectedExercise && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-cream rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-b from-gray-900 to-green-950 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-green-900/50">
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
-                <h2 className="text-2xl font-bold text-burgundy">
-                  {selectedExercise.exercise_name}
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-yellow-400 mb-2">
+                    {selectedExercise.exercise_name}
+                  </h2>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 text-sm font-medium rounded-full text-black ${getCategoryColor(selectedExercise.category)}`}>
+                      {selectedExercise.category}
+                    </span>
+                    {renderStars(selectedExercise.relevance_score)}
+                  </div>
+                </div>
                 <button
                   onClick={() => setSelectedExercise(null)}
-                  className="text-burgundy hover:text-burgundy/80 text-2xl leading-none"
+                  className="text-gray-400 hover:text-white text-3xl leading-none"
                 >
                   ×
                 </button>
@@ -156,40 +266,40 @@ export function GAASport() {
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-burgundy mb-1">Description</h3>
-                  <p className="text-charcoal/80">{selectedExercise.description}</p>
+                  <h3 className="font-semibold text-yellow-400 mb-2">Description</h3>
+                  <p className="text-gray-300">{selectedExercise.description}</p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-burgundy mb-1">GAA/Hurling Relevance</h3>
-                  <p className="text-charcoal/80">{selectedExercise.sport_relevance}</p>
+                  <h3 className="font-semibold text-yellow-400 mb-2">GAA/Hurling Relevance</h3>
+                  <p className="text-gray-300">{selectedExercise.sport_relevance}</p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-burgundy mb-1">Injury Prevention</h3>
-                  <p className="text-charcoal/80">{selectedExercise.injury_prevention}</p>
+                  <h3 className="font-semibold text-yellow-400 mb-2">Injury Prevention</h3>
+                  <p className="text-gray-300">{selectedExercise.injury_prevention}</p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-burgundy mb-1">Position-Specific Application</h3>
-                  <p className="text-charcoal/80">{selectedExercise.position_specific}</p>
+                  <h3 className="font-semibold text-yellow-400 mb-2">Position-Specific Application</h3>
+                  <p className="text-gray-300">{selectedExercise.position_specific}</p>
                 </div>
 
                 {selectedExercise.variations?.u12mod && (
                   <div>
-                    <h3 className="font-semibold text-burgundy mb-1">U12 Modifications</h3>
-                    <p className="text-charcoal/80">{selectedExercise.variations.u12mod}</p>
+                    <h3 className="font-semibold text-yellow-400 mb-2">U12 Modifications</h3>
+                    <p className="text-gray-300">{selectedExercise.variations.u12mod}</p>
                   </div>
                 )}
 
                 {selectedExercise.muscle_groups && selectedExercise.muscle_groups.length > 0 && (
                   <div>
-                    <h3 className="font-semibold text-burgundy mb-1">Muscle Groups</h3>
+                    <h3 className="font-semibold text-yellow-400 mb-2">Muscle Groups</h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedExercise.muscle_groups.map(muscle => (
                         <span
                           key={muscle}
-                          className="bg-burgundy/10 text-burgundy px-3 py-1 rounded-full text-sm"
+                          className="bg-gray-800 text-gray-300 px-3 py-1 rounded-full text-sm border border-gray-700"
                         >
                           {muscle}
                         </span>
@@ -200,12 +310,12 @@ export function GAASport() {
               </div>
 
               <div className="mt-6 flex justify-end">
-                <Button
-                  variant="primary"
+                <button
                   onClick={() => setSelectedExercise(null)}
+                  className="px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 transition-colors"
                 >
                   Close
-                </Button>
+                </button>
               </div>
             </div>
           </div>
