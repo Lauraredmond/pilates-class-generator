@@ -6,8 +6,8 @@ export function CoachHub() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Redirect if not a coach
-  if (!user || user.user_type !== 'coach') {
+  // Redirect if not a coach or admin
+  if (!user || (user.user_type !== 'coach' && user.user_type !== 'admin')) {
     navigate('/');
     return null;
   }

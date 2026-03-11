@@ -54,8 +54,8 @@ export function Home() {
           Generate my Pilates class
         </Button>
 
-        {/* Coach Tools Button - Only visible for coach users */}
-        {user?.user_type === 'coach' && (
+        {/* Coach Tools Button - Visible for coach and admin users */}
+        {(user?.user_type === 'coach' || user?.user_type === 'admin') && (
           <Button
             className="w-full"
             size="lg"
