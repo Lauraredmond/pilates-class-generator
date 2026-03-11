@@ -334,7 +334,7 @@ export function Register() {
                 <div>
                   <div className="font-medium text-charcoal">Practitioner</div>
                   <div className="text-sm text-charcoal/60 mt-1">
-                    I want to practice Pilates for my personal health and wellness
+                    I want to practise Pilates
                   </div>
                 </div>
               </label>
@@ -355,7 +355,7 @@ export function Register() {
                 <div>
                   <div className="font-medium text-charcoal">Coach</div>
                   <div className="text-sm text-charcoal/60 mt-1">
-                    I coach sports teams and want to integrate Pilates into my training programmes
+                    I am a Pilates instructor or I coach sports teams
                   </div>
                 </div>
               </label>
