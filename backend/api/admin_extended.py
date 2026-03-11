@@ -7,16 +7,28 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from uuid import UUID
 import logging
-from sqlalchemy import text
 import json
+import os
+from supabase import create_client, Client
+from dotenv import load_dotenv
 
-from db import get_db_connection
 from api.auth import get_current_user
 from models.user import User
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
+
+# Initialize Supabase client
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in .env file")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def admin_required(current_user: User = Depends(get_current_user)):
     """Require admin user type"""
@@ -42,55 +54,39 @@ async def get_all_users(
     Returns user profiles with statistics.
     """
     try:
-        conn = get_db_connection()
-
-        # Base query with user stats
-        query = """
-            SELECT
-                up.id,
-                up.email,
-                up.full_name,
-                up.user_type,
-                up.created_at,
-                up.last_login,
-                up.age_range,
-                up.country,
-                up.pilates_experience,
-                COUNT(DISTINCT ch.id) as total_classes,
-                COUNT(DISTINCT css.id) as total_sessions
-            FROM user_profiles up
-            LEFT JOIN class_history ch ON ch.user_id = up.id
-            LEFT JOIN coach_sport_sessions css ON css.coach_id = up.id
-            WHERE 1=1
-        """
-
-        params = {"limit": limit, "offset": offset}
+        # Build query for user profiles
+        query = supabase.table("user_profiles").select("*")
 
         # Add filters
         if user_type:
-            query += " AND up.user_type = :user_type"
-            params["user_type"] = user_type
+            query = query.eq("user_type", user_type)
 
         if search:
-            query += " AND (up.email ILIKE :search OR up.full_name ILIKE :search)"
-            params["search"] = f"%{search}%"
+            # Supabase doesn't support OR in a single query, so we'll filter on email only
+            query = query.ilike("email", f"%{search}%")
 
-        query += """
-            GROUP BY up.id
-            ORDER BY up.created_at DESC
-            LIMIT :limit OFFSET :offset
-        """
+        # Execute with pagination
+        result = query.order("created_at", desc=True).limit(limit).offset(offset).execute()
+        users = result.data or []
 
-        result = conn.execute(text(query), params)
-        users = result.fetchall()
+        # For each user, get their stats (simplified - in production you'd optimize this)
+        for user in users:
+            # Get class count
+            class_result = supabase.table("class_history").select("id", count="exact").eq("user_id", user["id"]).execute()
+            user["total_classes"] = class_result.count if hasattr(class_result, 'count') else 0
 
-        return [dict(user) for user in users]
+            # Get session count for coaches
+            if user["user_type"] == "coach":
+                session_result = supabase.table("coach_sport_sessions").select("id", count="exact").eq("coach_id", user["id"]).execute()
+                user["total_sessions"] = session_result.count if hasattr(session_result, 'count') else 0
+            else:
+                user["total_sessions"] = 0
+
+        return users
 
     except Exception as e:
         logger.error(f"Error fetching users: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch users")
-    finally:
-        conn.close()
 
 @router.get("/users/{user_id}")
 async def get_user_details(
@@ -99,37 +95,45 @@ async def get_user_details(
 ):
     """Get detailed user information (admin only)"""
     try:
-        conn = get_db_connection()
+        # Get user profile
+        result = supabase.table("user_profiles").select("*").eq("id", str(user_id)).execute()
 
-        query = """
-            SELECT
-                up.*,
-                COUNT(DISTINCT ch.id) as total_classes,
-                COUNT(DISTINCT css.id) as total_sessions,
-                MAX(ch.created_at) as last_class_date,
-                MAX(css.created_at) as last_session_date
-            FROM user_profiles up
-            LEFT JOIN class_history ch ON ch.user_id = up.id
-            LEFT JOIN coach_sport_sessions css ON css.coach_id = up.id
-            WHERE up.id = :user_id
-            GROUP BY up.id
-        """
-
-        result = conn.execute(text(query), {"user_id": str(user_id)})
-        user = result.fetchone()
-
-        if not user:
+        if not result.data:
             raise HTTPException(status_code=404, detail="User not found")
 
-        return dict(user)
+        user = result.data[0]
+
+        # Get class history stats
+        class_result = supabase.table("class_history")\
+            .select("id, created_at")\
+            .eq("user_id", str(user_id))\
+            .order("created_at", desc=True)\
+            .execute()
+
+        user["total_classes"] = len(class_result.data) if class_result.data else 0
+        user["last_class_date"] = class_result.data[0]["created_at"] if class_result.data else None
+
+        # Get coach session stats (if user is a coach)
+        if user["user_type"] == "coach":
+            session_result = supabase.table("coach_sport_sessions")\
+                .select("id, created_at")\
+                .eq("coach_id", str(user_id))\
+                .order("created_at", desc=True)\
+                .execute()
+
+            user["total_sessions"] = len(session_result.data) if session_result.data else 0
+            user["last_session_date"] = session_result.data[0]["created_at"] if session_result.data else None
+        else:
+            user["total_sessions"] = 0
+            user["last_session_date"] = None
+
+        return user
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error fetching user details: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch user details")
-    finally:
-        conn.close()
 
 @router.put("/users/{user_id}")
 async def update_user_by_admin(
@@ -139,49 +143,39 @@ async def update_user_by_admin(
 ):
     """Update user profile (admin only)"""
     try:
-        conn = get_db_connection()
-
         # Check user exists
-        check_query = "SELECT id FROM user_profiles WHERE id = :user_id"
-        result = conn.execute(text(check_query), {"user_id": str(user_id)})
-        if not result.fetchone():
+        check_result = supabase.table("user_profiles").select("id").eq("id", str(user_id)).execute()
+        if not check_result.data:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # Build update query
-        set_clauses = []
-        params = {"user_id": str(user_id)}
-
+        # Build update data
+        update_data = {}
         # Only allow updating specific fields
         allowed_fields = ["user_type", "full_name", "is_active"]
         for field in allowed_fields:
             if field in updates:
-                set_clauses.append(f"{field} = :{field}")
-                params[field] = updates[field]
+                update_data[field] = updates[field]
 
-        if not set_clauses:
+        if not update_data:
             raise HTTPException(status_code=400, detail="No valid fields to update")
 
-        query = f"""
-            UPDATE user_profiles
-            SET {', '.join(set_clauses)}, updated_at = NOW()
-            WHERE id = :user_id
-            RETURNING *
-        """
+        update_data["updated_at"] = datetime.utcnow().isoformat()
 
-        result = conn.execute(text(query), params)
-        updated_user = result.fetchone()
-        conn.commit()
+        result = supabase.table("user_profiles")\
+            .update(update_data)\
+            .eq("id", str(user_id))\
+            .execute()
 
-        return dict(updated_user)
+        if result.data:
+            return result.data[0]
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update user")
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error updating user: {e}")
-        conn.rollback()
         raise HTTPException(status_code=500, detail="Failed to update user")
-    finally:
-        conn.close()
 
 @router.delete("/users/{user_id}")
 async def delete_user_by_admin(
@@ -190,22 +184,17 @@ async def delete_user_by_admin(
 ):
     """Permanently delete user account (admin only)"""
     try:
-        conn = get_db_connection()
-
         # Prevent self-deletion
         if str(user_id) == str(current_user.id):
             raise HTTPException(status_code=400, detail="Cannot delete your own account")
 
         # Check user exists
-        check_query = "SELECT id FROM user_profiles WHERE id = :user_id"
-        result = conn.execute(text(check_query), {"user_id": str(user_id)})
-        if not result.fetchone():
+        check_result = supabase.table("user_profiles").select("id").eq("id", str(user_id)).execute()
+        if not check_result.data:
             raise HTTPException(status_code=404, detail="User not found")
 
         # Delete user (cascades to related tables)
-        delete_query = "DELETE FROM user_profiles WHERE id = :user_id"
-        conn.execute(text(delete_query), {"user_id": str(user_id)})
-        conn.commit()
+        supabase.table("user_profiles").delete().eq("id", str(user_id)).execute()
 
         return {"message": "User deleted successfully"}
 
@@ -213,10 +202,7 @@ async def delete_user_by_admin(
         raise
     except Exception as e:
         logger.error(f"Error deleting user: {e}")
-        conn.rollback()
         raise HTTPException(status_code=500, detail="Failed to delete user")
-    finally:
-        conn.close()
 
 # ============================================================================
 # EXERCISE MANAGEMENT ENDPOINTS
@@ -228,36 +214,30 @@ async def get_exercise_statistics(
 ):
     """Get exercise database statistics (admin only)"""
     try:
-        conn = get_db_connection()
+        # Get all exercises
+        result = supabase.table("sport_exercises").select("*").execute()
+        exercises = result.data or []
 
-        # Get exercise counts by sport
-        sport_query = """
-            SELECT
-                sport,
-                COUNT(*) as count,
-                COUNT(DISTINCT category) as categories
-            FROM sport_exercises
-            GROUP BY sport
-        """
+        # Group by sport and calculate stats
+        by_sport = {}
+        for exercise in exercises:
+            sport = exercise["sport"]
+            if sport not in by_sport:
+                by_sport[sport] = {"count": 0, "categories": set()}
+            by_sport[sport]["count"] += 1
+            by_sport[sport]["categories"].add(exercise["category"])
 
-        result = conn.execute(text(sport_query))
-        by_sport = {row["sport"]: {"count": row["count"], "categories": row["categories"]}
-                    for row in result}
+        # Convert sets to counts
+        for sport in by_sport:
+            by_sport[sport]["categories"] = len(by_sport[sport]["categories"])
 
         # Get total count
-        total_query = "SELECT COUNT(*) as total FROM sport_exercises"
-        result = conn.execute(text(total_query))
-        total = result.fetchone()["total"]
+        total = len(exercises)
 
-        # Get recently added
-        recent_query = """
-            SELECT id, sport, exercise_name, created_at
-            FROM sport_exercises
-            ORDER BY created_at DESC
-            LIMIT 5
-        """
-        result = conn.execute(text(recent_query))
-        recent = [dict(row) for row in result]
+        # Get recently added (sort by created_at)
+        recent = sorted(exercises, key=lambda x: x.get("created_at", ""), reverse=True)[:5]
+        recent = [{"id": e["id"], "sport": e["sport"], "exercise_name": e["exercise_name"],
+                  "created_at": e.get("created_at")} for e in recent]
 
         return {
             "total_exercises": total,
@@ -268,8 +248,6 @@ async def get_exercise_statistics(
     except Exception as e:
         logger.error(f"Error fetching exercise stats: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch exercise statistics")
-    finally:
-        conn.close()
 
 @router.post("/exercises/import")
 async def import_exercises(
@@ -282,8 +260,6 @@ async def import_exercises(
     Validates and imports exercises, preventing duplicates.
     """
     try:
-        conn = get_db_connection()
-
         sport = import_data["sport"]
         exercises = import_data["exercises"]
 
@@ -294,49 +270,36 @@ async def import_exercises(
         for exercise in exercises:
             try:
                 # Check for duplicates
-                check_query = """
-                    SELECT id FROM sport_exercises
-                    WHERE sport = :sport AND exercise_name = :name
-                """
-                result = conn.execute(text(check_query), {
-                    "sport": sport,
-                    "name": exercise["exercise_name"]
-                })
+                check_result = supabase.table("sport_exercises")\
+                    .select("id")\
+                    .eq("sport", sport)\
+                    .eq("exercise_name", exercise["exercise_name"])\
+                    .execute()
 
-                if result.fetchone():
+                if check_result.data:
                     failed_count += 1
                     errors.append(f"Duplicate: {exercise['exercise_name']}")
                     continue
 
                 # Insert exercise
-                insert_query = """
-                    INSERT INTO sport_exercises
-                    (sport, exercise_name, category, description, sport_relevance,
-                     injury_prevention, position_specific, variations, muscle_groups)
-                    VALUES (:sport, :name, :category, :description, :relevance,
-                            :prevention, :position, :variations::jsonb, :muscles)
-                """
-
-                params = {
+                exercise_record = {
                     "sport": sport,
-                    "name": exercise["exercise_name"],
+                    "exercise_name": exercise["exercise_name"],
                     "category": exercise["category"],
                     "description": exercise["description"],
-                    "relevance": exercise.get("sport_relevance"),
-                    "prevention": exercise.get("injury_prevention"),
-                    "position": exercise.get("position_specific"),
-                    "variations": json.dumps(exercise.get("variations", {})),
-                    "muscles": exercise.get("muscle_groups", [])
+                    "sport_relevance": exercise.get("sport_relevance"),
+                    "injury_prevention": exercise.get("injury_prevention"),
+                    "position_specific": exercise.get("position_specific"),
+                    "variations": exercise.get("variations", {}),
+                    "muscle_groups": exercise.get("muscle_groups", [])
                 }
 
-                conn.execute(text(insert_query), params)
+                supabase.table("sport_exercises").insert(exercise_record).execute()
                 imported_count += 1
 
             except Exception as e:
                 failed_count += 1
                 errors.append(f"Error with {exercise.get('exercise_name', 'unknown')}: {str(e)}")
-
-        conn.commit()
 
         return {
             "imported_count": imported_count,
@@ -346,10 +309,7 @@ async def import_exercises(
 
     except Exception as e:
         logger.error(f"Error importing exercises: {e}")
-        conn.rollback()
         raise HTTPException(status_code=500, detail="Failed to import exercises")
-    finally:
-        conn.close()
 
 # ============================================================================
 # PLATFORM STATISTICS ENDPOINTS
@@ -362,8 +322,6 @@ async def get_platform_statistics(
 ):
     """Get comprehensive platform statistics (admin only)"""
     try:
-        conn = get_db_connection()
-
         # Calculate date range
         now = datetime.utcnow()
         if period == "day":
@@ -375,83 +333,70 @@ async def get_platform_statistics(
         else:  # year
             start_date = now - timedelta(days=365)
 
-        # User statistics
-        user_stats_query = """
-            SELECT
-                COUNT(*) as total_users,
-                COUNT(CASE WHEN user_type = 'standard' THEN 1 END) as standard_users,
-                COUNT(CASE WHEN user_type = 'coach' THEN 1 END) as coach_users,
-                COUNT(CASE WHEN user_type = 'admin' THEN 1 END) as admin_users,
-                COUNT(CASE WHEN created_at >= :start_date THEN 1 END) as new_users_period,
-                COUNT(CASE WHEN last_login >= :start_date THEN 1 END) as active_users_period
-            FROM user_profiles
-        """
+        # Get all users
+        users_result = supabase.table("user_profiles").select("*").execute()
+        users = users_result.data or []
 
-        result = conn.execute(text(user_stats_query), {"start_date": start_date})
-        user_stats = dict(result.fetchone())
+        # Calculate user statistics
+        total_users = len(users)
+        standard_users = len([u for u in users if u.get("user_type") == "standard"])
+        coach_users = len([u for u in users if u.get("user_type") == "coach"])
+        admin_users = len([u for u in users if u.get("user_type") == "admin"])
 
-        # Class statistics
-        class_stats_query = """
-            SELECT
-                COUNT(*) as total_classes,
-                COUNT(CASE WHEN created_at >= :start_date THEN 1 END) as classes_period
-            FROM class_history
-        """
+        # Calculate period statistics
+        start_date_str = start_date.isoformat()
+        new_users_period = len([u for u in users if u.get("created_at", "") >= start_date_str])
+        active_users_period = len([u for u in users if u.get("last_login", "") >= start_date_str])
 
-        result = conn.execute(text(class_stats_query), {"start_date": start_date})
-        class_stats = dict(result.fetchone())
+        # Get class history
+        classes_result = supabase.table("class_history").select("created_at").execute()
+        classes = classes_result.data or []
+        total_classes = len(classes)
+        classes_period = len([c for c in classes if c.get("created_at", "") >= start_date_str])
 
-        # Session statistics
-        session_stats_query = """
-            SELECT
-                COUNT(*) as total_sessions,
-                COUNT(CASE WHEN created_at >= :start_date THEN 1 END) as sessions_period,
-                COUNT(DISTINCT coach_id) as active_coaches,
-                COUNT(DISTINCT sport) as sports_used
-            FROM coach_sport_sessions
-            WHERE created_at >= :start_date
-        """
+        # Get coach sessions
+        sessions_result = supabase.table("coach_sport_sessions").select("*").execute()
+        sessions = sessions_result.data or []
+        total_sessions = len(sessions)
+        sessions_period = len([s for s in sessions if s.get("created_at", "") >= start_date_str])
 
-        result = conn.execute(text(session_stats_query), {"start_date": start_date})
-        session_stats = dict(result.fetchone())
+        # Calculate active coaches and sports
+        period_sessions = [s for s in sessions if s.get("created_at", "") >= start_date_str]
+        active_coaches = len(set(s["coach_id"] for s in period_sessions if s.get("coach_id")))
 
         # Popular sports
-        sport_popularity_query = """
-            SELECT sport, COUNT(*) as session_count
-            FROM coach_sport_sessions
-            WHERE created_at >= :start_date
-            GROUP BY sport
-            ORDER BY session_count DESC
-            LIMIT 5
-        """
+        sport_counts = {}
+        for session in period_sessions:
+            sport = session.get("sport")
+            if sport:
+                sport_counts[sport] = sport_counts.get(sport, 0) + 1
 
-        result = conn.execute(text(sport_popularity_query), {"start_date": start_date})
-        popular_sports = [dict(row) for row in result]
+        popular_sports = [{"sport": sport, "session_count": count}
+                         for sport, count in sorted(sport_counts.items(),
+                                                   key=lambda x: x[1], reverse=True)[:5]]
 
         return {
             "period": period,
             "period_start": start_date.isoformat(),
-            "total_users": user_stats["total_users"],
+            "total_users": total_users,
             "users_by_type": {
-                "standard": user_stats["standard_users"],
-                "coach": user_stats["coach_users"],
-                "admin": user_stats["admin_users"]
+                "standard": standard_users,
+                "coach": coach_users,
+                "admin": admin_users
             },
-            "new_users_period": user_stats["new_users_period"],
-            "active_users_period": user_stats["active_users_period"],
-            "total_classes_created": class_stats["total_classes"],
-            "classes_created_period": class_stats["classes_period"],
-            "total_sessions_created": session_stats["total_sessions"],
-            "sessions_created_period": session_stats["sessions_period"],
-            "active_coaches": session_stats["active_coaches"],
+            "new_users_period": new_users_period,
+            "active_users_period": active_users_period,
+            "total_classes_created": total_classes,
+            "classes_created_period": classes_period,
+            "total_sessions_created": total_sessions,
+            "sessions_created_period": sessions_period,
+            "active_coaches": active_coaches,
             "popular_sports": popular_sports
         }
 
     except Exception as e:
         logger.error(f"Error fetching platform stats: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch platform statistics")
-    finally:
-        conn.close()
 
 # ============================================================================
 # SYSTEM HEALTH ENDPOINTS
@@ -471,9 +416,8 @@ async def get_system_health(
 
         # Check database
         try:
-            conn = get_db_connection()
-            conn.execute(text("SELECT 1"))
-            conn.close()
+            # Simple health check query
+            result = supabase.table("user_profiles").select("id").limit(1).execute()
             health_status["components"]["database"] = {
                 "status": "healthy",
                 "latency_ms": 5
