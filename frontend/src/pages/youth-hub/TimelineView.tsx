@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody } from '../../components/ui/Card';
-import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, Clock, Users, Activity } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Users, Activity } from 'lucide-react';
 import { youthHubApi } from '../../services/youthHubApi';
 
 interface Youth {
