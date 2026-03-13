@@ -204,36 +204,46 @@ async function handlePermissionsAndDisclaimers(page: any) {
 }
 
 async function acceptAllAgreements(page: any) {
-  // Check the safety confirmation checkbox
-  const safetyCheckbox = page.locator('input[type="checkbox"]').filter({
-    hasText: /16 years|age|safety|medical/i
-  });
-  if (await safetyCheckbox.isVisible()) {
-    await safetyCheckbox.check();
+  // First check the age/safety confirmation checkbox - this is REQUIRED
+  // Look for checkbox near text about being 16 years old
+  const ageCheckbox = page.locator('input[type="checkbox"]').locator('..', { has: page.locator('text=/16 years of age/i') }).locator('input[type="checkbox"]').first();
+  if (await ageCheckbox.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await ageCheckbox.check();
+    console.log('Checked age confirmation checkbox');
+  } else {
+    // Alternative selector - look for the parent div containing the text
+    const ageConfirmation = page.locator('div:has-text("I confirm that I am 16 years of age or older")').locator('input[type="checkbox"]').first();
+    if (await ageConfirmation.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await ageConfirmation.check();
+      console.log('Checked age confirmation checkbox (alt selector)');
+    }
   }
 
-  // Check privacy policy checkbox
-  const privacyCheckbox = page.locator('input[type="checkbox"]').filter({
-    hasText: /privacy|policy/i
-  });
-  if (await privacyCheckbox.isVisible()) {
-    await privacyCheckbox.check();
+  // Check all checkboxes in the Legal Agreements section
+  const legalSection = page.locator('h2:has-text("Legal Agreements")').locator('..');
+  const legalCheckboxes = legalSection.locator('input[type="checkbox"]:visible');
+  const legalCount = await legalCheckboxes.count();
+  console.log(`Found ${legalCount} legal agreement checkboxes`);
+  for (let i = 0; i < legalCount; i++) {
+    await legalCheckboxes.nth(i).check();
   }
 
-  // Check beta agreement checkbox
-  const betaCheckbox = page.locator('input[type="checkbox"]').filter({
-    hasText: /beta|agreement|terms/i
-  });
-  if (await betaCheckbox.isVisible()) {
-    await betaCheckbox.check();
-  }
-
-  // Check all visible checkboxes in legal section
-  const legalSection = page.locator('text=Legal Agreements').locator('..');
-  const allCheckboxes = legalSection.locator('input[type="checkbox"]:visible');
-  const count = await allCheckboxes.count();
-  for (let i = 0; i < count; i++) {
-    await allCheckboxes.nth(i).check();
+  // Also check any remaining unchecked checkboxes in the form that are required
+  // This is a fallback to ensure all necessary checkboxes are checked
+  const allUnchecked = page.locator('input[type="checkbox"]:not(:checked):visible');
+  const uncheckedCount = await allUnchecked.count();
+  console.log(`Found ${uncheckedCount} unchecked checkboxes to check`);
+  for (let i = 0; i < uncheckedCount; i++) {
+    const checkbox = allUnchecked.nth(i);
+    // Skip role selection checkboxes (they have specific labels)
+    const parent = await checkbox.locator('..').textContent();
+    if (!parent?.includes('Practitioner') && !parent?.includes('Instructor') &&
+        !parent?.includes('Coach') && !parent?.includes('Parent') &&
+        !parent?.includes('Stress') && !parent?.includes('Tone') &&
+        !parent?.includes('Performance') && !parent?.includes('Habit')) {
+      await checkbox.check();
+      console.log(`Checked additional checkbox: ${parent?.substring(0, 50)}`);
+    }
   }
 }
 
