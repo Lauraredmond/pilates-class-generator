@@ -28,6 +28,8 @@ import { CoachHub } from './pages/CoachHub';
 import { GAASport } from './pages/coach/sport/GAASport';
 import { SoccerSport } from './pages/coach/sport/SoccerSport';
 import { RugbySport } from './pages/coach/sport/RugbySport';
+// Youth Training Hub
+import { YouthTrainingHub } from './pages/youth-hub/YouthTrainingHub';
 // Admin pages
 import { AdminPanel } from './pages/AdminPanel';
 // PWA version management
@@ -213,6 +215,16 @@ function App() {
             </Layout>
           </ProtectedRoute>
         } />
+
+        {/* Youth Training Hub routes */}
+        <Route path="/youth-training-hub" element={
+          <ProtectedRoute>
+            <Layout>
+              <YouthTrainingHub />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/coach/sport/gaa" element={
           <ProtectedRoute>
             <Layout>

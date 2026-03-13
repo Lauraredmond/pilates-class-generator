@@ -25,6 +25,28 @@ export function CoachHub() {
 
         {/* Main Content Card */}
         <div className="bg-cream rounded-lg shadow-xl p-6">
+          {/* New Youth Training Hub - Full Width Featured Button */}
+          <div className="mb-6">
+            <div className="bg-gradient-to-r from-burgundy to-burgundy-dark rounded-lg shadow-xl p-6 text-cream">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold mb-2">
+                    🆕 Youth Training Hub
+                  </h3>
+                  <p className="text-cream/90 text-sm">
+                    Multi-sport coaching diary and youth training visibility platform. Track training across GAA, Rugby, Soccer and more. Parents and coaches can collaborate on youth development.
+                  </p>
+                </div>
+                <Button
+                  className="bg-cream text-burgundy hover:bg-cream/90 font-semibold px-6"
+                  onClick={() => navigate('/youth-training-hub')}
+                >
+                  Launch Hub
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* Tool Buttons Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Manage Students Button */}
