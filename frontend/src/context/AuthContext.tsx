@@ -26,7 +26,8 @@ interface RegistrationData {
   email: string;
   password: string;
   fullName?: string;
-  userType?: 'standard' | 'coach';
+  roles?: string[];  // Multi-role support
+  userType?: 'standard' | 'coach';  // Legacy support
   ageRange?: string;
   genderIdentity?: string;
   country?: string;
