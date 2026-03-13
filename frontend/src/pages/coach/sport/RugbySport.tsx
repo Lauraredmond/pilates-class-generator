@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { hasCoachingRole } from '../../../types/auth.types';
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -33,7 +34,7 @@ export function RugbySport() {
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
 
   // Redirect if not a coach or admin
-  if (!user || (user.user_type !== 'coach' && user.user_type !== 'admin')) {
+  if (!user || !hasCoachingRole(user)) {
     navigate('/');
     return null;
   }

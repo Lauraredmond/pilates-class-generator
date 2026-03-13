@@ -1,13 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
+import { hasCoachingRole } from '../types/auth.types';
 
 export function CoachHub() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   // Redirect if not a coach or admin
-  if (!user || (user.user_type !== 'coach' && user.user_type !== 'admin')) {
+  if (!user || !hasCoachingRole(user)) {
     navigate('/');
     return null;
   }

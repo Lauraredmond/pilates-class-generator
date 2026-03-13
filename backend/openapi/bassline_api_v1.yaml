@@ -510,7 +510,6 @@ components:
       required:
         - email
         - password
-        - full_name
       properties:
         email:
           type: string
@@ -521,6 +520,38 @@ components:
           minLength: 8
         full_name:
           type: string
+        user_type:
+          type: string
+          enum: [standard, coach]
+          description: |
+            User type for backward compatibility.
+            - standard: Maps to practitioner or parent roles
+            - coach: Maps to pilates_instructor or sports coach roles
+            Note: The actual role (practitioner, pilates_instructor, coach, parent)
+            is determined during registration but stored as standard/coach for compatibility.
+          default: standard
+        age_range:
+          type: string
+          enum: ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]
+        gender_identity:
+          type: string
+          enum: ["Female", "Male", "Non-binary", "Other", "Prefer not to say"]
+        country:
+          type: string
+        pilates_experience:
+          type: string
+          enum: ["Beginner", "Intermediate", "Advanced", "Instructor"]
+        goals:
+          type: array
+          items:
+            type: string
+            enum: ["stress_relief", "tone_strength", "performance", "habit_building"]
+        accepted_privacy_at:
+          type: string
+          format: date-time
+        accepted_beta_terms_at:
+          type: string
+          format: date-time
 
     UserLogin:
       type: object
@@ -546,9 +577,29 @@ components:
           format: email
         full_name:
           type: string
-        role:
+        user_type:
           type: string
-          enum: [student, instructor, admin]
+          enum: [standard, coach, practitioner, pilates_instructor, parent, admin]
+          description: |
+            User role in the system:
+            - standard: Legacy practitioner (backward compatibility)
+            - coach: Legacy coach (backward compatibility)
+            - practitioner: Pilates practitioner
+            - pilates_instructor: Pilates instructor with teaching tools
+            - parent: Parent managing children in Youth Hub
+            - admin: System administrator
+        age_range:
+          type: string
+        gender_identity:
+          type: string
+        country:
+          type: string
+        pilates_experience:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
         preferences:
           type: object
           properties:
