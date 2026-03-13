@@ -19,7 +19,7 @@ export function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [userType, setUserType] = useState<'standard' | 'coach'>('standard');
+  const [userType, setUserType] = useState<'practitioner' | 'pilates_instructor' | 'coach' | 'parent'>();
   const [ageRange, setAgeRange] = useState('');
   const [genderIdentity, setGenderIdentity] = useState('');
   const [country, setCountry] = useState('');
@@ -48,6 +48,7 @@ export function Register() {
     );
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -72,6 +73,12 @@ export function Register() {
       return;
     }
 
+    // Validate user type selection
+    if (!userType) {
+      setError('Please select your role');
+      return;
+    }
+
     // Validate legal acceptance
     if (!acceptedPrivacy || !acceptedBetaTerms) {
       setError('You must accept the Privacy Policy and Beta Agreement to register');
@@ -81,11 +88,15 @@ export function Register() {
     setLoading(true);
 
     try {
+      // Map new userType values to legacy format for backward compatibility
+      const legacyUserType = (userType === 'pilates_instructor' || userType === 'coach') ? 'coach' : 'standard';
+
       const registrationData: RegistrationData = {
         email,
         password,
         fullName: fullName || undefined,
-        userType: userType,
+        userType: legacyUserType,  // For backward compatibility
+        // Store the actual selected role in a field for future use
         ageRange: ageRange || undefined,
         genderIdentity: genderIdentity || undefined,
         country: country || undefined,
@@ -311,54 +322,40 @@ export function Register() {
             </div>
           </div>
 
-          {/* User Type Selection */}
+          {/* Role Selection - Single Dropdown */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-burgundy border-b border-burgundy/20 pb-2">
-              I am a... <span className="text-red-500">*</span>
+              Select Your Role <span className="text-red-500">*</span>
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                userType === 'standard'
-                  ? 'border-burgundy bg-burgundy/5'
-                  : 'border-charcoal/20 hover:border-charcoal/30'
-              }`}>
-                <input
-                  type="radio"
-                  name="userType"
-                  value="standard"
-                  checked={userType === 'standard'}
-                  onChange={() => setUserType('standard')}
-                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy"
-                />
-                <div>
-                  <div className="font-medium text-charcoal">Practitioner</div>
-                  <div className="text-sm text-charcoal/60 mt-1">
-                    I want to practise Pilates
-                  </div>
-                </div>
+            <div>
+              <label htmlFor="userType" className="block text-sm font-medium text-charcoal mb-2">
+                Choose your primary role
+                <span className="block text-xs text-charcoal/60 mt-1">
+                  If you have multiple roles, you can create additional accounts with the same email
+                </span>
               </label>
+              <select
+                id="userType"
+                value={userType || ''}
+                onChange={(e) => setUserType(e.target.value as 'practitioner' | 'pilates_instructor' | 'coach' | 'parent')}
+                required
+                className="w-full px-4 py-3 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy bg-white"
+              >
+                <option value="">Select your role...</option>
+                <option value="practitioner">Pilates Practitioner - I want to practise Pilates and generate classes</option>
+                <option value="pilates_instructor">Pilates Instructor - I teach Pilates and manage students</option>
+                <option value="coach">Sports Coach - I coach youth sports teams (GAA, Rugby, Soccer, etc.)</option>
+                <option value="parent">Parent - I manage my children's training schedules</option>
+              </select>
+            </div>
 
-              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                userType === 'coach'
-                  ? 'border-burgundy bg-burgundy/5'
-                  : 'border-charcoal/20 hover:border-charcoal/30'
-              }`}>
-                <input
-                  type="radio"
-                  name="userType"
-                  value="coach"
-                  checked={userType === 'coach'}
-                  onChange={() => setUserType('coach')}
-                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy"
-                />
-                <div>
-                  <div className="font-medium text-charcoal">Coach</div>
-                  <div className="text-sm text-charcoal/60 mt-1">
-                    I am a Pilates instructor or I coach sports teams
-                  </div>
-                </div>
-              </label>
+            {/* Info about multiple roles */}
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-3 text-sm">
+              <p className="text-blue-900">
+                <strong>Multiple roles?</strong> You can create separate accounts for each role using the same email address.
+                For example, create one account as a Parent and another as a Sports Coach.
+              </p>
             </div>
           </div>
 
