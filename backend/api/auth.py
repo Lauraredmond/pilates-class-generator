@@ -239,27 +239,28 @@ async def register(user_data: UserCreate, request: Request):
             user_type = user_type_mapping.get(role, "practitioner")
 
             # Create profile record for this role
-            # Note: Each profile gets a unique ID but shares the same user_id (auth.users ID)
-            profile_data = {
-                "id": f"{user_id}_{idx}" if idx > 0 else user_id,  # First profile uses user_id, rest get suffix
-                "user_id": user_id,  # All profiles link back to same auth.users record
-                "email": user_data.email,
-                "full_name": user_data.full_name,
-                "hashed_password": hashed_password,
-                "created_at": datetime.utcnow().isoformat(),
-                "last_login": datetime.utcnow().isoformat(),
-                "user_type": user_type,
-                # Profile fields (same for all roles)
-                "age_range": user_data.age_range,
-                "gender_identity": user_data.gender_identity,
-                "country": user_data.country,
-                "pilates_experience": user_data.pilates_experience,
-                "goals": user_data.goals if user_data.goals else [],
-                # Legal acceptance timestamps
-                "accepted_privacy_at": user_data.accepted_privacy_at,
-                "accepted_beta_terms_at": user_data.accepted_beta_terms_at
-            }
-            profiles_to_insert.append(profile_data)
+            # Note: For now, only create one profile (first role) to avoid ID conflicts
+            # Multi-profile support requires database schema changes
+            if idx == 0:  # Only create profile for first role
+                profile_data = {
+                    "id": user_id,  # Use auth.users ID directly
+                    "email": user_data.email,
+                    "full_name": user_data.full_name,
+                    "hashed_password": hashed_password,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "last_login": datetime.utcnow().isoformat(),
+                    "user_type": user_type,  # Use the first role's type
+                    # Profile fields (same for all roles)
+                    "age_range": user_data.age_range,
+                    "gender_identity": user_data.gender_identity,
+                    "country": user_data.country,
+                    "pilates_experience": user_data.pilates_experience,
+                    "goals": user_data.goals if user_data.goals else [],
+                    # Legal acceptance timestamps
+                    "accepted_privacy_at": user_data.accepted_privacy_at,
+                    "accepted_beta_terms_at": user_data.accepted_beta_terms_at
+                }
+                profiles_to_insert.append(profile_data)
 
         # Create user record in users table (for class_history foreign key)
         # This table is separate from user_profiles and used for GDPR/PII tokenization
@@ -324,9 +325,8 @@ async def register(user_data: UserCreate, request: Request):
                 pass
 
             try:
-                # Clean up all user_profiles records if they were created
-                # Delete by user_id since all profiles share the same user_id
-                supabase.table("user_profiles").delete().eq("user_id", user_id).execute()
+                # Clean up user_profiles if it was created
+                supabase.table("user_profiles").delete().eq("id", user_id).execute()
             except:
                 pass
 
@@ -572,18 +572,15 @@ async def get_current_user(request: Request, user_id: str = Depends(get_current_
     Returns user with all their profiles (multi-role support)
     """
     try:
-        # Fetch all profiles for this user (multiple if they have multiple roles)
-        result = supabase.table("user_profiles").select("*").eq("user_id", user_id).execute()
+        # For now, just fetch the single profile by ID
+        # Multi-profile support requires database schema changes
+        result = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
 
         if not result.data:
-            # Try legacy lookup by id for backward compatibility
-            result = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
-
-            if not result.data:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="User not found"
-                )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
 
         profiles = result.data
 
@@ -1097,9 +1094,10 @@ async def add_role(
     user_id: str = Depends(get_current_user_id)
 ):
     """
-    Add a new role to existing user
+    Add/change user role (temporarily updates single profile)
 
-    Creates an additional user_profiles record for the new role
+    Note: Multi-profile support requires database schema changes.
+    For now, this updates the user's single profile to the new role.
     """
     try:
         # Validate role
@@ -1110,58 +1108,32 @@ async def add_role(
                 detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}"
             )
 
-        # Check if user already has this role
-        existing = supabase.table("user_profiles").select("*").eq("user_id", user_id).eq("user_type", role).execute()
-        if existing.data:
+        # Get current profile
+        result = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        current_profile = result.data[0]
+
+        # Check if already has this role
+        if current_profile.get("user_type") == role:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"User already has role: {role}"
             )
 
-        # Get first profile to copy common fields
-        result = supabase.table("user_profiles").select("*").eq("user_id", user_id).execute()
-        if not result.data:
-            # Try legacy lookup by id
-            result = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
-            if not result.data:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="User not found"
-                )
-
-        first_profile = result.data[0]
-
-        # Count existing profiles to generate unique ID
-        profile_count = len(result.data)
-
-        # Create new profile for the new role
-        new_profile = {
-            "id": f"{user_id}_{profile_count}",  # Generate unique ID with suffix
-            "user_id": user_id,
-            "email": first_profile["email"],
-            "full_name": first_profile.get("full_name"),
-            "hashed_password": first_profile["hashed_password"],
-            "created_at": datetime.utcnow().isoformat(),
-            "last_login": datetime.utcnow().isoformat(),
-            "user_type": role,
-            # Copy profile fields from existing profile
-            "age_range": first_profile.get("age_range"),
-            "gender_identity": first_profile.get("gender_identity"),
-            "country": first_profile.get("country"),
-            "pilates_experience": first_profile.get("pilates_experience"),
-            "goals": first_profile.get("goals", []),
-            # Copy legal acceptance timestamps
-            "accepted_privacy_at": first_profile.get("accepted_privacy_at"),
-            "accepted_beta_terms_at": first_profile.get("accepted_beta_terms_at"),
-            "accepted_safety_at": first_profile.get("accepted_safety_at")
-        }
-
-        # Insert new profile
-        supabase.table("user_profiles").insert(new_profile).execute()
+        # Update user's role (temporary solution until multi-profile support)
+        supabase.table("user_profiles").update({
+            "user_type": role
+        }).eq("id", user_id).execute()
 
         return {
-            "message": f"Role '{role}' successfully added",
-            "role": role
+            "message": f"Role changed to '{role}' successfully",
+            "role": role,
+            "note": "Multi-role support coming soon. Currently this changes your primary role."
         }
 
     except HTTPException:
@@ -1171,7 +1143,7 @@ async def add_role(
         logger.error(f"Add role failed for user_id {user_id}, role {role}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to add role"
+            detail="Failed to update role"
         )
 
 
