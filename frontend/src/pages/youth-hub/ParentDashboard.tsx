@@ -30,7 +30,6 @@ export function ParentDashboard() {
   const navigate = useNavigate();
   const [youths, setYouths] = useState<Youth[]>([]);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
-  const [selectedYouth, setSelectedYouth] = useState<Youth | null>(null);
   const [loading, setLoading] = useState(true);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
