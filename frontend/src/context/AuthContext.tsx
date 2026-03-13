@@ -215,7 +215,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.email,
         password: data.password,
         full_name: data.fullName,
-        user_type: data.userType || 'standard',
+        roles: data.roles,  // Send array of roles
+        user_type: data.userType || 'standard',  // Legacy support
         age_range: data.ageRange,
         gender_identity: data.genderIdentity,
         country: data.country,
