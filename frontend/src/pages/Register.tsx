@@ -19,7 +19,7 @@ export function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [userType, setUserType] = useState<'practitioner' | 'pilates_instructor' | 'coach' | 'parent'>();
+  const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
   const [ageRange, setAgeRange] = useState('');
   const [genderIdentity, setGenderIdentity] = useState('');
   const [country, setCountry] = useState('');
@@ -48,6 +48,16 @@ export function Register() {
     );
   };
 
+  const handleRoleToggle = (role: string) => {
+    const newRoles = new Set(selectedRoles);
+    if (newRoles.has(role)) {
+      newRoles.delete(role);
+    } else {
+      newRoles.add(role);
+    }
+    setSelectedRoles(newRoles);
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,9 +83,9 @@ export function Register() {
       return;
     }
 
-    // Validate user type selection
-    if (!userType) {
-      setError('Please select your role');
+    // Validate role selection
+    if (selectedRoles.size === 0) {
+      setError('Please select at least one role');
       return;
     }
 
@@ -88,15 +98,14 @@ export function Register() {
     setLoading(true);
 
     try {
-      // Map new userType values to legacy format for backward compatibility
-      const legacyUserType = (userType === 'pilates_instructor' || userType === 'coach') ? 'coach' : 'standard';
+      // Convert selected roles to array
+      const rolesArray = Array.from(selectedRoles);
 
       const registrationData: RegistrationData = {
         email,
         password,
         fullName: fullName || undefined,
-        userType: legacyUserType,  // For backward compatibility
-        // Store the actual selected role in a field for future use
+        roles: rolesArray,  // Send multiple roles
         ageRange: ageRange || undefined,
         genderIdentity: genderIdentity || undefined,
         country: country || undefined,
@@ -322,39 +331,100 @@ export function Register() {
             </div>
           </div>
 
-          {/* Role Selection - Single Dropdown */}
+          {/* Role Selection - Multiple Checkboxes */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-burgundy border-b border-burgundy/20 pb-2">
-              Select Your Role <span className="text-red-500">*</span>
+              Select Your Roles <span className="text-red-500">*</span>
+              <span className="text-sm font-normal text-charcoal/60 ml-2">(select all that apply)</span>
             </h2>
 
-            <div>
-              <label htmlFor="userType" className="block text-sm font-medium text-charcoal mb-2">
-                Choose your primary role
-                <span className="block text-xs text-charcoal/60 mt-1">
-                  If you have multiple roles, you can create additional accounts with the same email
-                </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Practitioner */}
+              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedRoles.has('practitioner')
+                  ? 'border-burgundy bg-burgundy/5'
+                  : 'border-charcoal/20 hover:border-charcoal/30'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={selectedRoles.has('practitioner')}
+                  onChange={() => handleRoleToggle('practitioner')}
+                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy rounded"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Pilates Practitioner</div>
+                  <div className="text-sm text-charcoal/60 mt-1">
+                    Access Pilates classes and training plans
+                  </div>
+                </div>
               </label>
-              <select
-                id="userType"
-                value={userType || ''}
-                onChange={(e) => setUserType(e.target.value as 'practitioner' | 'pilates_instructor' | 'coach' | 'parent')}
-                required
-                className="w-full px-4 py-3 border border-charcoal/20 rounded focus:outline-none focus:ring-2 focus:ring-burgundy bg-white"
-              >
-                <option value="">Select your role...</option>
-                <option value="practitioner">Pilates Practitioner - I want to practise Pilates and generate classes</option>
-                <option value="pilates_instructor">Pilates Instructor - I teach Pilates and manage students</option>
-                <option value="coach">Sports Coach - I coach youth sports teams (GAA, Rugby, Soccer, etc.)</option>
-                <option value="parent">Parent - I manage my children's training schedules</option>
-              </select>
+
+              {/* Pilates Instructor */}
+              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedRoles.has('pilates_instructor')
+                  ? 'border-burgundy bg-burgundy/5'
+                  : 'border-charcoal/20 hover:border-charcoal/30'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={selectedRoles.has('pilates_instructor')}
+                  onChange={() => handleRoleToggle('pilates_instructor')}
+                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy rounded"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Pilates Instructor</div>
+                  <div className="text-sm text-charcoal/60 mt-1">
+                    Create and manage Pilates classes
+                  </div>
+                </div>
+              </label>
+
+              {/* Sports Coach */}
+              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedRoles.has('coach')
+                  ? 'border-burgundy bg-burgundy/5'
+                  : 'border-charcoal/20 hover:border-charcoal/30'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={selectedRoles.has('coach')}
+                  onChange={() => handleRoleToggle('coach')}
+                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy rounded"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Sports Coach</div>
+                  <div className="text-sm text-charcoal/60 mt-1">
+                    Manage youth teams (GAA, Rugby, Soccer, etc.)
+                  </div>
+                </div>
+              </label>
+
+              {/* Parent */}
+              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedRoles.has('parent')
+                  ? 'border-burgundy bg-burgundy/5'
+                  : 'border-charcoal/20 hover:border-charcoal/30'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={selectedRoles.has('parent')}
+                  onChange={() => handleRoleToggle('parent')}
+                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy rounded"
+                />
+                <div>
+                  <div className="font-medium text-charcoal">Parent</div>
+                  <div className="text-sm text-charcoal/60 mt-1">
+                    Track children's training schedules
+                  </div>
+                </div>
+              </label>
             </div>
 
             {/* Info about multiple roles */}
             <div className="bg-blue-50 border-l-4 border-blue-400 p-3 text-sm">
               <p className="text-blue-900">
-                <strong>Multiple roles?</strong> You can create separate accounts for each role using the same email address.
-                For example, create one account as a Parent and another as a Sports Coach.
+                <strong>Select all roles that apply to you.</strong> We'll create the necessary access for each role.
+                You can also add additional roles later from your profile settings.
               </p>
             </div>
           </div>
