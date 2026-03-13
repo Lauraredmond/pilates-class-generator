@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardTitle } from '../../components/ui/Card';
 import { ArrowLeft, Users, Calendar, Activity, ClipboardList } from 'lucide-react';
@@ -11,7 +10,6 @@ type ViewMode = 'selection' | 'parent' | 'coach';
 
 export function YouthTrainingHub() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [hubRole, setHubRole] = useState<HubRole>('none');
   const [viewMode, setViewMode] = useState<ViewMode>('selection');
 
