@@ -30,6 +30,9 @@ import { SoccerSport } from './pages/coach/sport/SoccerSport';
 import { RugbySport } from './pages/coach/sport/RugbySport';
 // Youth Training Hub
 import { YouthTrainingHub } from './pages/youth-hub/YouthTrainingHub';
+import { ParentDashboard } from './pages/youth-hub/ParentDashboard';
+import { CoachDashboard } from './pages/youth-hub/CoachDashboard';
+import { TimelineView } from './pages/youth-hub/TimelineView';
 // Admin pages
 import { AdminPanel } from './pages/AdminPanel';
 // PWA version management
@@ -221,6 +224,27 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <YouthTrainingHub />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/youth-hub/parent" element={
+          <ProtectedRoute>
+            <Layout>
+              <ParentDashboard />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/youth-hub/coach" element={
+          <ProtectedRoute>
+            <Layout>
+              <CoachDashboard />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/youth-hub/timeline/:youthCode" element={
+          <ProtectedRoute>
+            <Layout>
+              <TimelineView />
             </Layout>
           </ProtectedRoute>
         } />
