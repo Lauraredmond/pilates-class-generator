@@ -34,14 +34,14 @@ export function Home() {
 
       {/* Main Action Buttons */}
       <div className="space-y-3 mb-5">
-        {/* New Primary Button */}
+        {/* Primary Button - Renamed */}
         <Button
           className="w-full"
           size="lg"
           onClick={() => navigate('/classes')}
           variant="primary"
         >
-          Create my wellness routine (<i>Coming soon</i>)
+          Create my training plan
         </Button>
 
         {/* Existing Pilates Class Button - Same styling as above */}
@@ -53,18 +53,6 @@ export function Home() {
         >
           Generate my Pilates class
         </Button>
-
-        {/* Coach Tools Button - Visible for coach and admin users */}
-        {(user?.user_type === 'coach' || user?.user_type === 'admin') && (
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={() => navigate('/coach-hub')}
-            variant="secondary"
-          >
-            Coach Tools
-          </Button>
-        )}
 
         {/* Admin Panel Button - Visible only for admin users */}
         {user?.user_type === 'admin' && (
