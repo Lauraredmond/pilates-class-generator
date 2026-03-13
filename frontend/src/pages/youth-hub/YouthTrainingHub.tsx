@@ -41,8 +41,7 @@ export function YouthTrainingHub() {
     }
   };
 
-  const switchView = (view: ViewMode) => {
-    setViewMode(view);
+  const switchView = (view: 'parent' | 'coach') => {
     if (view === 'parent') {
       navigate('/youth-hub/parent');
     } else if (view === 'coach') {
