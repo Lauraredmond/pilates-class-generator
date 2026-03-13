@@ -87,7 +87,8 @@ workflows:
             value: Bearer $inputs.auth_token
         successCriteria:
           - condition: $statusCode == 200
-          - condition: $response.body.user_type == "coach" OR $response.body.user_type == "admin"
+          # Check if any of the user's profiles have coach or admin role
+          - condition: $response.body.profiles.some(p => p.user_type == "coach" || p.user_type == "admin") OR $response.body.user_type == "coach" OR $response.body.user_type == "admin"
         outputs:
           coach_profile: $response.body
           is_authorized: true
@@ -329,7 +330,8 @@ workflows:
         operationId: getCurrentUser
         description: Verify user is admin
         successCriteria:
-          - condition: $response.body.user_type == "admin"
+          # Check if any of the user's profiles have admin role
+          - condition: $response.body.profiles.some(p => p.user_type == "admin") OR $response.body.user_type == "admin"
         outputs:
           is_admin: true
 

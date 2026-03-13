@@ -58,8 +58,10 @@ test.describe('Multi-Role Registration Flow', () => {
     await page.click('text=Parent');
     await page.click('text=Sports Coach');
 
-    // Verify roles are selected
-    await expect(page.locator('input[type="checkbox"]:checked')).toHaveCount(3);
+    // Verify roles are selected (look specifically within role selection area)
+    const roleSection = page.locator('h2:has-text("Select Your Roles")').locator('..');
+    const selectedRoles = roleSection.locator('input[type="checkbox"]:checked');
+    await expect(selectedRoles).toHaveCount(3);
 
     // Fill optional profile information
     await page.selectOption('select#ageRange', '35-44');

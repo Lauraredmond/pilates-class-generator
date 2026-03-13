@@ -19,8 +19,10 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """User creation model (registration)"""
     password: str = Field(..., min_length=8)
-    # User type: standard (practitioner), coach, or admin
-    user_type: Optional[str] = Field("standard", description="User type: standard, coach, or admin")
+    # Multi-role support: accept array of roles
+    roles: Optional[list[str]] = Field(None, description="List of user roles: practitioner, pilates_instructor, coach, parent")
+    # Legacy single user_type for backward compatibility
+    user_type: Optional[str] = Field("standard", description="Legacy user type: standard, coach, or admin")
     # Optional profile fields captured during registration
     age_range: Optional[str] = Field(None, description="Age range: 18-24, 25-34, 35-44, 45-54, 55-64, 65+")
     gender_identity: Optional[str] = Field(None, description="Optional: Female, Male, Non-binary, Prefer not to say, Other")
