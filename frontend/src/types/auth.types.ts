@@ -23,7 +23,7 @@ export interface UserProfile {
 export interface User {
   id: string;  // auth.users id
   email: string;
-  profiles: UserProfile[];  // Array of all user profiles (one per role)
+  profiles?: UserProfile[];  // Array of all user profiles (one per role) - optional for backward compatibility
   full_name?: string;
   // Legacy single profile fields for backward compatibility
   user_type?: string;
@@ -57,7 +57,8 @@ export interface LoginCredentials {
 }
 
 // Helper function to check if user has any coaching role
-export function hasCoachingRole(user: User): boolean {
+export function hasCoachingRole(user: User | null): boolean {
+  if (!user) return false;
   // Check profiles array if available
   if (user.profiles && user.profiles.length > 0) {
     return user.profiles.some(p =>
@@ -72,7 +73,8 @@ export function hasCoachingRole(user: User): boolean {
 }
 
 // Helper function to check if user can access Youth Hub as parent
-export function canAccessParentDashboard(user: User): boolean {
+export function canAccessParentDashboard(user: User | null): boolean {
+  if (!user) return false;
   // Check profiles array if available
   if (user.profiles && user.profiles.length > 0) {
     return user.profiles.some(p => p.user_type === 'parent' || p.user_type === 'admin');
@@ -83,7 +85,8 @@ export function canAccessParentDashboard(user: User): boolean {
 }
 
 // Helper function to check if user can access Youth Hub as coach
-export function canAccessCoachDashboard(user: User): boolean {
+export function canAccessCoachDashboard(user: User | null): boolean {
+  if (!user) return false;
   // Check profiles array if available
   if (user.profiles && user.profiles.length > 0) {
     return user.profiles.some(p => p.user_type === 'coach' || p.user_type === 'admin');
@@ -94,7 +97,8 @@ export function canAccessCoachDashboard(user: User): boolean {
 }
 
 // Helper function to check if user can access Pilates coach tools
-export function canAccessPilatesCoachTools(user: User): boolean {
+export function canAccessPilatesCoachTools(user: User | null): boolean {
+  if (!user) return false;
   // Check profiles array if available
   if (user.profiles && user.profiles.length > 0) {
     return user.profiles.some(p => p.user_type === 'pilates_instructor' || p.user_type === 'admin');
