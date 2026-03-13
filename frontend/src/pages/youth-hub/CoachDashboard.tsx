@@ -40,7 +40,6 @@ export function CoachDashboard() {
   const [loading, setLoading] = useState(true);
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
   const [showLinkPlayerModal, setShowLinkPlayerModal] = useState(false);
-  const [showSessionModal, setShowSessionModal] = useState(false);
 
   // Form states
   const [teamForm, setTeamForm] = useState({
