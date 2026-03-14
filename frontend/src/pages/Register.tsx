@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth, type RegistrationData } from '../context/AuthContext';
 import { CountrySelect } from '../components/ui/CountrySelect';
@@ -33,12 +33,41 @@ export function Register() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const [showCoachingRoles, setShowCoachingRoles] = useState(false);
 
   const { register } = useAuth();
+  const roleDropdownRef = useRef<HTMLDivElement>(null);
 
   // Check password requirements in real-time
   const passwordRequirements = validatePassword(password);
   const isPasswordValid = Object.values(passwordRequirements).every(Boolean);
+
+  // Role options - filter based on toggle
+  const allRoleOptions = [
+    { value: 'practitioner', label: 'Pilates Practitioner', description: 'Access Pilates classes and training plans' },
+    { value: 'pilates_instructor', label: 'Pilates Instructor', description: 'Create and manage Pilates classes' },
+    { value: 'coach', label: 'Sports Coach', description: 'Manage youth teams (GAA, Rugby, Soccer, etc.)' },
+    { value: 'parent', label: 'Parent', description: 'Track children\'s training schedules' },
+  ];
+
+  const roleOptions = showCoachingRoles
+    ? allRoleOptions
+    : allRoleOptions.filter(role => role.value !== 'coach' && role.value !== 'parent');
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.target as Node)) {
+        setIsRoleDropdownOpen(false);
+      }
+    };
+
+    if (isRoleDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isRoleDropdownOpen]);
 
   const handleGoalToggle = (goal: string) => {
     setGoals(prev =>
@@ -165,7 +194,26 @@ export function Register() {
   return (
     <div className="min-h-screen bg-burgundy flex items-center justify-center p-4">
       <div className="bg-cream rounded-lg shadow-xl p-8 max-w-2xl w-full">
-        <h1 className="text-3xl font-bold text-burgundy mb-2 text-center">Create Account</h1>
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-burgundy">Create Account</h1>
+          </div>
+          {/* Subtle toggle for coaching roles */}
+          <button
+            type="button"
+            onClick={() => setShowCoachingRoles(!showCoachingRoles)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-burgundy/20 ${
+              showCoachingRoles ? 'bg-burgundy' : 'bg-charcoal/20'
+            }`}
+            title="Toggle coaching roles"
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                showCoachingRoles ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
         <p className="text-charcoal/70 text-sm text-center mb-6">
           Help us personalise your Pilates experience
         </p>
@@ -331,93 +379,68 @@ export function Register() {
             </div>
           </div>
 
-          {/* Role Selection - Multiple Checkboxes */}
-          <div className="space-y-4">
+          {/* Role Selection - Dropdown */}
+          <div className="space-y-3">
             <h2 className="text-lg font-semibold text-burgundy border-b border-burgundy/20 pb-2">
               Select Your Roles <span className="text-red-500">*</span>
               <span className="text-sm font-normal text-charcoal/60 ml-2">(select all that apply)</span>
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Practitioner */}
-              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                selectedRoles.has('practitioner')
-                  ? 'border-burgundy bg-burgundy/5'
-                  : 'border-charcoal/20 hover:border-charcoal/30'
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={selectedRoles.has('practitioner')}
-                  onChange={() => handleRoleToggle('practitioner')}
-                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy rounded"
-                />
-                <div>
-                  <div className="font-medium text-charcoal">Pilates Practitioner</div>
-                  <div className="text-sm text-charcoal/60 mt-1">
-                    Access Pilates classes and training plans
-                  </div>
-                </div>
-              </label>
+            <div className="relative" ref={roleDropdownRef}>
+              {/* Dropdown Button */}
+              <button
+                type="button"
+                onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                className="w-full px-4 py-2.5 border border-charcoal/20 rounded bg-white text-left focus:outline-none focus:ring-2 focus:ring-burgundy flex items-center justify-between"
+              >
+                <span className={selectedRoles.size === 0 ? 'text-charcoal/50' : 'text-charcoal'}>
+                  {selectedRoles.size === 0
+                    ? 'Select your roles...'
+                    : `${selectedRoles.size} role${selectedRoles.size > 1 ? 's' : ''} selected: ${
+                        Array.from(selectedRoles).map(role =>
+                          roleOptions.find(opt => opt.value === role)?.label
+                        ).join(', ')
+                      }`
+                  }
+                </span>
+                <svg
+                  className={`w-5 h-5 text-charcoal/60 transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-              {/* Pilates Instructor */}
-              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                selectedRoles.has('pilates_instructor')
-                  ? 'border-burgundy bg-burgundy/5'
-                  : 'border-charcoal/20 hover:border-charcoal/30'
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={selectedRoles.has('pilates_instructor')}
-                  onChange={() => handleRoleToggle('pilates_instructor')}
-                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy rounded"
-                />
-                <div>
-                  <div className="font-medium text-charcoal">Pilates Instructor</div>
-                  <div className="text-sm text-charcoal/60 mt-1">
-                    Create and manage Pilates classes
+              {/* Dropdown Menu */}
+              {isRoleDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-charcoal/20 rounded-lg shadow-lg">
+                  <div className="p-2 space-y-1">
+                    {roleOptions.map((role) => (
+                      <label
+                        key={role.value}
+                        className={`flex items-start space-x-3 p-3 rounded cursor-pointer transition-colors ${
+                          selectedRoles.has(role.value)
+                            ? 'bg-burgundy/10 hover:bg-burgundy/15'
+                            : 'hover:bg-charcoal/5'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedRoles.has(role.value)}
+                          onChange={() => handleRoleToggle(role.value)}
+                          className="mt-0.5 w-5 h-5 text-burgundy focus:ring-burgundy border-charcoal/30 rounded"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium text-charcoal text-sm">{role.label}</div>
+                          <div className="text-xs text-charcoal/60 mt-0.5">{role.description}</div>
+                        </div>
+                      </label>
+                    ))}
                   </div>
                 </div>
-              </label>
-
-              {/* Sports Coach */}
-              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                selectedRoles.has('coach')
-                  ? 'border-burgundy bg-burgundy/5'
-                  : 'border-charcoal/20 hover:border-charcoal/30'
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={selectedRoles.has('coach')}
-                  onChange={() => handleRoleToggle('coach')}
-                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy rounded"
-                />
-                <div>
-                  <div className="font-medium text-charcoal">Sports Coach</div>
-                  <div className="text-sm text-charcoal/60 mt-1">
-                    Manage youth teams (GAA, Rugby, Soccer, etc.)
-                  </div>
-                </div>
-              </label>
-
-              {/* Parent */}
-              <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                selectedRoles.has('parent')
-                  ? 'border-burgundy bg-burgundy/5'
-                  : 'border-charcoal/20 hover:border-charcoal/30'
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={selectedRoles.has('parent')}
-                  onChange={() => handleRoleToggle('parent')}
-                  className="mt-1 w-5 h-5 text-burgundy focus:ring-burgundy rounded"
-                />
-                <div>
-                  <div className="font-medium text-charcoal">Parent</div>
-                  <div className="text-sm text-charcoal/60 mt-1">
-                    Track children's training schedules
-                  </div>
-                </div>
-              </label>
+              )}
             </div>
 
             {/* Info about multiple roles */}
