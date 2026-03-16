@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
-// TODO: Implement API endpoints for admin functionality
-// import axios from 'axios';
-// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import axios from 'axios';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 interface UserProfile {
   id: string;
@@ -55,13 +54,16 @@ export function AdminPanel() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // TODO: Create admin API endpoints for user management
-      // For now, using empty array until backend endpoint is created
-      // const response = await axios.get(`${API_BASE_URL}/api/admin/users`);
-      // setUsers(response.data);
-      setUsers([]);
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE_URL}/api/admin/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }

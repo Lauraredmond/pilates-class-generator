@@ -295,7 +295,7 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
       }
 
       if (!classClicked) {
-        // Alternative: "Training & Nutrition Hub" flow
+        // Alternative: "Training Hub" flow
         const trainingButton = page.locator('button:has-text("Log my training plan")');
         if (await trainingButton.isVisible({ timeout: 2000 }).catch(() => false)) {
           console.log('Classes page shows Training Hub, clicking "Log my training plan"...');
