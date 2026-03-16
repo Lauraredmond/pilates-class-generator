@@ -1232,42 +1232,19 @@ async def save_completed_class(request: SaveCompletedClassRequest):
             logger.info(f"✅ Created user preferences: classes_completed=1, experience_level=beginner")
 
         # ==============================================================================
-        # 4. UPDATE MOVEMENT_USAGE TABLE (for favorite movement tracking)
+        # 4. DEPRECATED: movement_usage table is no longer being written to
         # ==============================================================================
-        for movement in movements_only:
-            movement_id = movement.get('id')
-            if not movement_id:
-                continue
+        # The movement_usage table is being phased out in favor of tracking movement
+        # usage through the class_movements table which provides better data consistency.
+        # All movement tracking is now done via class_movements which is populated when
+        # classes are saved to class_history.
+        #
+        # Migration status:
+        # - Phase 1 (COMPLETE): Stopped writing to movement_usage table
+        # - Phase 2 (TODO): Migrate reads from movement_usage to class_movements
+        # - Phase 3 (TODO): Archive and drop movement_usage table
 
-            # Check if usage record exists
-            usage_response = supabase.table('movement_usage') \
-                .select('*') \
-                .eq('user_id', request.user_id) \
-                .eq('movement_id', movement_id) \
-                .execute()
-
-            if usage_response.data:
-                # Update existing record
-                current_usage = usage_response.data[0]
-                new_usage_count = current_usage.get('usage_count', 0) + 1
-
-                supabase.table('movement_usage').update({
-                    'usage_count': new_usage_count,
-                    'last_used_date': today,
-                    'updated_at': now.isoformat()
-                }).eq('user_id', request.user_id).eq('movement_id', movement_id).execute()
-            else:
-                # Create new record
-                supabase.table('movement_usage').insert({
-                    'user_id': request.user_id,
-                    'movement_id': movement_id,
-                    'usage_count': 1,
-                    'last_used_date': today,
-                    'created_at': now.isoformat(),
-                    'updated_at': now.isoformat()
-                }).execute()
-
-        logger.info(f"✅ Updated movement_usage for {len(movements_only)} movements")
+        logger.info(f"✅ Skipped movement_usage update - table deprecated (Phase 1 migration)")
 
         return SaveCompletedClassResponse(
             class_plan_id=class_plan_id,  # NEW: Return for early skip analytics tracking

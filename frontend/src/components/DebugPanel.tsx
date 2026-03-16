@@ -24,7 +24,7 @@ export function DebugPanel() {
   const [showPanel, setShowPanel] = useState(false);
 
   // Only show to admins
-  if (!user?.is_admin) {
+  if (user?.user_type !== 'admin') {
     return null;
   }
 

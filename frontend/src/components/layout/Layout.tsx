@@ -24,7 +24,7 @@ export function Layout({ children }: LayoutProps) {
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home', shortLabel: 'Home' },
-    { path: '/classes', icon: BookOpen, label: 'Training & Nutrition Hub', shortLabel: 'Hub' },
+    { path: '/classes', icon: BookOpen, label: 'Training Hub', shortLabel: 'Hub' },
     { path: '/analytics', icon: BarChart3, label: 'Analytics', shortLabel: 'Stats' },
     { path: '/profile', icon: User, label: 'Profile', shortLabel: 'Profile' },
     { path: '/settings', icon: Settings, label: 'Settings', shortLabel: 'Settings' },

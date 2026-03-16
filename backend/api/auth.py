@@ -104,21 +104,37 @@ class PreferencesResponse(BaseModel):
     data_sharing_enabled: bool
 
 
-class UserResponse(BaseModel):
+class UserProfileResponse(BaseModel):
+    """Individual user profile (one per role)"""
     id: str
+    user_id: str
     email: str
     full_name: Optional[str] = None
-    created_at: datetime
-    last_login: Optional[datetime] = None
-    # Profile fields
+    user_type: str  # practitioner, pilates_instructor, coach, parent, admin
     age_range: Optional[str] = None
     gender_identity: Optional[str] = None
     country: Optional[str] = None
     pilates_experience: Optional[str] = None
     goals: Optional[list[str]] = None
-    # Admin flag (Session 10: Admin LLM Observability)
-    is_admin: Optional[bool] = None
-    # Legal acceptance timestamps (Session: Legal policy integration)
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+class UserResponse(BaseModel):
+    """User with all their profiles (multi-role support)"""
+    id: str  # auth.users id
+    email: str
+    profiles: list[UserProfileResponse]  # All user profiles (one per role)
+    full_name: Optional[str] = None
+    created_at: datetime
+    last_login: Optional[datetime] = None
+    # Legacy fields for backward compatibility
+    user_type: Optional[str] = Field("standard", description="Legacy user type")
+    age_range: Optional[str] = None
+    gender_identity: Optional[str] = None
+    country: Optional[str] = None
+    pilates_experience: Optional[str] = None
+    goals: Optional[list[str]] = None
+    # Legal acceptance timestamps
     accepted_safety_at: Optional[str] = None
 
 
@@ -188,24 +204,63 @@ async def register(user_data: UserCreate, request: Request):
 
         user_id = auth_response.user.id
 
-        # Create user profile
-        profile_data = {
-            "id": user_id,
-            "email": user_data.email,
-            "full_name": user_data.full_name,
-            "hashed_password": hashed_password,
-            "created_at": datetime.utcnow().isoformat(),
-            "last_login": datetime.utcnow().isoformat(),
-            # New profile fields
-            "age_range": user_data.age_range,
-            "gender_identity": user_data.gender_identity,
-            "country": user_data.country,
-            "pilates_experience": user_data.pilates_experience,
-            "goals": user_data.goals if user_data.goals else [],
-            # Legal acceptance timestamps (Session: Legal policy integration)
-            "accepted_privacy_at": user_data.accepted_privacy_at,
-            "accepted_beta_terms_at": user_data.accepted_beta_terms_at
-        }
+        # Determine which roles to create profiles for
+        roles_to_create = []
+
+        # If roles array is provided (multi-role support), use it
+        if user_data.roles and len(user_data.roles) > 0:
+            roles_to_create = user_data.roles
+        # Otherwise fall back to legacy single user_type
+        elif user_data.user_type:
+            # Map legacy user_type to role
+            if user_data.user_type == "coach":
+                roles_to_create = ["coach"]
+            elif user_data.user_type == "standard":
+                roles_to_create = ["practitioner"]
+            else:
+                roles_to_create = [user_data.user_type]
+        else:
+            # Default to practitioner if nothing specified
+            roles_to_create = ["practitioner"]
+
+        # Prepare profile data to be inserted for each role
+        profiles_to_insert = []
+
+        for idx, role in enumerate(roles_to_create):
+            # Map frontend role names to database user_type values
+            user_type_mapping = {
+                "practitioner": "practitioner",
+                "pilates_instructor": "pilates_instructor",
+                "coach": "coach",
+                "parent": "parent",
+                "admin": "admin"
+            }
+
+            user_type = user_type_mapping.get(role, "practitioner")
+
+            # Create profile record for this role
+            # Note: For now, only create one profile (first role) to avoid ID conflicts
+            # Multi-profile support requires database schema changes
+            if idx == 0:  # Only create profile for first role
+                profile_data = {
+                    "id": user_id,  # Use auth.users ID directly
+                    "email": user_data.email,
+                    "full_name": user_data.full_name,
+                    "hashed_password": hashed_password,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "last_login": datetime.utcnow().isoformat(),
+                    "user_type": user_type,  # Use the first role's type
+                    # Profile fields (same for all roles)
+                    "age_range": user_data.age_range,
+                    "gender_identity": user_data.gender_identity,
+                    "country": user_data.country,
+                    "pilates_experience": user_data.pilates_experience,
+                    "goals": user_data.goals if user_data.goals else [],
+                    # Legal acceptance timestamps
+                    "accepted_privacy_at": user_data.accepted_privacy_at,
+                    "accepted_beta_terms_at": user_data.accepted_beta_terms_at
+                }
+                profiles_to_insert.append(profile_data)
 
         # Create user record in users table (for class_history foreign key)
         # This table is separate from user_profiles and used for GDPR/PII tokenization
@@ -241,11 +296,17 @@ async def register(user_data: UserCreate, request: Request):
             "data_sharing_enabled": False
         }
 
-        # ATOMIC REGISTRATION: All 3 inserts in try-except with rollback
+        # ATOMIC REGISTRATION: Insert users, all profiles, and preferences in try-except with rollback
         # Prevents partial registration if any insert fails
         try:
-            supabase.table("user_profiles").insert(profile_data).execute()
+            # Insert multiple user_profiles records (one per role)
+            for profile_data in profiles_to_insert:
+                supabase.table("user_profiles").insert(profile_data).execute()
+
+            # Insert single users record (for GDPR/PII tokenization)
             supabase.table("users").insert(user_record).execute()
+
+            # Insert single preferences record (shared across all roles)
             supabase.table("user_preferences").insert(preferences_data).execute()
         except Exception as db_error:
             # Rollback: Clean up any partial inserts
@@ -506,11 +567,13 @@ async def confirm_password_reset(reset_data: PasswordResetConfirm):
 @router.get("/me", response_model=UserResponse)
 async def get_current_user(request: Request, user_id: str = Depends(get_current_user_id)):
     """
-    Get current authenticated user's profile
+    Get current authenticated user's profile with all roles
 
-    Requires valid access token
+    Returns user with all their profiles (multi-role support)
     """
     try:
+        # For now, just fetch the single profile by ID
+        # Multi-profile support requires database schema changes
         result = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
 
         if not result.data:
@@ -519,24 +582,47 @@ async def get_current_user(request: Request, user_id: str = Depends(get_current_
                 detail="User not found"
             )
 
-        user = result.data[0]
+        profiles = result.data
+
+        # Build profiles array
+        profile_responses = []
+        for profile in profiles:
+            profile_responses.append(UserProfileResponse(
+                id=profile["id"],
+                user_id=profile.get("user_id", user_id),
+                email=profile["email"],
+                full_name=profile.get("full_name"),
+                user_type=profile.get("user_type", "practitioner"),
+                age_range=profile.get("age_range"),
+                gender_identity=profile.get("gender_identity"),
+                country=profile.get("country"),
+                pilates_experience=profile.get("pilates_experience"),
+                goals=profile.get("goals", []),
+                created_at=profile.get("created_at"),
+                updated_at=profile.get("updated_at")
+            ))
+
+        # Use first profile for legacy fields
+        first_profile = profiles[0]
 
         # Log PII read for GDPR compliance
-        await PIILogger.log_profile_read(user_id, request, user)
+        await PIILogger.log_profile_read(user_id, request, first_profile)
 
         return UserResponse(
-            id=user["id"],
-            email=user["email"],
-            full_name=user.get("full_name"),
-            created_at=user["created_at"],
-            last_login=user.get("last_login"),
-            age_range=user.get("age_range"),
-            gender_identity=user.get("gender_identity"),
-            country=user.get("country"),
-            pilates_experience=user.get("pilates_experience"),
-            goals=user.get("goals", []),
-            is_admin=user.get("is_admin", False),
-            accepted_safety_at=user.get("accepted_safety_at")
+            id=user_id,
+            email=first_profile["email"],
+            profiles=profile_responses,
+            full_name=first_profile.get("full_name"),
+            created_at=first_profile["created_at"],
+            last_login=first_profile.get("last_login"),
+            # Legacy fields from first profile
+            user_type=first_profile.get("user_type", "standard"),
+            age_range=first_profile.get("age_range"),
+            gender_identity=first_profile.get("gender_identity"),
+            country=first_profile.get("country"),
+            pilates_experience=first_profile.get("pilates_experience"),
+            goals=first_profile.get("goals", []),
+            accepted_safety_at=first_profile.get("accepted_safety_at")
         )
 
     except HTTPException:
@@ -608,12 +694,12 @@ async def update_profile(
             full_name=user.get("full_name"),
             created_at=user["created_at"],
             last_login=user.get("last_login"),
+            user_type=user.get("user_type", "standard"),
             age_range=user.get("age_range"),
             gender_identity=user.get("gender_identity"),
             country=user.get("country"),
             pilates_experience=user.get("pilates_experience"),
             goals=user.get("goals", []),
-            is_admin=user.get("is_admin", False),
             accepted_safety_at=user.get("accepted_safety_at")
         )
 
@@ -916,10 +1002,10 @@ async def update_preferences(
         if preferences_data.use_ai_agent is not None:
             # ADMIN-ONLY: AI Agent toggle restricted to admins for cost control
             # Check if user is admin before allowing AI toggle
-            user_result = supabase.table("user_profiles").select("is_admin").eq("id", user_id).execute()
-            is_admin = user_result.data[0].get("is_admin", False) if user_result.data else False
+            user_result = supabase.table("user_profiles").select("user_type").eq("id", user_id).execute()
+            user_type = user_result.data[0].get("user_type", "standard") if user_result.data else "standard"
 
-            if not is_admin:
+            if user_type != "admin":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="AI Agent toggle is restricted to administrators. Contact support to upgrade your account."
@@ -999,6 +1085,65 @@ async def update_preferences(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorMessages.PREFERENCES_UPDATE_FAILED
+        )
+
+
+@router.post("/add-role", status_code=status.HTTP_200_OK)
+async def add_role(
+    role: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Add/change user role (temporarily updates single profile)
+
+    Note: Multi-profile support requires database schema changes.
+    For now, this updates the user's single profile to the new role.
+    """
+    try:
+        # Validate role
+        valid_roles = ["practitioner", "pilates_instructor", "coach", "parent", "admin"]
+        if role not in valid_roles:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}"
+            )
+
+        # Get current profile
+        result = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        current_profile = result.data[0]
+
+        # Check if already has this role
+        if current_profile.get("user_type") == role:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User already has role: {role}"
+            )
+
+        # Update user's role (temporary solution until multi-profile support)
+        supabase.table("user_profiles").update({
+            "user_type": role
+        }).eq("id", user_id).execute()
+
+        return {
+            "message": f"Role changed to '{role}' successfully",
+            "role": role,
+            "note": "Multi-role support coming soon. Currently this changes your primary role."
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Server-side logging with full error details
+        logger.error(f"Add role failed for user_id {user_id}, role {role}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update role"
         )
 
 

@@ -1228,63 +1228,14 @@ class SequenceTools:
 
         except Exception as e:
             logger.warning(f"Error getting movement usage weights (historical): {e}")
-            # Fallback to old movement_usage table if class_movements not available
-            return self._get_legacy_usage_weights(user_id, movements)
-
-    def _get_legacy_usage_weights(
-        self,
-        user_id: str,
-        movements: List[Dict[str, Any]]
-    ) -> Dict[str, float]:
-        """
-        FALLBACK: Legacy weight calculation using movement_usage table
-
-        Only used if class_movements table is unavailable (shouldn't happen after migration 036).
-        """
-        try:
-            response = self.supabase.table('movement_usage') \
-                .select('movement_id, last_used_date, usage_count') \
-                .eq('user_id', user_id) \
-                .execute()
-
-            usage_map = {
-                item['movement_id']: {
-                    'last_used_date': item['last_used_date'],
-                    'usage_count': item.get('usage_count', 0)
-                }
-                for item in response.data
-            }
-
-            weights = {}
-            today = date.today()
-
-            for movement in movements:
-                movement_id = movement['id']
-
-                if movement_id in usage_map:
-                    last_used_str = usage_map[movement_id]['last_used_date']
-                    usage_count = usage_map[movement_id]['usage_count']
-
-                    if 'T' in last_used_str:
-                        last_used = datetime.fromisoformat(last_used_str.replace('Z', '+00:00')).date()
-                    else:
-                        last_used = datetime.strptime(last_used_str, '%Y-%m-%d').date()
-
-                    days_since = (today - last_used).days
-                    recency_weight = (days_since + 1) ** 3
-                    frequency_penalty = max(1, usage_count) ** 2
-                    weight = recency_weight / frequency_penalty
-                else:
-                    weight = 100000
-
-                weights[movement_id] = weight
-
-            logger.warning("Using LEGACY movement_usage weights (class_movements table unavailable)")
-            return weights
-
-        except Exception as e:
-            logger.error(f"Error in legacy weight calculation: {e}")
+            # MIGRATION: No longer falling back to movement_usage table (Phase 2)
+            # Return default equal weights if there's an error
             return {m['id']: 1.0 for m in movements}
+
+    # MIGRATION: Removed _get_legacy_usage_weights function (Phase 2)
+    # This function was using the deprecated movement_usage table.
+    # All movement usage tracking is now done through the class_movements table.
+    # If class_movements query fails, we return default equal weights instead.
 
     def _log_class_quality(
         self,

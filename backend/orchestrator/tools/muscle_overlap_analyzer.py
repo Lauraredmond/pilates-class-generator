@@ -638,14 +638,14 @@ def _check_historical_muscle_balance(
         Dict with historical balance analysis, or None if no data
     """
     try:
-        # Query movement_usage table for ALL user history (no time limit)
-        # FIXED: Changed 'movements_usage' (plural) to 'movement_usage' (singular) - table name was wrong!
+        # FIX: Query class_movements table instead of movement_usage (which has no data)
+        # This matches _check_historical_movement_coverage which works correctly
         from datetime import datetime, timedelta
 
-        response = supabase_client.table('movement_usage') \
-            .select('movement_id, movement_name, used_at') \
+        response = supabase_client.table('class_movements') \
+            .select('movement_id, movement_name, class_generated_at') \
             .eq('user_id', user_id) \
-            .order('used_at', desc=True) \
+            .order('class_generated_at', desc=True) \
             .execute()
 
         if not response.data:
@@ -656,7 +656,7 @@ def _check_historical_muscle_balance(
         unique_movement_ids = list(set(m['movement_id'] for m in historical_movements))
 
         # Calculate days since user started (first class date)
-        first_class_date = min(datetime.fromisoformat(m['used_at'].replace('Z', '+00:00')).date()
+        first_class_date = min(datetime.fromisoformat(m['class_generated_at'].replace('Z', '+00:00')).date()
                                for m in historical_movements)
         days_since_start = (datetime.now().date() - first_class_date).days
 
@@ -682,8 +682,8 @@ def _check_historical_muscle_balance(
         for usage in historical_movements:
             movement_id = usage['movement_id']
             movement_name = usage['movement_name']
-            used_date = usage['used_at'][:10]  # Extract date (YYYY-MM-DD)
-            used_datetime = datetime.fromisoformat(usage['used_at'].replace('Z', '+00:00'))
+            used_date = usage['class_generated_at'][:10]  # Extract date (YYYY-MM-DD)
+            used_datetime = datetime.fromisoformat(usage['class_generated_at'].replace('Z', '+00:00'))
 
             # Track movement freshness (when was each movement last used?)
             if movement_id not in movement_freshness:

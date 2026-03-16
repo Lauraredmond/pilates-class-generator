@@ -1,0 +1,877 @@
+# ==============================================================================
+# Coach and Admin API Extensions - OpenAPI 3.0 Specification
+# ==============================================================================
+#
+# This file extends the main bassline_openapi.yaml with coach and admin endpoints
+# These endpoints support the new user types: standard, coach, admin
+#
+# Created: Coach Functionality Implementation (March 2024)
+# ==============================================================================
+
+# Add these tags to the main spec
+tags:
+  - name: Coach
+    description: Coach-specific features for sports integration
+  - name: Admin
+    description: Admin-only endpoints for platform management
+
+# Add these paths to the main spec
+paths:
+  # ----------------------------------------------------------------------------
+  # COACH ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /api/coach/exercises/{sport}:
+    get:
+      operationId: getSportExercises
+      summary: Get sport-specific exercises
+      description: |
+        Retrieve all Pilates exercises for a specific sport with annotations
+        for sport relevance, injury prevention, and position-specific applications.
+      tags:
+        - Coach
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sport
+          in: path
+          required: true
+          description: Sport identifier
+          schema:
+            type: string
+            enum: [gaa, soccer, rugby]
+        - name: category
+          in: query
+          description: Filter by exercise category
+          schema:
+            type: string
+        - name: muscle_group
+          in: query
+          description: Filter by muscle group
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of sport-specific exercises
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SportExercise'
+        '403':
+          description: Not authorized (coach or admin only)
+        '404':
+          description: Sport not found
+
+  /api/coach/exercises/{sport}/{exercise_id}:
+    get:
+      operationId: getSportExerciseById
+      summary: Get specific sport exercise
+      description: Get detailed information about a specific exercise for a sport
+      tags:
+        - Coach
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sport
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [gaa, soccer, rugby]
+        - name: exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Exercise details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SportExercise'
+        '403':
+          description: Not authorized
+        '404':
+          description: Exercise not found
+
+  /api/coach/sessions:
+    get:
+      operationId: getCoachSessions
+      summary: Get coach's training sessions
+      description: Retrieve all training sessions created by the coach
+      tags:
+        - Coach
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sport
+          in: query
+          schema:
+            type: string
+        - name: team_name
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of coach sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CoachSession'
+        '403':
+          description: Not authorized (coach only)
+
+    post:
+      operationId: createCoachSession
+      summary: Create training session
+      description: Create a new training session with selected exercises
+      tags:
+        - Coach
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoachSessionCreate'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoachSession'
+        '400':
+          description: Invalid request
+        '403':
+          description: Not authorized (coach only)
+
+  /api/coach/sessions/{session_id}:
+    get:
+      operationId: getCoachSessionById
+      summary: Get session by ID
+      description: Get detailed information about a specific training session
+      tags:
+        - Coach
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoachSession'
+        '403':
+          description: Not authorized
+        '404':
+          description: Session not found
+
+    put:
+      operationId: updateCoachSession
+      summary: Update training session
+      description: Update an existing training session
+      tags:
+        - Coach
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoachSessionUpdate'
+      responses:
+        '200':
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoachSession'
+        '403':
+          description: Not authorized
+        '404':
+          description: Session not found
+
+    delete:
+      operationId: deleteCoachSession
+      summary: Delete training session
+      description: Delete a training session
+      tags:
+        - Coach
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session deleted
+        '403':
+          description: Not authorized
+        '404':
+          description: Session not found
+
+  /api/coach/teams:
+    get:
+      operationId: getCoachTeams
+      summary: Get coach's teams
+      description: Get list of teams managed by the coach
+      tags:
+        - Coach
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+        '403':
+          description: Not authorized (coach only)
+
+  # ----------------------------------------------------------------------------
+  # ADMIN ENDPOINTS
+  # ----------------------------------------------------------------------------
+
+  /api/admin/users:
+    get:
+      operationId: getAllUsers
+      summary: Get all users (admin only)
+      description: Retrieve all user profiles with filtering options
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_type
+          in: query
+          schema:
+            type: string
+            enum: [standard, coach, admin]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          description: Search by email or name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminUserView'
+        '403':
+          description: Not authorized (admin only)
+
+  /api/admin/users/{user_id}:
+    get:
+      operationId: getAdminUserById
+      summary: Get user details (admin only)
+      description: Get detailed information about a specific user
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserView'
+        '403':
+          description: Not authorized (admin only)
+        '404':
+          description: User not found
+
+    put:
+      operationId: updateUserByAdmin
+      summary: Update user (admin only)
+      description: Update user profile including user type
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserUpdate'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserView'
+        '403':
+          description: Not authorized (admin only)
+        '404':
+          description: User not found
+
+    delete:
+      operationId: deleteUserByAdmin
+      summary: Delete user (admin only)
+      description: Permanently delete a user account
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: User deleted
+        '403':
+          description: Not authorized (admin only)
+        '404':
+          description: User not found
+
+  /api/admin/exercise-stats:
+    get:
+      operationId: getExerciseStatsByAdmin
+      summary: Get exercise statistics (admin only)
+      description: Get statistics about sport exercises in the system
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Exercise statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseStats'
+        '403':
+          description: Not authorized (admin only)
+
+  /api/admin/platform-stats:
+    get:
+      operationId: getPlatformStats
+      summary: Get platform statistics (admin only)
+      description: Get overall platform usage statistics
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, year]
+            default: month
+      responses:
+        '200':
+          description: Platform statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformStats'
+        '403':
+          description: Not authorized (admin only)
+
+  /api/admin/exercises/import:
+    post:
+      operationId: importExercises
+      summary: Import exercises (admin only)
+      description: Bulk import sport-specific exercises
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExerciseImport'
+      responses:
+        '201':
+          description: Exercises imported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported_count:
+                    type: integer
+                  failed_count:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Invalid import data
+        '403':
+          description: Not authorized (admin only)
+
+  /api/admin/system/health:
+    get:
+      operationId: getSystemHealth
+      summary: Get system health (admin only)
+      description: Check health of all system components
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: System health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemHealth'
+        '403':
+          description: Not authorized (admin only)
+
+# Add these schemas to the components section
+components:
+  schemas:
+    # --------------------------------------------------------------------------
+    # COACH SCHEMAS
+    # --------------------------------------------------------------------------
+
+    SportExercise:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sport:
+          type: string
+          enum: [gaa, soccer, rugby]
+        exercise_name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        sport_relevance:
+          type: string
+          description: How this exercise benefits the specific sport
+        injury_prevention:
+          type: string
+          description: Injury prevention benefits
+        position_specific:
+          type: string
+          description: Position-specific applications
+        variations:
+          type: object
+          description: Exercise variations (e.g., U12 modifications for GAA)
+        muscle_groups:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CoachSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        coach_id:
+          type: string
+          format: uuid
+        sport:
+          type: string
+        session_name:
+          type: string
+        team_name:
+          type: string
+        session_date:
+          type: string
+          format: date
+        exercises:
+          type: array
+          items:
+            type: object
+            properties:
+              exercise_id:
+                type: string
+                format: uuid
+              exercise_name:
+                type: string
+              duration_minutes:
+                type: integer
+              notes:
+                type: string
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CoachSessionCreate:
+      type: object
+      required:
+        - sport
+        - session_name
+        - exercises
+      properties:
+        sport:
+          type: string
+          enum: [gaa, soccer, rugby]
+        session_name:
+          type: string
+        team_name:
+          type: string
+        session_date:
+          type: string
+          format: date
+        exercises:
+          type: array
+          items:
+            type: object
+            required:
+              - exercise_id
+              - duration_minutes
+            properties:
+              exercise_id:
+                type: string
+                format: uuid
+              duration_minutes:
+                type: integer
+                minimum: 1
+              notes:
+                type: string
+        notes:
+          type: string
+
+    CoachSessionUpdate:
+      type: object
+      properties:
+        session_name:
+          type: string
+        team_name:
+          type: string
+        session_date:
+          type: string
+          format: date
+        exercises:
+          type: array
+          items:
+            type: object
+            properties:
+              exercise_id:
+                type: string
+                format: uuid
+              duration_minutes:
+                type: integer
+              notes:
+                type: string
+        notes:
+          type: string
+
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sport:
+          type: string
+        member_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    # --------------------------------------------------------------------------
+    # ADMIN SCHEMAS
+    # --------------------------------------------------------------------------
+
+    AdminUserView:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        full_name:
+          type: string
+        user_type:
+          type: string
+          enum: [standard, coach, admin]
+        created_at:
+          type: string
+          format: date-time
+        last_login:
+          type: string
+          format: date-time
+        age_range:
+          type: string
+        country:
+          type: string
+        pilates_experience:
+          type: string
+        total_classes:
+          type: integer
+        total_practice_time:
+          type: integer
+        last_class_date:
+          type: string
+          format: date-time
+
+    AdminUserUpdate:
+      type: object
+      properties:
+        user_type:
+          type: string
+          enum: [standard, coach, admin]
+        full_name:
+          type: string
+        is_active:
+          type: boolean
+        notes:
+          type: string
+          description: Admin notes about the user
+
+    ExerciseStats:
+      type: object
+      properties:
+        total_exercises:
+          type: integer
+        by_sport:
+          type: object
+          additionalProperties:
+            type: integer
+        by_category:
+          type: object
+          additionalProperties:
+            type: integer
+        recently_added:
+          type: array
+          items:
+            $ref: '#/components/schemas/SportExercise'
+
+    PlatformStats:
+      type: object
+      properties:
+        total_users:
+          type: integer
+        users_by_type:
+          type: object
+          properties:
+            standard:
+              type: integer
+            coach:
+              type: integer
+            admin:
+              type: integer
+        total_classes_created:
+          type: integer
+        total_sessions_created:
+          type: integer
+        total_practice_time_hours:
+          type: number
+        active_users_period:
+          type: integer
+        new_users_period:
+          type: integer
+        popular_exercises:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              usage_count:
+                type: integer
+        popular_sports:
+          type: array
+          items:
+            type: object
+            properties:
+              sport:
+                type: string
+              session_count:
+                type: integer
+
+    ExerciseImport:
+      type: object
+      required:
+        - sport
+        - exercises
+      properties:
+        sport:
+          type: string
+          enum: [gaa, soccer, rugby]
+        exercises:
+          type: array
+          items:
+            type: object
+            required:
+              - exercise_name
+              - category
+              - description
+            properties:
+              exercise_name:
+                type: string
+              category:
+                type: string
+              description:
+                type: string
+              sport_relevance:
+                type: string
+              injury_prevention:
+                type: string
+              position_specific:
+                type: string
+              variations:
+                type: object
+              muscle_groups:
+                type: array
+                items:
+                  type: string
+
+    SystemHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        components:
+          type: object
+          properties:
+            database:
+              $ref: '#/components/schemas/ComponentHealth'
+            redis:
+              $ref: '#/components/schemas/ComponentHealth'
+            ai_agents:
+              $ref: '#/components/schemas/ComponentHealth'
+            music_service:
+              $ref: '#/components/schemas/ComponentHealth'
+            storage:
+              $ref: '#/components/schemas/ComponentHealth'
+        uptime_seconds:
+          type: integer
+        version:
+          type: string
+
+    ComponentHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        latency_ms:
+          type: number
+        error_rate:
+          type: number
+        last_check:
+          type: string
+          format: date-time
+
+    # Update existing UserCreate schema to include user_type
+    UserCreateExtended:
+      allOf:
+        - $ref: '#/components/schemas/UserCreate'
+        - type: object
+          properties:
+            user_type:
+              type: string
+              enum: [standard, coach]
+              default: standard
+              description: User type selection (admin can only be set by existing admins)
+
+    # Update existing UserResponse to include user_type
+    UserResponseExtended:
+      allOf:
+        - $ref: '#/components/schemas/UserResponse'
+        - type: object
+          properties:
+            user_type:
+              type: string
+              enum: [standard, coach, admin]
+              description: User type (standard=practitioner, coach, admin)
+
+# ==============================================================================
+# END OF COACH AND ADMIN API EXTENSIONS
+# ==============================================================================

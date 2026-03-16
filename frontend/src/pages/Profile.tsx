@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardBody, CardTitle } from '../components/ui/Card';
-import { Edit2, Save, X, CheckCircle } from 'lucide-react';
+import { Edit2, Save, X, CheckCircle, Plus, UserPlus } from 'lucide-react';
 import { logger } from '../utils/logger';
+import type { User } from '../types/auth.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -39,6 +40,13 @@ export function Profile() {
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Role management state
+  const [isAddingRole, setIsAddingRole] = useState(false);
+  const [selectedNewRole, setSelectedNewRole] = useState('');
+  const [roleError, setRoleError] = useState('');
+  const [roleSuccess, setRoleSuccess] = useState('');
+  const [isSubmittingRole, setIsSubmittingRole] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -111,6 +119,58 @@ export function Profile() {
     });
     setIsEditingProfile(false);
     setProfileError('');
+  };
+
+  const handleAddRole = async () => {
+    if (!selectedNewRole) {
+      setRoleError('Please select a role to add');
+      return;
+    }
+
+    setRoleError('');
+    setRoleSuccess('');
+    setIsSubmittingRole(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      await axios.post(`${API_BASE_URL}/api/auth/add-role`, {
+        role: selectedNewRole
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      setRoleSuccess(`Role "${selectedNewRole}" added successfully!`);
+      setIsAddingRole(false);
+      setSelectedNewRole('');
+
+      // Reload page to refresh user data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error: any) {
+      setRoleError(error.response?.data?.detail || 'Failed to add role');
+    } finally {
+      setIsSubmittingRole(false);
+    }
+  };
+
+  const getAvailableRoles = () => {
+    const allRoles = ['practitioner', 'pilates_instructor', 'coach', 'parent'];
+    const userProfiles = (user as User)?.profiles || [];
+    const existingRoles = userProfiles.map(p => p.user_type);
+    return allRoles.filter(role => !existingRoles.includes(role));
+  };
+
+  const getRoleDisplayName = (role: string) => {
+    const displayNames: Record<string, string> = {
+      practitioner: 'Pilates Practitioner',
+      pilates_instructor: 'Pilates Instructor',
+      coach: 'Sports Coach',
+      parent: 'Parent'
+    };
+    return displayNames[role] || role;
   };
 
   const handleLogout = async () => {
@@ -357,6 +417,123 @@ export function Profile() {
           )}
         </CardBody>
       </Card>
+
+      {/* Role Management Card */}
+      {(user as User)?.profiles && (
+        <Card className="mb-6">
+          <CardBody>
+            <div className="flex items-center justify-between mb-4">
+              <CardTitle>Your Roles</CardTitle>
+              {!isAddingRole && getAvailableRoles().length > 0 && (
+                <button
+                  onClick={() => setIsAddingRole(true)}
+                  className="flex items-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-4 py-2 rounded font-semibold transition-smooth"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Add Role
+                </button>
+              )}
+            </div>
+
+            {/* Role Success Message */}
+            {roleSuccess && (
+              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-4 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <p className="text-green-400">{roleSuccess}</p>
+              </div>
+            )}
+
+            {/* Role Error Message */}
+            {roleError && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4">
+                <p className="text-sm text-red-700">{roleError}</p>
+              </div>
+            )}
+
+            {isAddingRole ? (
+              // Add Role Mode
+              <div className="space-y-4">
+                <p className="text-cream/70 text-sm">Select a role to add to your account:</p>
+                <div className="space-y-2">
+                  {getAvailableRoles().map((role) => (
+                    <label
+                      key={role}
+                      className="flex items-center space-x-3 p-3 bg-burgundy/10 border border-cream/20 rounded cursor-pointer hover:bg-burgundy/20 transition-colors"
+                    >
+                      <input
+                        type="radio"
+                        name="newRole"
+                        value={role}
+                        checked={selectedNewRole === role}
+                        onChange={(e) => setSelectedNewRole(e.target.value)}
+                        className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30"
+                      />
+                      <div>
+                        <p className="text-cream font-medium">{getRoleDisplayName(role)}</p>
+                        <p className="text-cream/60 text-sm">
+                          {role === 'practitioner' && 'Access Pilates classes and training plans'}
+                          {role === 'pilates_instructor' && 'Create and manage Pilates classes'}
+                          {role === 'coach' && 'Manage youth teams (GAA, Rugby, Soccer)'}
+                          {role === 'parent' && "Track children's training schedules"}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={handleAddRole}
+                    disabled={isSubmittingRole || !selectedNewRole}
+                    className="flex items-center gap-2 bg-burgundy hover:bg-burgundy/90 text-cream px-6 py-2 rounded font-semibold transition-smooth disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {isSubmittingRole ? 'Adding...' : 'Add Role'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsAddingRole(false);
+                      setSelectedNewRole('');
+                      setRoleError('');
+                    }}
+                    disabled={isSubmittingRole}
+                    className="flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream px-6 py-2 rounded font-semibold transition-smooth disabled:opacity-50"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // View Current Roles
+              <div className="space-y-3">
+                <p className="text-cream/70 text-sm">You have access to the following roles:</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {((user as User)?.profiles || []).map((profile) => (
+                    <div
+                      key={profile.id}
+                      className="p-3 bg-burgundy/10 border border-cream/20 rounded"
+                    >
+                      <p className="text-cream font-medium">{getRoleDisplayName(profile.user_type)}</p>
+                      <p className="text-cream/60 text-sm mt-1">
+                        {profile.user_type === 'practitioner' && 'Access to Pilates classes'}
+                        {profile.user_type === 'pilates_instructor' && 'Teaching tools access'}
+                        {profile.user_type === 'coach' && 'Youth team management'}
+                        {profile.user_type === 'parent' && 'Child training tracking'}
+                        {profile.user_type === 'admin' && 'Full system access'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {getAvailableRoles().length === 0 && (
+                  <p className="text-cream/50 text-sm italic">You have all available roles</p>
+                )}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
 
       {/* Stats */}
       {loading ? (

@@ -1,0 +1,988 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Menlo-Regular;\f2\fnil\fcharset0 Menlo-BoldItalic;
+\f3\fnil\fcharset0 Menlo-Bold;}
+{\colortbl;\red255\green255\blue255;\red255\green255\blue255;\red44\green44\blue44;\red0\green0\blue0;
+\red192\green226\blue225;\red153\green153\blue153;\red178\green157\blue240;\red171\green223\blue228;\red172\green225\blue165;
+\red225\green167\blue163;\red221\green239\blue255;\red47\green180\blue29;\red64\green11\blue217;\red180\green36\blue25;
+\red46\green174\blue187;\red97\green182\blue180;}
+{\*\expandedcolortbl;;\cspthree\c100000\c100000\c100000;\cspthree\c22745\c22745\c22745;\csgray\c0;
+\csgenericrgb\c75238\c88504\c88245;\csgenericrgb\c60000\c60000\c60000;\csgenericrgb\c69984\c61648\c94106;\csgenericrgb\c67157\c87278\c89373;\csgenericrgb\c67297\c88158\c64586;
+\csgenericrgb\c88173\c65632\c63927;\csgenericrgb\c86748\c93879\c99972;\cssrgb\c20241\c73898\c14950;\cssrgb\c32309\c18666\c88229;\cssrgb\c76411\c21697\c12527;
+\cssrgb\c20199\c73241\c78251;\cssrgb\c44514\c75859\c75806;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 ***Prompt***\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\fs22 \cf2 \cb3 \CocoaLigature0  You are a senior product architect and full-stack engineer.\cf4 \cb1 \
+\
+\cf2 \cb3 I am building a platform called Bassline. It originally started as a Pilates tracking app but I want to expand it to support youth athlete welfare by coordinating training load across \cf4 \cb1 \
+\cf2 \cb3 multiple coaches and recovery practitioners.\cf4 \cb1 \
+\
+\cf2 \cb3 The goal is to prevent overtraining and improve recovery by giving visibility of a child's full training schedule across clubs, schools, and recovery sessions.\cf4 \cb1 \
+\
+\cf2 \cb3 The system should be athlete-centric.\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 CORE USER TYPES\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Users in the system include:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 Coach (GAA, rugby, soccer etc.)\cf4 \cb1 \
+\cf2 \cb3 \'95 Parent / guardian\cf4 \cb1 \
+\cf2 \cb3 \'95 Pilates instructor (recovery specialist)\cf4 \cb1 \
+\cf2 \cb3 \'95 Athlete (child)\cf4 \cb1 \
+\cf2 \cb3 \'95 Standard user (adult Pilates user not involved in youth sport)\cf4 \cb1 \
+\cf2 \cb3 \'95 Admin\cf4 \cb1 \
+\
+\cf2 \cb3 Important design rule:\cf4 \cb1 \
+\cf2 \cb3 A user can have multiple roles (for example a coach could also be an athlete).\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 TEAM CREATION MODEL\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 We are using the following onboarding flow:\cf4 \cb1 \
+\
+\cf2 \cb3 1. Coach creates a team\cf4 \cb1 \
+\cf2 \cb3 2. Coach adds athletes to the team roster\cf4 \cb1 \
+\cf2 \cb3 3. Parents receive an invite to claim the athlete profile\cf4 \cb1 \
+\cf2 \cb3 4. Parent confirms the athlete profile and grants permissions\cf4 \cb1 \
+\cf2 \cb3 5. Parent can optionally add:\cf4 \cb1 \
+\cf2 \cb3    \'95 additional coaches\cf4 \cb1 \
+\cf2 \cb3    \'95 Pilates instructors\cf4 \cb1 \
+\cf2 \cb3    \'95 other practitioners\cf4 \cb1 \
+\
+\cf2 \cb3 The athlete profile becomes the central object in the system.\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 ATHLETE PROFILE\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Each athlete profile should contain:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 name\cf4 \cb1 \
+\cf2 \cb3 \'95 age\cf4 \cb1 \
+\cf2 \cb3 \'95 sports played\cf4 \cb1 \
+\cf2 \cb3 \'95 teams\cf4 \cb1 \
+\cf2 \cb3 \'95 injury history (optional future feature)\cf4 \cb1 \
+\cf2 \cb3 \'95 training sessions\cf4 \cb1 \
+\cf2 \cb3 \'95 recovery sessions\cf4 \cb1 \
+\
+\cf2 \cb3 Multiple coaches or practitioners may be linked to a single athlete.\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 RELATIONSHIP MODEL\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Users interact with athlete profiles through relationships.\cf4 \cb1 \
+\
+\cf2 \cb3 Example relationship types:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 coach\cf4 \cb1 \
+\cf2 \cb3 \'95 pilates_instructor\cf4 \cb1 \
+\cf2 \cb3 \'95 parent\cf4 \cb1 \
+\cf2 \cb3 \'95 guardian\cf4 \cb1 \
+\cf2 \cb3 \'95 physio\cf4 \cb1 \
+\
+\cf2 \cb3 These relationships control permissions and UI views.\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 TRAINING SESSION TYPES\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Coaches must be able to log:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 team training sessions\cf4 \cb1 \
+\cf2 \cb3 \'95 matches\cf4 \cb1 \
+\cf2 \cb3 \'95 conditioning sessions\cf4 \cb1 \
+\cf2 \cb3 \'95 skill sessions\cf4 \cb1 \
+\
+\cf2 \cb3 Session fields should include:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 date\cf4 \cb1 \
+\cf2 \cb3 \'95 duration\cf4 \cb1 \
+\cf2 \cb3 \'95 intensity (low / medium / high OR RPE scale)\cf4 \cb1 \
+\cf2 \cb3 \'95 sport\cf4 \cb1 \
+\cf2 \cb3 \'95 session type\cf4 \cb1 \
+\cf2 \cb3 \'95 team\cf4 \cb1 \
+\
+\cf2 \cb3 Pilates instructors must be able to log:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 recovery sessions\cf4 \cb1 \
+\cf2 \cb3 \'95 mobility work\cf4 \cb1 \
+\cf2 \cb3 \'95 injury prevention sessions\cf4 \cb1 \
+\cf2 \cb3 \'95 muscle imbalance corrective work\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 CORE FEATURES\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 1. TEAM MANAGEMENT\cf4 \cb1 \
+\
+\cf2 \cb3 Coaches should be able to:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 create teams\cf4 \cb1 \
+\cf2 \cb3 \'95 manage rosters\cf4 \cb1 \
+\cf2 \cb3 \'95 log team training sessions once and apply them to all athletes\cf4 \cb1 \
+\cf2 \cb3 \'95 view athlete training load summaries\cf4 \cb1 \
+\
+\cf2 \cb3 2. ATHLETE TIMELINE\cf4 \cb1 \
+\
+\cf2 \cb3 Each athlete should have a timeline view showing:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 training sessions\cf4 \cb1 \
+\cf2 \cb3 \'95 matches\cf4 \cb1 \
+\cf2 \cb3 \'95 Pilates sessions\cf4 \cb1 \
+\cf2 \cb3 \'95 recovery sessions\cf4 \cb1 \
+\
+\cf2 \cb3 The UI should resemble a Notion-style timeline.\cf4 \cb1 \
+\
+\cf2 \cb3 3. TRAINING LOAD ANALYTICS\cf4 \cb1 \
+\
+\cf2 \cb3 The system should calculate weekly training load.\cf4 \cb1 \
+\
+\cf2 \cb3 Example method:\cf4 \cb1 \
+\
+\cf2 \cb3 Training Load = Session RPE \'d7 Duration\cf4 \cb1 \
+\
+\cf2 \cb3 Display:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 weekly load\cf4 \cb1 \
+\cf2 \cb3 \'95 intensity distribution\cf4 \cb1 \
+\cf2 \cb3 \'95 warnings for excessive load\cf4 \cb1 \
+\
+\cf2 \cb3 Example warning:\cf4 \cb1 \
+\
+\cf2 \cb3 "High intensity sessions exceeded recommended weekly limit."\cf4 \cb1 \
+\
+\cf2 \cb3 4. USER INTERFACES\cf4 \cb1 \
+\
+\cf2 \cb3 Design interfaces for:\cf4 \cb1 \
+\
+\cf2 \cb3 Coach Hub\cf4 \cb1 \
+\cf2 \cb3 \'95 team management\cf4 \cb1 \
+\cf2 \cb3 \'95 session logging\cf4 \cb1 \
+\cf2 \cb3 \'95 athlete load summary\cf4 \cb1 \
+\
+\cf2 \cb3 Pilates Instructor Hub\cf4 \cb1 \
+\cf2 \cb3 \'95 recovery session builder\cf4 \cb1 \
+\cf2 \cb3 \'95 corrective exercise assignments\cf4 \cb1 \
+\cf2 \cb3 \'95 athlete recovery tracking\cf4 \cb1 \
+\
+\cf2 \cb3 Parent Dashboard\cf4 \cb1 \
+\cf2 \cb3 \'95 athlete training overview\cf4 \cb1 \
+\cf2 \cb3 \'95 timeline\cf4 \cb1 \
+\cf2 \cb3 \'95 permission management\cf4 \cb1 \
+\
+\cf2 \cb3 Athlete View\cf4 \cb1 \
+\cf2 \cb3 \'95 personal timeline\cf4 \cb1 \
+\cf2 \cb3 \'95 Pilates sessions\cf4 \cb1 \
+\cf2 \cb3 \'95 recovery schedule\cf4 \cb1 \
+\
+\cf2 \cb3 Standard Pilates User\cf4 \cb1 \
+\cf2 \cb3 \'95 simple Pilates workout tracking\cf4 \cb1 \
+\cf2 \cb3 \'95 no sports features\cf4 \cb1 \
+\
+\cf2 \cb3 Admin\cf4 \cb1 \
+\cf2 \cb3 \'95 full system visibility\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 PERMISSIONS\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Parents control access to their child's athlete profile.\cf4 \cb1 \
+\
+\cf2 \cb3 Parents can:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 approve coaches\cf4 \cb1 \
+\cf2 \cb3 \'95 approve Pilates instructors\cf4 \cb1 \
+\cf2 \cb3 \'95 revoke access\cf4 \cb1 \
+\
+\cf2 \cb3 Coaches should only see athletes linked to their team.\cf4 \cb1 \
+\
+\cf2 \cb3 Pilates instructors should only see athletes they are assigned to.\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 DATA MODEL TASK\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Design a database schema including:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 Users\cf4 \cb1 \
+\cf2 \cb3 \'95 Teams\cf4 \cb1 \
+\cf2 \cb3 \'95 AthleteProfiles\cf4 \cb1 \
+\cf2 \cb3 \'95 Relationships\cf4 \cb1 \
+\cf2 \cb3 \'95 Sessions\cf4 \cb1 \
+\cf2 \cb3 \'95 TeamMemberships\cf4 \cb1 \
+\cf2 \cb3 \'95 Permissions\cf4 \cb1 \
+\
+\cf2 \cb3 Include table structures and key relationships.\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 ARCHITECTURE TASK\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Recommend a scalable architecture for this feature including:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 backend services\cf4 \cb1 \
+\cf2 \cb3 \'95 API structure\cf4 \cb1 \
+\cf2 \cb3 \'95 database design\cf4 \cb1 \
+\cf2 \cb3 \'95 role/permission system\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 UI TASK\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Suggest UI layouts for:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 Coach hub\cf4 \cb1 \
+\cf2 \cb3 \'95 Athlete timeline\cf4 \cb1 \
+\cf2 \cb3 \'95 Pilates instructor hub\cf4 \cb1 \
+\cf2 \cb3 \'95 Parent dashboard\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 SAFETY / GDPR TASK\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Identify GDPR considerations for child data including:\cf4 \cb1 \
+\
+\cf2 \cb3 \'95 parental consent\cf4 \cb1 \
+\cf2 \cb3 \'95 data minimisation\cf4 \cb1 \
+\cf2 \cb3 \'95 role-based access\cf4 \cb1 \
+\cf2 \cb3 \'95 audit logs\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 OUTPUT FORMAT\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Provide:\cf4 \cb1 \
+\
+\cf2 \cb3 1. System architecture overview\cf4 \cb1 \
+\cf2 \cb3 2. Database schema\cf4 \cb1 \
+\cf2 \cb3 3. Role and permission model\cf4 \cb1 \
+\cf2 \cb3 4. Key API endpoints\cf4 \cb1 \
+\cf2 \cb3 5. UI structure recommendations\cf4 \cb1 \
+\cf2 \cb3 6. Future expansion ideas\cf4 \cb1 \
+\
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\cf2 \cb3 IMPORTANT UX CONSTRAINT\cf4 \cb1 \
+\cf2 \cb3 --------------------------------\cf4 \cb1 \
+\
+\cf2 \cb3 Bassline already has an existing Pilates user experience.\cf4 \cb1 \
+\
+\cf2 \cb3 Standard users currently use the platform only for Pilates workouts and progress tracking.\cf4 \cb1 \
+\
+\cf2 \cb3 This UX MUST remain unchanged.\cf4 \cb1 \
+\
+\cf2 \cb3 The new youth sport functionality must be implemented as an optional extension layer.\cf4 \cb1 \
+\
+\cf2 \cb3 Rules:\cf4 \cb1 \
+\
+\cf2 \cb3 1. Standard Pilates users should not see any sports or coaching features.\cf4 \cb1 \
+\
+\cf2 \cb3 2. Sports functionality should only appear when:\cf4 \cb1 \
+\cf2 \cb3    - a coach creates a team\cf4 \cb1 \
+\cf2 \cb3    - a parent claims an athlete profile\cf4 \cb1 \
+\cf2 \cb3    - a Pilates instructor is linked to an athlete\cf4 \cb1 \
+\cf2 \cb3    - a user joins a team\cf4 \cb1 \
+\
+\cf2 \cb3 3. The existing Pilates workflow should remain:\cf4 \cb1 \
+\
+\cf2 \cb3 Dashboard\cf4 \cb1 \
+\cf2 \cb3 Pilates Sessions\cf4 \cb1 \
+\cf2 \cb3 Workout Tracking\cf4 \cb1 \
+\cf2 \cb3 Progress\cf4 \cb1 \
+\
+\cf2 \cb3 4. Athlete and team features should appear as additional navigation items only when relevant.\cf4 \cb1 \
+\
+\cf2 \cb3 This design principle is called progressive disclosure.\cf4 \cb1 \
+\
+\cf2 \cb3 Please ensure that the system architecture and UI structure maintain this constraint. \cf4 \cb1 \
+\
+\
+\
+***Plan***\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf5 \uc0\u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9582 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f2\i\b \ul Bassline Youth Athlete Welfare Platform - Expansion Plan
+\f1\i0\b0 \ulnone                                                                                                                                  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f3\b 1. SYSTEM ARCHITECTURE OVERVIEW
+\f1\b0                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Multi-tier Architecture\cf4                                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Frontend (React/TypeScript)\cf4                                                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6     \uc0\u8595 \cf4                                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 API Layer (FastAPI)\cf4                                                                                                                                                                       \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6     \uc0\u8595 \cf4                                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Database (Supabase PostgreSQL)\cf4                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6     \uc0\u8595 \cf4                                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Event System (Webhooks/Realtime)\cf4                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Progressive Disclosure Strategy\cf4                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Standard users see only Pilates features\cf4                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Sports features activate only when relevant role/relationship exists\cf4                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Athlete-centric data model with relationship-based access\cf4                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f3\b 2. DATABASE SCHEMA DESIGN
+\f1\b0                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 New Tables Required\cf4                                                                                                                                                                       \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 athlete_profiles\cf4                                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 CREATE\cf6  \cf7 TABLE\cf6  athlete_profiles (\cf4                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   id UUID \cf7 PRIMARY\cf6  KEY \cf7 DEFAULT\cf6  gen_random_uuid(),\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   full_name \cf8 VARCHAR\cf6 (\cf9 200\cf6 ) \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   date_of_birth \cf8 DATE\cf6  \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   gender \cf8 VARCHAR\cf6 (\cf9 50\cf6 ),\cf4                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   primary_sport \cf8 VARCHAR\cf6 (\cf9 100\cf6 ),\cf4                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   secondary_sports JSONB,\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   medical_conditions JSONB,\cf4                                                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   emergency_contact JSONB,\cf4                                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   created_by UUID \cf7 REFERENCES\cf6  auth.users(id),\cf4                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   created_at TIMESTAMPTZ \cf7 DEFAULT\cf6  NOW(),\cf4                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   updated_at TIMESTAMPTZ \cf7 DEFAULT\cf6  NOW()\cf4                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 );\cf4                                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 teams\cf4                                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 CREATE\cf6  \cf7 TABLE\cf6  teams (\cf4                                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   id UUID \cf7 PRIMARY\cf6  KEY \cf7 DEFAULT\cf6  gen_random_uuid(),\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   team_name \cf8 VARCHAR\cf6 (\cf9 200\cf6 ) \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   sport \cf8 VARCHAR\cf6 (\cf9 100\cf6 ) \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   age_group \cf8 VARCHAR\cf6 (\cf9 50\cf6 ),\cf4                                                                                                                                                                  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   club_name \cf8 VARCHAR\cf6 (\cf9 200\cf6 ),\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   created_by UUID \cf7 REFERENCES\cf6  auth.users(id),\cf4                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   invite_code \cf8 VARCHAR\cf6 (\cf9 20\cf6 ) \cf7 UNIQUE\cf6 ,\cf4                                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   settings JSONB \cf7 DEFAULT\cf6  \cf10 '\{\}'\cf6 ,\cf4                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   created_at TIMESTAMPTZ \cf7 DEFAULT\cf6  NOW()\cf4                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 );\cf4                                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 athlete_relationships\cf4                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 CREATE\cf6  \cf7 TABLE\cf6  athlete_relationships (\cf4                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   id UUID \cf7 PRIMARY\cf6  KEY \cf7 DEFAULT\cf6  gen_random_uuid(),\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   athlete_id UUID \cf7 REFERENCES\cf6  athlete_profiles(id) \cf7 ON\cf6  \cf7 DELETE\cf6  CASCADE,\cf4                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   user_id UUID \cf7 REFERENCES\cf6  auth.users(id) \cf7 ON\cf6  \cf7 DELETE\cf6  CASCADE,\cf4                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   relationship_type \cf8 VARCHAR\cf6 (\cf9 50\cf6 ) \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   permissions JSONB \cf7 DEFAULT\cf6  \cf10 '\{"view": true, "edit": false\}'\cf6 ,\cf4                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   status \cf8 VARCHAR\cf6 (\cf9 20\cf6 ) \cf7 DEFAULT\cf6  \cf10 'pending'\cf6 ,\cf4                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   invited_at TIMESTAMPTZ \cf7 DEFAULT\cf6  NOW(),\cf4                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   accepted_at TIMESTAMPTZ,\cf4                                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   \cf7 UNIQUE\cf6 (athlete_id, user_id, relationship_type)\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 );\cf4                                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 team_memberships\cf4                                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 CREATE\cf6  \cf7 TABLE\cf6  team_memberships (\cf4                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   id UUID \cf7 PRIMARY\cf6  KEY \cf7 DEFAULT\cf6  gen_random_uuid(),\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   team_id UUID \cf7 REFERENCES\cf6  teams(id) \cf7 ON\cf6  \cf7 DELETE\cf6  CASCADE,\cf4                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   athlete_id UUID \cf7 REFERENCES\cf6  athlete_profiles(id) \cf7 ON\cf6  \cf7 DELETE\cf6  CASCADE,\cf4                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   joined_at TIMESTAMPTZ \cf7 DEFAULT\cf6  NOW(),\cf4                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   status \cf8 VARCHAR\cf6 (\cf9 20\cf6 ) \cf7 DEFAULT\cf6  \cf10 'active'\cf6 ,\cf4                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   \cf7 UNIQUE\cf6 (team_id, athlete_id)\cf4                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 );\cf4                                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 training_sessions\cf4                                                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 CREATE\cf6  \cf7 TABLE\cf6  training_sessions (\cf4                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   id UUID \cf7 PRIMARY\cf6  KEY \cf7 DEFAULT\cf6  gen_random_uuid(),\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   team_id UUID \cf7 REFERENCES\cf6  teams(id),\cf4                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   coach_id UUID \cf7 REFERENCES\cf6  auth.users(id),\cf4                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   session_type \cf8 VARCHAR\cf6 (\cf9 50\cf6 ) \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   sport \cf8 VARCHAR\cf6 (\cf9 100\cf6 ) \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   \cf8 date\cf6  \cf8 DATE\cf6  \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   duration_minutes \cf8 INTEGER\cf6  \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   intensity \cf8 VARCHAR\cf6 (\cf9 20\cf6 ),\cf4                                                                                                                                                                  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   rpe_score \cf8 INTEGER\cf6  \cf7 CHECK\cf6  (rpe_score >= \cf9 1\cf6  \cf7 AND\cf6  rpe_score <= \cf9 10\cf6 ),\cf4                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   notes TEXT,\cf4                                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   created_at TIMESTAMPTZ \cf7 DEFAULT\cf6  NOW()\cf4                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 );\cf4                                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 athlete_session_attendance\cf4                                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 CREATE\cf6  \cf7 TABLE\cf6  athlete_session_attendance (\cf4                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   id UUID \cf7 PRIMARY\cf6  KEY \cf7 DEFAULT\cf6  gen_random_uuid(),\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   session_id UUID \cf7 REFERENCES\cf6  training_sessions(id) \cf7 ON\cf6  \cf7 DELETE\cf6  CASCADE,\cf4                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   athlete_id UUID \cf7 REFERENCES\cf6  athlete_profiles(id) \cf7 ON\cf6  \cf7 DELETE\cf6  CASCADE,\cf4                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   attended \cf8 BOOLEAN\cf6  \cf7 DEFAULT\cf6  \cf7 true\cf6 ,\cf4                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   individual_rpe \cf8 INTEGER\cf6 ,\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   notes TEXT,\cf4                                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   \cf7 UNIQUE\cf6 (session_id, athlete_id)\cf4                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 );\cf4                                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 recovery_sessions\cf4                                                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 CREATE\cf6  \cf7 TABLE\cf6  recovery_sessions (\cf4                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   id UUID \cf7 PRIMARY\cf6  KEY \cf7 DEFAULT\cf6  gen_random_uuid(),\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   athlete_id UUID \cf7 REFERENCES\cf6  athlete_profiles(id) \cf7 ON\cf6  \cf7 DELETE\cf6  CASCADE,\cf4                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   instructor_id UUID \cf7 REFERENCES\cf6  auth.users(id),\cf4                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   session_type \cf8 VARCHAR\cf6 (\cf9 50\cf6 ),\cf4                                                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   \cf8 date\cf6  \cf8 DATE\cf6  \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   duration_minutes \cf8 INTEGER\cf6  \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   exercises JSONB,\cf4                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   notes TEXT,\cf4                                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   created_at TIMESTAMPTZ \cf7 DEFAULT\cf6  NOW()\cf4                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 );\cf4                                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 training_load_metrics\cf4                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 CREATE\cf6  \cf7 TABLE\cf6  training_load_metrics (\cf4                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   id UUID \cf7 PRIMARY\cf6  KEY \cf7 DEFAULT\cf6  gen_random_uuid(),\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   athlete_id UUID \cf7 REFERENCES\cf6  athlete_profiles(id) \cf7 ON\cf6  \cf7 DELETE\cf6  CASCADE,\cf4                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   week_start \cf8 DATE\cf6  \cf7 NOT\cf6  \cf7 NULL\cf6 ,\cf4                                                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   total_load \cf8 INTEGER\cf6 ,\cf4                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   high_intensity_count \cf8 INTEGER\cf6  \cf7 DEFAULT\cf6  \cf9 0\cf6 ,\cf4                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   medium_intensity_count \cf8 INTEGER\cf6  \cf7 DEFAULT\cf6  \cf9 0\cf6 ,\cf4                                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   low_intensity_count \cf8 INTEGER\cf6  \cf7 DEFAULT\cf6  \cf9 0\cf6 ,\cf4                                                                                                                                                  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   recovery_sessions_count \cf8 INTEGER\cf6  \cf7 DEFAULT\cf6  \cf9 0\cf6 ,\cf4                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   \cf7 UNIQUE\cf6 (athlete_id, week_start)\cf4                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 );\cf4                                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f3\b 3. ROLE AND PERMISSION MODEL
+\f1\b0                                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 User Type Extensions\cf4                                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 type\cf6  UserRole = \cf10 'standard'\cf6  | \cf10 'coach'\cf6  | \cf10 'admin'\cf6  | \cf10 'parent'\cf6  | \cf10 'instructor'\cf6  | \cf10 'athlete'\cf6 ;\cf4                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf7 type\cf6  RelationshipType = \cf10 'parent'\cf6  | \cf10 'guardian'\cf6  | \cf10 'coach'\cf6  | \cf10 'instructor'\cf6  | \cf10 'physio'\cf6 ;\cf4                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Permission Matrix\cf4                                                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6                     View  Edit  Delete  Share\cf4                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Parent/Guardian:     \uc0\u10003      \u10003       \u10003       \u10003 \cf4                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Coach (team):        \uc0\u10003      -      -      -\cf4                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Instructor:          \uc0\u10003      \u10003       -      -\cf4                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Athlete (self):      \uc0\u10003      -      -      -\cf4                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Admin:               \uc0\u10003      \u10003       \u10003       \u10003 \cf4                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f3\b 4. KEY API ENDPOINTS
+\f1\b0                                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Team Management\cf4                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 POST /api/teams\cf6  - Create team\cf4                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 POST /api/teams/\{team_id\}/invite\cf6  - Generate invite code\cf4                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 POST /api/teams/\{team_id\}/athletes\cf6  - Add athlete to roster\cf4                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 GET /api/teams/\{team_id\}/sessions\cf6  - Get team sessions\cf4                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 POST /api/teams/\{team_id\}/sessions\cf6  - Log team training\cf4                                                                                                                                  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Athlete Management\cf4                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 POST /api/athletes\cf6  - Create athlete profile\cf4                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 POST /api/athletes/\{athlete_id\}/claim\cf6  - Parent claims profile\cf4                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 GET /api/athletes/\{athlete_id\}/timeline\cf6  - Get training timeline\cf4                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 GET /api/athletes/\{athlete_id\}/load\cf6  - Get training load metrics\cf4                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 POST /api/athletes/\{athlete_id\}/relationships\cf6  - Add coach/instructor\cf4                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Session Tracking\cf4                                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 POST /api/sessions/training\cf6  - Log training session\cf4                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 POST /api/sessions/recovery\cf6  - Log recovery session\cf4                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 GET /api/sessions/athlete/\{athlete_id\}\cf6  - Get all sessions\cf4                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Analytics\cf4                                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 GET /api/analytics/load/\{athlete_id\}\cf6  - Weekly load analysis\cf4                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - \cf11 GET /api/analytics/warnings/\{athlete_id\}\cf6  - Overtraining warnings\cf4                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f3\b 5. UI STRUCTURE RECOMMENDATIONS
+\f1\b0                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Navigation Structure\cf4                                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Standard User sees:\cf4                                                                                                                                                                       \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9500 \u9472 \u9472  Dashboard\cf4                                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9500 \u9472 \u9472  Classes\cf4                                                                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9500 \u9472 \u9472  Progress\cf4                                                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9492 \u9472 \u9472  Settings\cf4                                                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Coach sees (additional):\cf4                                                                                                                                                                  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9500 \u9472 \u9472  Coach Hub\cf4                                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9500 \u9472 \u9472  Teams\cf4                                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9500 \u9472 \u9472  Sessions\cf4                                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9492 \u9472 \u9472  Athletes\cf4                                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9492 \u9472 \u9472  Sport Resources\cf4                                                                                                                                                                       \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Parent sees (additional):\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9500 \u9472 \u9472  My Athletes\cf4                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9500 \u9472 \u9472  [Child Name]\cf4                                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9474    \u9500 \u9472 \u9472  Timeline\cf4                                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9474    \u9500 \u9472 \u9472  Load Metrics\cf4                                                                                                                                                                  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9474    \u9492 \u9472 \u9472  Permissions\cf4                                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9492 \u9472 \u9472  Add Athlete\cf4                                                                                                                                                                       \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Instructor sees (additional):\cf4                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9500 \u9472 \u9472  Recovery Hub\cf4                                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9500 \u9472 \u9472  Assigned Athletes\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9500 \u9472 \u9472  Session Builder\cf4                                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9474    \u9492 \u9472 \u9472  Progress Tracking\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Key UI Components\cf4                                                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Athlete Timeline (Notion-style)\cf4                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Week View:\cf4                                                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Mon | Training (GAA) 90min HIGH | Recovery (Pilates) 30min\cf4                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Tue | Rest\cf4                                                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Wed | Match (GAA) 80min HIGH\cf4                                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Thu | Recovery (Pilates) 45min\cf4                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Fri | Training (Soccer) 60min MED\cf4                                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Sat | Training (GAA) 75min MED\cf4                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Sun | Rest\cf4                                                                                                                                                                                \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Load Score: 580 (\uc0\u8593  15% from last week)\cf4                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Warning: 3 high intensity sessions in 7 days\cf4                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Team Roster Management\cf4                                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Team: St. Mary's U14 GAA\cf4                                                                                                                                                                  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Athletes (18):\cf4                                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9633  Sarah Murphy     \u10003  Parental consent\cf4                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9633  Emma O'Brien     \u9888  Pending consent\cf4                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 \uc0\u9633  Katie Walsh      \u10003  Parental consent\cf4                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 [Bulk Actions] [Invite Parents]\cf4                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f3\b 6. SAFETY & GDPR CONSIDERATIONS
+\f1\b0                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Child Data Protection\cf4                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Parental consent required for under-16s\cf4                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Data minimization - collect only necessary info\cf4                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Audit log for all child data access\cf4                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Right to erasure implementation\cf4                                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Encrypted PII storage\cf4                                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Role-based access with relationship verification\cf4                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Implementation Steps\cf4                                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 1. Add consent_given_by field to athlete_profiles\cf4                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 2. Create audit_log table for tracking access\cf4                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 3. Implement data retention policies (auto-delete after 2 years inactive)\cf4                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 4. Add export functionality for data portability\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 5. Create privacy dashboard for parents\cf4                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f3\b 7. MIGRATION STRATEGY
+\f1\b0                                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Phase 1: Database Setup (Week 1)\cf4                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Create new tables with RLS policies\cf4                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Add relationship management system\cf4                                                                                                                                                      \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Implement audit logging\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Phase 2: API Development (Week 2-3)\cf4                                                                                                                                                       \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Build team management endpoints\cf4                                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Create athlete profile system\cf4                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Implement session tracking\cf4                                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Phase 3: UI Implementation (Week 4-6)\cf4                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Add progressive disclosure logic\cf4                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Build coach hub extensions\cf4                                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Create parent dashboard\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Implement athlete timeline\cf4                                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 Phase 4: Testing & Compliance (Week 7-8)\cf4                                                                                                                                                  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - GDPR compliance audit\cf4                                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - Security testing\cf4                                                                                                                                                                        \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 - User acceptance testing\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f3\b 8. FUTURE EXPANSION IDEAS
+\f1\b0                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 1. 
+\f3\b AI-Powered Insights
+\f1\b0 \cf4                                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Injury risk prediction based on load patterns\cf4                                                                                                                                         \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Personalized recovery recommendations\cf4                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Performance trend analysis\cf4                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 2. 
+\f3\b Integration Capabilities
+\f1\b0 \cf4                                                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Wearable device data import (Garmin, Fitbit)\cf4                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - School sports program integration\cf4                                                                                                                                                     \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Medical practitioner portal\cf4                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 3. 
+\f3\b Communication Features
+\f1\b0 \cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Team announcements\cf4                                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Parent notifications for high load warnings\cf4                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Athlete check-in system\cf4                                                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 4. 
+\f3\b Competition Management
+\f1\b0 \cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Tournament scheduling\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Multi-team load balancing\cf4                                                                                                                                                             \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6   - Season planning tools\cf4                                                                                                                                                                 \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  
+\f3\b Implementation Priority
+\f1\b0                                                                                                                                                                   \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 1. Core athlete profile and relationship system\cf4                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 2. Team management for coaches\cf4                                                                                                                                                            \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 3. Training session logging\cf4                                                                                                                                                               \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 4. Parent dashboard and permissions\cf4                                                                                                                                                       \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 5. Timeline view and load calculations\cf4                                                                                                                                                    \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 6. Recovery session integration with Pilates\cf4                                                                                                                                              \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 7. Analytics and warnings system\cf4                                                                                                                                                          \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4                                                                                                                                                                                           \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 This architecture maintains the existing Pilates experience while seamlessly adding youth sports functionality through progressive disclosure, ensuring standard users never see sports \cf4  \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9474 \cf4  \cf6 features unless they opt-in through role selection or team joining.\cf4                                                                                                                       \cf5 \uc0\u9474 \cf4 \
+     \cf5 \uc0\u9584 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9472 \u9583 \cf4 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \cb3 > Is this flexible enough so taht all coaches will be able to ultimately see their team members' full training schedule and same Pilates instructors will see the full description and \cf4 \cb1 \
+\cf2 \cb3 schedule of exercise for individuals they are permitted to view? Also, can we consider all risks of multiple people having schedule visibility of children. Conscious parents give permission\cf4 \cb1 \
+\cf2 \cb3  but let's consider all aspects of minimum level of visibilty privilege here \cf4 \cb1 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \uc0\u9210 \cf4  You raise critical points about both functionality and child safety. Let me address the cross-visibility needs and safety concerns with a revised architecture:\
+\
+  
+\f3\b REVISED ARCHITECTURE - CROSS-VISIBILITY & CHILD SAFETY
+\f1\b0 \
+\
+  \cf6 1. ENHANCED VISIBILITY MODEL\cf4 \
+\
+  \cf6 Visibility Levels for Coaches/Instructors\cf4 \
+\
+  \cf12 -- Revised athlete_relationships table with granular permissions\cf4 \
+  \cf13 CREATE\cf4  \cf13 TABLE\cf4  athlete_relationships (\
+    id UUID \cf13 PRIMARY\cf4  KEY \cf13 DEFAULT\cf4  gen_random_uuid(),\
+    athlete_id UUID \cf13 REFERENCES\cf4  athlete_profiles(id),\
+    user_id UUID \cf13 REFERENCES\cf4  auth.users(id),\
+    relationship_type \cf8 VARCHAR\cf4 (\cf12 50\cf4 ),\
+\
+    \cf12 -- Granular visibility permissions\cf4 \
+    visibility_level \cf8 VARCHAR\cf4 (\cf12 50\cf4 ) \cf13 DEFAULT\cf4  \cf14 'own_sessions_only'\cf4 ,\
+    \cf12 -- Options: 'own_sessions_only', 'team_schedule', 'full_schedule', 'full_with_metrics'\cf4 \
+\
+    can_view_personal_info \cf8 BOOLEAN\cf4  \cf13 DEFAULT\cf4  \cf13 false\cf4 ,\
+    can_view_medical_info \cf8 BOOLEAN\cf4  \cf13 DEFAULT\cf4  \cf13 false\cf4 ,\
+    can_view_location_details \cf8 BOOLEAN\cf4  \cf13 DEFAULT\cf4  \cf13 false\cf4 ,\
+    can_view_other_coaches \cf8 BOOLEAN\cf4  \cf13 DEFAULT\cf4  \cf13 false\cf4 ,\
+\
+    \cf12 -- Time-boxed permissions\cf4 \
+    valid_from \cf8 DATE\cf4  \cf13 NOT\cf4  \cf13 NULL\cf4  \cf13 DEFAULT\cf4  \cf15 CURRENT_DATE\cf4 ,\
+    valid_until \cf8 DATE\cf4 , \cf12 -- NULL = indefinite, but parent can revoke\cf4 \
+\
+    \cf12 -- Audit fields\cf4 \
+    granted_by UUID \cf13 REFERENCES\cf4  auth.users(id), \cf12 -- Parent who granted\cf4 \
+    granted_at TIMESTAMPTZ \cf13 DEFAULT\cf4  NOW(),\
+    last_accessed TIMESTAMPTZ,\
+    access_count \cf8 INTEGER\cf4  \cf13 DEFAULT\cf4  \cf12 0\cf4 \
+  );\
+\
+  \cf6 2. MINIMUM PRIVILEGE VISIBILITY MATRIX\cf4 \
+\
+  VISIBILITY LEVELS:\
+\
+  Level 1: "Own Sessions Only" (DEFAULT)\
+  - Coach sees: Only sessions they personally conducted\
+  - Instructor sees: Only recovery sessions they led\
+  - Cannot see: Other coaches, other sessions, personal details\
+\
+  Level 2: "Team Schedule"\
+  - Coach sees: All team training sessions, matches for their sport\
+  - Cannot see: Other sports, recovery sessions, personal info\
+\
+  Level 3: "Sport Overview"\
+  - Coach sees: All sessions for their sport across all teams\
+  - Instructor sees: All recovery work for athletes in their care\
+  - Cannot see: Other sports, detailed metrics\
+\
+  Level 4: "Full Schedule" (REQUIRES EXPLICIT PARENT CONSENT)\
+  - See all training across all sports\
+  - See all recovery sessions\
+  - See attendance patterns\
+  - Cannot see: Medical info, personal contact details\
+\
+  Level 5: "Full with Metrics" (RARE - MEDICAL PROFESSIONAL)\
+  - Everything including load metrics\
+  - Injury history\
+  - Recovery notes\
+\
+  \cf6 3. SAFETY CONTROLS & RISK MITIGATION\cf4 \
+\
+  \cf6 A. Data Minimization\cf4 \
+\
+  \cf12 // Information deliberately NOT stored/shown:\cf4 \
+  \cf13 interface\cf4  ExcludedData \{\
+    \cf15 home_address\cf4 : \cf15 never\cf4 ;  \cf12 // Use club/venue addresses only\cf4 \
+    school_name: \cf15 never\cf4 ;   \cf12 // Not relevant\cf4 \
+    phone_numbers: \cf15 never\cf4 ; \cf12 // Parent contact only through system\cf4 \
+    social_media: \cf15 never\cf4 ;  \cf12 // No social linking\cf4 \
+    photos: \cf15 never\cf4 ;        \cf12 // Unless separate photo consent\cf4 \
+  \}\
+\
+  \cf12 // Location handling\cf4 \
+  \cf13 interface\cf4  SafeLocation \{\
+    \cf15 venue_name\cf4 : \cf15 string\cf4 ;      \cf12 // "St. Mary's GAA Club"\cf4 \
+    venue_type: \cf15 string\cf4 ;      \cf12 // "Sports Facility"\cf4 \
+    \cf12 // NO street addresses shown to coaches\cf4 \
+  \}\
+\
+  \cf6 B. Access Monitoring & Alerts\cf4 \
+\
+  \cf13 CREATE\cf4  \cf13 TABLE\cf4  access_audit_log (\
+    id UUID \cf13 PRIMARY\cf4  KEY \cf13 DEFAULT\cf4  gen_random_uuid(),\
+    user_id UUID \cf13 NOT\cf4  \cf13 NULL\cf4 ,\
+    athlete_id UUID \cf13 NOT\cf4  \cf13 NULL\cf4 ,\
+    action \cf8 VARCHAR\cf4 (\cf12 50\cf4 ), \cf12 -- 'view_schedule', 'view_metrics', 'export_data'\cf4 \
+    ip_address INET,\
+    user_agent TEXT,\
+    accessed_at TIMESTAMPTZ \cf13 DEFAULT\cf4  NOW()\
+  );\
+\
+  \cf12 -- Alert triggers:\cf4 \
+  \cf12 -- 1. Unusual access patterns (e.g., accessing at unusual hours)\cf4 \
+  \cf12 -- 2. Bulk data access attempts\cf4 \
+  \cf12 -- 3. Access outside normal relationship scope\cf4 \
+  \cf12 -- 4. Repeated access to single athlete profile\cf4 \
+\
+  \cf6 C. Parent Control Dashboard\cf4 \
+\
+  \cf13 interface\cf4  ParentControls \{\
+    \cf12 // Granular permission toggles\cf4 \
+    \cf15 permissions\cf4 : \{\
+      \cf15 showFullName\cf4 : \cf15 boolean\cf4 ;        \cf12 // vs initials only\cf4 \
+      showAge: \cf15 boolean\cf4 ;             \cf12 // vs age group only\cf4 \
+      showExactTimes: \cf15 boolean\cf4 ;      \cf12 // vs "Morning/Afternoon"\cf4 \
+      showVenueDetails: \cf15 boolean\cf4 ;    \cf12 // vs "Training Ground A"\cf4 \
+      allowDataExport: \cf15 boolean\cf4 ;\
+      allowCrossCoachVisibility: \cf15 boolean\cf4 ;\
+    \};\
+\
+    \cf12 // Time-boxing\cf4 \
+    reviewSchedule: \cf14 'weekly'\cf4  | \cf14 'monthly'\cf4  | \cf14 'quarterly'\cf4 ;\
+    autoExpirePermissions: \cf15 number\cf4 ; \cf12 // days\cf4 \
+\
+    \cf12 // Notifications\cf4 \
+    notifyOnAccess: \cf15 boolean\cf4 ;\
+    weeklyAccessReport: \cf15 boolean\cf4 ;\
+    unusualActivityAlerts: \cf15 boolean\cf4 ;\
+  \}\
+\
+  \cf6 4. PROGRESSIVE INFORMATION DISCLOSURE\cf4 \
+\
+  \cf6 Default View (Maximum Safety)\cf4 \
+\
+  Athlete: J.M. (U14)\
+  Mon: Team Training (90 min) - High Intensity\
+  Wed: Match (80 min) - High Intensity\
+  Thu: Recovery Session (45 min)\
+\
+  Weekly Load: Above Average \uc0\u9888 \u65039 \
+\
+  \cf6 With Parent Permission\cf4 \
+\
+  Athlete: John Murphy (Age 14, DOB hidden)\
+  Mon: GAA Training @ Club Grounds (3:30-5:00 PM) - High Intensity\
+       Coach: Pat O'Brien\
+  Wed: Match vs St. Peters @ Home (4:00 PM) - High Intensity\
+  Thu: Pilates Recovery @ Bassline Studio (5:00 PM)\
+       Instructor: Mary Kelly\
+       Focus: Hip mobility, Core stability\
+\
+  Weekly Load: 580 (Target: 400-500)\
+  Other Activities: Soccer (Tues, Fri)\
+\
+  \cf6 5. RELATIONSHIP VERIFICATION WORKFLOW\cf4 \
+\
+  1. Coach creates team\
+  2. Coach adds athlete (name + DOB only)\
+  3. System generates unique claim code\
+  4. Parent receives invite with claim code\
+  5. Parent verifies:\
+     - Their identity\
+     - Relationship to child\
+     - Contact info for verification\
+  6. Parent sets permission levels:\
+     - What coaches can see\
+     - Duration of access\
+     - Notification preferences\
+  7. System sends confirmation to:\
+     - Parent email\
+     - Secondary guardian (optional)\
+  8. Quarterly review reminder to parent\
+\
+  \cf6 6. EMERGENCY OVERRIDE SCENARIOS\cf4 \
+\
+  \cf12 -- Emergency contact info (encrypted, parent-controlled)\cf4 \
+  \cf13 CREATE\cf4  \cf13 TABLE\cf4  emergency_access (\
+    athlete_id UUID \cf13 PRIMARY\cf4  KEY,\
+    encrypted_contact BYTEA, \cf12 -- Encrypted with parent's key\cf4 \
+    medical_conditions_summary TEXT, \cf12 -- "Asthma - inhaler required"\cf4 \
+    emergency_procedure TEXT,\
+    \cf12 -- Only shown in emergency mode with audit trail\cf4 \
+  );\
+\
+  \cf6 7. ANONYMIZATION OPTIONS\cf4 \
+\
+  For maximum safety, parents can choose:\
+\
+  \cf13 interface\cf4  AnonymizationOptions \{\
+    \cf15 displayMode\cf4 : \cf14 'full_name'\cf4  | \cf14 'initials'\cf4  | \cf14 'athlete_code'\cf4 ;\
+    \cf12 // Athlete code example: "TEAM01-2024-AF" (team-year-random)\cf4 \
+\
+    scheduleDetail: \cf14 'exact'\cf4  | \cf14 'blocks'\cf4  | \cf14 'counts_only'\cf4 ;\
+    \cf12 // Blocks: "Morning Training", "Afternoon Recovery"\cf4 \
+    \cf12 // Counts: "3 sessions this week"\cf4 \
+\
+    shareWithinTeam: \cf15 boolean\cf4 ; \cf12 // Other parents can see\cf4 \
+    shareAcrossSports: \cf15 boolean\cf4 ; \cf12 // Other sport coaches can see\cf4 \
+  \}\
+\
+  \cf6 8. LEGAL COMPLIANCE ADDITIONS\cf4 \
+\
+  \cf12 -- Consent tracking with versioning\cf4 \
+  \cf13 CREATE\cf4  \cf13 TABLE\cf4  consent_records (\
+    id UUID \cf13 PRIMARY\cf4  KEY \cf13 DEFAULT\cf4  gen_random_uuid(),\
+    athlete_id UUID \cf13 NOT\cf4  \cf13 NULL\cf4 ,\
+    parent_id UUID \cf13 NOT\cf4  \cf13 NULL\cf4 ,\
+    consent_type \cf8 VARCHAR\cf4 (\cf12 50\cf4 ), \cf12 -- 'data_sharing', 'photo', 'medical'\cf4 \
+    version \cf8 VARCHAR\cf4 (\cf12 10\cf4 ),\
+    granted_at TIMESTAMPTZ,\
+    expires_at TIMESTAMPTZ,\
+    consent_text TEXT, \cf12 -- Store exact text consented to\cf4 \
+    ip_address INET,\
+    withdrawn_at TIMESTAMPTZ\
+  );\
+\
+  \cf6 9. RECOMMENDED SAFETY DEFAULTS\cf4 \
+\
+  1. 
+\f3\b Coaches see by default:
+\f1\b0 \
+    - Initials only (not full names)\
+    - Their own team sessions only\
+    - General intensity levels (not specific metrics)\
+    - No other coaches' names\
+    - No venue addresses\
+  2. 
+\f3\b Parents must explicitly opt-in for:
+\f1\b0 \
+    - Full name display\
+    - Cross-coach visibility\
+    - Exact times/locations\
+    - Medical information sharing\
+    - Photo permissions\
+  3. 
+\f3\b Automatic safety features:
+\f1\b0 \
+    - Access logs emailed weekly to parents\
+    - Permissions expire after school term (3 months)\
+    - Unusual access patterns trigger alerts\
+    - Data export requires 2FA + parent notification\
+    - Coach changes require re-consent\
+\
+  This revised architecture prioritizes child safety while still enabling the cross-visibility needed for effective training load management. The key principle is: start with minimum access\
+   and let parents explicitly grant more as needed.\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \cb3 > Great, can you document this plan and save it to an md file called "Next session" in the docs folder in this location. This will hopefully allow us to start from here on next session \cf4 \cb1 \
+                                                                                                                                                                                            \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf16 \uc0\u9210 \cf4 User approved Claude's plan:\
+  \uc0\u9151  \'a0
+\f2\i\b \ul Plan to Document Youth Athlete Welfare Platform Architecture
+\f1\i0\b0 \ulnone \
+\
+     \cf6 I will create a comprehensive documentation file that captures our entire discussion about expanding Bassline to support youth athlete welfare. This will be saved as \cf11 /docs/Next \cf4 \
+     \cf6 session.md and will include:\cf4 \
+\
+     
+\f3\b Document Structure:
+\f1\b0 \
+\
+     \cf6 1. 
+\f3\b Executive Summary
+\f1\b0 \cf4 \
+     \cf6   - Vision for youth athlete welfare platform\cf4 \
+     \cf6   - Key principles (athlete-centric, progressive disclosure, safety-first)\cf4 \
+     \cf6 2. 
+\f3\b Complete System Architecture
+\f1\b0 \cf4 \
+     \cf6   - Multi-tier architecture diagram\cf4 \
+     \cf6   - Database schema with all tables\cf4 \
+     \cf6   - API structure\cf4 \
+     \cf6   - Event system design\cf4 \
+     \cf6 3. 
+\f3\b Enhanced Safety & Visibility Model
+\f1\b0 \cf4 \
+     \cf6   - 5-level visibility hierarchy\cf4 \
+     \cf6   - Minimum privilege matrix\cf4 \
+     \cf6   - Cross-coach/instructor visibility rules\cf4 \
+     \cf6   - Anonymization options\cf4 \
+     \cf6 4. 
+\f3\b Child Safety Controls
+\f1\b0 \cf4 \
+     \cf6   - Data minimization strategies\cf4 \
+     \cf6   - Access monitoring and alerts\cf4 \
+     \cf6   - Parent control dashboard\cf4 \
+     \cf6   - Emergency override scenarios\cf4 \
+     \cf6 5. 
+\f3\b Database Schema (Complete)
+\f1\b0 \cf4 \
+     \cf6   - All 8 new tables with full column definitions\cf4 \
+     \cf6   - Relationship mappings\cf4 \
+     \cf6   - RLS policies\cf4 \
+     \cf6   - Audit tables\cf4 \
+     \cf6 6. 
+\f3\b API Endpoints
+\f1\b0 \cf4 \
+     \cf6   - Team management\cf4 \
+     \cf6   - Athlete management\cf4 \
+     \cf6   - Session tracking\cf4 \
+     \cf6   - Analytics\cf4 \
+     \cf6   - Permissions\cf4 \
+     \cf6 7. 
+\f3\b UI/UX Specifications
+\f1\b0 \cf4 \
+     \cf6   - Progressive disclosure navigation\cf4 \
+     \cf6   - Role-based interfaces\cf4 \
+     \cf6   - Athlete timeline (Notion-style)\cf4 \
+     \cf6   - Parent dashboard mockups\cf4 \
+     \cf6 8. 
+\f3\b GDPR & Legal Compliance
+\f1\b0 \cf4 \
+     \cf6   - Consent management\cf4 \
+     \cf6   - Data retention policies\cf4 \
+     \cf6   - Audit requirements\cf4 \
+     \cf6   - Right to erasure implementation\cf4 \
+     \cf6 9. 
+\f3\b Implementation Roadmap
+\f1\b0 \cf4 \
+     \cf6   - 8-week phased approach\cf4 \
+     \cf6   - Migration strategy\cf4 \
+     \cf6   - Testing requirements\cf4 \
+     \cf6   - Compliance checkpoints\cf4 \
+     \cf6 10. 
+\f3\b Future Enhancements
+\f1\b0 \cf4 \
+     \cf6   - AI-powered insights\cf4 \
+     \cf6   - Integration capabilities\cf4 \
+     \cf6   - Communication features\cf4 \
+}

@@ -738,7 +738,7 @@ export function Settings() {
             ) : (
               <div className="space-y-4">
                 {/* AI Agent Toggle - Admin Only (Cost Control) */}
-                {user?.is_admin ? (
+                {user?.user_type === 'admin' ? (
                   <>
                     <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors border-2 border-burgundy/30">
                       <div>
@@ -1113,7 +1113,7 @@ export function Settings() {
       </div>
 
       {/* Developer Tools - Admin Only */}
-      {user?.is_admin && (
+      {user?.user_type === 'admin' && (
         <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
           <button
             onClick={() => toggleSection('developer')}

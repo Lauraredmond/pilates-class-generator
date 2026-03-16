@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
 
 export function Home() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="max-w-4xl mx-auto pt-[calc(env(safe-area-inset-top)+12px)]">
@@ -32,14 +34,14 @@ export function Home() {
 
       {/* Main Action Buttons */}
       <div className="space-y-3 mb-5">
-        {/* New Primary Button */}
+        {/* Primary Button - Renamed */}
         <Button
           className="w-full"
           size="lg"
           onClick={() => navigate('/classes')}
           variant="primary"
         >
-          Create my wellness routine (<i>Coming soon</i>)
+          Create my training plan
         </Button>
 
         {/* Existing Pilates Class Button - Same styling as above */}
@@ -51,6 +53,18 @@ export function Home() {
         >
           Generate my Pilates class
         </Button>
+
+        {/* Admin Panel Button - Visible only for admin users */}
+        {user?.user_type === 'admin' && (
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() => navigate('/admin')}
+            variant="secondary"
+          >
+            Admin Panel
+          </Button>
+        )}
       </div>
 
       {/* Mission Statement */}
