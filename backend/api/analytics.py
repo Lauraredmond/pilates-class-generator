@@ -1085,32 +1085,43 @@ def _calculate_streak(classes: List[Dict[str, Any]]) -> int:
 
 
 async def _get_favorite_movement(user_id: str) -> str:
-    """Get the most frequently used movement"""
+    """Get the most frequently used movement from class_movements table
+
+    MIGRATION: Changed from movement_usage to class_movements table (Phase 2)
+    This function now counts movement occurrences from the class_movements table
+    which provides more accurate data than the deprecated movement_usage table.
+    """
     try:
         user_uuid = _convert_to_uuid(user_id)
 
-        response = supabase.table('movement_usage') \
-            .select('movement_id, usage_count') \
+        # Get all movements from class_movements for this user
+        # We need to count occurrences of each movement
+        response = supabase.table('class_movements') \
+            .select('movement_id, movement_name') \
             .eq('user_id', user_uuid) \
-            .order('usage_count', desc=True) \
-            .limit(1) \
             .execute()
 
         if response.data and len(response.data) > 0:
-            movement_id = response.data[0]['movement_id']
+            # Count occurrences of each movement
+            movement_counts = {}
+            for record in response.data:
+                movement_id = record.get('movement_id')
+                movement_name = record.get('movement_name', 'Unknown')
 
-            movement_response = supabase.table('movements') \
-                .select('name') \
-                .eq('id', movement_id) \
-                .execute()
+                if movement_id:
+                    if movement_id not in movement_counts:
+                        movement_counts[movement_id] = {'count': 0, 'name': movement_name}
+                    movement_counts[movement_id]['count'] += 1
 
-            if movement_response.data:
-                return movement_response.data[0]['name']
+            # Find the movement with the highest count
+            if movement_counts:
+                favorite = max(movement_counts.items(), key=lambda x: x[1]['count'])
+                return favorite[1]['name']
 
         return "The Hundred"
 
     except Exception as e:
-        logger.warning(f"Error getting favorite movement: {e}")
+        logger.warning(f"Error getting favorite movement from class_movements: {e}")
         return "The Hundred"
 
 
