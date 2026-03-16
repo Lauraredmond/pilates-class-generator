@@ -1,8 +1,11 @@
 """
-Clear analytics data from class_history and movement_usage tables
+Clear analytics data from class_history and class_movements tables
 
 This script is for testing purposes - clears all existing data so you can
 verify that the analytics tables get populated correctly when you generate classes.
+
+MIGRATION NOTE: movement_usage table has been deprecated in favor of class_movements.
+All movement tracking is now done through the class_movements table.
 
 Usage:
     python backend/scripts/clear_analytics_data.py
@@ -31,7 +34,7 @@ if not env_path.exists():
 load_dotenv(env_path)
 
 def clear_analytics_tables():
-    """Clear data from class_history and movement_usage tables"""
+    """Clear data from class_history and class_movements tables"""
 
     # Initialize Supabase
     supabase_url = os.getenv('SUPABASE_URL')
@@ -66,23 +69,23 @@ def clear_analytics_tables():
 
     print()
 
-    # Clear movement_usage table
+    # Clear class_movements table
     try:
         # Count records
-        count_result = supabase.table('movement_usage').select('id', count='exact').execute()
-        usage_count = count_result.count if hasattr(count_result, 'count') else len(count_result.data)
+        count_result = supabase.table('class_movements').select('id', count='exact').execute()
+        movements_count = count_result.count if hasattr(count_result, 'count') else len(count_result.data)
 
-        print(f"📊 movement_usage table: {usage_count} records")
+        print(f"📊 class_movements table: {movements_count} records")
 
-        if usage_count > 0:
+        if movements_count > 0:
             # Delete all records
-            delete_result = supabase.table('movement_usage').delete().neq('id', '00000000-0000-0000-0000-000000000000').execute()
-            print(f"   ✅ Cleared {usage_count} records from movement_usage")
+            delete_result = supabase.table('class_movements').delete().neq('id', '00000000-0000-0000-0000-000000000000').execute()
+            print(f"   ✅ Cleared {movements_count} records from class_movements")
         else:
-            print(f"   ℹ️  movement_usage already empty")
+            print(f"   ℹ️  class_movements already empty")
 
     except Exception as e:
-        print(f"   ❌ Error clearing movement_usage: {e}")
+        print(f"   ❌ Error clearing class_movements: {e}")
 
     print()
     print("✅ Analytics tables cleared!")
@@ -90,7 +93,7 @@ def clear_analytics_tables():
     print("Next steps:")
     print("1. Generate 3-5 test classes in the app")
     print("2. Check that class_history table gets populated")
-    print("3. Check that movement_usage table tracks usage")
+    print("3. Check that class_movements table tracks movement usage")
     print("4. Verify analytics dashboard shows data")
     print()
     print("Note: class_plans table was NOT cleared (contains manually created classes)")
@@ -110,7 +113,7 @@ if __name__ == "__main__":
     print()
     print("This will delete ALL records from:")
     print("  - class_history")
-    print("  - movement_usage")
+    print("  - class_movements")
     print()
 
     if not args.confirm:

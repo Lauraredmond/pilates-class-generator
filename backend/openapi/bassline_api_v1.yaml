@@ -510,7 +510,6 @@ components:
       required:
         - email
         - password
-        - full_name
       properties:
         email:
           type: string
@@ -521,6 +520,44 @@ components:
           minLength: 8
         full_name:
           type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [practitioner, pilates_instructor, coach, parent]
+          description: |
+            Array of user roles (multi-role support).
+            Multiple user_profiles records will be created, one for each role.
+            All profiles share the same auth.users account and email.
+        user_type:
+          type: string
+          enum: [standard, coach]
+          description: |
+            Legacy user type for backward compatibility.
+            Use 'roles' array instead for new registrations.
+          default: standard
+        age_range:
+          type: string
+          enum: ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]
+        gender_identity:
+          type: string
+          enum: ["Female", "Male", "Non-binary", "Other", "Prefer not to say"]
+        country:
+          type: string
+        pilates_experience:
+          type: string
+          enum: ["Beginner", "Intermediate", "Advanced", "Instructor"]
+        goals:
+          type: array
+          items:
+            type: string
+            enum: ["stress_relief", "tone_strength", "performance", "habit_building"]
+        accepted_privacy_at:
+          type: string
+          format: date-time
+        accepted_beta_terms_at:
+          type: string
+          format: date-time
 
     UserLogin:
       type: object
@@ -535,20 +572,78 @@ components:
           type: string
           format: password
 
+    UserProfileData:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Profile ID
+        user_id:
+          type: string
+          format: uuid
+          description: References auth.users
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+        user_type:
+          type: string
+          enum: [practitioner, pilates_instructor, coach, parent, admin]
+        age_range:
+          type: string
+        gender_identity:
+          type: string
+        country:
+          type: string
+        pilates_experience:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
     UserProfile:
       type: object
       properties:
         id:
           type: string
           format: uuid
+          description: auth.users ID
         email:
           type: string
           format: email
+        profiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfileData'
+          description: All user profiles (one per role)
         full_name:
           type: string
-        role:
+        user_type:
           type: string
-          enum: [student, instructor, admin]
+          enum: [standard, coach, practitioner, pilates_instructor, parent, admin]
+          description: |
+            Legacy field from first profile for backward compatibility.
+            Use 'profiles' array to check all user roles.
+        age_range:
+          type: string
+        gender_identity:
+          type: string
+        country:
+          type: string
+        pilates_experience:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
         preferences:
           type: object
           properties:
@@ -1046,6 +1141,7 @@ paths:
       summary: Get current user profile
       description: |
         Get authenticated user's profile and preferences.
+        Returns all user profiles if user has multiple roles.
 
         **JENTIC INTEGRATION NOTE:**
         This is typically the first step in Arazzo workflows to personalize class generation.
@@ -1053,13 +1149,56 @@ paths:
       operationId: getUserProfile
       responses:
         '200':
-          description: User profile
+          description: User profile with all roles
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfile'
         '401':
           description: Unauthorized
+      security:
+        - BearerAuth: []
+
+  /api/auth/add-role:
+    post:
+      tags: [Authentication]
+      summary: Add new role to existing user
+      description: |
+        Add an additional role to the current user's account.
+        Creates a new user_profiles record for the new role.
+        All profiles share the same auth.users account and email.
+      operationId: addUserRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+                  enum: [practitioner, pilates_instructor, coach, parent]
+                  description: The role to add to the user's account
+      responses:
+        '200':
+          description: Role added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  role:
+                    type: string
+        '400':
+          description: Invalid role or user already has this role
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
       security:
         - BearerAuth: []
 

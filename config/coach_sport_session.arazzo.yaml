@@ -1,0 +1,402 @@
+arazzo: 1.0.0
+info:
+  title: Coach Sport Session Workflow
+  summary: Create and manage coach training sessions with sport-specific exercises
+  description: >
+    This workflow orchestrates the creation of a coach training session:
+    1. Authenticate coach user
+    2. Fetch sport-specific exercises
+    3. Filter exercises by category/muscle group
+    4. Create session plan with selected exercises
+    5. Generate printable session guide
+    6. Track session completion
+
+    **JENTIC INTEGRATION**: This workflow demonstrates proper sequencing
+    for coach features that could be executed by StandardAgent.
+  version: 1.0.0
+
+# ============================================
+# SOURCE DESCRIPTIONS
+# ============================================
+sourceDescriptions:
+  - name: bassline-api
+    url: https://pilates-class-generator-api3.onrender.com
+    type: openapi
+    description: Bassline Pilates backend API with coach extensions
+
+# ============================================
+# WORKFLOW: COACH SESSION CREATION
+# ============================================
+workflows:
+  - workflowId: create_coach_sport_session
+    summary: Create a training session for a sports team
+    description: >
+      **Coach workflow** for creating sport-specific Pilates training sessions.
+      Ensures proper authorization and exercise selection for injury prevention.
+
+    inputs:
+      # Coach context
+      coach_id:
+        type: string
+        description: Authenticated coach user ID
+
+      # Session parameters
+      sport:
+        type: string
+        enum: [gaa, soccer, rugby]
+        description: Sport for the session
+
+      team_name:
+        type: string
+        description: Name of the team
+
+      session_date:
+        type: string
+        format: date
+        description: Date of the training session
+
+      focus_areas:
+        type: array
+        items:
+          type: string
+          enum: [warmup, core, lower_body, upper_body, flexibility, recovery]
+        description: Focus areas for the session
+
+      duration_minutes:
+        type: integer
+        minimum: 30
+        maximum: 120
+        default: 60
+        description: Total session duration
+
+      include_injury_prevention:
+        type: boolean
+        default: true
+        description: Prioritize injury prevention exercises
+
+    # ============================================
+    # STEP 1: VERIFY COACH AUTHORIZATION
+    # ============================================
+    steps:
+      - stepId: verify_coach_auth
+        operationId: getCurrentUser
+        description: Verify user is authenticated as coach or admin
+        parameters:
+          - name: Authorization
+            in: header
+            value: Bearer $inputs.auth_token
+        successCriteria:
+          - condition: $statusCode == 200
+          # Check if any of the user's profiles have coach or admin role
+          - condition: $response.body.profiles.some(p => p.user_type == "coach" || p.user_type == "admin") OR $response.body.user_type == "coach" OR $response.body.user_type == "admin"
+        outputs:
+          coach_profile: $response.body
+          is_authorized: true
+
+      # ============================================
+      # STEP 2: FETCH SPORT-SPECIFIC EXERCISES
+      # ============================================
+      - stepId: fetch_sport_exercises
+        operationId: getSportExercises
+        description: Get all exercises for the specified sport
+        dependsOn:
+          - verify_coach_auth
+        parameters:
+          - name: sport
+            in: path
+            value: $inputs.sport
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.length > 0
+        outputs:
+          all_exercises: $response.body
+          exercise_count: $response.body.length
+
+      # ============================================
+      # STEP 3: FILTER BY FOCUS AREAS
+      # ============================================
+      - stepId: filter_exercises_by_focus
+        operationId: filterExercises
+        description: Filter exercises based on coach's selected focus areas
+        dependsOn:
+          - fetch_sport_exercises
+        parameters:
+          - name: exercises
+            in: body
+            value: $steps.fetch_sport_exercises.outputs.all_exercises
+          - name: categories
+            in: body
+            value: $inputs.focus_areas
+          - name: prioritize_injury_prevention
+            in: body
+            value: $inputs.include_injury_prevention
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          filtered_exercises: $response.body
+          filtered_count: $response.body.length
+
+      # ============================================
+      # STEP 4: SELECT EXERCISES FOR DURATION
+      # ============================================
+      - stepId: select_exercises_for_duration
+        operationId: optimizeExerciseSelection
+        description: Select optimal exercises to fit session duration
+        dependsOn:
+          - filter_exercises_by_focus
+        parameters:
+          - name: available_exercises
+            in: body
+            value: $steps.filter_exercises_by_focus.outputs.filtered_exercises
+          - name: target_duration_minutes
+            in: body
+            value: $inputs.duration_minutes
+          - name: balance_muscle_groups
+            in: body
+            value: true
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          selected_exercises: $response.body.exercises
+          estimated_duration: $response.body.total_duration_minutes
+
+      # ============================================
+      # STEP 5: CREATE SESSION PLAN
+      # ============================================
+      - stepId: create_session_plan
+        operationId: createCoachSession
+        description: Create and save the training session
+        dependsOn:
+          - select_exercises_for_duration
+        parameters:
+          - name: sport
+            in: body
+            value: $inputs.sport
+          - name: session_name
+            in: body
+            value: "$inputs.team_name - $inputs.session_date Training"
+          - name: team_name
+            in: body
+            value: $inputs.team_name
+          - name: session_date
+            in: body
+            value: $inputs.session_date
+          - name: exercises
+            in: body
+            value: $steps.select_exercises_for_duration.outputs.selected_exercises
+          - name: notes
+            in: body
+            value: "Focus areas: $inputs.focus_areas. Duration: $inputs.duration_minutes minutes."
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          session_id: $response.body.id
+          session_details: $response.body
+
+      # ============================================
+      # STEP 6: GENERATE SESSION GUIDE
+      # ============================================
+      - stepId: generate_session_guide
+        operationId: generateSessionGuide
+        description: Generate printable guide with cues and modifications
+        dependsOn:
+          - create_session_plan
+        parameters:
+          - name: session_id
+            in: path
+            value: $steps.create_session_plan.outputs.session_id
+          - name: include_modifications
+            in: query
+            value: true
+          - name: include_injury_prevention_notes
+            in: query
+            value: $inputs.include_injury_prevention
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          guide_url: $response.body.guide_url
+          guide_format: $response.body.format
+
+    # ============================================
+    # WORKFLOW OUTPUTS
+    # ============================================
+    outputs:
+      session_id: $steps.create_session_plan.outputs.session_id
+      session_name: $steps.create_session_plan.outputs.session_details.session_name
+      exercise_count: $steps.select_exercises_for_duration.outputs.selected_exercises.length
+      estimated_duration: $steps.select_exercises_for_duration.outputs.estimated_duration
+      guide_url: $steps.generate_session_guide.outputs.guide_url
+      success: true
+      message: "Training session created successfully for $inputs.team_name"
+
+  # ============================================
+  # WORKFLOW: UPDATE EXISTING SESSION
+  # ============================================
+  - workflowId: update_coach_session
+    summary: Update an existing training session
+    description: >
+      Workflow for updating coach training sessions with proper validation.
+
+    inputs:
+      session_id:
+        type: string
+        description: ID of session to update
+
+      updates:
+        type: object
+        properties:
+          exercises:
+            type: array
+          notes:
+            type: string
+          session_date:
+            type: string
+            format: date
+
+    steps:
+      - stepId: verify_session_ownership
+        operationId: getCoachSessionById
+        description: Verify coach owns this session
+        parameters:
+          - name: session_id
+            in: path
+            value: $inputs.session_id
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.coach_id == $auth.user_id
+        outputs:
+          current_session: $response.body
+
+      - stepId: validate_updates
+        operationId: validateSessionUpdates
+        description: Validate the proposed updates
+        dependsOn:
+          - verify_session_ownership
+        parameters:
+          - name: current_session
+            in: body
+            value: $steps.verify_session_ownership.outputs.current_session
+          - name: updates
+            in: body
+            value: $inputs.updates
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          validated_updates: $response.body
+
+      - stepId: apply_updates
+        operationId: updateCoachSession
+        description: Apply validated updates to session
+        dependsOn:
+          - validate_updates
+        parameters:
+          - name: session_id
+            in: path
+            value: $inputs.session_id
+          - name: updates
+            in: body
+            value: $steps.validate_updates.outputs.validated_updates
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          updated_session: $response.body
+
+    outputs:
+      session_id: $inputs.session_id
+      updated_session: $steps.apply_updates.outputs.updated_session
+      success: true
+
+  # ============================================
+  # WORKFLOW: ADMIN EXERCISE IMPORT
+  # ============================================
+  - workflowId: admin_import_exercises
+    summary: Bulk import sport exercises (admin only)
+    description: >
+      Admin workflow for importing sport-specific exercises in bulk.
+      Validates data integrity and prevents duplicates.
+
+    inputs:
+      sport:
+        type: string
+        enum: [gaa, soccer, rugby]
+
+      exercises:
+        type: array
+        items:
+          type: object
+
+    steps:
+      - stepId: verify_admin_auth
+        operationId: getCurrentUser
+        description: Verify user is admin
+        successCriteria:
+          # Check if any of the user's profiles have admin role
+          - condition: $response.body.profiles.some(p => p.user_type == "admin") OR $response.body.user_type == "admin"
+        outputs:
+          is_admin: true
+
+      - stepId: validate_exercise_data
+        operationId: validateExerciseImport
+        description: Validate all exercise data before import
+        dependsOn:
+          - verify_admin_auth
+        parameters:
+          - name: sport
+            in: body
+            value: $inputs.sport
+          - name: exercises
+            in: body
+            value: $inputs.exercises
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          valid_exercises: $response.body.valid
+          invalid_exercises: $response.body.invalid
+          validation_errors: $response.body.errors
+
+      - stepId: check_duplicates
+        operationId: checkExerciseDuplicates
+        description: Check for duplicate exercises
+        dependsOn:
+          - validate_exercise_data
+        parameters:
+          - name: sport
+            in: body
+            value: $inputs.sport
+          - name: exercise_names
+            in: body
+            value: $steps.validate_exercise_data.outputs.valid_exercises.map(e => e.exercise_name)
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          duplicates: $response.body.duplicates
+          new_exercises: $response.body.new
+
+      - stepId: import_exercises
+        operationId: importExercises
+        description: Import non-duplicate exercises
+        dependsOn:
+          - check_duplicates
+        parameters:
+          - name: sport
+            in: body
+            value: $inputs.sport
+          - name: exercises
+            in: body
+            value: $steps.check_duplicates.outputs.new_exercises
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          imported_count: $response.body.imported_count
+          imported_ids: $response.body.imported_ids
+
+    outputs:
+      imported_count: $steps.import_exercises.outputs.imported_count
+      duplicate_count: $steps.check_duplicates.outputs.duplicates.length
+      invalid_count: $steps.validate_exercise_data.outputs.invalid_exercises.length
+      success: true
+      summary: "Imported $steps.import_exercises.outputs.imported_count exercises for $inputs.sport"
+
+# ============================================
+# END OF COACH SPORT SESSION WORKFLOW
+# ============================================
