@@ -229,12 +229,12 @@ async def get_admin_user_id(
     try:
         # Check if user is admin
         result = supabase.table("user_profiles")\
-            .select("is_admin")\
+            .select("user_type")\
             .eq("id", user_id)\
             .single()\
             .execute()
 
-        if not result.data or not result.data.get("is_admin"):
+        if not result.data or result.data.get("user_type") != "admin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admin access required"
