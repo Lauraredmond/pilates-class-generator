@@ -686,21 +686,44 @@ async def update_profile(
                 detail="User not found"
             )
 
-        user = result.data[0]
+        profiles = result.data
+
+        # Build profiles array (matching the /me endpoint structure)
+        profile_responses = []
+        for profile in profiles:
+            profile_responses.append(UserProfileResponse(
+                id=profile["id"],
+                user_id=profile.get("user_id", user_id),
+                email=profile["email"],
+                full_name=profile.get("full_name"),
+                user_type=profile.get("user_type", "practitioner"),
+                age_range=profile.get("age_range"),
+                gender_identity=profile.get("gender_identity"),
+                country=profile.get("country"),
+                pilates_experience=profile.get("pilates_experience"),
+                goals=profile.get("goals", []),
+                created_at=profile.get("created_at"),
+                updated_at=profile.get("updated_at")
+            ))
+
+        # Use first profile for legacy fields
+        first_profile = profiles[0]
 
         return UserResponse(
-            id=user["id"],
-            email=user["email"],
-            full_name=user.get("full_name"),
-            created_at=user["created_at"],
-            last_login=user.get("last_login"),
-            user_type=user.get("user_type", "standard"),
-            age_range=user.get("age_range"),
-            gender_identity=user.get("gender_identity"),
-            country=user.get("country"),
-            pilates_experience=user.get("pilates_experience"),
-            goals=user.get("goals", []),
-            accepted_safety_at=user.get("accepted_safety_at")
+            id=user_id,
+            email=first_profile["email"],
+            profiles=profile_responses,
+            full_name=first_profile.get("full_name"),
+            created_at=first_profile["created_at"],
+            last_login=first_profile.get("last_login"),
+            # Legacy fields from first profile
+            user_type=first_profile.get("user_type", "standard"),
+            age_range=first_profile.get("age_range"),
+            gender_identity=first_profile.get("gender_identity"),
+            country=first_profile.get("country"),
+            pilates_experience=first_profile.get("pilates_experience"),
+            goals=first_profile.get("goals", []),
+            accepted_safety_at=first_profile.get("accepted_safety_at")
         )
 
     except HTTPException:

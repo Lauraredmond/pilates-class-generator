@@ -193,7 +193,14 @@ export function Settings() {
             Authorization: `Bearer ${token}`
           }
         });
-        setPreferences(response.data);
+        // Normalize preferred_movement_level to lowercase if it exists
+        const normalizedPreferences = {
+          ...response.data,
+          preferred_movement_level: response.data.preferred_movement_level
+            ? response.data.preferred_movement_level.toLowerCase()
+            : response.data.preferred_movement_level
+        };
+        setPreferences(normalizedPreferences);
       } catch (error: any) {
         logger.error('Failed to fetch preferences:', error);
         setPreferencesError('Failed to load preferences');
@@ -232,7 +239,14 @@ export function Settings() {
         }
       );
 
-      setPreferences(response.data);
+      // Normalize preferred_movement_level to lowercase if it exists
+      const updatedPreferences = {
+        ...response.data,
+        preferred_movement_level: response.data.preferred_movement_level
+          ? response.data.preferred_movement_level.toLowerCase()
+          : response.data.preferred_movement_level
+      };
+      setPreferences(updatedPreferences);
       setSavedField(key);
       setPreferencesSuccess(`${key === 'preferred_movement_level' ? 'Difficulty level' :
                               key === 'default_class_duration' ? 'Duration' :
