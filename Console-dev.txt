@@ -1,0 +1,19 @@
+[Log] [API Config] Using backend: https://pilates-dev-i0jb.onrender.com (isDev: true) (index-BdvCYJnJ.js, line 108)
+[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Log] [Debug] ✅ Eruda debug console initialized (eruda-Dkdrpl4M.js, line 92)
+[Log] [Debug] ✅ Media diagnostics panel added (eruda-Dkdrpl4M.js, line 92)
+[Log] ✅ Service Worker registered: – "https://bassline-dev.netlify.app/" (eruda-Dkdrpl4M.js, line 92)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – Pe
+Pe
+	(anonymous function) (eruda-Dkdrpl4M.js:92:2986)
+	error (index-BdvCYJnJ.js:13:5449)
+	(anonymous function) (index-BdvCYJnJ.js:110:53909)
+[Error] Failed to load resource: the server responded with a status of 500 () (profile, line 0)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – Pe
+Pe
+	(anonymous function) (eruda-Dkdrpl4M.js:92:2986)
+	error (index-BdvCYJnJ.js:13:5449)
+	(anonymous function) (index-BdvCYJnJ.js:110:53909)
+[Error] Failed to load resource: the server responded with a status of 500 () (profile, line 0)

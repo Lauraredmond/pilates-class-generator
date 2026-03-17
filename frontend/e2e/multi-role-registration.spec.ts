@@ -13,10 +13,10 @@ const TEST_USER = {
   roles: ['practitioner', 'parent', 'coach'],  // Multiple roles
 };
 
-// Existing user for login test
+// Existing user for login test - credentials from environment variables
 const EXISTING_USER = {
-  email: 'test@example.com',  // UPDATE THIS with a real test account email
-  password: 'TestPassword123!',  // UPDATE THIS with the real password
+  email: process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'test@example.com',
+  password: process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'TestPassword123!',
 };
 
 test.describe('Multi-Role Registration Flow', () => {
