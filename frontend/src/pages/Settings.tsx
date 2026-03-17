@@ -797,20 +797,20 @@ export function Settings() {
                   <label className="block text-sm font-medium text-cream mb-2">Default Difficulty Level</label>
                   <select
                     value={preferences.preferred_movement_level || ''}
-                    onChange={(e) => updatePreference('preferred_movement_level', e.target.value)}
+                    onChange={(e) => updatePreference('preferred_movement_level', e.target.value.toLowerCase())}
                     disabled={savingField !== null}
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                   >
                     <option value="">Use my Pilates experience level</option>
-                    <option value="Beginner">Always start with Beginner</option>
-                    <option value="Intermediate">Always start with Intermediate</option>
-                    <option value="Advanced">Always start with Advanced</option>
-                    <option value="Mixed">Always start with Mixed</option>
+                    <option value="beginner">Always start with Beginner</option>
+                    <option value="intermediate">Always start with Intermediate</option>
+                    <option value="advanced">Always start with Advanced</option>
+                    <option value="mixed">Always start with Mixed</option>
                   </select>
                   <p className="text-xs text-cream/60 mt-1">
                     {preferences.preferred_movement_level === ''
                       ? `Will default to your registered experience level (${user?.pilates_experience || 'Intermediate'})`
-                      : `Classes will default to ${preferences.preferred_movement_level} difficulty`}
+                      : `Classes will default to ${preferences.preferred_movement_level ? preferences.preferred_movement_level.charAt(0).toUpperCase() + preferences.preferred_movement_level.slice(1) : ''} difficulty`}
                   </p>
                 </div>
 

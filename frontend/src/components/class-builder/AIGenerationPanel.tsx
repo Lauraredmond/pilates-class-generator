@@ -107,7 +107,20 @@ export function AIGenerationPanel() {
   const getDefaultDifficulty = (): 'Beginner' | 'Intermediate' | 'Advanced' | 'Mixed' => {
     // First check if user has set a preference
     if (userPreferences?.preferred_movement_level && userPreferences.preferred_movement_level !== '') {
-      return userPreferences.preferred_movement_level;
+      // Convert lowercase from backend to capitalized for GenerationForm
+      const level = userPreferences.preferred_movement_level.toLowerCase();
+      switch (level) {
+        case 'beginner':
+          return 'Beginner';
+        case 'intermediate':
+          return 'Intermediate';
+        case 'advanced':
+          return 'Advanced';
+        case 'mixed':
+          return 'Mixed';
+        default:
+          return 'Intermediate';
+      }
     }
 
     // Otherwise, use their Pilates experience level
