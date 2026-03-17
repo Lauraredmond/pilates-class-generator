@@ -535,7 +535,10 @@ class SequenceTools:
             max_movements = 3
             logger.info("✅ 10-minute quick practice: Enforcing exactly 3 movements")
             if difficulty == 'Advanced':
-                logger.info("⚠️ 10-min ADVANCED: Max 66% cap = 2 Advanced movements, min 1 non-Advanced")
+                logger.info("📊 10-min ADVANCED REQUIREMENTS:")
+                logger.info("   • MINIMUM: 1 Advanced movement (33%)")
+                logger.info("   • MAXIMUM: 2 Advanced movements (66%)")
+                logger.info("   • VALID: 1 Advanced + 2 others OR 2 Advanced + 1 other")
 
         logger.info(
             f"Building sequence: {target_duration} min total - {overhead_minutes} min overhead = {available_minutes} min available / "
@@ -722,6 +725,18 @@ class SequenceTools:
             logger.info(f"    voiceover_duration_seconds: {m.get('voiceover_duration_seconds')}")
         logger.info("=" * 80)
 
+        # VALIDATION: Check if 10-min Advanced class meets requirements (33-66% Advanced)
+        if target_duration == 10 and difficulty == 'Advanced':
+            advanced_in_sequence = sum(1 for m in sequence if m.get('difficulty_level') == 'Advanced')
+            advanced_pct = (advanced_in_sequence / len(sequence) * 100) if len(sequence) > 0 else 0
+
+            if advanced_in_sequence < 1:
+                logger.error(f"❌ 10-MIN ADVANCED VIOLATION: Only {advanced_in_sequence}/3 Advanced movements ({advanced_pct:.1f}%) - BELOW 33% minimum!")
+            elif advanced_in_sequence > 2:
+                logger.error(f"❌ 10-MIN ADVANCED VIOLATION: {advanced_in_sequence}/3 Advanced movements ({advanced_pct:.1f}%) - ABOVE 66% maximum!")
+            else:
+                logger.info(f"✅ 10-MIN ADVANCED VALID: {advanced_in_sequence}/3 Advanced movements ({advanced_pct:.1f}%) - within 33-66% range")
+
         logger.info(f"Generated sequence with {len(sequence)} movements (max was {max_movements})")
 
         return sequence
@@ -754,15 +769,31 @@ class SequenceTools:
         if not available:
             return None
 
-        # HARD STOP FOR 10-MIN ADVANCED: Absolutely prevent 100% Advanced (3/3)
-        # If we already have 2 Advanced movements in a 10-min class, filter out ALL Advanced movements
+        # HARD ENFORCEMENT FOR 10-MIN ADVANCED: Ensure 33-66% Advanced (1-2 out of 3)
         if target_duration == 10 and class_difficulty == 'Advanced':
             advanced_count = sum(1 for m in current_sequence if m.get('difficulty_level') == 'Advanced')
-            if advanced_count >= 2:
+            sequence_position = len(current_sequence)
+            movements_remaining = 3 - sequence_position
+
+            # HARD START: If we have 0 Advanced and this is the LAST movement, FORCE Advanced
+            if advanced_count == 0 and movements_remaining == 1:
+                # This is our last chance - MUST select Advanced to meet minimum 33%
+                advanced_only = [m for m in available if m.get('difficulty_level') == 'Advanced']
+                if advanced_only:
+                    logger.info(f"🚀 10-MIN HARD START: LAST movement, need 1 Advanced minimum - forcing Advanced selection")
+                    available = advanced_only
+                else:
+                    logger.warning("⚠️ CRITICAL: No Advanced movements available for mandatory selection!")
+                    # Don't return None - let it proceed with what's available
+
+            # HARD STOP: If we already have 2 Advanced, do NOT allow a third
+            elif advanced_count >= 2:
                 # We already have 2 Advanced (66%), do NOT allow a third
                 logger.info(f"🛑 10-MIN HARD STOP: Already have {advanced_count}/3 Advanced, filtering out all Advanced movements")
-                available = [m for m in available if m.get('difficulty_level') != 'Advanced']
-                if not available:
+                non_advanced = [m for m in available if m.get('difficulty_level') != 'Advanced']
+                if non_advanced:
+                    available = non_advanced
+                else:
                     logger.warning("⚠️ No non-Advanced movements available after hard stop filter!")
                     return None
 
@@ -920,9 +951,18 @@ class SequenceTools:
                         if movements_remaining > 0 and advanced_count < min_advanced_needed and movements_remaining <= (min_advanced_needed - advanced_count):
                             # If we don't have enough Advanced and running out of slots
                             if movement_difficulty == 'Advanced':
-                                # If this is the LAST movement and we have NO Advanced, make it nearly certain
-                                if movements_remaining == 1 and advanced_count == 0:
-                                    difficulty_multiplier *= 100.0  # Essentially force Advanced
+                                # For 10-min classes, be VERY aggressive about meeting minimum
+                                if target_duration == 10:
+                                    if movements_remaining == 1 and advanced_count == 0:
+                                        difficulty_multiplier *= 1000.0  # Essentially FORCE Advanced for last movement
+                                        logger.info(f"⚠️ 10-MIN MINIMUM: LAST CHANCE - boosting Advanced ×1000")
+                                    elif movements_remaining == 2 and advanced_count == 0:
+                                        difficulty_multiplier *= 50.0  # Strongly boost when 2 slots left
+                                        logger.info(f"⚠️ 10-MIN MINIMUM: 2 slots left, 0 Advanced - boosting ×50")
+                                    else:
+                                        difficulty_multiplier *= 20.0  # General strong boost
+                                elif movements_remaining == 1 and advanced_count == 0:
+                                    difficulty_multiplier *= 100.0  # Force for other durations too
                                 else:
                                     difficulty_multiplier *= 10.0  # STRONGLY boost Advanced to meet minimum
                                 logger.debug(
@@ -931,8 +971,16 @@ class SequenceTools:
                                     f"→ boosting Advanced weight to {difficulty_multiplier:.1f}"
                                 )
                             elif movement_difficulty in ['Beginner', 'Intermediate']:
-                                # If this is the last movement and we need Advanced, nearly eliminate non-Advanced
-                                if movements_remaining == 1 and advanced_count == 0:
+                                # For 10-min classes, be aggressive about reducing non-Advanced when below minimum
+                                if target_duration == 10:
+                                    if movements_remaining == 1 and advanced_count == 0:
+                                        difficulty_multiplier *= 0.001  # Nearly ELIMINATE non-Advanced
+                                        logger.info(f"⚠️ 10-MIN MINIMUM: Reducing non-Advanced ×0.001")
+                                    elif movements_remaining == 2 and advanced_count == 0:
+                                        difficulty_multiplier *= 0.02  # Strongly reduce when 2 slots left
+                                    else:
+                                        difficulty_multiplier *= 0.05  # General reduction
+                                elif movements_remaining == 1 and advanced_count == 0:
                                     difficulty_multiplier *= 0.01  # Nearly eliminate non-Advanced
                                 else:
                                     difficulty_multiplier *= 0.1  # Reduce non-Advanced when below minimum
