@@ -2524,13 +2524,9 @@ async def get_creators_vs_performers_users(
 
         total_count = len(target_user_ids)
 
-        # Apply pagination
-        paginated_user_ids = list(target_user_ids)[offset:offset + limit]
-        has_more = (offset + limit) < total_count
-
-        # Build detailed user records
+        # Build detailed user records for ALL users (need full data to sort properly)
         users = []
-        for user_id in paginated_user_ids:
+        for user_id in target_user_ids:
             # Get user email
             user_profile_response = supabase.table('user_profiles') \
                 .select('email') \
@@ -2589,12 +2585,16 @@ async def get_creators_vs_performers_users(
 
         # Sort users by last_activity_at descending (most recent first)
         # None values (inactive users) will be sorted to the end
-        users.sort(key=lambda u: u.last_activity_at or '', reverse=True)
+        users.sort(key=lambda u: (u.last_activity_at is not None, u.last_activity_at or ''), reverse=True)
+
+        # Apply pagination AFTER sorting to ensure global sort order
+        paginated_users = users[offset:offset + limit]
+        has_more = (offset + limit) < total_count
 
         return CreatorsVsPerformersUsersResponse(
             category=category,
             total_count=total_count,
-            users=users,
+            users=paginated_users,
             has_more=has_more
         )
 
