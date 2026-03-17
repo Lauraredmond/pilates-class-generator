@@ -4,7 +4,7 @@
  * Includes duration, difficulty, focus areas, music, and meditation preferences
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../../ui/Button';
 
 export interface GenerationFormData {
@@ -91,6 +91,17 @@ export function GenerationForm({
     movementMusicStyle: defaultMovementMusic,
     coolDownMusicStyle: defaultCooldownMusic,
   });
+
+  // Update form when defaults change (e.g., after updating settings)
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      duration: defaultDuration,
+      difficulty: defaultDifficulty,
+      movementMusicStyle: defaultMovementMusic,
+      coolDownMusicStyle: defaultCooldownMusic,
+    }));
+  }, [defaultDuration, defaultDifficulty, defaultMovementMusic, defaultCooldownMusic]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
