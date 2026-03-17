@@ -14,6 +14,9 @@ import { GenerationForm, GenerationFormData } from './ai-generation/GenerationFo
 import { GeneratedResults, GeneratedClassResults } from './ai-generation/GeneratedResults';
 import { ClassPlayback, PlaybackItem } from '../class-playback/ClassPlayback';
 import { logger } from '../../utils/logger';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 /**
  * Validates duration from database, using 60-second minimal default if NULL/missing
@@ -40,6 +43,102 @@ export function AIGenerationPanel() {
   const [savedClassId, setSavedClassId] = useState<string | null>(null);  // NEW: Store class_plan_id for analytics
   const setCurrentClass = useStore((state) => state.setCurrentClass);
   const showToast = useStore((state) => state.showToast);
+
+  // User preferences state
+  const [userPreferences, setUserPreferences] = useState<any>(null);
+  const [preferencesLoading, setPreferencesLoading] = useState(true);
+
+  // Function to fetch preferences
+  const fetchPreferences = async () => {
+    if (!user) {
+      setPreferencesLoading(false);
+      return;
+    }
+
+    try {
+      setPreferencesLoading(true);
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE_URL}/api/auth/preferences`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setUserPreferences(response.data);
+      logger.debug('[AIGenerationPanel] Preferences loaded:', response.data);
+    } catch (error: any) {
+      logger.error('[AIGenerationPanel] Failed to fetch preferences:', error);
+      // If preferences fail to load, we'll use defaults
+    } finally {
+      setPreferencesLoading(false);
+    }
+  };
+
+  // Fetch user preferences on mount
+  useEffect(() => {
+    fetchPreferences();
+  }, [user]);
+
+  // Refetch preferences when the page becomes visible (e.g., returning from settings)
+  useEffect(() => {
+    const handleFocus = () => {
+      logger.debug('[AIGenerationPanel] Window focused, refetching preferences');
+      fetchPreferences();
+    };
+
+    // Listen for when the window/tab regains focus
+    window.addEventListener('focus', handleFocus);
+
+    // Also listen for visibility change (e.g., switching tabs)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        logger.debug('[AIGenerationPanel] Page became visible, refetching preferences');
+        fetchPreferences();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user]);
+
+  // Map user's pilates_experience to difficulty level
+  const getDefaultDifficulty = (): 'Beginner' | 'Intermediate' | 'Advanced' | 'Mixed' => {
+    // First check if user has set a preference
+    if (userPreferences?.preferred_movement_level && userPreferences.preferred_movement_level !== '') {
+      // Convert lowercase from backend to capitalized for GenerationForm
+      const level = userPreferences.preferred_movement_level.toLowerCase();
+      switch (level) {
+        case 'beginner':
+          return 'Beginner';
+        case 'intermediate':
+          return 'Intermediate';
+        case 'advanced':
+          return 'Advanced';
+        case 'mixed':
+          return 'Mixed';
+        default:
+          return 'Intermediate';
+      }
+    }
+
+    // Otherwise, use their Pilates experience level
+    if (!user?.pilates_experience) return 'Intermediate';
+
+    switch (user.pilates_experience) {
+      case 'Beginner':
+        return 'Beginner';
+      case 'Intermediate':
+        return 'Intermediate';
+      case 'Advanced':
+        return 'Advanced';
+      case 'Instructor':
+        return 'Advanced'; // Instructors get advanced classes
+      default:
+        return 'Intermediate';
+    }
+  };
 
   const handleGenerateCompleteClass = async (formData: GenerationFormData) => {
     setIsGenerating(true);
@@ -540,9 +639,13 @@ export function AIGenerationPanel() {
           <CardBody className="flex-1 overflow-y-auto">
             <GenerationForm
               onSubmit={handleGenerateCompleteClass}
-              isLoading={isGenerating}
+              isLoading={isGenerating || preferencesLoading}
               onPlayClass={handlePlayClass}
               hasGeneratedClass={results !== null}
+              defaultDifficulty={getDefaultDifficulty()}
+              defaultDuration={userPreferences?.default_class_duration || 60}
+              defaultMovementMusic={userPreferences?.music_preferences?.default_movement_style || 'CLASSICAL'}
+              defaultCooldownMusic={userPreferences?.music_preferences?.default_cooldown_style || 'BAROQUE'}
             />
           </CardBody>
         </Card>

@@ -19,6 +19,7 @@ export function Settings() {
   const [expandedSections, setExpandedSections] = useState({
     security: true,
     notifications: false,
+    classDefaults: false,
     ai: false,
     compliance: false,
     developer: false,
@@ -44,6 +45,11 @@ export function Settings() {
   const [preferences, setPreferences] = useState({
     strictness_level: 'guided',
     default_class_duration: 60,
+    preferred_movement_level: '', // Empty string means use pilates_experience
+    music_preferences: {
+      default_movement_style: 'CLASSICAL',
+      default_cooldown_style: 'BAROQUE'
+    },
     enable_mcp_research: true,
     use_ai_agent: false,  // Session 10: Jentic Integration toggle
     email_notifications: true,
@@ -53,7 +59,6 @@ export function Settings() {
     data_sharing_enabled: false
   });
   const [preferencesLoading, setPreferencesLoading] = useState(true);
-  const [preferencesSaving, setPreferencesSaving] = useState(false);
   const [preferencesError, setPreferencesError] = useState('');
   const [preferencesSuccess, setPreferencesSuccess] = useState('');
 
@@ -200,15 +205,22 @@ export function Settings() {
     fetchPreferences();
   }, []);
 
+  // Track which field is being saved
+  const [savingField, setSavingField] = useState<string | null>(null);
+  const [savedField, setSavedField] = useState<string | null>(null);
+
   // Update a single preference
   const updatePreference = async (key: string, value: any) => {
-    setPreferencesSaving(true);
+    setSavingField(key);
+    setSavedField(null);
     setPreferencesError('');
     setPreferencesSuccess('');
 
     try {
       const token = localStorage.getItem('access_token');
       const updateData = { [key]: value };
+
+      logger.debug('[Settings] Updating preference:', { key, value });
 
       const response = await axios.put(
         `${API_BASE_URL}/api/auth/preferences`,
@@ -221,12 +233,27 @@ export function Settings() {
       );
 
       setPreferences(response.data);
-      setPreferencesSuccess('Preference updated successfully');
-      setTimeout(() => setPreferencesSuccess(''), 3000);
+      setSavedField(key);
+      setPreferencesSuccess(`${key === 'preferred_movement_level' ? 'Difficulty level' :
+                              key === 'default_class_duration' ? 'Duration' :
+                              key === 'music_preferences' ? 'Music preferences' :
+                              'Preference'} saved successfully`);
+      logger.debug('[Settings] Preference updated successfully:', { key, value });
+      setTimeout(() => {
+        setPreferencesSuccess('');
+        setSavedField(null);
+      }, 2000);
     } catch (error: any) {
-      setPreferencesError(error.response?.data?.detail || 'Failed to update preference');
+      const errorMessage = error.response?.data?.detail || 'Failed to update preference';
+      logger.error('[Settings] Failed to update preference:', {
+        key,
+        value,
+        error: errorMessage,
+        status: error.response?.status
+      });
+      setPreferencesError(errorMessage);
     } finally {
-      setPreferencesSaving(false);
+      setSavingField(null);
     }
   };
 
@@ -673,7 +700,7 @@ export function Settings() {
                     type="checkbox"
                     checked={preferences.email_notifications}
                     onChange={(e) => updatePreference('email_notifications', e.target.checked)}
-                    disabled={preferencesSaving}
+                    disabled={savingField !== null}
                     className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                   />
                 </label>
@@ -687,7 +714,7 @@ export function Settings() {
                     type="checkbox"
                     checked={preferences.class_reminders}
                     onChange={(e) => updatePreference('class_reminders', e.target.checked)}
-                    disabled={preferencesSaving}
+                    disabled={savingField !== null}
                     className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                   />
                 </label>
@@ -701,7 +728,7 @@ export function Settings() {
                     type="checkbox"
                     checked={preferences.weekly_summary}
                     onChange={(e) => updatePreference('weekly_summary', e.target.checked)}
-                    disabled={preferencesSaving}
+                    disabled={savingField !== null}
                     className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                   />
                 </label>
@@ -711,7 +738,134 @@ export function Settings() {
         )}
       </div>
 
-      {/* AI Settings */}
+      {/* Class Generation Defaults */}
+      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
+        <button
+          onClick={() => toggleSection('classDefaults')}
+          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <SettingsIcon className="w-6 h-6 text-burgundy" />
+            <h2 className="text-xl font-semibold text-cream">Class Generation Defaults</h2>
+          </div>
+          {expandedSections.classDefaults ? (
+            <ChevronUp className="w-5 h-5 text-cream/60" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-cream/60" />
+          )}
+        </button>
+
+        {expandedSections.classDefaults && (
+          <div className="px-6 pb-6">
+            <p className="text-cream/60 text-sm mb-4">
+              Set your preferred defaults for class generation. Changes save automatically.
+            </p>
+            {preferencesLoading ? (
+              <p className="text-cream/50">Loading preferences...</p>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label className="block text-sm font-medium text-cream">Default Class Duration</label>
+                    {savingField === 'default_class_duration' && (
+                      <span className="text-xs text-blue-400 flex items-center gap-1">
+                        <div className="animate-spin h-3 w-3 border border-blue-400 border-t-transparent rounded-full"></div>
+                        Saving...
+                      </span>
+                    )}
+                    {savedField === 'default_class_duration' && (
+                      <span className="text-xs text-green-400 flex items-center gap-1">
+                        ✓ Saved
+                      </span>
+                    )}
+                  </div>
+                  <select
+                    value={preferences.default_class_duration}
+                    onChange={(e) => updatePreference('default_class_duration', parseInt(e.target.value))}
+                    disabled={savingField === 'default_class_duration'}
+                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  >
+                    <option value="10">10 minutes - Quick movement practice</option>
+                    <option value="30">30 minutes - Class excludes relaxation phase</option>
+                    <option value="45">45 minutes - Full class</option>
+                    <option value="60">60 minutes - Full class</option>
+                  </select>
+                  <p className="text-xs text-cream/60 mt-1">Choose your preferred default class duration</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-cream mb-2">Default Difficulty Level</label>
+                  <select
+                    value={preferences.preferred_movement_level || ''}
+                    onChange={(e) => updatePreference('preferred_movement_level', e.target.value.toLowerCase())}
+                    disabled={savingField !== null}
+                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  >
+                    <option value="">Use my Pilates experience level</option>
+                    <option value="beginner">Always start with Beginner</option>
+                    <option value="intermediate">Always start with Intermediate</option>
+                    <option value="advanced">Always start with Advanced</option>
+                    <option value="mixed">Always start with Mixed</option>
+                  </select>
+                  <p className="text-xs text-cream/60 mt-1">
+                    {preferences.preferred_movement_level === ''
+                      ? `Will default to your registered experience level (${user?.pilates_experience || 'Intermediate'})`
+                      : `Classes will default to ${preferences.preferred_movement_level ? preferences.preferred_movement_level.charAt(0).toUpperCase() + preferences.preferred_movement_level.slice(1) : ''} difficulty`}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-cream mb-2">Default Movement Music Style</label>
+                  <select
+                    value={preferences.music_preferences?.default_movement_style || 'CLASSICAL'}
+                    onChange={(e) => updatePreference('music_preferences', {
+                      ...preferences.music_preferences,
+                      default_movement_style: e.target.value
+                    })}
+                    disabled={savingField !== null}
+                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  >
+                    <option value="BAROQUE">Baroque (Bach, Handel, Vivaldi)</option>
+                    <option value="CLASSICAL">Classical (Mozart, Haydn)</option>
+                    <option value="ROMANTIC">Romantic (Chopin, Beethoven, Brahms)</option>
+                    <option value="IMPRESSIONIST">Impressionist (Debussy, Ravel)</option>
+                    <option value="MODERN">Modern (Satie, Copland)</option>
+                    <option value="CONTEMPORARY">Contemporary (Ambient, Meditation)</option>
+                    <option value="JAZZ">Jazz (Cool, smooth)</option>
+                    <option value="CELTIC_TRADITIONAL">Celtic Traditional (Ancestral, enduring)</option>
+                  </select>
+                  <p className="text-xs text-cream/60 mt-1">Default music for movement sections of the class</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-cream mb-2">Default Cool Down Music Style</label>
+                  <select
+                    value={preferences.music_preferences?.default_cooldown_style || 'BAROQUE'}
+                    onChange={(e) => updatePreference('music_preferences', {
+                      ...preferences.music_preferences,
+                      default_cooldown_style: e.target.value
+                    })}
+                    disabled={savingField !== null}
+                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  >
+                    <option value="BAROQUE">Baroque (Bach, Handel, Vivaldi)</option>
+                    <option value="CLASSICAL">Classical (Mozart, Haydn)</option>
+                    <option value="ROMANTIC">Romantic (Chopin, Beethoven, Brahms)</option>
+                    <option value="IMPRESSIONIST">Impressionist (Debussy, Ravel)</option>
+                    <option value="MODERN">Modern (Satie, Copland)</option>
+                    <option value="CONTEMPORARY">Contemporary (Ambient, Meditation)</option>
+                    <option value="JAZZ">Jazz (Cool, smooth)</option>
+                    <option value="CELTIC_TRADITIONAL">Celtic Traditional (Ancestral, enduring)</option>
+                  </select>
+                  <p className="text-xs text-cream/60 mt-1">Default music for relaxation sections of the class</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* AI Settings - Admin Only */}
       <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
         <button
           onClick={() => toggleSection('ai')}
@@ -719,7 +873,10 @@ export function Settings() {
         >
           <div className="flex items-center gap-3">
             <SettingsIcon className="w-6 h-6 text-burgundy" />
-            <h2 className="text-xl font-semibold text-cream">AI Class Generation</h2>
+            <h2 className="text-xl font-semibold text-cream flex items-center gap-2">
+              AI Class Generation
+              <span className="text-xs bg-burgundy px-2 py-0.5 rounded text-cream/90">Admin Only</span>
+            </h2>
           </div>
           {expandedSections.ai ? (
             <ChevronUp className="w-5 h-5 text-cream/60" />
@@ -730,16 +887,23 @@ export function Settings() {
 
         {expandedSections.ai && (
           <div className="px-6 pb-6">
-            <p className="text-cream/60 text-sm mb-4">
-              Configure AI behavior for class planning
-            </p>
-            {preferencesLoading ? (
-              <p className="text-cream/50">Loading preferences...</p>
+            {user?.user_type !== 'admin' ? (
+              <div className="bg-cream/10 border border-cream/20 rounded p-4">
+                <p className="text-cream/50 text-sm">
+                  AI-powered class generation is currently restricted to administrators to control OpenAI API costs.
+                  Standard class generation uses pre-validated database content and is available to all users.
+                </p>
+              </div>
             ) : (
-              <div className="space-y-4">
-                {/* AI Agent Toggle - Admin Only (Cost Control) */}
-                {user?.user_type === 'admin' ? (
-                  <>
+              <>
+                <p className="text-cream/60 text-sm mb-4">
+                  Configure AI behavior for class planning (Administrator only)
+                </p>
+                {preferencesLoading ? (
+                  <p className="text-cream/50">Loading preferences...</p>
+                ) : (
+                  <div className="space-y-4">
+                    {/* AI Agent Toggle - Admin Only (Cost Control) */}
                     <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors border-2 border-burgundy/30">
                       <div>
                         <div className="font-medium text-cream flex items-center gap-2">
@@ -765,7 +929,7 @@ export function Settings() {
                         type="checkbox"
                         checked={preferences.use_ai_agent || false}
                         onChange={(e) => updatePreference('use_ai_agent', e.target.checked)}
-                        disabled={preferencesSaving}
+                        disabled={savingField !== null}
                         className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                       />
                     </label>
@@ -782,83 +946,42 @@ export function Settings() {
                         </p>
                       </div>
                     )}
-                  </>
-                ) : (
-                  <div className="bg-cream/10 border border-cream/20 rounded p-4">
-                    <p className="text-cream font-medium mb-2">AI Class Generation (Admin Only)</p>
-                    <p className="text-cream/60 text-sm">
-                      AI-powered class generation with GPT-4 is restricted to administrators to control OpenAI API costs.
-                      Standard class generation is available to all users and uses pre-validated database content.
-                    </p>
+
+                    <div>
+                      <label className="block text-sm font-medium text-cream mb-2">AI Strictness Level</label>
+                      <select
+                        value={preferences.strictness_level}
+                        onChange={(e) => updatePreference('strictness_level', e.target.value)}
+                        disabled={savingField !== null}
+                        className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                      >
+                        <option value="guided">Guided - AI suggests with flexibility</option>
+                        <option value="strict">Strict - AI follows classical rules closely</option>
+                        <option value="autonomous">Autonomous - AI has full creative control</option>
+                      </select>
+                      <p className="text-xs text-cream/60 mt-1">
+                        {preferences.strictness_level === 'guided' && 'AI will suggest movements while allowing you to make changes'}
+                        {preferences.strictness_level === 'strict' && 'AI will strictly follow classical Pilates sequencing rules'}
+                        {preferences.strictness_level === 'autonomous' && 'AI will generate complete classes with full creative freedom'}
+                      </p>
+                    </div>
+
+                    <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+                      <div>
+                        <div className="font-medium text-cream">Enable Web Research</div>
+                        <div className="text-sm text-cream/60">Allow AI to research movement cues and modifications online</div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.enable_mcp_research}
+                        onChange={(e) => updatePreference('enable_mcp_research', e.target.checked)}
+                        disabled={savingField !== null}
+                        className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+                      />
+                    </label>
                   </div>
                 )}
-
-                <div>
-                  <label className="block text-sm font-medium text-cream mb-2">AI Strictness Level</label>
-                  <select
-                    value={preferences.strictness_level}
-                    onChange={(e) => updatePreference('strictness_level', e.target.value)}
-                    disabled={preferencesSaving}
-                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
-                  >
-                    <option value="guided">Guided - AI suggests with flexibility</option>
-                    <option value="strict">Strict - AI follows classical rules closely</option>
-                    <option value="autonomous">Autonomous - AI has full creative control</option>
-                  </select>
-                  <p className="text-xs text-cream/60 mt-1">
-                    {preferences.strictness_level === 'guided' && 'AI will suggest movements while allowing you to make changes'}
-                    {preferences.strictness_level === 'strict' && 'AI will strictly follow classical Pilates sequencing rules'}
-                    {preferences.strictness_level === 'autonomous' && 'AI will generate complete classes with full creative freedom'}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-cream mb-2">Default Class Duration (minutes)</label>
-                  <input
-                    type="number"
-                    value={preferences.default_class_duration}
-                    onChange={(e) => {
-                      // Update local state immediately for smooth typing
-                      const value = e.target.value;
-                      if (value === '') return; // Don't update if empty
-                      const numValue = parseInt(value);
-                      if (!isNaN(numValue) && numValue >= 10 && numValue <= 120) {
-                        setPreferences({ ...preferences, default_class_duration: numValue });
-                      }
-                    }}
-                    onBlur={(e) => {
-                      // Only send to server when user finishes editing
-                      const value = parseInt(e.target.value);
-                      if (!isNaN(value) && value >= 10 && value <= 120) {
-                        updatePreference('default_class_duration', value);
-                      } else {
-                        // Reset to previous valid value if invalid
-                        setPreferences({ ...preferences, default_class_duration: preferences.default_class_duration });
-                      }
-                    }}
-                    disabled={preferencesSaving}
-                    min={10}
-                    max={120}
-                    step={5}
-                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
-                  />
-                  <p className="text-xs text-cream/60 mt-1">Between 10 and 120 minutes (use up/down arrows or type directly)</p>
-                </div>
-
-                <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
-                  <div>
-                    <div className="font-medium text-cream">Enable Web Research</div>
-                    <div className="text-sm text-cream/60">Allow AI to research movement cues and modifications online</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={preferences.enable_mcp_research}
-                    onChange={(e) => updatePreference('enable_mcp_research', e.target.checked)}
-                    disabled={preferencesSaving}
-                    className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
-                  />
-                </label>
-              </div>
+              </>
             )}
           </div>
         )}
@@ -923,7 +1046,7 @@ export function Settings() {
                       type="checkbox"
                       checked={preferences.analytics_enabled}
                       onChange={(e) => updatePreference('analytics_enabled', e.target.checked)}
-                      disabled={preferencesSaving}
+                      disabled={savingField !== null}
                       className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                     />
                   </label>
@@ -937,7 +1060,7 @@ export function Settings() {
                       type="checkbox"
                       checked={preferences.data_sharing_enabled}
                       onChange={(e) => updatePreference('data_sharing_enabled', e.target.checked)}
-                      disabled={preferencesSaving}
+                      disabled={savingField !== null}
                       className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                     />
                   </label>

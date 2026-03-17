@@ -4,7 +4,7 @@
  * Includes duration, difficulty, focus areas, music, and meditation preferences
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../../ui/Button';
 
 export interface GenerationFormData {
@@ -25,6 +25,10 @@ interface GenerationFormProps {
   isLoading?: boolean;
   onPlayClass?: () => void;
   hasGeneratedClass?: boolean;
+  defaultDifficulty?: 'Beginner' | 'Intermediate' | 'Advanced' | 'Mixed';
+  defaultDuration?: number;
+  defaultMovementMusic?: string;
+  defaultCooldownMusic?: string;
 }
 
 const DURATION_OPTIONS = [
@@ -65,19 +69,39 @@ const ALL_MUSIC_STYLES = [
 const MOVEMENT_MUSIC_STYLES = ALL_MUSIC_STYLES;
 const COOLDOWN_MUSIC_STYLES = ALL_MUSIC_STYLES;
 
-export function GenerationForm({ onSubmit, isLoading = false, onPlayClass, hasGeneratedClass = false }: GenerationFormProps) {
+export function GenerationForm({
+  onSubmit,
+  isLoading = false,
+  onPlayClass,
+  hasGeneratedClass = false,
+  defaultDifficulty = 'Intermediate',
+  defaultDuration = 60,
+  defaultMovementMusic = 'CLASSICAL',
+  defaultCooldownMusic = 'BAROQUE'
+}: GenerationFormProps) {
   const [formData, setFormData] = useState<GenerationFormData>({
-    duration: 60,
-    difficulty: 'Intermediate',
+    duration: defaultDuration,
+    difficulty: defaultDifficulty,
     focusAreas: [],
     musicBpmMin: 80,
     musicBpmMax: 120,
     energyLevel: 0.5,
     meditationTheme: 'Mindfulness',
     enableMcpResearch: false,
-    movementMusicStyle: 'CLASSICAL',
-    coolDownMusicStyle: 'BAROQUE',
+    movementMusicStyle: defaultMovementMusic,
+    coolDownMusicStyle: defaultCooldownMusic,
   });
+
+  // Update form when defaults change (e.g., after updating settings)
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      duration: defaultDuration,
+      difficulty: defaultDifficulty,
+      movementMusicStyle: defaultMovementMusic,
+      coolDownMusicStyle: defaultCooldownMusic,
+    }));
+  }, [defaultDuration, defaultDifficulty, defaultMovementMusic, defaultCooldownMusic]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

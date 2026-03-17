@@ -102,23 +102,42 @@ CREATE INDEX idx_user_profiles_parent_user_id ON user_profiles(parent_user_id);
 
 ### 📋 Testing Instructions
 
-1. **Local Backend Testing**:
+1. **Setup Test Credentials** (First Time Only):
+```bash
+cd frontend
+# Copy the example file
+cp .env.test.example .env.test
+
+# Edit .env.test and add your real credentials
+# PLAYWRIGHT_TEST_USER_EMAIL=your-actual-test@example.com
+# PLAYWRIGHT_TEST_USER_PASSWORD=YourActualPassword123!
+```
+
+**Note**: `.env.test` is gitignored and will never be committed to the repository.
+
+2. **Local Backend Testing**:
 ```bash
 cd backend
 uvicorn api.main:app --reload --port 8000
 ```
 
-2. **Local Frontend Testing**:
+3. **Local Frontend Testing**:
 ```bash
 cd frontend
 npm run dev
 ```
 
-3. **Run Playwright Tests**:
+4. **Run Playwright Tests**:
 ```bash
 cd frontend
-# Update test credentials first!
-npx playwright test e2e/multi-role-registration.spec.ts --headed
+# Test local environment
+npx playwright test e2e/multi-role-registration.spec.ts --project=local-chromium --headed
+
+# Test dev environment
+TEST_ENV=dev npx playwright test e2e/multi-role-registration.spec.ts --project=dev-chromium
+
+# Test production environment
+TEST_ENV=production npx playwright test e2e/multi-role-registration.spec.ts --project=prod-chromium
 ```
 
 ### 🚀 Deployment Steps
