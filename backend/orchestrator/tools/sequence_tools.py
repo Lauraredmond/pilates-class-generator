@@ -890,26 +890,25 @@ class SequenceTools:
                         min_advanced_needed = max(1, int(total_expected * 0.33 + 0.5))  # Round up, at least 1
 
                         # Check if we risk falling below minimum
-                        if movements_remaining > 0:
+                        if movements_remaining > 0 and advanced_count < min_advanced_needed and movements_remaining <= (min_advanced_needed - advanced_count):
                             # If we don't have enough Advanced and running out of slots
-                            if advanced_count < min_advanced_needed and movements_remaining <= (min_advanced_needed - advanced_count):
-                                if movement_difficulty == 'Advanced':
-                                    # If this is the LAST movement and we have NO Advanced, make it nearly certain
-                                    if movements_remaining == 1 and advanced_count == 0:
-                                        difficulty_multiplier *= 100.0  # Essentially force Advanced
-                                    else:
-                                        difficulty_multiplier *= 10.0  # STRONGLY boost Advanced to meet minimum
-                                    logger.debug(
-                                        f"Advanced MINIMUM enforced: {advanced_count}/{sequence_position} "
-                                        f"Need {min_advanced_needed - advanced_count} more Advanced in {movements_remaining} slots "
-                                        f"→ boosting Advanced weight to {difficulty_multiplier:.1f}"
-                                    )
-                                elif movement_difficulty in ['Beginner', 'Intermediate']:
-                                    # If this is the last movement and we need Advanced, nearly eliminate non-Advanced
-                                    if movements_remaining == 1 and advanced_count == 0:
-                                        difficulty_multiplier *= 0.01  # Nearly eliminate non-Advanced
-                                    else:
-                                        difficulty_multiplier *= 0.1  # Reduce non-Advanced when below minimum
+                            if movement_difficulty == 'Advanced':
+                                # If this is the LAST movement and we have NO Advanced, make it nearly certain
+                                if movements_remaining == 1 and advanced_count == 0:
+                                    difficulty_multiplier *= 100.0  # Essentially force Advanced
+                                else:
+                                    difficulty_multiplier *= 10.0  # STRONGLY boost Advanced to meet minimum
+                                logger.debug(
+                                    f"Advanced MINIMUM enforced: {advanced_count}/{sequence_position} "
+                                    f"Need {min_advanced_needed - advanced_count} more Advanced in {movements_remaining} slots "
+                                    f"→ boosting Advanced weight to {difficulty_multiplier:.1f}"
+                                )
+                            elif movement_difficulty in ['Beginner', 'Intermediate']:
+                                # If this is the last movement and we need Advanced, nearly eliminate non-Advanced
+                                if movements_remaining == 1 and advanced_count == 0:
+                                    difficulty_multiplier *= 0.01  # Nearly eliminate non-Advanced
+                                else:
+                                    difficulty_multiplier *= 0.1  # Reduce non-Advanced when below minimum
 
                         # If adding this Advanced movement would exceed 66%, strongly reduce its weight
                         # For very short sequences (3 movements), be even more strict
