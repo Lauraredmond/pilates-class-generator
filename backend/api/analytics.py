@@ -2381,9 +2381,11 @@ async def get_creators_vs_performers_report(
     await verify_admin(admin_user_id)
 
     try:
-        # Get all users
+        # Get all users (explicitly set high limit to avoid pagination truncation)
+        # Supabase client may have default pagination limits, so we need to be explicit
         all_users_response = supabase.table('user_profiles') \
             .select('id, email') \
+            .limit(10000) \
             .execute()
 
         all_users = all_users_response.data or []
