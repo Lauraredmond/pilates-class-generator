@@ -588,7 +588,8 @@ class SequenceTools:
                 focus_areas=focus_areas,
                 pattern_priority=pattern_order,
                 usage_weights=usage_weights,
-                class_difficulty=difficulty
+                class_difficulty=difficulty,
+                target_duration=target_duration
             )
 
             if not selected:
@@ -658,7 +659,8 @@ class SequenceTools:
                     focus_areas=focus_areas,
                     pattern_priority=pattern_order,
                     usage_weights=usage_weights,
-                    class_difficulty=difficulty
+                    class_difficulty=difficulty,
+                    target_duration=target_duration
                 )
 
                 if not selected:
@@ -724,7 +726,8 @@ class SequenceTools:
         focus_areas: List[str],
         pattern_priority: List[str],
         usage_weights: Dict[str, float] = None,
-        class_difficulty: str = None
+        class_difficulty: str = None,
+        target_duration: int = None
     ) -> Optional[Dict[str, Any]]:
         """
         Select next movement based on rules and focus areas
@@ -869,27 +872,36 @@ class SequenceTools:
 
                     # PROGRESSIVE DIFFICULTY: Adjust weights based on position in sequence
                     # For Advanced classes, prefer easier movements early, harder later
+                    sequence_position = len(current_sequence)
+                    advanced_count = sum(1 for mov in current_sequence
+                                       if mov.get('difficulty_level') == 'Advanced')
+
                     if class_difficulty == 'Advanced':
-                        sequence_position = len(current_sequence)
-                        total_expected = 10  # Approximate number of movements in a class
+                        # For 10-min classes, we know it's exactly 3 movements
+                        # Otherwise estimate based on typical class size
+                        total_expected = 3 if target_duration == 10 else 10
 
-                        # HARD CAP: Check current Advanced movement percentage
-                        # Count how many Advanced movements are already in sequence
-                        advanced_count = sum(1 for mov in current_sequence
-                                           if mov.get('difficulty_level') == 'Advanced')
-                        current_advanced_pct = (advanced_count / (sequence_position + 1) * 100) if sequence_position > 0 else 0
+                        # Calculate what percentage WOULD BE if we add another Advanced
+                        next_advanced_pct = ((advanced_count + 1) / (sequence_position + 1) * 100) if movement_difficulty == 'Advanced' else 0
+                        current_pct = (advanced_count / sequence_position * 100) if sequence_position > 0 else 0
 
-                        # If we're at or above 66% Advanced, strongly reduce Advanced weight
-                        if current_advanced_pct >= 66 and movement_difficulty == 'Advanced':
-                            difficulty_multiplier *= 0.1  # Drastically reduce to stay under cap
-                            if sequence_position >= 3:  # Only log after first few movements
+                        # If adding this Advanced movement would exceed 66%, strongly reduce its weight
+                        # For very short sequences (3 movements), be even more strict
+                        if next_advanced_pct > 66 and movement_difficulty == 'Advanced':
+                            if total_expected <= 3:  # 10-minute quick practice
+                                difficulty_multiplier *= 0.01  # Almost eliminate Advanced weight
+                            else:
+                                difficulty_multiplier *= 0.1  # Drastically reduce to stay under cap
+                            if sequence_position >= 2:  # Log when selecting 3rd or later movement
                                 logger.debug(
-                                    f"Advanced cap enforced: {advanced_count}/{sequence_position} = {current_advanced_pct:.1f}% "
-                                    f"(reducing Advanced weight to {difficulty_multiplier:.1f})"
+                                    f"Advanced cap enforced: {advanced_count}/{sequence_position} = {current_pct:.1f}% current, "
+                                    f"would be {next_advanced_pct:.1f}% → reducing Advanced weight to {difficulty_multiplier:.1f}"
                                 )
 
                         # Early in sequence (first 20%): boost Beginner/Intermediate
-                        elif sequence_position < total_expected * 0.2:
+                        # For 10-min classes (3 movements), only first movement is "early"
+                        elif (target_duration == 10 and sequence_position == 0) or \
+                             (target_duration != 10 and sequence_position < total_expected * 0.2):
                             if movement_difficulty == 'Beginner':
                                 difficulty_multiplier *= 2.0  # Double weight for warm-up
                             elif movement_difficulty == 'Intermediate':
@@ -901,7 +913,8 @@ class SequenceTools:
                         # (no adjustment needed)
 
                         # Late in sequence (last 20%): slightly reduce Advanced
-                        elif sequence_position > total_expected * 0.8:
+                        # Skip for 10-min classes (no explicit cooldown phase with only 3 movements)
+                        elif target_duration != 10 and sequence_position > total_expected * 0.8:
                             if movement_difficulty == 'Advanced':
                                 difficulty_multiplier *= 0.7  # Slightly reduce for cooldown
                             elif movement_difficulty == 'Beginner':
@@ -910,10 +923,12 @@ class SequenceTools:
                     final_weight = base_weight * difficulty_multiplier
 
                     # Log detailed weight calculation for Advanced classes
-                    if class_difficulty == 'Advanced' and len(current_sequence) < 3:
+                    # Always log for 10-minute classes to debug the 3-movement selection
+                    if (class_difficulty == 'Advanced' and len(current_sequence) < 3) or target_duration == 10:
                         logger.debug(
                             f"Weight calc for '{m['name']}' ({movement_difficulty}): "
                             f"base={base_weight:.1f} × multiplier={difficulty_multiplier:.1f} = {final_weight:.1f}"
+                            f" [pos={sequence_position}, advanced_count={advanced_count if class_difficulty == 'Advanced' else 'N/A'}]"
                         )
                 else:
                     final_weight = base_weight
