@@ -77,8 +77,8 @@ export function AIGenerationPanel() {
   // Map user's pilates_experience to difficulty level
   const getDefaultDifficulty = (): 'Beginner' | 'Intermediate' | 'Advanced' | 'Mixed' => {
     // First check if user has set a preference
-    if (userPreferences?.default_difficulty_level) {
-      return userPreferences.default_difficulty_level;
+    if (userPreferences?.preferred_movement_level && userPreferences.preferred_movement_level !== '') {
+      return userPreferences.preferred_movement_level;
     }
 
     // Otherwise, use their Pilates experience level
@@ -602,8 +602,8 @@ export function AIGenerationPanel() {
               hasGeneratedClass={results !== null}
               defaultDifficulty={getDefaultDifficulty()}
               defaultDuration={userPreferences?.default_class_duration || 60}
-              defaultMovementMusic={userPreferences?.default_movement_music_style || 'CLASSICAL'}
-              defaultCooldownMusic={userPreferences?.default_cooldown_music_style || 'BAROQUE'}
+              defaultMovementMusic={userPreferences?.music_preferences?.default_movement_style || 'CLASSICAL'}
+              defaultCooldownMusic={userPreferences?.music_preferences?.default_cooldown_style || 'BAROQUE'}
             />
           </CardBody>
         </Card>
