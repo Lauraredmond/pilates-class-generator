@@ -44,6 +44,9 @@ export function Settings() {
   const [preferences, setPreferences] = useState({
     strictness_level: 'guided',
     default_class_duration: 60,
+    default_difficulty_level: '', // Empty string means use pilates_experience
+    default_movement_music_style: 'CLASSICAL',
+    default_cooldown_music_style: 'BAROQUE',
     enable_mcp_research: true,
     use_ai_agent: false,  // Session 10: Jentic Integration toggle
     email_notifications: true,
@@ -843,6 +846,67 @@ export function Settings() {
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                   />
                   <p className="text-xs text-cream/60 mt-1">Between 10 and 120 minutes (use up/down arrows or type directly)</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-cream mb-2">Default Difficulty Level</label>
+                  <select
+                    value={preferences.default_difficulty_level || ''}
+                    onChange={(e) => updatePreference('default_difficulty_level', e.target.value)}
+                    disabled={preferencesSaving}
+                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  >
+                    <option value="">Use my Pilates experience level</option>
+                    <option value="Beginner">Always start with Beginner</option>
+                    <option value="Intermediate">Always start with Intermediate</option>
+                    <option value="Advanced">Always start with Advanced</option>
+                    <option value="Mixed">Always start with Mixed</option>
+                  </select>
+                  <p className="text-xs text-cream/60 mt-1">
+                    {preferences.default_difficulty_level === ''
+                      ? `Will default to your registered experience level (${user?.pilates_experience || 'Intermediate'})`
+                      : `Classes will default to ${preferences.default_difficulty_level} difficulty`}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-cream mb-2">Default Movement Music Style</label>
+                  <select
+                    value={preferences.default_movement_music_style}
+                    onChange={(e) => updatePreference('default_movement_music_style', e.target.value)}
+                    disabled={preferencesSaving}
+                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  >
+                    <option value="BAROQUE">Baroque (Bach, Handel, Vivaldi)</option>
+                    <option value="CLASSICAL">Classical (Mozart, Haydn)</option>
+                    <option value="ROMANTIC">Romantic (Chopin, Beethoven, Brahms)</option>
+                    <option value="IMPRESSIONIST">Impressionist (Debussy, Ravel)</option>
+                    <option value="MODERN">Modern (Satie, Copland)</option>
+                    <option value="CONTEMPORARY">Contemporary (Ambient, Meditation)</option>
+                    <option value="JAZZ">Jazz (Cool, smooth)</option>
+                    <option value="CELTIC_TRADITIONAL">Celtic Traditional (Ancestral, enduring)</option>
+                  </select>
+                  <p className="text-xs text-cream/60 mt-1">Default music for movement sections of the class</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-cream mb-2">Default Cool Down Music Style</label>
+                  <select
+                    value={preferences.default_cooldown_music_style}
+                    onChange={(e) => updatePreference('default_cooldown_music_style', e.target.value)}
+                    disabled={preferencesSaving}
+                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                  >
+                    <option value="BAROQUE">Baroque (Bach, Handel, Vivaldi)</option>
+                    <option value="CLASSICAL">Classical (Mozart, Haydn)</option>
+                    <option value="ROMANTIC">Romantic (Chopin, Beethoven, Brahms)</option>
+                    <option value="IMPRESSIONIST">Impressionist (Debussy, Ravel)</option>
+                    <option value="MODERN">Modern (Satie, Copland)</option>
+                    <option value="CONTEMPORARY">Contemporary (Ambient, Meditation)</option>
+                    <option value="JAZZ">Jazz (Cool, smooth)</option>
+                    <option value="CELTIC_TRADITIONAL">Celtic Traditional (Ancestral, enduring)</option>
+                  </select>
+                  <p className="text-xs text-cream/60 mt-1">Default music for relaxation sections of the class</p>
                 </div>
 
                 <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
