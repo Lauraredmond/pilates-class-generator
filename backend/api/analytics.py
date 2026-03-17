@@ -1195,11 +1195,11 @@ async def verify_admin(user_id: str) -> bool:
     """
     Verify if user is an admin
 
-    Returns True if user has is_admin=true in user_profiles table
+    Returns True if user has user_type='admin' in user_profiles table
     Raises HTTPException 403 if not admin
     """
     try:
-        response = supabase.table("user_profiles").select("is_admin").eq("id", user_id).limit(1).execute()
+        response = supabase.table("user_profiles").select("user_type").eq("id", user_id).limit(1).execute()
 
         if not response.data:
             raise HTTPException(
@@ -1207,7 +1207,7 @@ async def verify_admin(user_id: str) -> bool:
                 detail="User not found"
             )
 
-        is_admin = response.data[0].get("is_admin", False)
+        is_admin = response.data[0].get("user_type") == "admin"
 
         if not is_admin:
             raise HTTPException(
@@ -1521,7 +1521,7 @@ async def find_user_id_by_email(
     Helper endpoint to find your user ID for admin operations
     """
     try:
-        response = supabase.table('user_profiles').select('id, email, full_name, is_admin').eq('email', email).execute()
+        response = supabase.table('user_profiles').select('id, email, full_name, user_type').eq('email', email).execute()
 
         if not response.data:
             raise HTTPException(
@@ -1534,7 +1534,7 @@ async def find_user_id_by_email(
             "user_id": user['id'],
             "email": user['email'],
             "full_name": user.get('full_name'),
-            "is_admin": user.get('is_admin', False),
+            "is_admin": user.get('user_type') == 'admin',
             "message": f"Use this user_id in the backfill endpoint: {user['id']}"
         }
 
