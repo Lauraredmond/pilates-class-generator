@@ -89,7 +89,7 @@ class SequenceTools:
         "Advanced": {
             "Beginner": 0.15,      # 15% Beginner for warm-up/transitions
             "Intermediate": 0.25,  # 25% Intermediate for building
-            "Advanced": 0.60       # 60% Advanced for mastery (but variety maintained)
+            "Advanced": 0.60       # 60% Advanced target (hard capped at 66%)
         }
     }
 
@@ -873,8 +873,23 @@ class SequenceTools:
                         sequence_position = len(current_sequence)
                         total_expected = 10  # Approximate number of movements in a class
 
+                        # HARD CAP: Check current Advanced movement percentage
+                        # Count how many Advanced movements are already in sequence
+                        advanced_count = sum(1 for mov in current_sequence
+                                           if mov.get('difficulty_level') == 'Advanced')
+                        current_advanced_pct = (advanced_count / (sequence_position + 1) * 100) if sequence_position > 0 else 0
+
+                        # If we're at or above 66% Advanced, strongly reduce Advanced weight
+                        if current_advanced_pct >= 66 and movement_difficulty == 'Advanced':
+                            difficulty_multiplier *= 0.1  # Drastically reduce to stay under cap
+                            if sequence_position >= 3:  # Only log after first few movements
+                                logger.debug(
+                                    f"Advanced cap enforced: {advanced_count}/{sequence_position} = {current_advanced_pct:.1f}% "
+                                    f"(reducing Advanced weight to {difficulty_multiplier:.1f})"
+                                )
+
                         # Early in sequence (first 20%): boost Beginner/Intermediate
-                        if sequence_position < total_expected * 0.2:
+                        elif sequence_position < total_expected * 0.2:
                             if movement_difficulty == 'Beginner':
                                 difficulty_multiplier *= 2.0  # Double weight for warm-up
                             elif movement_difficulty == 'Intermediate':
@@ -1257,8 +1272,14 @@ class SequenceTools:
                     "on_target": abs(deviation) <= 10  # Within 10% is considered on target
                 }
 
+                # Special handling for Advanced class hard cap at 66%
+                if class_difficulty == 'Advanced' and difficulty_level == 'Advanced' and actual_pct > 66:
+                    violations.append(
+                        f"Advanced movements exceed 66% hard cap "
+                        f"(actual: {actual_pct:.1f}%)"
+                    )
                 # Add warning if significantly off target (>20% deviation)
-                if abs(deviation) > 20:
+                elif abs(deviation) > 20:
                     if deviation > 0:
                         warnings.append(
                             f"{difficulty_level} movements exceed target "
