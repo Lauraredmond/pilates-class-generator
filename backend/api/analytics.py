@@ -1199,7 +1199,7 @@ async def verify_admin(user_id: str) -> bool:
     Raises HTTPException 403 if not admin
     """
     try:
-        response = supabase.table("user_profiles").select("is_admin").eq("id", user_id).execute()
+        response = supabase.table("user_profiles").select("is_admin").eq("id", user_id).limit(1).execute()
 
         if not response.data:
             raise HTTPException(
