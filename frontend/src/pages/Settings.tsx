@@ -59,7 +59,6 @@ export function Settings() {
     data_sharing_enabled: false
   });
   const [preferencesLoading, setPreferencesLoading] = useState(true);
-  const [preferencesSaving, setPreferencesSaving] = useState(false);
   const [preferencesError, setPreferencesError] = useState('');
   const [preferencesSuccess, setPreferencesSuccess] = useState('');
 
@@ -206,9 +205,14 @@ export function Settings() {
     fetchPreferences();
   }, []);
 
+  // Track which field is being saved
+  const [savingField, setSavingField] = useState<string | null>(null);
+  const [savedField, setSavedField] = useState<string | null>(null);
+
   // Update a single preference
   const updatePreference = async (key: string, value: any) => {
-    setPreferencesSaving(true);
+    setSavingField(key);
+    setSavedField(null);
     setPreferencesError('');
     setPreferencesSuccess('');
 
@@ -229,9 +233,16 @@ export function Settings() {
       );
 
       setPreferences(response.data);
-      setPreferencesSuccess('Preference updated successfully');
+      setSavedField(key);
+      setPreferencesSuccess(`${key === 'preferred_movement_level' ? 'Difficulty level' :
+                              key === 'default_class_duration' ? 'Duration' :
+                              key === 'music_preferences' ? 'Music preferences' :
+                              'Preference'} saved successfully`);
       logger.debug('[Settings] Preference updated successfully:', { key, value });
-      setTimeout(() => setPreferencesSuccess(''), 3000);
+      setTimeout(() => {
+        setPreferencesSuccess('');
+        setSavedField(null);
+      }, 2000);
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || 'Failed to update preference';
       logger.error('[Settings] Failed to update preference:', {
@@ -242,7 +253,7 @@ export function Settings() {
       });
       setPreferencesError(errorMessage);
     } finally {
-      setPreferencesSaving(false);
+      setSavingField(null);
     }
   };
 
@@ -689,7 +700,7 @@ export function Settings() {
                     type="checkbox"
                     checked={preferences.email_notifications}
                     onChange={(e) => updatePreference('email_notifications', e.target.checked)}
-                    disabled={preferencesSaving}
+                    disabled={savingField !== null}
                     className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                   />
                 </label>
@@ -703,7 +714,7 @@ export function Settings() {
                     type="checkbox"
                     checked={preferences.class_reminders}
                     onChange={(e) => updatePreference('class_reminders', e.target.checked)}
-                    disabled={preferencesSaving}
+                    disabled={savingField !== null}
                     className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                   />
                 </label>
@@ -717,7 +728,7 @@ export function Settings() {
                     type="checkbox"
                     checked={preferences.weekly_summary}
                     onChange={(e) => updatePreference('weekly_summary', e.target.checked)}
-                    disabled={preferencesSaving}
+                    disabled={savingField !== null}
                     className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                   />
                 </label>
@@ -747,18 +758,31 @@ export function Settings() {
         {expandedSections.classDefaults && (
           <div className="px-6 pb-6">
             <p className="text-cream/60 text-sm mb-4">
-              Set your preferred defaults for class generation
+              Set your preferred defaults for class generation. Changes save automatically.
             </p>
             {preferencesLoading ? (
               <p className="text-cream/50">Loading preferences...</p>
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-cream mb-2">Default Class Duration</label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label className="block text-sm font-medium text-cream">Default Class Duration</label>
+                    {savingField === 'default_class_duration' && (
+                      <span className="text-xs text-blue-400 flex items-center gap-1">
+                        <div className="animate-spin h-3 w-3 border border-blue-400 border-t-transparent rounded-full"></div>
+                        Saving...
+                      </span>
+                    )}
+                    {savedField === 'default_class_duration' && (
+                      <span className="text-xs text-green-400 flex items-center gap-1">
+                        ✓ Saved
+                      </span>
+                    )}
+                  </div>
                   <select
                     value={preferences.default_class_duration}
                     onChange={(e) => updatePreference('default_class_duration', parseInt(e.target.value))}
-                    disabled={preferencesSaving}
+                    disabled={savingField === 'default_class_duration'}
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                   >
                     <option value="10">10 minutes - Quick movement practice</option>
@@ -774,7 +798,7 @@ export function Settings() {
                   <select
                     value={preferences.preferred_movement_level || ''}
                     onChange={(e) => updatePreference('preferred_movement_level', e.target.value)}
-                    disabled={preferencesSaving}
+                    disabled={savingField !== null}
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                   >
                     <option value="">Use my Pilates experience level</option>
@@ -798,7 +822,7 @@ export function Settings() {
                       ...preferences.music_preferences,
                       default_movement_style: e.target.value
                     })}
-                    disabled={preferencesSaving}
+                    disabled={savingField !== null}
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                   >
                     <option value="BAROQUE">Baroque (Bach, Handel, Vivaldi)</option>
@@ -821,7 +845,7 @@ export function Settings() {
                       ...preferences.music_preferences,
                       default_cooldown_style: e.target.value
                     })}
-                    disabled={preferencesSaving}
+                    disabled={savingField !== null}
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                   >
                     <option value="BAROQUE">Baroque (Bach, Handel, Vivaldi)</option>
@@ -905,7 +929,7 @@ export function Settings() {
                         type="checkbox"
                         checked={preferences.use_ai_agent || false}
                         onChange={(e) => updatePreference('use_ai_agent', e.target.checked)}
-                        disabled={preferencesSaving}
+                        disabled={savingField !== null}
                         className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                       />
                     </label>
@@ -928,7 +952,7 @@ export function Settings() {
                       <select
                         value={preferences.strictness_level}
                         onChange={(e) => updatePreference('strictness_level', e.target.value)}
-                        disabled={preferencesSaving}
+                        disabled={savingField !== null}
                         className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                       >
                         <option value="guided">Guided - AI suggests with flexibility</option>
@@ -951,7 +975,7 @@ export function Settings() {
                         type="checkbox"
                         checked={preferences.enable_mcp_research}
                         onChange={(e) => updatePreference('enable_mcp_research', e.target.checked)}
-                        disabled={preferencesSaving}
+                        disabled={savingField !== null}
                         className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                       />
                     </label>
@@ -1022,7 +1046,7 @@ export function Settings() {
                       type="checkbox"
                       checked={preferences.analytics_enabled}
                       onChange={(e) => updatePreference('analytics_enabled', e.target.checked)}
-                      disabled={preferencesSaving}
+                      disabled={savingField !== null}
                       className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                     />
                   </label>
@@ -1036,7 +1060,7 @@ export function Settings() {
                       type="checkbox"
                       checked={preferences.data_sharing_enabled}
                       onChange={(e) => updatePreference('data_sharing_enabled', e.target.checked)}
-                      disabled={preferencesSaving}
+                      disabled={savingField !== null}
                       className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
                     />
                   </label>

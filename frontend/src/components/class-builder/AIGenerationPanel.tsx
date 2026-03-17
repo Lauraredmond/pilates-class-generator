@@ -48,30 +48,59 @@ export function AIGenerationPanel() {
   const [userPreferences, setUserPreferences] = useState<any>(null);
   const [preferencesLoading, setPreferencesLoading] = useState(true);
 
-  // Fetch user preferences on mount
-  useEffect(() => {
-    const fetchPreferences = async () => {
-      try {
-        const token = localStorage.getItem('access_token');
-        const response = await axios.get(`${API_BASE_URL}/api/auth/preferences`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        setUserPreferences(response.data);
-      } catch (error: any) {
-        logger.error('[AIGenerationPanel] Failed to fetch preferences:', error);
-        // If preferences fail to load, we'll use defaults
-      } finally {
-        setPreferencesLoading(false);
-      }
-    };
+  // Function to fetch preferences
+  const fetchPreferences = async () => {
+    if (!user) {
+      setPreferencesLoading(false);
+      return;
+    }
 
-    if (user) {
-      fetchPreferences();
-    } else {
+    try {
+      setPreferencesLoading(true);
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE_URL}/api/auth/preferences`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setUserPreferences(response.data);
+      logger.debug('[AIGenerationPanel] Preferences loaded:', response.data);
+    } catch (error: any) {
+      logger.error('[AIGenerationPanel] Failed to fetch preferences:', error);
+      // If preferences fail to load, we'll use defaults
+    } finally {
       setPreferencesLoading(false);
     }
+  };
+
+  // Fetch user preferences on mount
+  useEffect(() => {
+    fetchPreferences();
+  }, [user]);
+
+  // Refetch preferences when the page becomes visible (e.g., returning from settings)
+  useEffect(() => {
+    const handleFocus = () => {
+      logger.debug('[AIGenerationPanel] Window focused, refetching preferences');
+      fetchPreferences();
+    };
+
+    // Listen for when the window/tab regains focus
+    window.addEventListener('focus', handleFocus);
+
+    // Also listen for visibility change (e.g., switching tabs)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        logger.debug('[AIGenerationPanel] Page became visible, refetching preferences');
+        fetchPreferences();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user]);
 
   // Map user's pilates_experience to difficulty level
