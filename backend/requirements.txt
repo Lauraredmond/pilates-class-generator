@@ -57,7 +57,7 @@ pytest-cov==4.1.0
 pytest-mock==3.12.0
 
 # Code quality
-black==25.11.0  # Security: CVE-2024-21503 (ReDoS) fixed
+black==26.3.1  # Security: CVE-2024-21503 (ReDoS) fixed
 flake8==7.0.0
 mypy==1.8.0
 isort==5.13.2
