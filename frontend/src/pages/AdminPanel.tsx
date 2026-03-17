@@ -315,7 +315,7 @@ export function AdminPanel() {
             <Button
               variant="ghost"
               onClick={() => navigate('/')}
-              className="text-burgundy hover:text-burgundy/80"
+              className="text-burgundy hover:text-burgundy/80 bg-burgundy/10 hover:bg-burgundy/20 font-semibold"
             >
               ← Back to Home
             </Button>

@@ -590,10 +590,10 @@ export function Analytics() {
             label: duration === 12 ? '10 min' : `${duration} min`,  // Map 12 to 10 in label
             data: classDurationDistribution.duration_counts[String(duration)],
             backgroundColor: [
-              '#cd8b76',  // 10 min - Terracotta (lightest)
-              '#b8927d',  // 30 min - Medium beige
-              '#8b2635',  // 45 min - Primary burgundy
-              '#5c1a26',  // 60 min - Dark burgundy
+              '#e9967a',  // 10 min - Light salmon/coral (distinctly lighter)
+              '#daa520',  // 30 min - Goldenrod/amber (distinctly golden)
+              '#8b2635',  // 45 min - Primary burgundy (medium dark red)
+              '#4b0f1a',  // 60 min - Very dark burgundy (darkest)
             ][idx % 4],
           })),
       }
