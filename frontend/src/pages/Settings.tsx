@@ -45,9 +45,11 @@ export function Settings() {
   const [preferences, setPreferences] = useState({
     strictness_level: 'guided',
     default_class_duration: 60,
-    default_difficulty_level: '', // Empty string means use pilates_experience
-    default_movement_music_style: 'CLASSICAL',
-    default_cooldown_music_style: 'BAROQUE',
+    preferred_movement_level: '', // Empty string means use pilates_experience
+    music_preferences: {
+      default_movement_style: 'CLASSICAL',
+      default_cooldown_style: 'BAROQUE'
+    },
     enable_mcp_research: true,
     use_ai_agent: false,  // Session 10: Jentic Integration toggle
     email_notifications: true,
@@ -770,8 +772,8 @@ export function Settings() {
                 <div>
                   <label className="block text-sm font-medium text-cream mb-2">Default Difficulty Level</label>
                   <select
-                    value={preferences.default_difficulty_level || ''}
-                    onChange={(e) => updatePreference('default_difficulty_level', e.target.value)}
+                    value={preferences.preferred_movement_level || ''}
+                    onChange={(e) => updatePreference('preferred_movement_level', e.target.value)}
                     disabled={preferencesSaving}
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                   >
@@ -782,17 +784,20 @@ export function Settings() {
                     <option value="Mixed">Always start with Mixed</option>
                   </select>
                   <p className="text-xs text-cream/60 mt-1">
-                    {preferences.default_difficulty_level === ''
+                    {preferences.preferred_movement_level === ''
                       ? `Will default to your registered experience level (${user?.pilates_experience || 'Intermediate'})`
-                      : `Classes will default to ${preferences.default_difficulty_level} difficulty`}
+                      : `Classes will default to ${preferences.preferred_movement_level} difficulty`}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-cream mb-2">Default Movement Music Style</label>
                   <select
-                    value={preferences.default_movement_music_style}
-                    onChange={(e) => updatePreference('default_movement_music_style', e.target.value)}
+                    value={preferences.music_preferences?.default_movement_style || 'CLASSICAL'}
+                    onChange={(e) => updatePreference('music_preferences', {
+                      ...preferences.music_preferences,
+                      default_movement_style: e.target.value
+                    })}
                     disabled={preferencesSaving}
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                   >
@@ -811,8 +816,11 @@ export function Settings() {
                 <div>
                   <label className="block text-sm font-medium text-cream mb-2">Default Cool Down Music Style</label>
                   <select
-                    value={preferences.default_cooldown_music_style}
-                    onChange={(e) => updatePreference('default_cooldown_music_style', e.target.value)}
+                    value={preferences.music_preferences?.default_cooldown_style || 'BAROQUE'}
+                    onChange={(e) => updatePreference('music_preferences', {
+                      ...preferences.music_preferences,
+                      default_cooldown_style: e.target.value
+                    })}
                     disabled={preferencesSaving}
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
                   >
