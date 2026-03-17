@@ -2587,6 +2587,10 @@ async def get_creators_vs_performers_users(
                 last_activity_at=last_activity_at
             ))
 
+        # Sort users by last_activity_at descending (most recent first)
+        # None values (inactive users) will be sorted to the end
+        users.sort(key=lambda u: u.last_activity_at or '', reverse=True)
+
         return CreatorsVsPerformersUsersResponse(
             category=category,
             total_count=total_count,

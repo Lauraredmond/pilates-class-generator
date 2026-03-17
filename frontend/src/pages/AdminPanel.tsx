@@ -313,9 +313,8 @@ export function AdminPanel() {
           {/* Back Button */}
           <div className="p-6 pt-0 text-center">
             <Button
-              variant="ghost"
+              variant="secondary"
               onClick={() => navigate('/')}
-              className="text-burgundy hover:text-burgundy/80"
             >
               ← Back to Home
             </Button>
