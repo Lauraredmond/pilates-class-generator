@@ -882,8 +882,9 @@ class SequenceTools:
                         total_expected = 3 if target_duration == 10 else 10
 
                         # Calculate what percentage WOULD BE if we add another Advanced
-                        next_advanced_pct = ((advanced_count + 1) / (sequence_position + 1) * 100) if movement_difficulty == 'Advanced' else 0
-                        current_pct = (advanced_count / sequence_position * 100) if sequence_position > 0 else 0
+                        # Must divide by total_expected (final sequence size), not current position!
+                        next_advanced_pct = ((advanced_count + 1) / total_expected * 100) if movement_difficulty == 'Advanced' else 0
+                        current_pct = (advanced_count / total_expected * 100) if total_expected > 0 else 0
 
                         # Calculate if we're below minimum (33%) and need to boost Advanced
                         movements_remaining = total_expected - sequence_position
@@ -899,7 +900,7 @@ class SequenceTools:
                                 else:
                                     difficulty_multiplier *= 10.0  # STRONGLY boost Advanced to meet minimum
                                 logger.debug(
-                                    f"Advanced MINIMUM enforced: {advanced_count}/{sequence_position} "
+                                    f"Advanced MINIMUM enforced: {advanced_count}/{total_expected} = {current_pct:.1f}% current, "
                                     f"Need {min_advanced_needed - advanced_count} more Advanced in {movements_remaining} slots "
                                     f"→ boosting Advanced weight to {difficulty_multiplier:.1f}"
                                 )
@@ -917,10 +918,10 @@ class SequenceTools:
                                 difficulty_multiplier *= 0.01  # Almost eliminate Advanced weight
                             else:
                                 difficulty_multiplier *= 0.1  # Drastically reduce to stay under cap
-                            if sequence_position >= 2:  # Log when selecting 3rd or later movement
+                            if sequence_position >= 1:  # Log when selecting 2nd or later movement
                                 logger.debug(
-                                    f"Advanced cap enforced: {advanced_count}/{sequence_position} = {current_pct:.1f}% current, "
-                                    f"would be {next_advanced_pct:.1f}% → reducing Advanced weight to {difficulty_multiplier:.1f}"
+                                    f"Advanced cap enforced: {advanced_count}/{total_expected} = {current_pct:.1f}% current, "
+                                    f"would be {next_advanced_pct:.1f}% with this Advanced → reducing weight to {difficulty_multiplier:.1f}"
                                 )
 
                         # Early in sequence (first 20%): boost Beginner/Intermediate
