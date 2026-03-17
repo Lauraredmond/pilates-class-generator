@@ -73,36 +73,39 @@ class SequenceTools:
 
     # Difficulty mix targets for balanced classes (NEW)
     # These define the ideal percentage of movements from each difficulty level
+    # Note: Movement pool is already filtered by difficulty, so these targets
+    # only apply to movements actually available at each level
     DIFFICULTY_MIX_TARGETS = {
         "Beginner": {
-            "Beginner": 0.80,      # 80% Beginner movements
-            "Intermediate": 0.15,  # 15% Intermediate for progression
-            "Advanced": 0.05       # 5% Advanced for challenge
+            "Beginner": 1.00,      # 100% Beginner movements ONLY
+            "Intermediate": 0.00,  # No Intermediate (not in pool)
+            "Advanced": 0.00       # No Advanced (not in pool)
         },
         "Intermediate": {
-            "Beginner": 0.30,      # 30% Beginner for warm-up/cooldown
-            "Intermediate": 0.50,  # 50% Intermediate core work
-            "Advanced": 0.20       # 20% Advanced for challenge
+            "Beginner": 0.40,      # 40% Beginner for foundation/cooldown
+            "Intermediate": 0.60,  # 60% Intermediate core work
+            "Advanced": 0.00       # No Advanced (filtered out of pool)
         },
         "Advanced": {
             "Beginner": 0.15,      # 15% Beginner for warm-up/transitions
             "Intermediate": 0.25,  # 25% Intermediate for building
-            "Advanced": 0.60       # 60% Advanced for mastery
+            "Advanced": 0.60       # 60% Advanced for mastery (but variety maintained)
         }
     }
 
     # Difficulty weight multipliers for selection bias (NEW)
     # Higher weights increase likelihood of selection
+    # Note: Only affects movements actually in the filtered pool
     DIFFICULTY_WEIGHT_MULTIPLIERS = {
         "Beginner": {
-            "Beginner": 2.0,       # Prefer Beginner movements
-            "Intermediate": 1.0,   # Normal weight
-            "Advanced": 0.5        # Reduce Advanced selection
+            "Beginner": 1.0,       # Only Beginner movements available anyway
+            "Intermediate": 1.0,   # Not applicable (filtered out)
+            "Advanced": 1.0        # Not applicable (filtered out)
         },
         "Intermediate": {
-            "Beginner": 1.0,       # Normal weight
-            "Intermediate": 1.5,   # Slight preference
-            "Advanced": 1.0        # Normal weight
+            "Beginner": 0.7,       # Slight reduction for Beginner
+            "Intermediate": 1.3,   # Prefer Intermediate movements
+            "Advanced": 1.0        # Not applicable (filtered out)
         },
         "Advanced": {
             "Beginner": 1.0,       # Normal weight for variety
