@@ -71,6 +71,46 @@ class SequenceTools:
         "Advanced": 6       # Advanced students perfect form, not rush
     }
 
+    # Difficulty mix targets for balanced classes (NEW)
+    # These define the ideal percentage of movements from each difficulty level
+    DIFFICULTY_MIX_TARGETS = {
+        "Beginner": {
+            "Beginner": 0.80,      # 80% Beginner movements
+            "Intermediate": 0.15,  # 15% Intermediate for progression
+            "Advanced": 0.05       # 5% Advanced for challenge
+        },
+        "Intermediate": {
+            "Beginner": 0.30,      # 30% Beginner for warm-up/cooldown
+            "Intermediate": 0.50,  # 50% Intermediate core work
+            "Advanced": 0.20       # 20% Advanced for challenge
+        },
+        "Advanced": {
+            "Beginner": 0.15,      # 15% Beginner for warm-up/transitions
+            "Intermediate": 0.25,  # 25% Intermediate for building
+            "Advanced": 0.60       # 60% Advanced for mastery
+        }
+    }
+
+    # Difficulty weight multipliers for selection bias (NEW)
+    # Higher weights increase likelihood of selection
+    DIFFICULTY_WEIGHT_MULTIPLIERS = {
+        "Beginner": {
+            "Beginner": 2.0,       # Prefer Beginner movements
+            "Intermediate": 1.0,   # Normal weight
+            "Advanced": 0.5        # Reduce Advanced selection
+        },
+        "Intermediate": {
+            "Beginner": 1.0,       # Normal weight
+            "Intermediate": 1.5,   # Slight preference
+            "Advanced": 1.0        # Normal weight
+        },
+        "Advanced": {
+            "Beginner": 1.0,       # Normal weight for variety
+            "Intermediate": 1.5,   # Moderate preference
+            "Advanced": 3.0        # Strong preference for Advanced
+        }
+    }
+
     # Transition time between movements (in minutes)
     # NOTE: This is calculated dynamically from database in _build_safe_sequence
     # Kept as class constant for fallback only if database query fails
@@ -155,8 +195,8 @@ class SequenceTools:
         # Step 4: Calculate muscle balance (use movements only, not transitions)
         muscle_balance = self._calculate_muscle_balance(sequence)
 
-        # Step 5: Validate sequence against safety rules
-        validation = self._validate_sequence(sequence, muscle_balance)
+        # Step 5: Validate sequence against safety rules and difficulty targets
+        validation = self._validate_sequence(sequence, muscle_balance, difficulty_level)
 
         # Calculate counts
         movements_only = [item for item in sequence_with_transitions if item.get("type") == "movement"]
@@ -544,7 +584,8 @@ class SequenceTools:
                 current_sequence=sequence,
                 focus_areas=focus_areas,
                 pattern_priority=pattern_order,
-                usage_weights=usage_weights
+                usage_weights=usage_weights,
+                class_difficulty=difficulty
             )
 
             if not selected:
@@ -613,7 +654,8 @@ class SequenceTools:
                     current_sequence=sequence,
                     focus_areas=focus_areas,
                     pattern_priority=pattern_order,
-                    usage_weights=usage_weights
+                    usage_weights=usage_weights,
+                    class_difficulty=difficulty
                 )
 
                 if not selected:
@@ -678,7 +720,8 @@ class SequenceTools:
         current_sequence: List[Dict[str, Any]],
         focus_areas: List[str],
         pattern_priority: List[str],
-        usage_weights: Dict[str, float] = None
+        usage_weights: Dict[str, float] = None,
+        class_difficulty: str = None
     ) -> Optional[Dict[str, Any]]:
         """
         Select next movement based on rules and focus areas
@@ -686,6 +729,7 @@ class SequenceTools:
         PHASE 1 FIX: Added consecutive muscle overlap validation
         PHASE 2 FIX: Added weighted random selection based on usage history
         SESSION: Movement Families - Added family balance filtering
+        PHASE 3 FIX: Added difficulty-based weight multipliers for Advanced classes
         """
         # Get already used movement IDs
         used_ids = [m["id"] for m in current_sequence]
@@ -805,13 +849,68 @@ class SequenceTools:
                 available = focused
 
         # PHASE 2 FIX: Use weighted random selection based on usage history
-        if usage_weights and available:
+        # PHASE 3 FIX: Apply difficulty-based multipliers for Advanced classes
+        if available:
             # Build weights list aligned with available movements
-            weights = [usage_weights.get(m['id'], 1.0) for m in available]
+            weights = []
+            for m in available:
+                # Start with usage weight (historical variety)
+                base_weight = usage_weights.get(m['id'], 1.0) if usage_weights else 1.0
 
-            # Use random.choices with weights (prefers less-recently-used movements)
+                # Apply difficulty multiplier if class_difficulty is specified
+                if class_difficulty and class_difficulty in self.DIFFICULTY_WEIGHT_MULTIPLIERS:
+                    movement_difficulty = m.get('difficulty_level', 'Beginner')
+                    difficulty_multiplier = self.DIFFICULTY_WEIGHT_MULTIPLIERS[class_difficulty].get(
+                        movement_difficulty, 1.0
+                    )
+
+                    # PROGRESSIVE DIFFICULTY: Adjust weights based on position in sequence
+                    # For Advanced classes, prefer easier movements early, harder later
+                    if class_difficulty == 'Advanced':
+                        sequence_position = len(current_sequence)
+                        total_expected = 10  # Approximate number of movements in a class
+
+                        # Early in sequence (first 20%): boost Beginner/Intermediate
+                        if sequence_position < total_expected * 0.2:
+                            if movement_difficulty == 'Beginner':
+                                difficulty_multiplier *= 2.0  # Double weight for warm-up
+                            elif movement_difficulty == 'Intermediate':
+                                difficulty_multiplier *= 1.5  # Boost intermediate
+                            elif movement_difficulty == 'Advanced':
+                                difficulty_multiplier *= 0.5  # Reduce Advanced early on
+
+                        # Middle of sequence (20-80%): use standard multipliers
+                        # (no adjustment needed)
+
+                        # Late in sequence (last 20%): slightly reduce Advanced
+                        elif sequence_position > total_expected * 0.8:
+                            if movement_difficulty == 'Advanced':
+                                difficulty_multiplier *= 0.7  # Slightly reduce for cooldown
+                            elif movement_difficulty == 'Beginner':
+                                difficulty_multiplier *= 1.3  # Slight boost for cooldown
+
+                    final_weight = base_weight * difficulty_multiplier
+
+                    # Log detailed weight calculation for Advanced classes
+                    if class_difficulty == 'Advanced' and len(current_sequence) < 3:
+                        logger.debug(
+                            f"Weight calc for '{m['name']}' ({movement_difficulty}): "
+                            f"base={base_weight:.1f} × multiplier={difficulty_multiplier:.1f} = {final_weight:.1f}"
+                        )
+                else:
+                    final_weight = base_weight
+
+                weights.append(final_weight)
+
+            # Use random.choices with combined weights
             selected = random.choices(available, weights=weights, k=1)[0]
-            logger.info(f"Selected '{selected['name']}' (weight: {usage_weights.get(selected['id'], 1.0):.0f})")
+
+            # Log selection with difficulty info
+            selected_weight = weights[available.index(selected)]
+            logger.info(
+                f"Selected '{selected['name']}' ({selected.get('difficulty_level', 'Unknown')}) "
+                f"weight: {selected_weight:.1f}"
+            )
             return selected
 
         # Fallback: pick randomly from available (no usage data)
@@ -1000,6 +1099,39 @@ class SequenceTools:
 
         return muscle_load
 
+    def _calculate_difficulty_balance(self, sequence: List[Dict[str, Any]]) -> Dict[str, float]:
+        """
+        Calculate difficulty level distribution across sequence
+
+        Returns percentage of movements from each difficulty level.
+        """
+        difficulty_counts = {}
+        total_movements = len(sequence)
+
+        if total_movements == 0:
+            return {}
+
+        try:
+            # Count movements by difficulty
+            for movement in sequence:
+                difficulty = movement.get("difficulty_level", "Unknown")
+                if difficulty not in difficulty_counts:
+                    difficulty_counts[difficulty] = 0
+                difficulty_counts[difficulty] += 1
+
+            # Convert to percentages
+            difficulty_percentages = {
+                difficulty: (count / total_movements) * 100
+                for difficulty, count in difficulty_counts.items()
+            }
+
+            logger.info(f"Difficulty distribution: {difficulty_percentages}")
+            return difficulty_percentages
+
+        except Exception as e:
+            logger.error(f"Error calculating difficulty balance: {e}")
+            return {}
+
     def _calculate_family_balance(self, sequence: List[Dict[str, Any]]) -> Dict[str, float]:
         """
         Calculate movement family distribution across sequence
@@ -1079,9 +1211,10 @@ class SequenceTools:
     def _validate_sequence(
         self,
         sequence: List[Dict[str, Any]],
-        muscle_balance: Dict[str, float]
+        muscle_balance: Dict[str, float],
+        class_difficulty: str = None
     ) -> Dict[str, Any]:
-        """Validate sequence against safety rules"""
+        """Validate sequence against safety rules and difficulty targets"""
         violations = []
         warnings = []
 
@@ -1103,6 +1236,37 @@ class SequenceTools:
                     f"deviation: +{stats['deviation']:.1f}%)"
                 )
 
+        # NEW: Check difficulty balance against targets
+        difficulty_balance = self._calculate_difficulty_balance(sequence)
+        difficulty_analysis = {}
+
+        if class_difficulty and class_difficulty in self.DIFFICULTY_MIX_TARGETS:
+            targets = self.DIFFICULTY_MIX_TARGETS[class_difficulty]
+
+            for difficulty_level, target_pct in targets.items():
+                actual_pct = difficulty_balance.get(difficulty_level, 0.0)
+                deviation = actual_pct - (target_pct * 100)  # Convert target to percentage
+
+                difficulty_analysis[difficulty_level] = {
+                    "target_pct": target_pct * 100,
+                    "actual_pct": actual_pct,
+                    "deviation": deviation,
+                    "on_target": abs(deviation) <= 10  # Within 10% is considered on target
+                }
+
+                # Add warning if significantly off target (>20% deviation)
+                if abs(deviation) > 20:
+                    if deviation > 0:
+                        warnings.append(
+                            f"{difficulty_level} movements exceed target "
+                            f"(actual: {actual_pct:.1f}%, target: {target_pct * 100:.1f}%)"
+                        )
+                    else:
+                        warnings.append(
+                            f"{difficulty_level} movements below target "
+                            f"(actual: {actual_pct:.1f}%, target: {target_pct * 100:.1f}%)"
+                        )
+
         # Calculate safety score
         safety_score = 1.0 - (len(violations) * 0.2 + len(warnings) * 0.05)
         safety_score = max(0.0, min(1.0, safety_score))
@@ -1113,7 +1277,9 @@ class SequenceTools:
             "violations": violations,
             "warnings": warnings,
             "family_balance": family_balance,  # Include family distribution in response
-            "family_usage_analysis": usage_analysis  # NEW: Include detailed family analysis
+            "family_usage_analysis": usage_analysis,  # Include detailed family analysis
+            "difficulty_balance": difficulty_balance,  # NEW: Include difficulty distribution
+            "difficulty_analysis": difficulty_analysis  # NEW: Include difficulty vs target analysis
         }
 
     # ==========================================================================
