@@ -1,0 +1,137 @@
+[Warning] 60 console messages are not shown.
+[Log] 🎥 DEBUG: Video URL changed! – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 DEBUG: Waiting for video to buffer... (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 INFO: New section starting (no pending fade to cancel) (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 ⏱️ SECTION TIMER: Started for 300s section (eruda-JwbgsIzL.js, line 92)
+[Log] [Media:music] Section tracking START – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] URL changed – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] switching voiceover – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] src updated - loading – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 DEBUG: Forced video opacity to 1 (override fade-out) (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Set video.src to: – "https://pilates-movement-videos.s3.us-east-1.amazonaws.com/Warmup.mp4" (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Called video.load() to fetch new video (eruda-JwbgsIzL.js, line 92)
+[Log] [Media:voiceover] play (ducking music) – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:music] volume change (ducking) – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] waiting (buffering) – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] loadstart – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 299s remaining (eruda-JwbgsIzL.js, line 92)
+[Log] [Media:voiceover] loadedmetadata – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] loadeddata – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] canplay – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] playing – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] canplaythrough – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 299s remaining (eruda-JwbgsIzL.js, line 92)
+[Log] [Media:music] Section tracking SUCCESS – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 299s remaining (eruda-JwbgsIzL.js, line 92, x6)
+[Log] [Media:music] AudioContext health check OK – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 299s remaining (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 📊 VIDEO LOADED: Duration = 291.35s, Section duration = 300s (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Reset video to 0:00 before playing (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Video ready to play - starting immediately (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: About to check if video_url exists... (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: item.video_url value: – "https://pilates-movement-videos.s3.us-east-1.amazonaws.com/16.Scissors.mp4" (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: item.video_url type: – "string" (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Is video_url truthy?: – true (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Video URL changed! – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 DEBUG: Waiting for video to buffer... (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 INFO: New section starting (no pending fade to cancel) (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 ⏱️ SECTION TIMER: Started for 180s section (eruda-JwbgsIzL.js, line 92)
+[Log] [Media:music] Section tracking START – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] URL changed – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] switching voiceover – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] src updated - loading – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 DEBUG: Forced video opacity to 1 (override fade-out) (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Set video.src to: – "https://pilates-movement-videos.s3.us-east-1.amazonaws.com/16.Scissors.mp4" (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Called video.load() to fetch new video (eruda-JwbgsIzL.js, line 92)
+[Log] [Media:voiceover] play (ducking music) – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:music] volume change (ducking) – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] waiting (buffering) – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] loadstart – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 179s remaining (eruda-JwbgsIzL.js, line 92, x2)
+[Log] [Media:music] Section tracking SUCCESS – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 179s remaining (eruda-JwbgsIzL.js, line 92)
+[Log] [Media:voiceover] loadedmetadata – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] loadeddata – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] canplay – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] playing – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] canplaythrough – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 179s remaining (eruda-JwbgsIzL.js, line 92, x6)
+[Log] 🎥 📊 VIDEO LOADED: Duration = 114.702s, Section duration = 180s (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Reset video to 0:00 before playing (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Video ready - delaying start by 4s (movement sync) (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: About to check if video_url exists... (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: item.video_url value: – "https://pilates-movement-videos.s3.us-east-1.amazonaws.com/16.Scissors.mp4" (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: item.video_url type: – "string" (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Is video_url truthy?: – true (eruda-JwbgsIzL.js, line 92)
+[Log] [Media:music] AudioContext health check OK – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 5s elapsed, 174s remaining (eruda-JwbgsIzL.js, line 92, x10)
+[Log] 🎥 DEBUG: Starting video after delay (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Video autoplay SUCCESS (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: About to check if video_url exists... (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: item.video_url value: – "https://pilates-movement-videos.s3.us-east-1.amazonaws.com/16.Scissors.mp4" (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: item.video_url type: – "string" (eruda-JwbgsIzL.js, line 92)
+[Log] 🎥 DEBUG: Is video_url truthy?: – true (eruda-JwbgsIzL.js, line 92)
+[Log] [Media:music] AudioContext health check OK – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:music] ClassPlayback component unmounted – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:music] Wake Lock RELEASED (browser event) – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:music] Wake Lock released on component unmount – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:music] pause – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Log] [Media:voiceover] pause – Object (eruda-JwbgsIzL.js, line 92)
+Object
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – Pe
+Pe
+	(anonymous function) (eruda-JwbgsIzL.js:92:2986)
+	error (index-BDSOIjv1.js:13:5449)
+	(anonymous function) (index-BDSOIjv1.js:110:53907)
+[Log] 🔍 DEBUG: RecordingModeManager MOUNTED (eruda-JwbgsIzL.js, line 92)
+[Log] 🔍 DEBUG: isPlaying changed: – false – "playbackItems.length:" – 0 (eruda-JwbgsIzL.js, line 92)
+[Error] Failed to load resource: the server responded with a status of 500 () (beta-feedback, line 0)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – Pe
+Pe
+	(anonymous function) (eruda-JwbgsIzL.js:92:2986)
+	(anonymous function) (index-BDSOIjv1.js:110:89768)
+[Error] FetchEvent.respondWith received an error: Returned response is null.
+[Error] XMLHttpRequest cannot load https://pilates-dev-i0jb.onrender.com/api/analytics/admin/creators-vs-performers?admin_user_id=c6db6029-5e98-4d4d-89b9-d6e9de65acb3&period=month.
+[Error] Failed to load resource: FetchEvent.respondWith received an error: Returned response is null. (creators-vs-performers, line 0)
+[Error] FetchEvent.respondWith received an error: Returned response is null.
+[Error] XMLHttpRequest cannot load https://pilates-dev-i0jb.onrender.com/api/analytics/admin/creators-vs-performers?admin_user_id=c6db6029-5e98-4d4d-89b9-d6e9de65acb3&period=month.
+[Error] Failed to load resource: FetchEvent.respondWith received an error: Returned response is null. (creators-vs-performers, line 0)
