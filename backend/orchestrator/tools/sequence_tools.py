@@ -534,6 +534,8 @@ class SequenceTools:
         if target_duration == 10:
             max_movements = 3
             logger.info("✅ 10-minute quick practice: Enforcing exactly 3 movements")
+            if difficulty == 'Advanced':
+                logger.info("⚠️ 10-min ADVANCED: Max 66% cap = 2 Advanced movements, min 1 non-Advanced")
 
         logger.info(
             f"Building sequence: {target_duration} min total - {overhead_minutes} min overhead = {available_minutes} min available / "
@@ -589,7 +591,8 @@ class SequenceTools:
                 pattern_priority=pattern_order,
                 usage_weights=usage_weights,
                 class_difficulty=difficulty,
-                target_duration=target_duration
+                target_duration=target_duration,
+                target_count=target_count
             )
 
             if not selected:
@@ -653,6 +656,9 @@ class SequenceTools:
             fill_count = 0
             while remaining_seconds >= min_time_needed:
                 # Try to select another movement using existing safety rules
+                # For fill pass, we don't have a fixed target_count anymore
+                # Use current sequence length + remaining capacity as estimate
+                estimated_final_count = len(sequence) + max(1, int(remaining_seconds / min_time_needed))
                 selected = self._select_next_movement(
                     movements=movements,
                     current_sequence=sequence,
@@ -660,7 +666,8 @@ class SequenceTools:
                     pattern_priority=pattern_order,
                     usage_weights=usage_weights,
                     class_difficulty=difficulty,
-                    target_duration=target_duration
+                    target_duration=target_duration,
+                    target_count=estimated_final_count
                 )
 
                 if not selected:
@@ -727,7 +734,8 @@ class SequenceTools:
         pattern_priority: List[str],
         usage_weights: Dict[str, float] = None,
         class_difficulty: str = None,
-        target_duration: int = None
+        target_duration: int = None,
+        target_count: int = None
     ) -> Optional[Dict[str, Any]]:
         """
         Select next movement based on rules and focus areas
@@ -745,6 +753,18 @@ class SequenceTools:
 
         if not available:
             return None
+
+        # HARD STOP FOR 10-MIN ADVANCED: Absolutely prevent 100% Advanced (3/3)
+        # If we already have 2 Advanced movements in a 10-min class, filter out ALL Advanced movements
+        if target_duration == 10 and class_difficulty == 'Advanced':
+            advanced_count = sum(1 for m in current_sequence if m.get('difficulty_level') == 'Advanced')
+            if advanced_count >= 2:
+                # We already have 2 Advanced (66%), do NOT allow a third
+                logger.info(f"🛑 10-MIN HARD STOP: Already have {advanced_count}/3 Advanced, filtering out all Advanced movements")
+                available = [m for m in available if m.get('difficulty_level') != 'Advanced']
+                if not available:
+                    logger.warning("⚠️ No non-Advanced movements available after hard stop filter!")
+                    return None
 
         # RULE 1 (HARD CONSTRAINT): Filter out movements with high consecutive muscle overlap
         # NO FALLBACK - Rule violations are NOT acceptable
@@ -877,9 +897,15 @@ class SequenceTools:
                                        if mov.get('difficulty_level') == 'Advanced')
 
                     if class_difficulty == 'Advanced':
+                        # Use the actual target_count if provided, otherwise fall back to estimates
                         # For 10-min classes, we know it's exactly 3 movements
-                        # Otherwise estimate based on typical class size
-                        total_expected = 3 if target_duration == 10 else 10
+                        # For other classes, use the passed target_count or estimate
+                        if target_count is not None:
+                            total_expected = target_count
+                        else:
+                            # Fallback to old logic if target_count not provided
+                            total_expected = 3 if target_duration == 10 else 10
+                            logger.warning(f"target_count not provided, using estimate: {total_expected}")
 
                         # Calculate what percentage WOULD BE if we add another Advanced
                         # Must divide by total_expected (final sequence size), not current position!
@@ -915,9 +941,13 @@ class SequenceTools:
                         # For very short sequences (3 movements), be even more strict
                         elif next_advanced_pct > 66 and movement_difficulty == 'Advanced':
                             if total_expected <= 3:  # 10-minute quick practice
-                                difficulty_multiplier *= 0.01  # Almost eliminate Advanced weight
+                                difficulty_multiplier *= 0.001  # Nearly ELIMINATE Advanced weight (was 0.01)
+                                logger.info(  # Changed to info level for visibility
+                                    f"🚫 10-MIN ADVANCED CAP: {advanced_count}/{total_expected} Advanced already "
+                                    f"({current_pct:.1f}%), would be {next_advanced_pct:.1f}% → weight×0.001"
+                                )
                             else:
-                                difficulty_multiplier *= 0.1  # Drastically reduce to stay under cap
+                                difficulty_multiplier *= 0.01  # Strongly reduce to stay under cap (was 0.1)
                             if sequence_position >= 1:  # Log when selecting 2nd or later movement
                                 logger.debug(
                                     f"Advanced cap enforced: {advanced_count}/{total_expected} = {current_pct:.1f}% current, "
@@ -966,10 +996,20 @@ class SequenceTools:
 
             # Log selection with difficulty info
             selected_weight = weights[available.index(selected)]
-            logger.info(
-                f"Selected '{selected['name']}' ({selected.get('difficulty_level', 'Unknown')}) "
-                f"weight: {selected_weight:.1f}"
-            )
+
+            # Extra logging for 10-minute Advanced classes to debug the issue
+            if target_duration == 10 and class_difficulty == 'Advanced':
+                advanced_so_far = sum(1 for m in current_sequence if m.get('difficulty_level') == 'Advanced')
+                logger.info(
+                    f"🎯 10-MIN ADVANCED SELECTION #{len(current_sequence)+1}/3: "
+                    f"'{selected['name']}' ({selected.get('difficulty_level')}) weight={selected_weight:.1f} | "
+                    f"Advanced so far: {advanced_so_far}"
+                )
+            else:
+                logger.info(
+                    f"Selected '{selected['name']}' ({selected.get('difficulty_level', 'Unknown')}) "
+                    f"weight: {selected_weight:.1f}"
+                )
             return selected
 
         # Fallback: pick randomly from available (no usage data)
