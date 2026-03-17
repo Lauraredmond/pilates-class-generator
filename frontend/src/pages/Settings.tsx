@@ -214,6 +214,8 @@ export function Settings() {
       const token = localStorage.getItem('access_token');
       const updateData = { [key]: value };
 
+      logger.debug('[Settings] Updating preference:', { key, value });
+
       const response = await axios.put(
         `${API_BASE_URL}/api/auth/preferences`,
         updateData,
@@ -226,9 +228,17 @@ export function Settings() {
 
       setPreferences(response.data);
       setPreferencesSuccess('Preference updated successfully');
+      logger.debug('[Settings] Preference updated successfully:', { key, value });
       setTimeout(() => setPreferencesSuccess(''), 3000);
     } catch (error: any) {
-      setPreferencesError(error.response?.data?.detail || 'Failed to update preference');
+      const errorMessage = error.response?.data?.detail || 'Failed to update preference';
+      logger.error('[Settings] Failed to update preference:', {
+        key,
+        value,
+        error: errorMessage,
+        status: error.response?.status
+      });
+      setPreferencesError(errorMessage);
     } finally {
       setPreferencesSaving(false);
     }
@@ -742,36 +752,19 @@ export function Settings() {
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-cream mb-2">Default Class Duration (minutes)</label>
-                  <input
-                    type="number"
+                  <label className="block text-sm font-medium text-cream mb-2">Default Class Duration</label>
+                  <select
                     value={preferences.default_class_duration}
-                    onChange={(e) => {
-                      // Update local state immediately for smooth typing
-                      const value = e.target.value;
-                      if (value === '') return; // Don't update if empty
-                      const numValue = parseInt(value);
-                      if (!isNaN(numValue) && numValue >= 10 && numValue <= 120) {
-                        setPreferences({ ...preferences, default_class_duration: numValue });
-                      }
-                    }}
-                    onBlur={(e) => {
-                      // Only send to server when user finishes editing
-                      const value = parseInt(e.target.value);
-                      if (!isNaN(value) && value >= 10 && value <= 120) {
-                        updatePreference('default_class_duration', value);
-                      } else {
-                        // Reset to previous valid value if invalid
-                        setPreferences({ ...preferences, default_class_duration: preferences.default_class_duration });
-                      }
-                    }}
+                    onChange={(e) => updatePreference('default_class_duration', parseInt(e.target.value))}
                     disabled={preferencesSaving}
-                    min={10}
-                    max={120}
-                    step={5}
                     className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
-                  />
-                  <p className="text-xs text-cream/60 mt-1">Between 10 and 120 minutes (use up/down arrows or type directly)</p>
+                  >
+                    <option value="10">10 minutes - Quick movement practice</option>
+                    <option value="30">30 minutes - Class excludes relaxation phase</option>
+                    <option value="45">45 minutes - Full class</option>
+                    <option value="60">60 minutes - Full class</option>
+                  </select>
+                  <p className="text-xs text-cream/60 mt-1">Choose your preferred default class duration</p>
                 </div>
 
                 <div>

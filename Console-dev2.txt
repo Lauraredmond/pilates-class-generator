@@ -17,3 +17,5 @@ Pe
 	error (index-BdvCYJnJ.js:13:5449)
 	(anonymous function) (index-BdvCYJnJ.js:110:53909)
 [Error] Failed to load resource: the server responded with a status of 500 () (profile, line 0)
+[Error] Failed to load resource: the server responded with a status of 400 () (preferences, line 0)
+[Error] Failed to load resource: the server responded with a status of 400 () (preferences, line 0)
