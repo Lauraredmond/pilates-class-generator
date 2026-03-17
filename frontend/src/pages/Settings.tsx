@@ -19,6 +19,7 @@ export function Settings() {
   const [expandedSections, setExpandedSections] = useState({
     security: true,
     notifications: false,
+    classDefaults: false,
     ai: false,
     compliance: false,
     developer: false,
@@ -714,107 +715,32 @@ export function Settings() {
         )}
       </div>
 
-      {/* AI Settings */}
+      {/* Class Generation Defaults */}
       <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
         <button
-          onClick={() => toggleSection('ai')}
+          onClick={() => toggleSection('classDefaults')}
           className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
         >
           <div className="flex items-center gap-3">
             <SettingsIcon className="w-6 h-6 text-burgundy" />
-            <h2 className="text-xl font-semibold text-cream">AI Class Generation</h2>
+            <h2 className="text-xl font-semibold text-cream">Class Generation Defaults</h2>
           </div>
-          {expandedSections.ai ? (
+          {expandedSections.classDefaults ? (
             <ChevronUp className="w-5 h-5 text-cream/60" />
           ) : (
             <ChevronDown className="w-5 h-5 text-cream/60" />
           )}
         </button>
 
-        {expandedSections.ai && (
+        {expandedSections.classDefaults && (
           <div className="px-6 pb-6">
             <p className="text-cream/60 text-sm mb-4">
-              Configure AI behavior for class planning
+              Set your preferred defaults for class generation
             </p>
             {preferencesLoading ? (
               <p className="text-cream/50">Loading preferences...</p>
             ) : (
               <div className="space-y-4">
-                {/* AI Agent Toggle - Admin Only (Cost Control) */}
-                {user?.user_type === 'admin' ? (
-                  <>
-                    <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors border-2 border-burgundy/30">
-                      <div>
-                        <div className="font-medium text-cream flex items-center gap-2">
-                          Use AI Agent for Class Generation
-                          <span className="text-xs bg-burgundy px-2 py-0.5 rounded text-cream/90">Admin Only</span>
-                          <span className="text-xs bg-green-900/50 px-2 py-0.5 rounded text-green-400">Jentic StandardAgent</span>
-                        </div>
-                        <div className="text-sm text-cream/60 mt-1">
-                          Enable intelligent AI reasoning for class creation with GPT-4.
-                        </div>
-                        <div className="text-xs text-cream/50 mt-2 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">Enabled:</span>
-                            <span>LLM-powered planning, ~60-70s first request (cache miss), {'<'}5s cached, costs $0.25-0.30 per class</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">Disabled:</span>
-                            <span>Database selection, {'<'}1s, free</span>
-                          </div>
-                        </div>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={preferences.use_ai_agent || false}
-                        onChange={(e) => updatePreference('use_ai_agent', e.target.checked)}
-                        disabled={preferencesSaving}
-                        className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
-                      />
-                    </label>
-
-                    {preferences.use_ai_agent && (
-                      <div className="bg-blue-900/20 border border-blue-500/30 rounded p-4">
-                        <p className="text-blue-400 font-semibold mb-2">AI Agent Enabled</p>
-                        <p className="text-cream/70 text-sm mb-2">
-                          Your classes will be generated using advanced AI reasoning with GPT-4 via Jentic's StandardAgent framework.
-                          This provides more intelligent and adaptive class planning, but incurs OpenAI API costs.
-                        </p>
-                        <p className="text-cream/50 text-xs">
-                          Estimated cost: $0.25-0.30 per class (first request), $0.05-0.10 (cached requests) | Phase 1 optimization with Redis caching + GPT-3.5-turbo
-                        </p>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="bg-cream/10 border border-cream/20 rounded p-4">
-                    <p className="text-cream font-medium mb-2">AI Class Generation (Admin Only)</p>
-                    <p className="text-cream/60 text-sm">
-                      AI-powered class generation with GPT-4 is restricted to administrators to control OpenAI API costs.
-                      Standard class generation is available to all users and uses pre-validated database content.
-                    </p>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-cream mb-2">AI Strictness Level</label>
-                  <select
-                    value={preferences.strictness_level}
-                    onChange={(e) => updatePreference('strictness_level', e.target.value)}
-                    disabled={preferencesSaving}
-                    className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
-                  >
-                    <option value="guided">Guided - AI suggests with flexibility</option>
-                    <option value="strict">Strict - AI follows classical rules closely</option>
-                    <option value="autonomous">Autonomous - AI has full creative control</option>
-                  </select>
-                  <p className="text-xs text-cream/60 mt-1">
-                    {preferences.strictness_level === 'guided' && 'AI will suggest movements while allowing you to make changes'}
-                    {preferences.strictness_level === 'strict' && 'AI will strictly follow classical Pilates sequencing rules'}
-                    {preferences.strictness_level === 'autonomous' && 'AI will generate complete classes with full creative freedom'}
-                  </p>
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-cream mb-2">Default Class Duration (minutes)</label>
                   <input
@@ -908,21 +834,129 @@ export function Settings() {
                   </select>
                   <p className="text-xs text-cream/60 mt-1">Default music for relaxation sections of the class</p>
                 </div>
-
-                <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
-                  <div>
-                    <div className="font-medium text-cream">Enable Web Research</div>
-                    <div className="text-sm text-cream/60">Allow AI to research movement cues and modifications online</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={preferences.enable_mcp_research}
-                    onChange={(e) => updatePreference('enable_mcp_research', e.target.checked)}
-                    disabled={preferencesSaving}
-                    className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
-                  />
-                </label>
               </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* AI Settings - Admin Only */}
+      <div className="bg-charcoal rounded-lg mb-4 border-2 border-cream/10">
+        <button
+          onClick={() => toggleSection('ai')}
+          className="w-full flex items-center justify-between p-6 hover:bg-cream/5 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <SettingsIcon className="w-6 h-6 text-burgundy" />
+            <h2 className="text-xl font-semibold text-cream flex items-center gap-2">
+              AI Class Generation
+              <span className="text-xs bg-burgundy px-2 py-0.5 rounded text-cream/90">Admin Only</span>
+            </h2>
+          </div>
+          {expandedSections.ai ? (
+            <ChevronUp className="w-5 h-5 text-cream/60" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-cream/60" />
+          )}
+        </button>
+
+        {expandedSections.ai && (
+          <div className="px-6 pb-6">
+            {user?.user_type !== 'admin' ? (
+              <div className="bg-cream/10 border border-cream/20 rounded p-4">
+                <p className="text-cream/50 text-sm">
+                  AI-powered class generation is currently restricted to administrators to control OpenAI API costs.
+                  Standard class generation uses pre-validated database content and is available to all users.
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-cream/60 text-sm mb-4">
+                  Configure AI behavior for class planning (Administrator only)
+                </p>
+                {preferencesLoading ? (
+                  <p className="text-cream/50">Loading preferences...</p>
+                ) : (
+                  <div className="space-y-4">
+                    {/* AI Agent Toggle - Admin Only (Cost Control) */}
+                    <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors border-2 border-burgundy/30">
+                      <div>
+                        <div className="font-medium text-cream flex items-center gap-2">
+                          Use AI Agent for Class Generation
+                          <span className="text-xs bg-burgundy px-2 py-0.5 rounded text-cream/90">Admin Only</span>
+                          <span className="text-xs bg-green-900/50 px-2 py-0.5 rounded text-green-400">Jentic StandardAgent</span>
+                        </div>
+                        <div className="text-sm text-cream/60 mt-1">
+                          Enable intelligent AI reasoning for class creation with GPT-4.
+                        </div>
+                        <div className="text-xs text-cream/50 mt-2 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">Enabled:</span>
+                            <span>LLM-powered planning, ~60-70s first request (cache miss), {'<'}5s cached, costs $0.25-0.30 per class</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">Disabled:</span>
+                            <span>Database selection, {'<'}1s, free</span>
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.use_ai_agent || false}
+                        onChange={(e) => updatePreference('use_ai_agent', e.target.checked)}
+                        disabled={preferencesSaving}
+                        className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+                      />
+                    </label>
+
+                    {preferences.use_ai_agent && (
+                      <div className="bg-blue-900/20 border border-blue-500/30 rounded p-4">
+                        <p className="text-blue-400 font-semibold mb-2">AI Agent Enabled</p>
+                        <p className="text-cream/70 text-sm mb-2">
+                          Your classes will be generated using advanced AI reasoning with GPT-4 via Jentic's StandardAgent framework.
+                          This provides more intelligent and adaptive class planning, but incurs OpenAI API costs.
+                        </p>
+                        <p className="text-cream/50 text-xs">
+                          Estimated cost: $0.25-0.30 per class (first request), $0.05-0.10 (cached requests) | Phase 1 optimization with Redis caching + GPT-3.5-turbo
+                        </p>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-cream mb-2">AI Strictness Level</label>
+                      <select
+                        value={preferences.strictness_level}
+                        onChange={(e) => updatePreference('strictness_level', e.target.value)}
+                        disabled={preferencesSaving}
+                        className="w-full px-4 py-2 bg-burgundy/20 border border-cream/20 rounded text-cream focus:outline-none focus:ring-2 focus:ring-burgundy"
+                      >
+                        <option value="guided">Guided - AI suggests with flexibility</option>
+                        <option value="strict">Strict - AI follows classical rules closely</option>
+                        <option value="autonomous">Autonomous - AI has full creative control</option>
+                      </select>
+                      <p className="text-xs text-cream/60 mt-1">
+                        {preferences.strictness_level === 'guided' && 'AI will suggest movements while allowing you to make changes'}
+                        {preferences.strictness_level === 'strict' && 'AI will strictly follow classical Pilates sequencing rules'}
+                        {preferences.strictness_level === 'autonomous' && 'AI will generate complete classes with full creative freedom'}
+                      </p>
+                    </div>
+
+                    <label className="flex items-center justify-between p-4 bg-burgundy/10 rounded cursor-pointer hover:bg-burgundy/20 transition-colors">
+                      <div>
+                        <div className="font-medium text-cream">Enable Web Research</div>
+                        <div className="text-sm text-cream/60">Allow AI to research movement cues and modifications online</div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.enable_mcp_research}
+                        onChange={(e) => updatePreference('enable_mcp_research', e.target.checked)}
+                        disabled={preferencesSaving}
+                        className="w-5 h-5 text-burgundy focus:ring-burgundy border-cream/30 rounded"
+                      />
+                    </label>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
