@@ -12,15 +12,15 @@ from uuid import UUID
 class AgentDecision(BaseModel):
     """Base model for all agent decisions (EU AI Act compliance)"""
     agent_type: str = Field(..., description="sequence, music, meditation, or research")
-    decision_id: UUID
-    user_id: UUID
-    timestamp: datetime
-    input_parameters: Dict[str, Any]
-    output_data: Dict[str, Any]
-    confidence_score: float = Field(..., ge=0.0, le=1.0)
+    decision_id: UUID = Field(..., description="Decision identifier")
+    user_id: UUID = Field(..., description="User identifier")
+    timestamp: datetime = Field(..., description="Timestamp")
+    input_parameters: Dict[str, Any] = Field(..., description="Input parameters")
+    output_data: Dict[str, Any] = Field(..., description="Output data")
+    confidence_score: float = Field(..., ge=0.0, le=1.0, description="Confidence score (0.0-1.0)")
     reasoning: str = Field(..., description="Human-readable explanation")
-    model_used: str
-    processing_time_ms: float
+    model_used: str = Field(..., description="Model used")
+    processing_time_ms: float = Field(..., description="Processing time in milliseconds")
 
     class Config:
         from_attributes = True
@@ -32,8 +32,8 @@ class AgentDecision(BaseModel):
 
 class SequenceGenerationRequest(BaseModel):
     """Request to generate a movement sequence"""
-    target_duration_minutes: int = Field(default=60, ge=10, le=120)  # Allow 10-min quick practice
-    difficulty_level: str = Field(default="Beginner")
+    target_duration_minutes: int = Field(default=60, ge=10, le=120, description="Target class duration in minutes")  # Allow 10-min quick practice
+    difficulty_level: str = Field(default="Beginner", description="Difficulty level (Beginner, Intermediate, or Advanced)")
     focus_areas: Optional[List[str]] = Field(
         default=None,
         description="Muscle groups to emphasize: core, legs, back, etc."
@@ -58,12 +58,12 @@ class SequenceGenerationRequest(BaseModel):
 
 class SequenceGenerationResponse(BaseModel):
     """Response from sequence generation"""
-    sequence: List[Dict[str, Any]]
-    total_duration_minutes: int
-    muscle_balance: Dict[str, float]
-    validation: Dict[str, Any]
-    mcp_enhancements: Optional[Dict[str, Any]] = None
-    agent_decision: AgentDecision
+    sequence: List[Dict[str, Any]] = Field(..., description="Movement sequence")
+    total_duration_minutes: int = Field(..., description="Total duration in minutes")
+    muscle_balance: Dict[str, float] = Field(..., description="Muscle balance percentages")
+    validation: Dict[str, Any] = Field(..., description="Validation results")
+    mcp_enhancements: Optional[Dict[str, Any]] = Field(None, description="MCP research enhancements")
+    agent_decision: AgentDecision = Field(..., description="Agent decision metadata")
 
 
 # ============================================

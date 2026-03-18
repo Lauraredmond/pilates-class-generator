@@ -72,12 +72,12 @@ class AccountDeleteRequest(BaseModel):
 
 
 class ProfileUpdateRequest(BaseModel):
-    full_name: Optional[str] = Field(None, example="Jane Doe")
-    age_range: Optional[str] = Field(None, example="25-34")
-    gender_identity: Optional[str] = Field(None, example="female")
-    country: Optional[str] = Field(None, example="United States")
-    pilates_experience: Optional[str] = Field(None, example="intermediate")
-    goals: Optional[list[str]] = Field(None, example=["flexibility", "core_strength", "stress_relief"])
+    full_name: Optional[str] = Field(None, example="Jane Doe", description="Full Name")
+    age_range: Optional[str] = Field(None, example="25-34", description="Age Range")
+    gender_identity: Optional[str] = Field(None, example="female", description="Gender Identity")
+    country: Optional[str] = Field(None, example="United States", description="Country")
+    pilates_experience: Optional[str] = Field(None, example="intermediate", description="Pilates Experience")
+    goals: Optional[list[str]] = Field(None, example=["flexibility", "core_strength", "stress_relief"], description="Goals")
 
     class Config:
         json_schema_extra = {
@@ -98,60 +98,60 @@ class PasswordChangeRequest(BaseModel):
 
 
 class PreferencesUpdateRequest(BaseModel):
-    strictness_level: Optional[str] = None  # guided, strict, autonomous
-    default_class_duration: Optional[int] = None  # in minutes
-    favorite_movements: Optional[list[str]] = None
-    music_preferences: Optional[dict] = None
-    research_sources: Optional[list[str]] = None
-    enable_mcp_research: Optional[bool] = None
-    use_ai_agent: Optional[bool] = None  # Session 10: Jentic AI Agent toggle
+    strictness_level: Optional[str] = Field(None, description="AI strictness level (strict, guided, or autonomous)")  # guided, strict, autonomous
+    default_class_duration: Optional[int] = Field(None, description="Default Class Duration")  # in minutes
+    favorite_movements: Optional[list[str]] = Field(None, description="Favorite Movements")
+    music_preferences: Optional[dict] = Field(None, description="Music Preferences")
+    research_sources: Optional[list[str]] = Field(None, description="Research Sources")
+    enable_mcp_research: Optional[bool] = Field(None, description="Enable Mcp Research")
+    use_ai_agent: Optional[bool] = Field(None, description="Use Ai Agent")  # Session 10: Jentic AI Agent toggle
     # Session 11: Movement level preferences
-    preferred_movement_level: Optional[str] = None  # beginner, intermediate, advanced
-    show_full_progression: Optional[bool] = None  # Show L1→L2→L3→Full (for instructors)
+    preferred_movement_level: Optional[str] = Field(None, description="Preferred Movement Level")  # beginner, intermediate, advanced
+    show_full_progression: Optional[bool] = Field(None, description="Show Full Progression")  # Show L1→L2→L3→Full (for instructors)
     # Notification preferences
-    email_notifications: Optional[bool] = None
-    class_reminders: Optional[bool] = None
-    weekly_summary: Optional[bool] = None
+    email_notifications: Optional[bool] = Field(None, description="Email Notifications")
+    class_reminders: Optional[bool] = Field(None, description="Class Reminders")
+    weekly_summary: Optional[bool] = Field(None, description="Weekly Summary")
     # Privacy settings
-    analytics_enabled: Optional[bool] = None
-    data_sharing_enabled: Optional[bool] = None
+    analytics_enabled: Optional[bool] = Field(None, description="Analytics Enabled")
+    data_sharing_enabled: Optional[bool] = Field(None, description="Data Sharing Enabled")
 
 
 class PreferencesResponse(BaseModel):
-    user_id: str
-    strictness_level: str
-    default_class_duration: int
-    favorite_movements: list[str]
-    music_preferences: dict
-    research_sources: list[str]
-    enable_mcp_research: bool
-    use_ai_agent: bool  # Session 10: Jentic AI Agent toggle
+    user_id: str = Field(..., description="User identifier")
+    strictness_level: str = Field(..., description="AI strictness level (strict, guided, or autonomous)")
+    default_class_duration: int = Field(..., description="Default Class Duration")
+    favorite_movements: list[str] = Field(..., description="Favorite Movements")
+    music_preferences: dict = Field(..., description="Music Preferences")
+    research_sources: list[str] = Field(..., description="Research Sources")
+    enable_mcp_research: bool = Field(..., description="Enable Mcp Research")
+    use_ai_agent: bool = Field(..., description="Use Ai Agent")  # Session 10: Jentic AI Agent toggle
     # Session 11: Movement level preferences
-    preferred_movement_level: str  # beginner, intermediate, advanced
-    show_full_progression: bool  # Show L1→L2→L3→Full (for instructors)
+    preferred_movement_level: str = Field(..., description="Preferred Movement Level")  # beginner, intermediate, advanced
+    show_full_progression: bool = Field(..., description="Show Full Progression")  # Show L1→L2→L3→Full (for instructors)
     # Notification preferences
-    email_notifications: bool
-    class_reminders: bool
-    weekly_summary: bool
+    email_notifications: bool = Field(..., description="Email Notifications")
+    class_reminders: bool = Field(..., description="Class Reminders")
+    weekly_summary: bool = Field(..., description="Weekly Summary")
     # Privacy settings
-    analytics_enabled: bool
-    data_sharing_enabled: bool
+    analytics_enabled: bool = Field(..., description="Analytics Enabled")
+    data_sharing_enabled: bool = Field(..., description="Data Sharing Enabled")
 
 
 class UserProfileResponse(BaseModel):
     """Individual user profile (one per role)"""
-    id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000")
-    user_id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000")
-    email: str = Field(..., example="user@example.com")
-    full_name: Optional[str] = Field(None, example="Jane Doe")
+    id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000", description="Unique identifier")
+    user_id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000", description="User identifier")
+    email: str = Field(..., example="user@example.com", description="Email address")
+    full_name: Optional[str] = Field(None, example="Jane Doe", description="Full Name")
     user_type: str = Field(..., example="practitioner", description="User role: practitioner, pilates_instructor, coach, parent, admin")
-    age_range: Optional[str] = Field(None, example="25-34")
-    gender_identity: Optional[str] = Field(None, example="female")
-    country: Optional[str] = Field(None, example="United States")
-    pilates_experience: Optional[str] = Field(None, example="intermediate")
-    goals: Optional[list[str]] = Field(None, example=["flexibility", "core_strength"])
-    created_at: Optional[datetime] = Field(None, example="2024-03-18T10:30:00Z")
-    updated_at: Optional[datetime] = Field(None, example="2024-03-18T11:00:00Z")
+    age_range: Optional[str] = Field(None, example="25-34", description="Age Range")
+    gender_identity: Optional[str] = Field(None, example="female", description="Gender Identity")
+    country: Optional[str] = Field(None, example="United States", description="Country")
+    pilates_experience: Optional[str] = Field(None, example="intermediate", description="Pilates Experience")
+    goals: Optional[list[str]] = Field(None, example=["flexibility", "core_strength"], description="Goals")
+    created_at: Optional[datetime] = Field(None, example="2024-03-18T10:30:00Z", description="Creation timestamp")
+    updated_at: Optional[datetime] = Field(None, example="2024-03-18T11:00:00Z", description="Last update timestamp")
 
     class Config:
         json_schema_extra = {
@@ -174,20 +174,20 @@ class UserProfileResponse(BaseModel):
 class UserResponse(BaseModel):
     """User with all their profiles (multi-role support)"""
     id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000", description="User ID")
-    email: str = Field(..., example="user@example.com")
-    profiles: list[UserProfileResponse]  # All user profiles (one per role)
-    full_name: Optional[str] = Field(None, example="Jane Doe")
-    created_at: datetime = Field(..., example="2024-03-18T10:30:00Z")
-    last_login: Optional[datetime] = Field(None, example="2024-03-18T15:45:00Z")
+    email: str = Field(..., example="user@example.com", description="Email address")
+    profiles: list[UserProfileResponse] = Field(..., description="Profiles")  # All user profiles (one per role)
+    full_name: Optional[str] = Field(None, example="Jane Doe", description="Full Name")
+    created_at: datetime = Field(..., example="2024-03-18T10:30:00Z", description="Creation timestamp")
+    last_login: Optional[datetime] = Field(None, example="2024-03-18T15:45:00Z", description="Last Login")
     # Legacy fields for backward compatibility
     user_type: Optional[str] = Field("standard", example="practitioner", description="Legacy user type")
-    age_range: Optional[str] = Field(None, example="25-34")
-    gender_identity: Optional[str] = Field(None, example="female")
-    country: Optional[str] = Field(None, example="United States")
-    pilates_experience: Optional[str] = Field(None, example="intermediate")
-    goals: Optional[list[str]] = Field(None, example=["flexibility", "core_strength"])
+    age_range: Optional[str] = Field(None, example="25-34", description="Age Range")
+    gender_identity: Optional[str] = Field(None, example="female", description="Gender Identity")
+    country: Optional[str] = Field(None, example="United States", description="Country")
+    pilates_experience: Optional[str] = Field(None, example="intermediate", description="Pilates Experience")
+    goals: Optional[list[str]] = Field(None, example=["flexibility", "core_strength"], description="Goals")
     # Legal acceptance timestamps
-    accepted_safety_at: Optional[str] = Field(None, example="2024-03-18T10:35:00Z")
+    accepted_safety_at: Optional[str] = Field(None, example="2024-03-18T10:35:00Z", description="Accepted Safety timestamp")
 
     class Config:
         json_schema_extra = {

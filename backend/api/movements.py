@@ -5,7 +5,7 @@ Endpoints for retrieving Pilates movement data
 
 from fastapi import APIRouter, HTTPException, Query, Path
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -41,24 +41,24 @@ class Movement(BaseModel):
     name: str = Field(..., example="The Hundred", description="Movement name")
     category: str = Field(..., example="Core", description="Movement category")
     difficulty_level: str = Field(..., example="Intermediate", description="Difficulty level: Beginner, Intermediate, or Advanced")
-    narrative: Optional[str] = Field(None, example="The Hundred is a classic Pilates exercise that builds core strength and stamina. Pump your arms vigorously while maintaining a strong, stable core.")
-    visual_cues: Optional[str] = Field(None, example="Imagine pressing your spine into the mat while your arms pump like pistons")
+    narrative: Optional[str] = Field(None, example="The Hundred is a classic Pilates exercise that builds core strength and stamina. Pump your arms vigorously while maintaining a strong, stable core.", description="Narrative")
+    visual_cues: Optional[str] = Field(None, example="Imagine pressing your spine into the mat while your arms pump like pistons", description="Visual Cues")
     setup_position: Optional[str] = Field(None, example="Supine", description="Starting position")
-    breathing_pattern: Optional[str] = Field(None, example="Inhale for 5 pumps, exhale for 5 pumps")
-    primary_muscles: Optional[List[str]] = Field(None, example=["Core", "Hip Flexors"])
-    secondary_muscles: Optional[List[str]] = Field(None, example=["Shoulders", "Neck"])
+    breathing_pattern: Optional[str] = Field(None, example="Inhale for 5 pumps, exhale for 5 pumps", description="Breathing Pattern")
+    primary_muscles: Optional[List[str]] = Field(None, example=["Core", "Hip Flexors"], description="Primary Muscles")
+    secondary_muscles: Optional[List[str]] = Field(None, example=["Shoulders", "Neck"], description="Secondary Muscles")
     duration_seconds: Optional[int] = Field(None, example=60, description="Duration in seconds")
-    prerequisites: Optional[List[str]] = Field(None, example=["Basic core control", "Neck strength"])
-    contraindications: Optional[List[str]] = Field(None, example=["Neck injury", "Lower back pain"])
-    modifications: Optional[dict] = Field(None, example={"easier": "Keep head down", "harder": "Lower legs to 45 degrees"})
+    prerequisites: Optional[List[str]] = Field(None, example=["Basic core control", "Neck strength"], description="Prerequisites")
+    contraindications: Optional[List[str]] = Field(None, example=["Neck injury", "Lower back pain"], description="Contraindications")
+    modifications: Optional[dict] = Field(None, example={"easier": "Keep head down", "harder": "Lower legs to 45 degrees"}, description="Modifications")
 
     # Voiceover audio (Session 13.5+) - MUST match database columns
-    voiceover_url: Optional[str] = Field(None, example="https://bassline-audio.s3.amazonaws.com/movements/the-hundred.mp3")
-    voiceover_duration_seconds: Optional[int] = Field(None, example=65)
-    voiceover_enabled: Optional[bool] = Field(None, example=True)
+    voiceover_url: Optional[str] = Field(None, example="https://bassline-audio.s3.amazonaws.com/movements/the-hundred.mp3", description="URL for voiceover")
+    voiceover_duration_seconds: Optional[int] = Field(None, example=65, description="Voiceover Duration Seconds")
+    voiceover_enabled: Optional[bool] = Field(None, example=True, description="Voiceover Enabled")
 
     # Video demonstration (AWS Phase 1 - December 2025)
-    video_url: Optional[str] = Field(None, example="https://bassline-videos.s3.amazonaws.com/movements/the-hundred.mp4")
+    video_url: Optional[str] = Field(None, example="https://bassline-videos.s3.amazonaws.com/movements/the-hundred.mp4", description="URL for video")
 
     class Config:
         from_attributes = True
@@ -257,21 +257,21 @@ async def get_movement_by_id(
 # Request/Response models for add-transitions endpoint
 class MovementInput(BaseModel):
     """Movement data as input for transition insertion"""
-    id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440001")
-    name: str = Field(..., example="The Hundred")
-    setup_position: Optional[str] = Field(None, example="Supine")
-    duration_seconds: Optional[int] = Field(None, example=60)
+    id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440001", description="Unique identifier")
+    name: str = Field(..., example="The Hundred", description="Name")
+    setup_position: Optional[str] = Field(None, example="Supine", description="Setup Position")
+    duration_seconds: Optional[int] = Field(None, example=60, description="Duration in seconds")
     # Include all other fields that should be preserved
-    difficulty_level: Optional[str] = Field(None, example="Intermediate")
-    primary_muscles: Optional[List[str]] = Field(None, example=["Core", "Hip Flexors"])
-    narrative: Optional[str] = Field(None, example="Classic core strengthening exercise")
-    watch_out_points: Optional[str] = Field(None, example="Keep neck relaxed")
-    teaching_cues: Optional[List[Dict[str, Any]]] = Field(None, example=[{"timing": "start", "cue": "Engage your core"}])
-    muscle_groups: Optional[List[Dict[str, Any]]] = Field(None, example=[{"name": "Core", "percentage": 60}])
-    voiceover_url: Optional[str] = Field(None, example="https://bassline-audio.s3.amazonaws.com/movements/the-hundred.mp3")
-    voiceover_duration_seconds: Optional[int] = Field(None, example=65)
-    voiceover_enabled: Optional[bool] = Field(None, example=True)
-    video_url: Optional[str] = Field(None, example="https://bassline-videos.s3.amazonaws.com/movements/the-hundred.mp4")
+    difficulty_level: Optional[str] = Field(None, example="Intermediate", description="Difficulty level (Beginner, Intermediate, or Advanced)")
+    primary_muscles: Optional[List[str]] = Field(None, example=["Core", "Hip Flexors"], description="Primary Muscles")
+    narrative: Optional[str] = Field(None, example="Classic core strengthening exercise", description="Narrative")
+    watch_out_points: Optional[str] = Field(None, example="Keep neck relaxed", description="Watch Out Points")
+    teaching_cues: Optional[List[Dict[str, Any]]] = Field(None, example=[{"timing": "start", "cue": "Engage your core"}], description="Teaching Cues")
+    muscle_groups: Optional[List[Dict[str, Any]]] = Field(None, example=[{"name": "Core", "percentage": 60}], description="Muscle Groups")
+    voiceover_url: Optional[str] = Field(None, example="https://bassline-audio.s3.amazonaws.com/movements/the-hundred.mp3", description="URL for voiceover")
+    voiceover_duration_seconds: Optional[int] = Field(None, example=65, description="Voiceover Duration Seconds")
+    voiceover_enabled: Optional[bool] = Field(None, example=True, description="Voiceover Enabled")
+    video_url: Optional[str] = Field(None, example="https://bassline-videos.s3.amazonaws.com/movements/the-hundred.mp4", description="URL for video")
 
     class Config:
         extra = 'allow'  # Allow extra fields to pass through
@@ -290,7 +290,7 @@ class MovementInput(BaseModel):
 
 class AddTransitionsRequest(BaseModel):
     """Request body for adding transitions to a movement sequence"""
-    movements: List[MovementInput]
+    movements: List[MovementInput] = Field(..., description="List of movements in the sequence")
 
     class Config:
         json_schema_extra = {
@@ -317,24 +317,24 @@ class SequenceItemResponse(BaseModel):
     """Response item that can be either a movement or a transition"""
     type: str = Field(..., example="movement", description="Item type: 'movement' or 'transition'")
     # Movement fields
-    id: Optional[str] = Field(None, example="550e8400-e29b-41d4-a716-446655440001")
-    name: Optional[str] = Field(None, example="The Hundred")
-    duration_seconds: Optional[int] = Field(None, example=60)
-    setup_position: Optional[str] = Field(None, example="Supine")
-    difficulty_level: Optional[str] = Field(None, example="Intermediate")
-    primary_muscles: Optional[List[str]] = Field(None, example=["Core", "Hip Flexors"])
-    narrative: Optional[str] = Field(None, example="Transition smoothly from supine to sitting")
-    watch_out_points: Optional[str] = Field(None, example="Keep neck relaxed")
-    teaching_cues: Optional[List[Dict[str, Any]]] = Field(None, example=[{"timing": "start", "cue": "Engage core"}])
-    muscle_groups: Optional[List[Dict[str, Any]]] = Field(None, example=[{"name": "Core", "percentage": 60}])
-    voiceover_url: Optional[str] = Field(None, example="https://bassline-audio.s3.amazonaws.com/transitions/supine-to-sitting.mp3")
-    voiceover_duration_seconds: Optional[int] = Field(None, example=15)
-    voiceover_enabled: Optional[bool] = Field(None, example=True)
-    video_url: Optional[str] = Field(None, example="https://bassline-videos.s3.amazonaws.com/movements/the-hundred.mp4")
+    id: Optional[str] = Field(None, example="550e8400-e29b-41d4-a716-446655440001", description="Unique identifier")
+    name: Optional[str] = Field(None, example="The Hundred", description="Name")
+    duration_seconds: Optional[int] = Field(None, example=60, description="Duration in seconds")
+    setup_position: Optional[str] = Field(None, example="Supine", description="Setup Position")
+    difficulty_level: Optional[str] = Field(None, example="Intermediate", description="Difficulty level (Beginner, Intermediate, or Advanced)")
+    primary_muscles: Optional[List[str]] = Field(None, example=["Core", "Hip Flexors"], description="Primary Muscles")
+    narrative: Optional[str] = Field(None, example="Transition smoothly from supine to sitting", description="Narrative")
+    watch_out_points: Optional[str] = Field(None, example="Keep neck relaxed", description="Watch Out Points")
+    teaching_cues: Optional[List[Dict[str, Any]]] = Field(None, example=[{"timing": "start", "cue": "Engage core"}], description="Teaching Cues")
+    muscle_groups: Optional[List[Dict[str, Any]]] = Field(None, example=[{"name": "Core", "percentage": 60}], description="Muscle Groups")
+    voiceover_url: Optional[str] = Field(None, example="https://bassline-audio.s3.amazonaws.com/transitions/supine-to-sitting.mp3", description="URL for voiceover")
+    voiceover_duration_seconds: Optional[int] = Field(None, example=15, description="Voiceover Duration Seconds")
+    voiceover_enabled: Optional[bool] = Field(None, example=True, description="Voiceover Enabled")
+    video_url: Optional[str] = Field(None, example="https://bassline-videos.s3.amazonaws.com/movements/the-hundred.mp4", description="URL for video")
     # Transition fields
-    from_position: Optional[str] = Field(None, example="Supine")
-    to_position: Optional[str] = Field(None, example="Sitting")
-    voiceover_duration: Optional[int] = Field(None, example=15)
+    from_position: Optional[str] = Field(None, example="Supine", description="From Position")
+    to_position: Optional[str] = Field(None, example="Sitting", description="To Position")
+    voiceover_duration: Optional[int] = Field(None, example=15, description="Voiceover Duration")
 
     class Config:
         extra = 'allow'  # Allow extra fields to pass through

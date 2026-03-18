@@ -11,9 +11,9 @@ from uuid import UUID
 
 class UserBase(BaseModel):
     """Base user model with non-sensitive fields"""
-    email: EmailStr
-    full_name: Optional[str] = None
-    is_active: bool = True
+    email: EmailStr = Field(..., description="Email address")
+    full_name: Optional[str] = Field(None, description="Full Name")
+    is_active: bool = Field(True, description="Whether the item is active")
 
 
 class UserCreate(UserBase):
@@ -36,8 +36,8 @@ class UserCreate(UserBase):
 
 class UserLogin(BaseModel):
     """User login credentials"""
-    email: EmailStr
-    password: str
+    email: EmailStr = Field(..., description="Email address")
+    password: str = Field(..., description="Password")
 
 
 class UserInDB(UserBase):
@@ -105,12 +105,12 @@ class UserPreferences(BaseModel):
 
 class TokenResponse(BaseModel):
     """JWT token response"""
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-    expires_in: int  # seconds
+    access_token: str = Field(..., description="Access Token")
+    refresh_token: str = Field(..., description="Refresh Token")
+    token_type: str = Field("bearer", description="Token Type")
+    expires_in: int = Field(..., description="Expires in seconds")
 
 
 class TokenRefresh(BaseModel):
     """Token refresh request"""
-    refresh_token: str
+    refresh_token: str = Field(..., description="Refresh Token")
