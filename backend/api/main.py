@@ -142,6 +142,18 @@ def custom_openapi():
         routes=app.routes,
     )
 
+    # JENTIC FIX: Add servers array (get_openapi doesn't include it from app.servers)
+    openapi_schema["servers"] = [
+        {
+            "url": "https://pilates-dev-i0jb.onrender.com",
+            "description": "Development server on Render"
+        },
+        {
+            "url": "http://localhost:8000",
+            "description": "Local development server"
+        }
+    ]
+
     # Get component schemas with examples
     schemas = openapi_schema.get("components", {}).get("schemas", {})
 
@@ -169,7 +181,15 @@ def custom_openapi():
             # Sanitize operationId if present
             if "operationId" in operation:
                 original_id = operation["operationId"]
-                sanitized_id = original_id.replace("-", "_").replace("/", "_").replace("{", "").replace("}", "")
+                # JENTIC FIX: Remove all URL-invalid characters
+                # Replace spaces, hyphens, slashes with underscores
+                # Remove braces and other special characters
+                sanitized_id = (original_id
+                    .replace(" ", "_")  # CRITICAL: Remove spaces from tag names
+                    .replace("-", "_")
+                    .replace("/", "_")
+                    .replace("{", "")
+                    .replace("}", ""))
                 if original_id != sanitized_id:
                     operation["operationId"] = sanitized_id
                     logger.debug(f"Sanitized operationId: {original_id} → {sanitized_id}")
