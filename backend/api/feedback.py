@@ -3,7 +3,7 @@ Feedback API Endpoints
 Handles beta tester feedback submissions and email notifications
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Path
 from fastapi.responses import JSONResponse
 from models.feedback import FeedbackSubmission, FeedbackResponse
 from models.error import ErrorMessages

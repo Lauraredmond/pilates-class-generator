@@ -4,7 +4,7 @@ Endpoints for movement progression levels (L1 → L2 → L3 → Full)
 Session 11: Data Model Expansion
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Path
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -70,7 +70,7 @@ class MovementLevelCreate(BaseModel):
 
 @router.get("/{movement_id}/levels", response_model=List[MovementLevel])
 async def get_movement_levels(
-    movement_id: str,
+    movement_id: str = Path(..., description="Unique identifier (UUID) for the Pilates movement"),
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -96,8 +96,8 @@ async def get_movement_levels(
 
 @router.get("/{movement_id}/levels/{level_number}", response_model=MovementLevel)
 async def get_movement_level(
-    movement_id: str,
-    level_number: int,
+    movement_id: str = Path(..., description="Unique identifier (UUID) for the Pilates movement"),
+    level_number: int = Path(..., ge=1, le=5, description="Progression level number (1-5, where 1=beginner, 5=full movement)"),
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -105,7 +105,7 @@ async def get_movement_level(
 
     Parameters:
     - movement_id: UUID of the movement
-    - level_number: 1, 2, 3, or 4 (Full)
+    - level_number: 1, 2, 3, 4, or 5 (progression levels from beginner to full movement)
     """
     try:
         if level_number < 1 or level_number > 4:
@@ -138,8 +138,8 @@ async def get_movement_level(
 
 @router.post("/{movement_id}/levels", response_model=MovementLevel, status_code=status.HTTP_201_CREATED)
 async def create_movement_level(
-    movement_id: str,
-    level_data: MovementLevelCreate,
+    movement_id: str = Path(..., description="Unique identifier (UUID) for the Pilates movement"),
+    level_data: MovementLevelCreate = ...,
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -189,9 +189,9 @@ async def create_movement_level(
 
 @router.put("/{movement_id}/levels/{level_number}", response_model=MovementLevel)
 async def update_movement_level(
-    movement_id: str,
-    level_number: int,
-    level_data: MovementLevelCreate,
+    movement_id: str = Path(..., description="Unique identifier (UUID) for the Pilates movement"),
+    level_number: int = Path(..., ge=1, le=5, description="Progression level number (1-5, where 1=beginner, 5=full movement)"),
+    level_data: MovementLevelCreate = ...,
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -231,8 +231,8 @@ async def update_movement_level(
 
 @router.delete("/{movement_id}/levels/{level_number}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_movement_level(
-    movement_id: str,
-    level_number: int,
+    movement_id: str = Path(..., description="Unique identifier (UUID) for the Pilates movement"),
+    level_number: int = Path(..., ge=1, le=5, description="Progression level number (1-5, where 1=beginner, 5=full movement)"),
     user_id: str = Depends(get_current_user_id)
 ):
     """

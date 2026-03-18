@@ -3,7 +3,7 @@ Class Plans API Router - Session 5
 Endpoints for creating and managing Pilates class plans
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Path
 from typing import List, Optional
 from pydantic import BaseModel, Field
 import os
@@ -428,7 +428,7 @@ async def get_class_plan(class_id: str):
     }
 )
 async def get_user_class_plans(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     limit: int = Query(default=20, ge=1, le=100, description="Number of results to return (1-100, default 20)"),
     offset: int = Query(default=0, ge=0, description="Number of results to skip for pagination (default 0)")
 ):
@@ -501,7 +501,7 @@ async def get_user_class_plans(
     }
 )
 async def delete_class_plan(
-    class_id: str,
+    class_id: str = Path(..., description="Unique identifier (UUID) for the class plan"),
     user_id: str = Query(..., description="User ID for ownership verification. Must match the class plan's user_id.")
 ):
     """
