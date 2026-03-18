@@ -19,6 +19,17 @@ app = FastAPI(
     version="2.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
+    # CRITICAL for Jentic AI readiness: Define server URLs
+    servers=[
+        {
+            "url": "https://pilates-dev-i0jb.onrender.com",
+            "description": "Development server on Render"
+        },
+        {
+            "url": "http://localhost:8000",
+            "description": "Local development server"
+        }
+    ],
     # Enable automatic example generation from Pydantic models for Jentic integration
     openapi_tags=[
         {"name": "Movements", "description": "Pilates movement catalog and transitions"},
@@ -134,7 +145,23 @@ def custom_openapi():
     # Get component schemas with examples
     schemas = openapi_schema.get("components", {}).get("schemas", {})
 
-    # Iterate through all paths and operations
+    # JENTIC FIX: Sanitize operationIds to remove URL-invalid characters
+    # Jentic validation fails on operationIds with hyphens (kebab-case)
+    # Convert hyphens to underscores: "generate-sequence" → "generate_sequence"
+    for path, path_item in openapi_schema.get("paths", {}).items():
+        for method, operation in path_item.items():
+            if method not in ["get", "post", "put", "patch", "delete"]:
+                continue
+
+            # Sanitize operationId if present
+            if "operationId" in operation:
+                original_id = operation["operationId"]
+                sanitized_id = original_id.replace("-", "_").replace("/", "_").replace("{", "").replace("}", "")
+                if original_id != sanitized_id:
+                    operation["operationId"] = sanitized_id
+                    logger.debug(f"Sanitized operationId: {original_id} → {sanitized_id}")
+
+    # Iterate through all paths and operations again for examples
     for path, path_item in openapi_schema.get("paths", {}).items():
         for method, operation in path_item.items():
             if method not in ["get", "post", "put", "patch", "delete"]:
