@@ -7,11 +7,18 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
+from fastapi.exceptions import RequestValidationError
+from fastapi import status
 from loguru import logger
 import time
+from uuid import uuid4
+from datetime import datetime
 
 # Import routers
 from api import movements, agents, classes, analytics, soundcloud_auth, soundcloud_api, auth, users, compliance, music, beta_errors, class_sections, movement_levels, feedback, debug, admin, coach, admin_extended
+
+# Import RFC 9457 error models
+from models.error import RFC9457ProblemDetail, ProblemTypes
 
 app = FastAPI(
     title="Pilates Class Planner API",
@@ -157,6 +164,15 @@ def custom_openapi():
     # Get component schemas with examples
     schemas = openapi_schema.get("components", {}).get("schemas", {})
 
+    # JENTIC FIX: Add RFC 9457 ProblemDetail schema to components
+    # This ensures error responses are documented with proper schema
+    if "RFC9457ProblemDetail" not in schemas:
+        from models.error import RFC9457ProblemDetail
+        # Generate schema from Pydantic model
+        problem_schema = RFC9457ProblemDetail.model_json_schema()
+        schemas["RFC9457ProblemDetail"] = problem_schema
+        openapi_schema.setdefault("components", {})["schemas"] = schemas
+
     # Helper function to convert snake_case to camelCase for operationIds
     def to_camel_case(snake_str: str) -> str:
         """Convert snake_case to camelCase for AI-agent-friendly operationIds"""
@@ -165,6 +181,47 @@ def custom_openapi():
         components = snake_str.split('_')
         # Keep first component lowercase, capitalize rest
         return components[0].lower() + ''.join(x.capitalize() for x in components[1:])
+
+    # Helper function to add RFC 9457 error responses to operations
+    def add_rfc9457_responses(operation: dict):
+        """Add standardized RFC 9457 error responses to operation if missing"""
+        responses = operation.setdefault("responses", {})
+
+        # Add 422 Validation Error if not present
+        if "422" not in responses:
+            responses["422"] = {
+                "description": "Validation Error - Request data failed validation rules",
+                "content": {
+                    "application/problem+json": {
+                        "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
+                        "example": {
+                            "type": "https://api.basslinepilates.com/errors/validation-error",
+                            "title": "Validation Error",
+                            "status": 422,
+                            "detail": "Validation failed for field 'difficulty_level': value is not a valid enumeration member",
+                            "instance": "/api/classes/generate"
+                        }
+                    }
+                }
+            }
+
+        # Add 500 Internal Server Error if not present
+        if "500" not in responses:
+            responses["500"] = {
+                "description": "Internal Server Error - An unexpected error occurred",
+                "content": {
+                    "application/problem+json": {
+                        "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
+                        "example": {
+                            "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                            "title": "Internal Server Error",
+                            "status": 500,
+                            "detail": "An unexpected error occurred while processing your request.",
+                            "instance": "/api/classes/generate"
+                        }
+                    }
+                }
+            }
 
     # JENTIC FIXES: Sanitize paths and operationIds
     # 1. Remove trailing slashes from paths (Jentic validation error)
@@ -181,7 +238,7 @@ def custom_openapi():
     for old_path, new_path in paths_to_rename.items():
         openapi_schema["paths"][new_path] = openapi_schema["paths"].pop(old_path)
 
-    # Sanitize operationIds
+    # Sanitize operationIds and add RFC 9457 error responses
     for path, path_item in openapi_schema.get("paths", {}).items():
         for method, operation in path_item.items():
             if method not in ["get", "post", "put", "patch", "delete"]:
@@ -204,6 +261,9 @@ def custom_openapi():
                 if original_id != camel_id:
                     operation["operationId"] = camel_id
                     logger.debug(f"Sanitized operationId: {original_id} → {camel_id}")
+
+            # JENTIC FIX: Add RFC 9457 error responses (Error Standardization 0% → 90%+)
+            add_rfc9457_responses(operation)
 
     # Iterate through all paths and operations again for examples
     for path, path_item in openapi_schema.get("paths", {}).items():
@@ -254,25 +314,90 @@ def custom_openapi():
                             media_spec["examples"] = schema["examples"]
 
     app.openapi_schema = openapi_schema
-    logger.info("✅ Generated OpenAPI schema with automatic operation-level examples for Jentic")
+    logger.info("✅ Generated OpenAPI schema with Jentic AI readiness improvements:")
+    logger.info("   - Automatic operation-level examples")
+    logger.info("   - camelCase operationIds")
+    logger.info("   - RFC 9457 error responses (422, 500)")
+    logger.info("   - Comprehensive Field descriptions")
     return app.openapi_schema
 
 # Override FastAPI's openapi() method with our custom version
 app.openapi = custom_openapi
 
 
-# Global exception handler
+# ============================================
+# RFC 9457 EXCEPTION HANDLERS
+# ============================================
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Handle Pydantic validation errors with RFC 9457 format
+
+    JENTIC FIX: Error Standardization 0% → 90%+
+    Returns structured problem details for validation failures
+    """
+    error_id = uuid4()
+
+    # Extract first validation error for detail message
+    first_error = exc.errors()[0] if exc.errors() else {}
+    field_path = " -> ".join(str(loc) for loc in first_error.get("loc", []))
+    error_msg = first_error.get("msg", "Validation failed")
+
+    detail = f"Validation failed for field '{field_path}': {error_msg}"
+
+    logger.warning(
+        f"Validation error [ID: {error_id}]: {detail}",
+        extra={"error_id": str(error_id), "path": str(request.url.path), "errors": exc.errors()}
+    )
+
+    problem = RFC9457ProblemDetail(
+        type=ProblemTypes.VALIDATION_ERROR,
+        title="Validation Error",
+        status=422,
+        detail=detail,
+        instance=str(request.url.path),
+        error_id=error_id,
+        timestamp=datetime.utcnow()
+    )
+
+    return JSONResponse(
+        status_code=422,
+        content=problem.model_dump(exclude_none=True),
+        headers={"Content-Type": "application/problem+json"}
+    )
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Handle all uncaught exceptions"""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    """
+    Handle all uncaught exceptions with RFC 9457 format
+
+    JENTIC FIX: Error Standardization 0% → 90%+
+    Returns structured problem details for server errors
+    """
+    error_id = uuid4()
+
+    logger.error(
+        f"Unhandled exception [ID: {error_id}]: {exc}",
+        exc_info=True,
+        extra={"error_id": str(error_id), "path": str(request.url.path)}
+    )
+
+    problem = RFC9457ProblemDetail(
+        type=ProblemTypes.INTERNAL_SERVER_ERROR,
+        title="Internal Server Error",
+        status=500,
+        detail="An unexpected error occurred while processing your request. Please try again later or contact support with the error ID.",
+        instance=str(request.url.path),
+        error_id=error_id,
+        timestamp=datetime.utcnow()
+    )
 
     return JSONResponse(
         status_code=500,
-        content={
-            "detail": "Internal server error",
-            "type": "server_error"
-        }
+        content=problem.model_dump(exclude_none=True),
+        headers={"Content-Type": "application/problem+json"}
     )
 
 
