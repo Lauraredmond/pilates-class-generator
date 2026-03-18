@@ -66,47 +66,109 @@ def get_movement_muscle_groups(movement_id: str) -> List[str]:
 # Pydantic models
 class ClassMovement(BaseModel):
     """Movement within a class sequence"""
-    movement_id: str
-    movement_name: str
-    order_index: int
-    duration_seconds: int = 60
-    custom_cues: Optional[str] = None
-    notes: Optional[str] = None
+    movement_id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440001")
+    movement_name: str = Field(..., example="The Hundred")
+    order_index: int = Field(..., example=0, description="Position in sequence (0-based)")
+    duration_seconds: int = Field(default=60, example=60, description="Duration in seconds")
+    custom_cues: Optional[str] = Field(None, example="Focus on breathing rhythm")
+    notes: Optional[str] = Field(None, example="Modified for beginner level")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "movement_id": "550e8400-e29b-41d4-a716-446655440001",
+                "movement_name": "The Hundred",
+                "order_index": 0,
+                "duration_seconds": 60,
+                "custom_cues": "Focus on breathing rhythm",
+                "notes": "Modified for beginner level"
+            }
+        }
 
 
 class ClassPlanCreate(BaseModel):
     """Create new class plan"""
-    name: str = Field(..., min_length=1, max_length=255)
-    user_id: str
-    movements: List[ClassMovement]
-    duration: Optional[int] = None
-    difficulty: str = "Beginner"
-    notes: Optional[str] = None
+    name: str = Field(..., min_length=1, max_length=255, example="Morning Core Workout")
+    user_id: str = Field(..., example="user_123abc")
+    movements: List[ClassMovement] = Field(..., description="Ordered list of movements")
+    duration: Optional[int] = Field(None, example=30, description="Total duration in minutes")
+    difficulty: str = Field(default="Beginner", example="Beginner", description="Beginner, Intermediate, or Advanced")
+    notes: Optional[str] = Field(None, example="Focus on core stability and breathing")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "name": "Morning Core Workout",
+                "user_id": "user_123abc",
+                "movements": [
+                    {
+                        "movement_id": "550e8400-e29b-41d4-a716-446655440001",
+                        "movement_name": "The Hundred",
+                        "order_index": 0,
+                        "duration_seconds": 60
+                    },
+                    {
+                        "movement_id": "660e8400-e29b-41d4-a716-446655440002",
+                        "movement_name": "Roll Up",
+                        "order_index": 1,
+                        "duration_seconds": 45
+                    }
+                ],
+                "duration": 30,
+                "difficulty": "Beginner",
+                "notes": "Focus on core stability"
+            }
+        }
 
 
 class ClassPlanUpdate(BaseModel):
     """Update existing class plan"""
-    name: Optional[str] = None
-    movements: Optional[List[ClassMovement]] = None
-    duration: Optional[int] = None
-    difficulty: Optional[str] = None
-    notes: Optional[str] = None
+    name: Optional[str] = Field(None, example="Updated Workout Name")
+    movements: Optional[List[ClassMovement]] = Field(None, description="Updated movement sequence")
+    duration: Optional[int] = Field(None, example=45)
+    difficulty: Optional[str] = Field(None, example="Intermediate")
+    notes: Optional[str] = Field(None, example="Added more challenging variations")
 
 
 class ClassPlanResponse(BaseModel):
     """Class plan response"""
-    id: str
-    name: str
-    user_id: str
+    id: str = Field(..., example="class_789xyz")
+    name: str = Field(..., example="Morning Core Workout")
+    user_id: str = Field(..., example="user_123abc")
     movements: List[ClassMovement]
-    duration: Optional[int] = None
-    difficulty: str
-    notes: Optional[str] = None
-    muscle_balance: dict
-    validation_status: dict
-    created_at: str
-    updated_at: Optional[str] = None
-    deleted_at: Optional[str] = None
+    duration: Optional[int] = Field(None, example=30)
+    difficulty: str = Field(..., example="Beginner")
+    notes: Optional[str] = Field(None, example="Focus on core stability")
+    muscle_balance: dict = Field(..., example={"Core": 40, "Glutes": 30, "Back": 20, "Arms": 10})
+    validation_status: dict = Field(..., example={"valid": True, "safety_score": 0.95, "warnings": []})
+    created_at: str = Field(..., example="2024-03-18T10:30:00Z")
+    updated_at: Optional[str] = Field(None, example="2024-03-18T11:00:00Z")
+    deleted_at: Optional[str] = Field(None, example=None)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "class_789xyz",
+                "name": "Morning Core Workout",
+                "user_id": "user_123abc",
+                "movements": [
+                    {
+                        "movement_id": "550e8400-e29b-41d4-a716-446655440001",
+                        "movement_name": "The Hundred",
+                        "order_index": 0,
+                        "duration_seconds": 60
+                    }
+                ],
+                "duration": 30,
+                "difficulty": "Beginner",
+                "notes": "Great for beginners",
+                "muscle_balance": {"Core": 40, "Glutes": 30, "Back": 20, "Arms": 10},
+                "validation_status": {"valid": True, "safety_score": 0.95, "warnings": []},
+                "created_at": "2024-03-18T10:30:00Z",
+                "updated_at": None,
+                "deleted_at": None
+            }
+        }
 
 
 @router.post("/", response_model=ClassPlanResponse, status_code=201)
@@ -577,20 +639,56 @@ async def update_class_plan(class_id: str, update: ClassPlanUpdate):
 
 class ClassGenerationRequest(BaseModel):
     """Request for AI-generated Pilates class"""
-    user_id: str
-    duration_minutes: int = Field(default=30, ge=1, le=120)  # No minimum - user has duration analytics
-    difficulty: str = Field(default="Beginner")
-    use_agent: Optional[bool] = None  # If None, fetch from user preferences
+    user_id: str = Field(..., example="user_123abc", description="User identifier")
+    duration_minutes: int = Field(default=30, ge=1, le=120, example=30, description="Class duration (1-120 minutes)")
+    difficulty: str = Field(default="Beginner", example="Beginner", description="Beginner, Intermediate, or Advanced")
+    use_agent: Optional[bool] = Field(None, example=False, description="Use AI agent (True) or direct API (False)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": "user_123abc",
+                "duration_minutes": 30,
+                "difficulty": "Beginner",
+                "use_agent": False
+            }
+        }
 
 
 class ClassGenerationResponse(BaseModel):
     """Response from AI-generated class"""
-    class_plan: dict
-    method: str  # "ai_agent" or "direct_api"
-    iterations: Optional[int] = None  # Only for AI agent
-    success: bool
-    cost_estimate: str
-    processing_time_ms: float
+    class_plan: dict = Field(..., example={"name": "AI-Generated Class", "movements": []})
+    method: str = Field(..., example="direct_api", description="Generation method: 'ai_agent' or 'direct_api'")
+    iterations: Optional[int] = Field(None, example=3, description="AI agent iterations (if applicable)")
+    success: bool = Field(..., example=True)
+    cost_estimate: str = Field(..., example="$0.00", description="Estimated cost for generation")
+    processing_time_ms: float = Field(..., example=1250.5, description="Processing time in milliseconds")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "class_plan": {
+                    "name": "Beginner Pilates Class (30 min)",
+                    "user_id": "user_123abc",
+                    "movements": [
+                        {
+                            "movement_id": "550e8400-e29b-41d4-a716-446655440001",
+                            "movement_name": "The Hundred",
+                            "order_index": 0,
+                            "duration_seconds": 60
+                        }
+                    ],
+                    "duration_minutes": 30,
+                    "difficulty_level": "Beginner",
+                    "generated_by": "direct_api"
+                },
+                "method": "direct_api",
+                "iterations": None,
+                "success": True,
+                "cost_estimate": "$0.00",
+                "processing_time_ms": 1250.5
+            }
+        }
 
 
 @router.post("/generate", response_model=ClassGenerationResponse)
@@ -1020,23 +1118,63 @@ def normalize_music_genre(frontend_value: str) -> str:
 
 class SaveCompletedClassRequest(BaseModel):
     """Request to save a completed class to database"""
-    user_id: str
-    difficulty: str
-    duration_minutes: int
-    movements_snapshot: List[dict]  # Full sequence with movements + transitions
-    muscle_balance: dict
-    class_name: Optional[str] = "Automatically Generated Class"
-    music_genre: Optional[str] = None  # Analytics: Movement music (sections 1-3)
-    cooldown_music_genre: Optional[str] = None  # Analytics: Cooldown music (sections 4-6)
+    user_id: str = Field(..., example="user_123abc")
+    difficulty: str = Field(..., example="Beginner")
+    duration_minutes: int = Field(..., example=30)
+    movements_snapshot: List[dict] = Field(..., description="Full sequence with movements + transitions")
+    muscle_balance: dict = Field(..., example={"Core": 40, "Glutes": 30, "Back": 20, "Arms": 10})
+    class_name: Optional[str] = Field(default="Automatically Generated Class", example="Morning Core Workout")
+    music_genre: Optional[str] = Field(None, example="CLASSICAL", description="Movement music genre")
+    cooldown_music_genre: Optional[str] = Field(None, example="IMPRESSIONIST", description="Cooldown music genre")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": "user_123abc",
+                "difficulty": "Beginner",
+                "duration_minutes": 30,
+                "movements_snapshot": [
+                    {
+                        "type": "movement",
+                        "id": "550e8400-e29b-41d4-a716-446655440001",
+                        "name": "The Hundred",
+                        "duration_seconds": 60,
+                        "muscle_groups": ["Core", "Hip Flexors"]
+                    },
+                    {
+                        "type": "transition",
+                        "from_position": "Supine",
+                        "to_position": "Sitting",
+                        "narrative": "Roll up to sitting",
+                        "duration_seconds": 15
+                    }
+                ],
+                "muscle_balance": {"Core": 40, "Glutes": 30, "Back": 20, "Arms": 10},
+                "class_name": "Morning Core Workout",
+                "music_genre": "CLASSICAL",
+                "cooldown_music_genre": "IMPRESSIONIST"
+            }
+        }
 
 
 class SaveCompletedClassResponse(BaseModel):
     """Response after saving completed class"""
-    class_plan_id: str  # NEW: Added for early skip analytics tracking
-    class_history_id: str
-    classes_completed: int
-    experience_level: str
-    message: str
+    class_plan_id: str = Field(..., example="class_789xyz", description="Saved class plan ID")
+    class_history_id: str = Field(..., example="history_456def", description="Class history entry ID")
+    classes_completed: int = Field(..., example=5, description="Total classes completed by user")
+    experience_level: str = Field(..., example="beginner", description="User's experience level")
+    message: str = Field(..., example="Class saved successfully! Total classes: 5")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "class_plan_id": "class_789xyz",
+                "class_history_id": "history_456def",
+                "classes_completed": 5,
+                "experience_level": "beginner",
+                "message": "Class saved successfully! Total classes: 5"
+            }
+        }
 
 
 @router.post("/save-completed", response_model=SaveCompletedClassResponse)

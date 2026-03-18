@@ -37,30 +37,64 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Request/Response models
 class PasswordResetRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(..., example="user@example.com", description="Email address for password reset")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com"
+            }
+        }
 
 
 class PasswordResetConfirm(BaseModel):
-    token: str
-    new_password: str
+    token: str = Field(..., example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", description="Reset token from email")
+    new_password: str = Field(..., example="NewSecurePassword123!", min_length=8, description="New password")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "new_password": "NewSecurePassword123!"
+            }
+        }
 
 
 class AccountDeleteRequest(BaseModel):
-    password: str
+    password: str = Field(..., example="CurrentPassword123!", description="Current password for confirmation")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "password": "CurrentPassword123!"
+            }
+        }
 
 
 class ProfileUpdateRequest(BaseModel):
-    full_name: Optional[str] = None
-    age_range: Optional[str] = None
-    gender_identity: Optional[str] = None
-    country: Optional[str] = None
-    pilates_experience: Optional[str] = None
-    goals: Optional[list[str]] = None
+    full_name: Optional[str] = Field(None, example="Jane Doe")
+    age_range: Optional[str] = Field(None, example="25-34")
+    gender_identity: Optional[str] = Field(None, example="female")
+    country: Optional[str] = Field(None, example="United States")
+    pilates_experience: Optional[str] = Field(None, example="intermediate")
+    goals: Optional[list[str]] = Field(None, example=["flexibility", "core_strength", "stress_relief"])
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "full_name": "Jane Doe",
+                "age_range": "25-34",
+                "gender_identity": "female",
+                "country": "United States",
+                "pilates_experience": "intermediate",
+                "goals": ["flexibility", "core_strength", "stress_relief"]
+            }
+        }
 
 
 class PasswordChangeRequest(BaseModel):
-    current_password: str
-    new_password: str = Field(..., min_length=8)
+    current_password: str = Field(..., example="CurrentPassword123!", description="Current password")
+    new_password: str = Field(..., min_length=8, example="NewSecurePassword123!", description="New password")
 
 
 class PreferencesUpdateRequest(BaseModel):
@@ -106,36 +140,85 @@ class PreferencesResponse(BaseModel):
 
 class UserProfileResponse(BaseModel):
     """Individual user profile (one per role)"""
-    id: str
-    user_id: str
-    email: str
-    full_name: Optional[str] = None
-    user_type: str  # practitioner, pilates_instructor, coach, parent, admin
-    age_range: Optional[str] = None
-    gender_identity: Optional[str] = None
-    country: Optional[str] = None
-    pilates_experience: Optional[str] = None
-    goals: Optional[list[str]] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000")
+    user_id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000")
+    email: str = Field(..., example="user@example.com")
+    full_name: Optional[str] = Field(None, example="Jane Doe")
+    user_type: str = Field(..., example="practitioner", description="User role: practitioner, pilates_instructor, coach, parent, admin")
+    age_range: Optional[str] = Field(None, example="25-34")
+    gender_identity: Optional[str] = Field(None, example="female")
+    country: Optional[str] = Field(None, example="United States")
+    pilates_experience: Optional[str] = Field(None, example="intermediate")
+    goals: Optional[list[str]] = Field(None, example=["flexibility", "core_strength"])
+    created_at: Optional[datetime] = Field(None, example="2024-03-18T10:30:00Z")
+    updated_at: Optional[datetime] = Field(None, example="2024-03-18T11:00:00Z")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                "email": "user@example.com",
+                "full_name": "Jane Doe",
+                "user_type": "practitioner",
+                "age_range": "25-34",
+                "gender_identity": "female",
+                "country": "United States",
+                "pilates_experience": "intermediate",
+                "goals": ["flexibility", "core_strength"],
+                "created_at": "2024-03-18T10:30:00Z",
+                "updated_at": "2024-03-18T11:00:00Z"
+            }
+        }
 
 class UserResponse(BaseModel):
     """User with all their profiles (multi-role support)"""
-    id: str  # auth.users id
-    email: str
+    id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000", description="User ID")
+    email: str = Field(..., example="user@example.com")
     profiles: list[UserProfileResponse]  # All user profiles (one per role)
-    full_name: Optional[str] = None
-    created_at: datetime
-    last_login: Optional[datetime] = None
+    full_name: Optional[str] = Field(None, example="Jane Doe")
+    created_at: datetime = Field(..., example="2024-03-18T10:30:00Z")
+    last_login: Optional[datetime] = Field(None, example="2024-03-18T15:45:00Z")
     # Legacy fields for backward compatibility
-    user_type: Optional[str] = Field("standard", description="Legacy user type")
-    age_range: Optional[str] = None
-    gender_identity: Optional[str] = None
-    country: Optional[str] = None
-    pilates_experience: Optional[str] = None
-    goals: Optional[list[str]] = None
+    user_type: Optional[str] = Field("standard", example="practitioner", description="Legacy user type")
+    age_range: Optional[str] = Field(None, example="25-34")
+    gender_identity: Optional[str] = Field(None, example="female")
+    country: Optional[str] = Field(None, example="United States")
+    pilates_experience: Optional[str] = Field(None, example="intermediate")
+    goals: Optional[list[str]] = Field(None, example=["flexibility", "core_strength"])
     # Legal acceptance timestamps
-    accepted_safety_at: Optional[str] = None
+    accepted_safety_at: Optional[str] = Field(None, example="2024-03-18T10:35:00Z")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "email": "user@example.com",
+                "profiles": [{
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "email": "user@example.com",
+                    "full_name": "Jane Doe",
+                    "user_type": "practitioner",
+                    "age_range": "25-34",
+                    "gender_identity": "female",
+                    "country": "United States",
+                    "pilates_experience": "intermediate",
+                    "goals": ["flexibility", "core_strength"],
+                    "created_at": "2024-03-18T10:30:00Z"
+                }],
+                "full_name": "Jane Doe",
+                "created_at": "2024-03-18T10:30:00Z",
+                "last_login": "2024-03-18T15:45:00Z",
+                "user_type": "practitioner",
+                "age_range": "25-34",
+                "gender_identity": "female",
+                "country": "United States",
+                "pilates_experience": "intermediate",
+                "goals": ["flexibility", "core_strength"],
+                "accepted_safety_at": "2024-03-18T10:35:00Z"
+            }
+        }
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
