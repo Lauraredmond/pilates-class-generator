@@ -15,7 +15,7 @@ from uuid import uuid4
 from datetime import datetime
 
 # Import routers
-from api import movements, agents, classes, analytics, auth, users, compliance, music, beta_errors, class_sections, movement_levels, feedback, debug, admin, coach, admin_extended
+from api import movements, agents, classes, analytics, auth, users, compliance, music, beta_errors, class_sections, movement_levels, feedback, debug, admin, coach, admin_extended, agent_gateway
 
 # Import RFC 9457 error models
 from models.error import RFC9457ProblemDetail, ProblemTypes
@@ -127,6 +127,7 @@ app.include_router(admin.router, tags=["Admin"])  # Admin-only endpoints (feedba
 app.include_router(coach.router, tags=["Coach"])  # Coach endpoints for sport-specific training
 app.include_router(admin_extended.router, tags=["Admin"])  # Extended admin endpoints for platform management
 app.include_router(debug.router, tags=["Debug"])  # TEMPORARY: Debug endpoints - REMOVE BEFORE PRODUCTION!
+app.include_router(agent_gateway.router)  # Agent gateway - simplified API for AI agents (Jentic/OpenClaw)
 
 
 # Custom OpenAPI schema generator that copies examples from schemas to operations
