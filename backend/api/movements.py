@@ -335,32 +335,21 @@ class SequenceItemResponse(BaseModel):
     class Config:
         extra = 'allow'  # Allow extra fields to pass through
         json_schema_extra = {
-            "examples": [
-                {
-                    "type": "movement",
-                    "id": "550e8400-e29b-41d4-a716-446655440001",
-                    "name": "The Hundred",
-                    "duration_seconds": 60,
-                    "setup_position": "Supine",
-                    "difficulty_level": "Intermediate",
-                    "primary_muscles": ["Core", "Hip Flexors"],
-                    "narrative": "The Hundred is a classic Pilates exercise",
-                    "voiceover_url": "https://bassline-audio.s3.amazonaws.com/movements/the-hundred.mp3",
-                    "voiceover_duration_seconds": 65,
-                    "voiceover_enabled": True,
-                    "video_url": "https://bassline-videos.s3.amazonaws.com/movements/the-hundred.mp4"
-                },
-                {
-                    "type": "transition",
-                    "from_position": "Supine",
-                    "to_position": "Sitting",
-                    "narrative": "Roll up through your spine to come to sitting",
-                    "duration_seconds": 15,
-                    "voiceover_url": "https://bassline-audio.s3.amazonaws.com/transitions/supine-to-sitting.mp3",
-                    "voiceover_duration_seconds": 15,
-                    "voiceover_enabled": True
-                }
-            ]
+            # JENTIC FIX: examples must be an ExamplesMap (object), not an array
+            "example": {
+                "type": "movement",
+                "id": "550e8400-e29b-41d4-a716-446655440001",
+                "name": "The Hundred",
+                "duration_seconds": 60,
+                "setup_position": "Supine",
+                "difficulty_level": "Intermediate",
+                "primary_muscles": ["Core", "Hip Flexors"],
+                "narrative": "The Hundred is a classic Pilates exercise",
+                "voiceover_url": "https://bassline-audio.s3.amazonaws.com/movements/the-hundred.mp3",
+                "voiceover_duration_seconds": 65,
+                "voiceover_enabled": True,
+                "video_url": "https://bassline-videos.s3.amazonaws.com/movements/the-hundred.mp4"
+            }
         }
 
 
