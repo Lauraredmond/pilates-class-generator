@@ -105,7 +105,7 @@ def get_agent() -> BasslinePilatesCoachAgent:
 def call_agent_tool(
     tool_id: str,
     parameters: dict,
-    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
+    user_id: str,
     agent: BasslinePilatesCoachAgent
 ) -> dict:
     """

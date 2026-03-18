@@ -91,8 +91,8 @@ async def get_all_beta_feedback(
 
 @router.patch("/beta-feedback/{feedback_id}")
 async def update_beta_feedback(
-    feedback_id: str = Path(..., description="Unique identifier (UUID) for the feedback submission"),
     update: FeedbackUpdate,
+    feedback_id: str = Path(..., description="Unique identifier (UUID) for the feedback submission"),
     admin_user_id: str = Depends(get_admin_user_id)
 ):
     """

@@ -207,8 +207,8 @@ async def get_beta_error(
 
 @router.patch("/beta-errors/{error_id}/status")
 async def update_beta_error_status(
-    error_id: str = Path(..., description="Unique identifier (UUID) for the beta error record"),
     status: str,
+    error_id: str = Path(..., description="Unique identifier (UUID) for the beta error record"),
     fix_notes: Optional[str] = None,
     fix_commit_hash: Optional[str] = None,
     admin_user_id: str = Depends(require_admin)

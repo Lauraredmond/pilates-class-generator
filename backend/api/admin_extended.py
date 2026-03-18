@@ -137,8 +137,8 @@ async def get_user_details(
 
 @router.put("/users/{user_id}")
 async def update_user_by_admin(
-    user_id: UUID = Path(..., description="Unique identifier (UUID) for the user"),
     updates: dict,
+    user_id: UUID = Path(..., description="Unique identifier (UUID) for the user"),
     current_user: User = Depends(admin_required)
 ):
     """Update user profile (admin only)"""
