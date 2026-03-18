@@ -15,7 +15,7 @@ from uuid import uuid4
 from datetime import datetime
 
 # Import routers
-from api import movements, agents, classes, analytics, soundcloud_auth, soundcloud_api, auth, users, compliance, music, beta_errors, class_sections, movement_levels, feedback, debug, admin, coach, admin_extended
+from api import movements, agents, classes, analytics, auth, users, compliance, music, beta_errors, class_sections, movement_levels, feedback, debug, admin, coach, admin_extended
 
 # Import RFC 9457 error models
 from models.error import RFC9457ProblemDetail, ProblemTypes
@@ -113,8 +113,9 @@ app.include_router(movement_levels.router)  # Session 11: Movement progression l
 app.include_router(agents.router, prefix="/api/agents", tags=["AI Agents"])
 app.include_router(classes.router, prefix="/api/classes", tags=["Classes"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
-app.include_router(soundcloud_auth.router)  # SoundCloud OAuth (has its own prefix)
-app.include_router(soundcloud_api.router)  # SoundCloud API (has its own prefix)
+# REMOVED: SoundCloud routers (redundant - now using Musopen/FreePD via /api/music)
+# app.include_router(soundcloud_auth.router)  # SoundCloud OAuth
+# app.include_router(soundcloud_api.router)  # SoundCloud API
 app.include_router(auth.router)  # Auth routes (has its own prefix)
 app.include_router(users.router)  # User routes (has its own prefix)
 app.include_router(compliance.router, tags=["Compliance"])  # GDPR & AI Act compliance
@@ -183,13 +184,73 @@ def custom_openapi():
         return components[0].lower() + ''.join(x.capitalize() for x in components[1:])
 
     # Helper function to add RFC 9457 error responses to operations
-    def add_rfc9457_responses(operation: dict):
+    def add_rfc9457_responses(operation: dict, method: str, path: str):
         """Add standardized RFC 9457 error responses to operation if missing"""
         responses = operation.setdefault("responses", {})
 
-        # Add 422 Validation Error if not present
-        if "422" not in responses:
-            responses["422"] = {
+        # Define common error responses in RFC 9457 format
+        rfc9457_errors = {
+            "400": {
+                "description": "Bad Request - Invalid request syntax or parameters",
+                "content": {
+                    "application/problem+json": {
+                        "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
+                        "example": {
+                            "type": "https://api.basslinepilates.com/errors/validation-error",
+                            "title": "Bad Request",
+                            "status": 400,
+                            "detail": "The request contains invalid or malformed data.",
+                            "instance": path
+                        }
+                    }
+                }
+            },
+            "401": {
+                "description": "Unauthorized - Authentication required or invalid credentials",
+                "content": {
+                    "application/problem+json": {
+                        "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
+                        "example": {
+                            "type": "https://api.basslinepilates.com/errors/authentication-required",
+                            "title": "Unauthorized",
+                            "status": 401,
+                            "detail": "Authentication is required to access this resource.",
+                            "instance": path
+                        }
+                    }
+                }
+            },
+            "403": {
+                "description": "Forbidden - Insufficient permissions to access this resource",
+                "content": {
+                    "application/problem+json": {
+                        "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
+                        "example": {
+                            "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                            "title": "Forbidden",
+                            "status": 403,
+                            "detail": "You do not have permission to access this resource.",
+                            "instance": path
+                        }
+                    }
+                }
+            },
+            "404": {
+                "description": "Not Found - The requested resource does not exist",
+                "content": {
+                    "application/problem+json": {
+                        "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
+                        "example": {
+                            "type": "https://api.basslinepilates.com/errors/resource-not-found",
+                            "title": "Not Found",
+                            "status": 404,
+                            "detail": "The requested resource was not found.",
+                            "instance": path
+                        }
+                    }
+                }
+            },
+            "422": {
                 "description": "Validation Error - Request data failed validation rules",
                 "content": {
                     "application/problem+json": {
@@ -199,15 +260,12 @@ def custom_openapi():
                             "title": "Validation Error",
                             "status": 422,
                             "detail": "Validation failed for field 'difficulty_level': value is not a valid enumeration member",
-                            "instance": "/api/classes/generate"
+                            "instance": path
                         }
                     }
                 }
-            }
-
-        # Add 500 Internal Server Error if not present
-        if "500" not in responses:
-            responses["500"] = {
+            },
+            "500": {
                 "description": "Internal Server Error - An unexpected error occurred",
                 "content": {
                     "application/problem+json": {
@@ -217,11 +275,37 @@ def custom_openapi():
                             "title": "Internal Server Error",
                             "status": 500,
                             "detail": "An unexpected error occurred while processing your request.",
-                            "instance": "/api/classes/generate"
+                            "instance": path
                         }
                     }
                 }
             }
+        }
+
+        # Add error responses based on operation type
+        # All operations can have 500
+        if "500" not in responses:
+            responses["500"] = rfc9457_errors["500"]
+
+        # All operations with request bodies can have 400, 422
+        if method in ["post", "put", "patch"]:
+            if "400" not in responses:
+                responses["400"] = rfc9457_errors["400"]
+            if "422" not in responses:
+                responses["422"] = rfc9457_errors["422"]
+
+        # Operations with path parameters can have 404
+        if "{" in path:  # Has path parameter
+            if "404" not in responses:
+                responses["404"] = rfc9457_errors["404"]
+
+        # All operations can have 401, 403 (authentication/authorization)
+        # But only add if endpoint path suggests auth is required (not /health, /)
+        if path not in ["/health", "/"]:
+            if "401" not in responses:
+                responses["401"] = rfc9457_errors["401"]
+            if "403" not in responses:
+                responses["403"] = rfc9457_errors["403"]
 
     # JENTIC FIXES: Sanitize paths and operationIds
     # 1. Remove trailing slashes from paths (Jentic validation error)
@@ -262,8 +346,9 @@ def custom_openapi():
                     operation["operationId"] = camel_id
                     logger.debug(f"Sanitized operationId: {original_id} → {camel_id}")
 
-            # JENTIC FIX: Add RFC 9457 error responses (Error Standardization 0% → 90%+)
-            add_rfc9457_responses(operation)
+            # JENTIC FIX: Add RFC 9457 error responses (Error Standardization 21% → 90%+)
+            # Pass method and path for context-aware error response generation
+            add_rfc9457_responses(operation, method, path)
 
     # Iterate through all paths and operations again for examples
     for path, path_item in openapi_schema.get("paths", {}).items():
