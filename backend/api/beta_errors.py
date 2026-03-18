@@ -3,7 +3,7 @@ Beta Errors API Router
 Endpoints for viewing and managing beta errors logged during development/testing
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Path
 from typing import Optional, List
 from loguru import logger
 from pydantic import BaseModel
@@ -175,7 +175,7 @@ async def get_beta_error_stats(
 
 @router.get("/beta-errors/{error_id}", response_model=BetaError)
 async def get_beta_error(
-    error_id: str,
+    error_id: str = Path(..., description="Unique identifier (UUID) for the beta error record"),
     admin_user_id: str = Depends(require_admin)
 ):
     """
@@ -207,7 +207,7 @@ async def get_beta_error(
 
 @router.patch("/beta-errors/{error_id}/status")
 async def update_beta_error_status(
-    error_id: str,
+    error_id: str = Path(..., description="Unique identifier (UUID) for the beta error record"),
     status: str,
     fix_notes: Optional[str] = None,
     fix_commit_hash: Optional[str] = None,

@@ -15,7 +15,7 @@ Security:
 - Authenticated users only for starting class sessions
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -239,7 +239,7 @@ async def get_playlists(
 
 @router.get("/playlists/{playlist_id}", response_model=PlaylistWithTracksResponse)
 async def get_playlist_details(
-    playlist_id: str,
+    playlist_id: str = Path(..., description="Unique identifier (UUID) for the music playlist"),
     supabase = Depends(get_supabase_client)
 ):
     """
@@ -372,7 +372,7 @@ async def get_tracks(
 
 @router.get("/tracks/{track_id}/stream-url")
 async def get_track_streaming_url(
-    track_id: str,
+    track_id: str = Path(..., description="Unique identifier (UUID) for the music track"),
     supabase = Depends(get_supabase_client)
 ):
     """

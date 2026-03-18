@@ -3,7 +3,7 @@ Admin API Endpoints
 Handles admin-only features: beta feedback management, analytics, diagnostics
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Path
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
@@ -91,7 +91,7 @@ async def get_all_beta_feedback(
 
 @router.patch("/beta-feedback/{feedback_id}")
 async def update_beta_feedback(
-    feedback_id: str,
+    feedback_id: str = Path(..., description="Unique identifier (UUID) for the feedback submission"),
     update: FeedbackUpdate,
     admin_user_id: str = Depends(get_admin_user_id)
 ):
@@ -205,7 +205,7 @@ async def get_beta_feedback_stats(
 
 @router.delete("/beta-feedback/{feedback_id}")
 async def delete_beta_feedback(
-    feedback_id: str,
+    feedback_id: str = Path(..., description="Unique identifier (UUID) for the feedback submission"),
     admin_user_id: str = Depends(get_admin_user_id)
 ):
     """

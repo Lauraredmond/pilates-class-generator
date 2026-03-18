@@ -377,7 +377,7 @@ def _get_date_ranges(period: TimePeriod) -> tuple[List[tuple[date, date]], List[
 # Endpoints
 @router.get("/summary/{user_id}", response_model=UserAnalyticsSummary)
 async def get_user_analytics_summary(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     period: Optional[TimePeriod] = Query(default=None, description="Time period filter")
 ):
     """Get summary analytics for a user with optional time period filtering"""
@@ -472,7 +472,7 @@ async def get_user_analytics_summary(
 
 @router.get("/movement-history/{user_id}", response_model=List[TimeSeriesData])
 async def get_movement_history(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     period: TimePeriod = Query(default=TimePeriod.WEEK)
 ):
     """
@@ -551,7 +551,7 @@ async def get_movement_history(
 
 @router.get("/muscle-group-history/{user_id}", response_model=List[TimeSeriesData])
 async def get_muscle_group_history(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     period: TimePeriod = Query(default=TimePeriod.WEEK)
 ):
     """
@@ -685,7 +685,7 @@ async def get_muscle_group_history(
 
 @router.get("/practice-frequency/{user_id}", response_model=PracticeFrequencyData)
 async def get_practice_frequency(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     period: TimePeriod = Query(default=TimePeriod.WEEK)
 ):
     """Get practice frequency data for line chart"""
@@ -739,7 +739,7 @@ async def get_practice_frequency(
 
 @router.get("/difficulty-progression/{user_id}", response_model=DifficultyProgressionData)
 async def get_difficulty_progression(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     period: TimePeriod = Query(default=TimePeriod.WEEK)
 ):
     """
@@ -838,7 +838,7 @@ async def get_difficulty_progression(
 
 @router.get("/muscle-distribution/{user_id}", response_model=MuscleDistributionData)
 async def get_muscle_distribution(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     period: TimePeriod = Query(default=TimePeriod.TOTAL)
 ):
     """
@@ -956,7 +956,7 @@ async def get_muscle_distribution(
 
 @router.get("/movement-family-distribution/{user_id}", response_model=MovementFamilyDistributionData)
 async def get_movement_family_distribution(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     period: TimePeriod = Query(default=TimePeriod.TOTAL)
 ):
     """
@@ -1428,7 +1428,7 @@ async def get_llm_usage_statistics(
 
 @router.get("/llm-logs/{log_id}", response_model=LLMInvocationLogEntry)
 async def get_single_llm_log(
-    log_id: str,
+    log_id: str = Path(..., description="Unique identifier (UUID) for the log entry"),
     admin_user_id: str = Query(..., description="Admin user ID for authorization")
 ):
     """
@@ -2849,8 +2849,8 @@ async def get_quality_logs(
 # ==============================================================================
 
 async def generate_and_save_sequencing_report_background(
-    class_plan_id: str,
-    user_id: str,
+    class_plan_id: str = Path(..., description="Unique identifier (UUID) for the class plan"),
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     movements_snapshot: List[Dict[str, Any]]
 ):
     """
@@ -2989,7 +2989,7 @@ async def generate_and_save_sequencing_report_background(
 
 @router.post("/trigger-report-generation/{class_plan_id}")
 async def trigger_sequencing_report_generation(
-    class_plan_id: str,
+    class_plan_id: str = Path(..., description="Unique identifier (UUID) for the class plan"),
     background_tasks: BackgroundTasks
 ):
     """

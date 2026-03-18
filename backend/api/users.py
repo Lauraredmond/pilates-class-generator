@@ -3,7 +3,7 @@ User profile and statistics API
 Manage user profiles, preferences, and view statistics
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Path
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime

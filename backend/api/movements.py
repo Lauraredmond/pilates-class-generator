@@ -40,7 +40,7 @@ class Movement(BaseModel):
     code: str = Field(..., example="the_hundred", description="URL-friendly identifier")
     name: str = Field(..., example="The Hundred", description="Movement name")
     category: str = Field(..., example="Core", description="Movement category")
-    difficulty_level: str = Field(..., example="Intermediate", description="Difficulty level: Beginner, Intermediate, or Advanced")
+    difficulty_level: str = Field(..., example="Intermediate", description="Difficulty level: Beginner = Path(..., description="Difficulty level: Beginner, Intermediate, or Advanced"), Intermediate, or Advanced")
     narrative: Optional[str] = Field(None, example="The Hundred is a classic Pilates exercise that builds core strength and stamina. Pump your arms vigorously while maintaining a strong, stable core.")
     visual_cues: Optional[str] = Field(None, example="Imagine pressing your spine into the mat while your arms pump like pistons")
     setup_position: Optional[str] = Field(None, example="Supine", description="Starting position")

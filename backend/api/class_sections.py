@@ -3,7 +3,7 @@ Class Sections API
 Endpoints for all 6 Pilates class sections (Session 11)
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Path
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -147,7 +147,7 @@ async def get_preparation_scripts(
 
 @router.get("/preparation/{script_id}", response_model=PreparationScript)
 async def get_preparation_script(
-    script_id: str,
+    script_id: str = Path(..., description="Unique identifier (UUID) for the preparation/meditation script"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get a specific preparation script by ID"""
@@ -210,7 +210,7 @@ async def get_warmup_routines(
 
 @router.get("/warmup/{routine_id}", response_model=WarmupRoutine)
 async def get_warmup_routine(
-    routine_id: str,
+    routine_id: str = Path(..., description="Unique identifier (UUID) for the warmup routine"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get a specific warmup routine by ID"""
@@ -269,7 +269,7 @@ async def get_cooldown_sequences(
 
 @router.get("/cooldown/{sequence_id}", response_model=CooldownSequence)
 async def get_cooldown_sequence(
-    sequence_id: str,
+    sequence_id: str = Path(..., description="Unique identifier (UUID) for the cooldown sequence"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get a specific cooldown sequence by ID"""
@@ -332,7 +332,7 @@ async def get_closing_meditations(
 
 @router.get("/closing-meditation/{script_id}", response_model=ClosingMeditationScript)
 async def get_closing_meditation(
-    script_id: str,
+    script_id: str = Path(..., description="Unique identifier (UUID) for the preparation/meditation script"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get a specific closing meditation script by ID"""
@@ -391,7 +391,7 @@ async def get_closing_homecare_advice(
 
 @router.get("/closing-homecare/{advice_id}", response_model=ClosingHomecareAdvice)
 async def get_homecare_advice(
-    advice_id: str,
+    advice_id: str = Path(..., description="Unique identifier (UUID) for the homecare advice"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get specific homecare advice by ID"""

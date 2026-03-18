@@ -3,7 +3,7 @@ Authentication API routes
 User registration, login, password reset using Supabase Auth
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends, Request
+from fastapi import APIRouter, HTTPException, status, Depends, Request, Path
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime

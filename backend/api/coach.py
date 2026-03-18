@@ -191,7 +191,7 @@ async def get_session_by_id(
 
 @router.put("/sessions/{session_id}")
 async def update_session(
-    session_id: UUID,
+    session_id: UUID = Path(..., description="Unique identifier (UUID) for the session"),
     updates: dict,
     current_user: User = Depends(coach_or_admin_required)
 ):
@@ -239,7 +239,7 @@ async def update_session(
 
 @router.delete("/sessions/{session_id}")
 async def delete_session(
-    session_id: UUID,
+    session_id: UUID = Path(..., description="Unique identifier (UUID) for the session"),
     current_user: User = Depends(coach_or_admin_required)
 ):
     """Delete training session"""

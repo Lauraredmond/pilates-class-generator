@@ -19,7 +19,7 @@ class ClassDurationDistributionData(BaseModel):
 
 @router.get("/music-genre-distribution/{user_id}", response_model=MusicGenreDistributionData)
 async def get_music_genre_distribution(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     period: TimePeriod = Query(default=TimePeriod.TOTAL)  # Default to total (no time filter needed)
 ):
     """
@@ -91,7 +91,7 @@ async def get_music_genre_distribution(
 
 @router.get("/class-duration-distribution/{user_id}", response_model=ClassDurationDistributionData)
 async def get_class_duration_distribution(
-    user_id: str,
+    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
     period: TimePeriod = Query(default=TimePeriod.WEEK)
 ):
     """
