@@ -3,7 +3,7 @@ Movements API Router - Session 2B
 Endpoints for retrieving Pilates movement data
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Path
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import os
@@ -174,7 +174,9 @@ async def search_movements(
 
 
 @router.get("/difficulty/{level}", response_model=List[Movement])
-async def get_movements_by_difficulty(level: str):
+async def get_movements_by_difficulty(
+    level: str = Path(..., description="Difficulty level to filter by: 'Beginner', 'Intermediate', or 'Advanced'")
+):
     """
     Get movements filtered by difficulty level
     Valid levels: Beginner, Intermediate, Advanced
@@ -226,7 +228,9 @@ async def get_movement_stats():
 
 
 @router.get("/{movement_id}", response_model=Movement)
-async def get_movement_by_id(movement_id: str):
+async def get_movement_by_id(
+    movement_id: str = Path(..., description="Unique identifier (UUID) for the Pilates movement")
+):
     """
     Get a specific movement by ID
     """
