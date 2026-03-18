@@ -299,27 +299,28 @@ async def register(user_data: UserCreate, request: Request):
             if user_data.user_type == "coach":
                 roles_to_create = ["coach"]
             elif user_data.user_type == "standard":
-                roles_to_create = ["practitioner"]
+                roles_to_create = ["standard"]
             else:
                 roles_to_create = [user_data.user_type]
         else:
-            # Default to practitioner if nothing specified
-            roles_to_create = ["practitioner"]
+            # Default to standard if nothing specified
+            roles_to_create = ["standard"]
 
         # Prepare profile data to be inserted for each role
         profiles_to_insert = []
 
         for idx, role in enumerate(roles_to_create):
             # Map frontend role names to database user_type values
+            # Note: Database constraint only allows: 'standard', 'coach', 'admin'
             user_type_mapping = {
-                "practitioner": "practitioner",
-                "pilates_instructor": "pilates_instructor",
+                "practitioner": "standard",  # Map to 'standard' (allowed by DB constraint)
+                "pilates_instructor": "standard",  # Map to 'standard'
                 "coach": "coach",
-                "parent": "parent",
+                "parent": "standard",  # Map to 'standard'
                 "admin": "admin"
             }
 
-            user_type = user_type_mapping.get(role, "practitioner")
+            user_type = user_type_mapping.get(role, "standard")
 
             # Create profile record for this role
             # Note: For now, only create one profile (first role) to avoid ID conflicts
