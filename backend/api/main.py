@@ -283,29 +283,26 @@ def custom_openapi():
         }
 
         # Add error responses based on operation type
+        # FORCE-REPLACE all error responses to use application/problem+json
+        # Don't check if they exist - always replace to fix FastAPI auto-generated responses
+
         # All operations can have 500
-        if "500" not in responses:
-            responses["500"] = rfc9457_errors["500"]
+        responses["500"] = rfc9457_errors["500"]
 
         # All operations with request bodies can have 400, 422
         if method in ["post", "put", "patch"]:
-            if "400" not in responses:
-                responses["400"] = rfc9457_errors["400"]
-            if "422" not in responses:
-                responses["422"] = rfc9457_errors["422"]
+            responses["400"] = rfc9457_errors["400"]
+            responses["422"] = rfc9457_errors["422"]
 
         # Operations with path parameters can have 404
         if "{" in path:  # Has path parameter
-            if "404" not in responses:
-                responses["404"] = rfc9457_errors["404"]
+            responses["404"] = rfc9457_errors["404"]
 
         # All operations can have 401, 403 (authentication/authorization)
         # But only add if endpoint path suggests auth is required (not /health, /)
         if path not in ["/health", "/"]:
-            if "401" not in responses:
-                responses["401"] = rfc9457_errors["401"]
-            if "403" not in responses:
-                responses["403"] = rfc9457_errors["403"]
+            responses["401"] = rfc9457_errors["401"]
+            responses["403"] = rfc9457_errors["403"]
 
     # JENTIC FIXES: Sanitize paths and operationIds
     # 1. Remove trailing slashes from paths (Jentic validation error)
