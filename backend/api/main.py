@@ -145,9 +145,22 @@ def custom_openapi():
     # Get component schemas with examples
     schemas = openapi_schema.get("components", {}).get("schemas", {})
 
-    # JENTIC FIX: Sanitize operationIds to remove URL-invalid characters
-    # Jentic validation fails on operationIds with hyphens (kebab-case)
-    # Convert hyphens to underscores: "generate-sequence" → "generate_sequence"
+    # JENTIC FIXES: Sanitize paths and operationIds
+    # 1. Remove trailing slashes from paths (Jentic validation error)
+    # 2. Sanitize operationIds to remove URL-invalid characters
+    paths_to_rename = {}
+    for path in list(openapi_schema.get("paths", {}).keys()):
+        if path.endswith("/") and path != "/":
+            # Remove trailing slash
+            new_path = path.rstrip("/")
+            paths_to_rename[path] = new_path
+            logger.debug(f"Removing trailing slash: {path} → {new_path}")
+
+    # Apply path renames
+    for old_path, new_path in paths_to_rename.items():
+        openapi_schema["paths"][new_path] = openapi_schema["paths"].pop(old_path)
+
+    # Sanitize operationIds
     for path, path_item in openapi_schema.get("paths", {}).items():
         for method, operation in path_item.items():
             if method not in ["get", "post", "put", "patch", "delete"]:

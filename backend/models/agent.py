@@ -79,9 +79,12 @@ class MusicSelectionRequest(BaseModel):
     )
     preferred_genres: Optional[List[str]] = None
     exclude_explicit: bool = True
-    target_bpm_range: Optional[tuple[int, int]] = Field(
-        default=(90, 130),
-        description="Target BPM range"
+    # JENTIC FIX: Use List instead of tuple to avoid anyOf array without items field
+    target_bpm_range: Optional[List[int]] = Field(
+        default=[90, 130],
+        description="Target BPM range [min, max]",
+        min_length=2,
+        max_length=2
     )
 
 
