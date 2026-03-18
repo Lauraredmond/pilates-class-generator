@@ -157,6 +157,15 @@ def custom_openapi():
     # Get component schemas with examples
     schemas = openapi_schema.get("components", {}).get("schemas", {})
 
+    # Helper function to convert snake_case to camelCase for operationIds
+    def to_camel_case(snake_str: str) -> str:
+        """Convert snake_case to camelCase for AI-agent-friendly operationIds"""
+        if not snake_str or '_' not in snake_str:
+            return snake_str
+        components = snake_str.split('_')
+        # Keep first component lowercase, capitalize rest
+        return components[0].lower() + ''.join(x.capitalize() for x in components[1:])
+
     # JENTIC FIXES: Sanitize paths and operationIds
     # 1. Remove trailing slashes from paths (Jentic validation error)
     # 2. Sanitize operationIds to remove URL-invalid characters
@@ -190,9 +199,11 @@ def custom_openapi():
                     .replace("/", "_")
                     .replace("{", "")
                     .replace("}", ""))
-                if original_id != sanitized_id:
-                    operation["operationId"] = sanitized_id
-                    logger.debug(f"Sanitized operationId: {original_id} → {sanitized_id}")
+                # JENTIC FIX: Convert to camelCase for AI agent compatibility (7% → 70%+)
+                camel_id = to_camel_case(sanitized_id)
+                if original_id != camel_id:
+                    operation["operationId"] = camel_id
+                    logger.debug(f"Sanitized operationId: {original_id} → {camel_id}")
 
     # Iterate through all paths and operations again for examples
     for path, path_item in openapi_schema.get("paths", {}).items():
