@@ -6,6 +6,7 @@ Main application entry point
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.openapi.utils import get_openapi
 from loguru import logger
 import time
 
@@ -18,6 +19,18 @@ app = FastAPI(
     version="2.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
+    # Enable automatic example generation from Pydantic models for Jentic integration
+    openapi_tags=[
+        {"name": "Movements", "description": "Pilates movement catalog and transitions"},
+        {"name": "Classes", "description": "AI-powered class generation and planning"},
+        {"name": "AI Agents", "description": "Jentic StandardAgent orchestration"},
+        {"name": "Analytics", "description": "Movement usage and class analytics"},
+        {"name": "Compliance", "description": "GDPR Article 15 & EU AI Act compliance"},
+        {"name": "Music", "description": "Music integration (Musopen/FreePD)"},
+        {"name": "Auth", "description": "Authentication and user management"},
+    ],
+    # Generate examples for all operations from model schemas
+    generate_unique_id_function=lambda route: f"{route.tags[0]}-{route.name}" if route.tags else route.name,
 )
 
 # CORS configuration
@@ -95,6 +108,86 @@ app.include_router(admin.router, tags=["Admin"])  # Admin-only endpoints (feedba
 app.include_router(coach.router, tags=["Coach"])  # Coach endpoints for sport-specific training
 app.include_router(admin_extended.router, tags=["Admin"])  # Extended admin endpoints for platform management
 app.include_router(debug.router, tags=["Debug"])  # TEMPORARY: Debug endpoints - REMOVE BEFORE PRODUCTION!
+
+
+# Custom OpenAPI schema generator that copies examples from schemas to operations
+# This improves Jentic Agent Usability score by adding operation-level examples
+def custom_openapi():
+    """
+    Generate OpenAPI schema with automatic operation-level examples.
+
+    Jentic evaluates operation-level examples, not just schema-level examples.
+    This function copies examples from Pydantic model schemas to operation
+    request/response examples for better AI agent understanding.
+    """
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    # Generate base OpenAPI schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    # Get component schemas with examples
+    schemas = openapi_schema.get("components", {}).get("schemas", {})
+
+    # Iterate through all paths and operations
+    for path, path_item in openapi_schema.get("paths", {}).items():
+        for method, operation in path_item.items():
+            if method not in ["get", "post", "put", "patch", "delete"]:
+                continue
+
+            # Add request body examples
+            request_body = operation.get("requestBody", {})
+            if request_body:
+                content = request_body.get("content", {})
+                for media_type, media_spec in content.items():
+                    # Get schema reference
+                    schema_ref = media_spec.get("schema", {}).get("$ref", "")
+                    if schema_ref:
+                        schema_name = schema_ref.split("/")[-1]
+                        schema = schemas.get(schema_name, {})
+
+                        # Copy example from schema to operation if not already present
+                        if "example" not in media_spec and "example" in schema:
+                            media_spec["example"] = schema["example"]
+                        elif "examples" not in media_spec and "examples" in schema:
+                            media_spec["examples"] = schema["examples"]
+
+            # Add response examples
+            for status_code, response in operation.get("responses", {}).items():
+                content = response.get("content", {})
+                for media_type, media_spec in content.items():
+                    # Get schema reference
+                    schema_ref = media_spec.get("schema", {}).get("$ref", "")
+                    if not schema_ref:
+                        # Handle arrays: List[Model] -> items.$ref
+                        items = media_spec.get("schema", {}).get("items", {})
+                        schema_ref = items.get("$ref", "")
+
+                    if schema_ref:
+                        schema_name = schema_ref.split("/")[-1]
+                        schema = schemas.get(schema_name, {})
+
+                        # Copy example from schema to operation if not already present
+                        if "example" not in media_spec and "example" in schema:
+                            # For list responses, wrap single example in array
+                            if media_spec.get("schema", {}).get("type") == "array":
+                                media_spec["example"] = [schema["example"]]
+                            else:
+                                media_spec["example"] = schema["example"]
+                        elif "examples" not in media_spec and "examples" in schema:
+                            media_spec["examples"] = schema["examples"]
+
+    app.openapi_schema = openapi_schema
+    logger.info("✅ Generated OpenAPI schema with automatic operation-level examples for Jentic")
+    return app.openapi_schema
+
+# Override FastAPI's openapi() method with our custom version
+app.openapi = custom_openapi
 
 
 # Global exception handler
