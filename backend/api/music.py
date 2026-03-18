@@ -41,44 +41,44 @@ router = APIRouter(prefix="/api/music", tags=["music"])
 
 class StylisticPeriodInfo(BaseModel):
     """Information about a musical stylistic period."""
-    value: str
-    name: str
-    description: str
-    era: str
-    composers: List[str]
-    traits: List[str]
+    value: str = Field(..., description="Value")
+    name: str = Field(..., description="Name")
+    description: str = Field(..., description="Description")
+    era: str = Field(..., description="Era")
+    composers: List[str] = Field(..., description="Composers")
+    traits: List[str] = Field(..., description="Traits")
 
 class TrackResponse(BaseModel):
     """Music track response model."""
-    id: str
-    source: str
-    title: str
-    composer: Optional[str] = None
-    artist_performer: Optional[str] = None
-    duration_seconds: int
-    audio_url: str
-    stylistic_period: str
-    bpm: Optional[int] = None
-    mood_tags: List[str] = []
-    license_type: Optional[str] = None
+    id: str = Field(..., description="Unique identifier")
+    source: str = Field(..., description="Source")
+    title: str = Field(..., description="Title")
+    composer: Optional[str] = Field(None, description="Composer")
+    artist_performer: Optional[str] = Field(None, description="Artist Performer")
+    duration_seconds: int = Field(..., description="Duration in seconds")
+    audio_url: str = Field(..., description="URL for audio")
+    stylistic_period: str = Field(..., description="Stylistic Period")
+    bpm: Optional[int] = Field(None, description="Beats per minute")
+    mood_tags: List[str] = Field([], description="Mood Tags")
+    license_type: Optional[str] = Field(None, description="License Type")
 
 class PlaylistResponse(BaseModel):
     """Music playlist response model."""
-    id: str
-    name: str
-    description: str
-    intended_intensity: str
-    intended_use: str
-    stylistic_period: str
-    duration_minutes_target: int
-    track_count: int
-    is_featured: bool = False
+    id: str = Field(..., description="Unique identifier")
+    name: str = Field(..., description="Name")
+    description: str = Field(..., description="Description")
+    intended_intensity: str = Field(..., description="Intended Intensity")
+    intended_use: str = Field(..., description="Intended Use")
+    stylistic_period: str = Field(..., description="Stylistic Period")
+    duration_minutes_target: int = Field(..., description="Duration Minutes Target")
+    track_count: int = Field(..., description="Number of track")
+    is_featured: bool = Field(False, description="Whether featured")
 
 class PlaylistWithTracksResponse(BaseModel):
     """Playlist with full track list."""
-    playlist: PlaylistResponse
-    tracks: List[TrackResponse]
-    total_duration_seconds: int
+    playlist: PlaylistResponse = Field(..., description="Playlist")
+    tracks: List[TrackResponse] = Field(..., description="Tracks")
+    total_duration_seconds: int = Field(..., description="Total Duration Seconds")
 
 
 # =============================================================================

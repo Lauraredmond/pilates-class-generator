@@ -6,7 +6,7 @@ Endpoints for viewing and managing beta errors logged during development/testing
 from fastapi import APIRouter, HTTPException, Depends, Path
 from typing import Optional, List
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 from utils.auth import get_current_user_id
@@ -31,34 +31,34 @@ router = APIRouter()
 
 class BetaError(BaseModel):
     """Beta error response model"""
-    id: str
-    error_type: str
-    severity: str
-    status: str
-    endpoint: str
-    error_message: str
-    was_bypassed: bool
-    bypass_reason: Optional[str]
-    user_affected: bool
-    user_notified: bool
-    occurrence_count: int
-    first_occurred_at: datetime
-    last_occurred_at: datetime
-    environment: str
-    version: Optional[str]
+    id: str = Field(..., description="Unique identifier")
+    error_type: str = Field(..., description="Type of error")
+    severity: str = Field(..., description="Error severity")
+    status: str = Field(..., description="Status")
+    endpoint: str = Field(..., description="Endpoint")
+    error_message: str = Field(..., description="Error message")
+    was_bypassed: bool = Field(..., description="Was Bypassed")
+    bypass_reason: Optional[str] = Field(..., description="Bypass Reason")
+    user_affected: bool = Field(..., description="User Affected")
+    user_notified: bool = Field(..., description="User Notified")
+    occurrence_count: int = Field(..., description="Number of occurrence")
+    first_occurred_at: datetime = Field(..., description="First Occurred timestamp")
+    last_occurred_at: datetime = Field(..., description="Last Occurred timestamp")
+    environment: str = Field(..., description="Environment")
+    version: Optional[str] = Field(..., description="Version")
 
 
 class BetaErrorStats(BaseModel):
     """Beta error statistics"""
-    error_type: str
-    severity: str
-    status: str
-    total_occurrences: int
-    total_hits: int
-    users_affected: int
-    first_seen: datetime
-    last_seen: datetime
-    bypass_rate_pct: float
+    error_type: str = Field(..., description="Type of error")
+    severity: str = Field(..., description="Error severity")
+    status: str = Field(..., description="Status")
+    total_occurrences: int = Field(..., description="Total Occurrences")
+    total_hits: int = Field(..., description="Total Hits")
+    users_affected: int = Field(..., description="Users Affected")
+    first_seen: datetime = Field(..., description="First Seen")
+    last_seen: datetime = Field(..., description="Last Seen")
+    bypass_rate_pct: float = Field(..., description="Bypass Rate Pct")
 
 
 # ============================================================================

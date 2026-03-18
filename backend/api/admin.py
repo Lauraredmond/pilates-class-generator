@@ -4,7 +4,7 @@ Handles admin-only features: beta feedback management, analytics, diagnostics
 """
 
 from fastapi import APIRouter, HTTPException, Depends, Path
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 from utils.auth import get_admin_user_id
@@ -28,26 +28,26 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class FeedbackUpdate(BaseModel):
     """Model for updating feedback status/notes"""
-    status: Optional[str] = None  # new, in_progress, resolved
-    admin_notes: Optional[str] = None
+    status: Optional[str] = Field(None, description="Status")  # new, in_progress, resolved
+    admin_notes: Optional[str] = Field(None, description="Admin Notes")
 
 
 class BetaFeedbackItem(BaseModel):
     """Model for beta feedback response"""
-    id: str
-    user_id: Optional[str]
-    name: str
-    email: str
-    country: Optional[str]
-    feedback_type: str
-    subject: str
-    message: str
-    status: Optional[str]
-    created_at: datetime
-    updated_at: Optional[datetime]
-    reviewed_by: Optional[str]
-    reviewed_at: Optional[datetime]
-    admin_notes: Optional[str]
+    id: str = Field(..., description="Unique identifier")
+    user_id: Optional[str] = Field(..., description="User identifier")
+    name: str = Field(..., description="Name")
+    email: str = Field(..., description="Email address")
+    country: Optional[str] = Field(..., description="Country")
+    feedback_type: str = Field(..., description="Feedback Type")
+    subject: str = Field(..., description="Subject")
+    message: str = Field(..., description="Message content")
+    status: Optional[str] = Field(..., description="Status")
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: Optional[datetime] = Field(..., description="Last update timestamp")
+    reviewed_by: Optional[str] = Field(..., description="Reviewed By")
+    reviewed_at: Optional[datetime] = Field(..., description="Reviewed timestamp")
+    admin_notes: Optional[str] = Field(..., description="Admin Notes")
 
 
 # ============================================================================

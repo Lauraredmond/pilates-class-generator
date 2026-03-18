@@ -45,54 +45,54 @@ class TimePeriod(str, Enum):
 # Pydantic models
 class UserAnalyticsSummary(BaseModel):
     """Summary analytics for a user"""
-    total_classes: int
-    total_practice_time: int  # in minutes
-    current_streak: int  # consecutive days with classes
-    favorite_movement: str
-    classes_this_week: int
-    avg_class_duration: int  # in minutes
-    top_3_movements: List[str]  # Top 3 most-selected movements
-    coverage_percentage: int  # % coverage of top 3 across total selections
+    total_classes: int = Field(..., description="Total Classes")
+    total_practice_time: int  # in minutes = Field(..., description="Total Practice Time")
+    current_streak: int  # consecutive days with classes = Field(..., description="Current Streak")
+    favorite_movement: str = Field(..., description="Favorite Movement")
+    classes_this_week: int = Field(..., description="Classes This Week")
+    avg_class_duration: int  # in minutes = Field(..., description="Avg Class Duration")
+    top_3_movements: List[str]  # Top 3 most-selected movements = Field(..., description="Top 3 Movements")
+    coverage_percentage: int  # % coverage of top 3 across total selections = Field(..., description="Coverage Percentage")
 
 
 class TimeSeriesData(BaseModel):
     """Generic time series data with dynamic columns"""
-    label: str  # Movement name or muscle group name
-    periods: List[int]  # Counts for each time period
-    period_labels: List[str]  # Labels for each period (e.g., "Mon", "Week 1", "Jan 2025")
-    total: int
+    label: str  # Movement name or muscle group name = Field(..., description="Label")
+    periods: List[int]  # Counts for each time period = Field(..., description="Periods")
+    period_labels: List[str]  # Labels for each period (e.g., "Mon", "Week 1", "Jan 2025") = Field(..., description="Period Labels")
+    total: int = Field(..., description="Total count")
 
 
 class ChartDataPoint(BaseModel):
     """Single data point for charts"""
-    label: str
-    value: int
+    label: str = Field(..., description="Label")
+    value: int = Field(..., description="Value")
 
 
 class PracticeFrequencyData(BaseModel):
     """Practice frequency chart data"""
-    period_labels: List[str]
-    class_counts: List[int]
+    period_labels: List[str] = Field(..., description="Period Labels")
+    class_counts: List[int] = Field(..., description="Class Counts")
 
 
 class DifficultyProgressionData(BaseModel):
     """Difficulty progression chart data"""
-    period_labels: List[str]
-    beginner_counts: List[int]
-    intermediate_counts: List[int]
-    advanced_counts: List[int]
+    period_labels: List[str] = Field(..., description="Period Labels")
+    beginner_counts: List[int] = Field(..., description="Beginner Counts")
+    intermediate_counts: List[int] = Field(..., description="Intermediate Counts")
+    advanced_counts: List[int] = Field(..., description="Advanced Counts")
 
 
 class MuscleDistributionData(BaseModel):
     """Muscle distribution for doughnut chart"""
-    muscle_groups: List[str]
-    percentages: List[float]
+    muscle_groups: List[str] = Field(..., description="Muscle Groups")
+    percentages: List[float] = Field(..., description="Percentages")
 
 
 class MovementFamilyDistributionData(BaseModel):
     """Movement family distribution for pie chart (Session: Movement Families)"""
-    families: List[str]
-    percentages: List[float]
+    families: List[str] = Field(..., description="Families")
+    percentages: List[float] = Field(..., description="Percentages")
 
 
 # ==============================================================================
@@ -101,84 +101,84 @@ class MovementFamilyDistributionData(BaseModel):
 
 class PlaySessionStart(BaseModel):
     """Request to start a new play session"""
-    user_id: str
-    class_plan_id: Optional[str] = None
+    user_id: str = Field(..., description="User identifier")
+    class_plan_id: Optional[str] = Field(None, description="Class plan identifier")
     playback_source: str = Field(..., description="'library', 'generated', 'shared', or 'preview'")
-    device_info: Optional[dict] = None
+    device_info: Optional[dict] = Field(None, description="Device Info")
 
 
 class PlaySessionHeartbeat(BaseModel):
     """Request to update play session duration"""
-    duration_seconds: int
-    current_section_index: Optional[int] = None
-    pause_count: Optional[int] = None
-    skip_count: Optional[int] = None
-    rewind_count: Optional[int] = None
+    duration_seconds: int = Field(..., description="Duration in seconds")
+    current_section_index: Optional[int] = Field(None, description="Current Section Index")
+    pause_count: Optional[int] = Field(None, description="Number of pause")
+    skip_count: Optional[int] = Field(None, description="Number of skip")
+    rewind_count: Optional[int] = Field(None, description="Number of rewind")
 
 
 class PlaySessionEnd(BaseModel):
     """Request to end a play session"""
-    duration_seconds: int
-    was_completed: bool = False
-    max_section_reached: Optional[int] = None
+    duration_seconds: int = Field(..., description="Duration in seconds")
+    was_completed: bool = Field(False, description="Was Completed")
+    max_section_reached: Optional[int] = Field(None, description="Max Section Reached")
 
 
 class PlaySessionResponse(BaseModel):
     """Response after creating/updating play session"""
-    session_id: str
-    user_id: str
-    class_plan_id: Optional[str] = None
-    started_at: str
-    duration_seconds: int
-    is_qualified_play: bool
-    was_completed: bool
+    session_id: str = Field(..., description="Session identifier")
+    user_id: str = Field(..., description="User identifier")
+    class_plan_id: Optional[str] = Field(None, description="Class plan identifier")
+    started_at: str = Field(..., description="Started timestamp")
+    duration_seconds: int = Field(..., description="Duration in seconds")
+    is_qualified_play: bool = Field(..., description="Whether qualified play")
+    was_completed: bool = Field(..., description="Was Completed")
 
 
 class UserPlayStatistics(BaseModel):
     """Aggregated play statistics for a user"""
-    user_id: str
-    email: str
-    total_sessions: int
-    qualified_plays: int
-    completed_classes: int
-    unique_classes_played: int
-    total_play_seconds: int
-    avg_play_seconds: float
-    longest_session_seconds: int
-    first_play_date: Optional[str] = None
-    last_play_date: Optional[str] = None
-    avg_pauses_per_session: float
-    completion_rate_percentage: float
+    user_id: str = Field(..., description="User identifier")
+    email: str = Field(..., description="Email address")
+    total_sessions: int = Field(..., description="Total Sessions")
+    qualified_plays: int = Field(..., description="Qualified Plays")
+    completed_classes: int = Field(..., description="Completed Classes")
+    unique_classes_played: int = Field(..., description="Unique Classes Played")
+    total_play_seconds: int = Field(..., description="Total Play Seconds")
+    avg_play_seconds: float = Field(..., description="Avg Play Seconds")
+    longest_session_seconds: int = Field(..., description="Longest Session Seconds")
+    first_play_date: Optional[str] = Field(None, description="First Play Date")
+    last_play_date: Optional[str] = Field(None, description="Last Play Date")
+    avg_pauses_per_session: float = Field(..., description="Avg Pauses Per Session")
+    completion_rate_percentage: float = Field(..., description="Completion Rate Percentage")
 
 
 class CreatorsVsPerformersReport(BaseModel):
     """Admin-only report comparing class creators vs performers"""
-    total_users: int
-    creators_only: int  # Created classes but never played >120s
-    performers_only: int  # Played classes >120s but never created
-    both: int  # Both create and perform
-    inactive_users: int  # Registered but never created or performed
-    creator_engagement_rate: float  # % of creators who also perform
-    performer_creation_rate: float  # % of performers who also create
-    registration_creator_rate: float  # % of registered users who create classes
-    time_series: List[dict]  # Historical data by period
+    total_users: int = Field(..., description="Total Users")
+    creators_only: int  # Created classes but never played >120s = Field(..., description="Creators Only")
+    performers_only: int  # Played classes >120s but never created = Field(..., description="Performers Only")
+    both: int  # Both create and perform = Field(..., description="Both")
+    inactive_users: int  # Registered but never created or performed = Field(..., description="Inactive Users")
+    creator_engagement_rate: float  # % of creators who also perform = Field(..., description="Creator Engagement Rate")
+    performer_creation_rate: float  # % of performers who also create = Field(..., description="Performer Creation Rate")
+    registration_creator_rate: float  # % of registered users who create classes = Field(..., description="Registration Creator Rate")
+    time_series: List[dict]  # Historical data by period = Field(..., description="Time Series")
 
 
 class CreatorsVsPerformersUserDetail(BaseModel):
     """Individual user details for creators vs performers drilldown"""
-    user_id: str
-    email: Optional[str] = None
-    created_classes_count: int
-    completed_plays_count: int  # Qualified plays (>120s)
-    last_activity_at: Optional[str] = None
+    user_id: str = Field(..., description="User identifier")
+    email: Optional[str] = Field(None, description="Email address")
+    created_classes_count: int = Field(..., description="Number of created classes")
+    completed_plays_count: int  # Qualified plays (>120s) = Field(..., description="Number of completed plays")
+    last_activity_at: Optional[str] = Field(None, description="Last Activity timestamp")
 
 
 class CreatorsVsPerformersUsersResponse(BaseModel):
     """Paginated response for user drilldown"""
-    category: str  # 'creators_only', 'performers_only', 'both'
-    total_count: int
-    users: List[CreatorsVsPerformersUserDetail]
-    has_more: bool
+    category: str  # 'creators_only', 'performers_only', 'both' = Field(..., description="Category")
+    total_count: int = Field(..., description="Number of total")
+    users: List[CreatorsVsPerformersUserDetail] = Field(..., description="Users")
+    has_more: bool = Field(..., description="Whether has more")
 
 
 # ==============================================================================
@@ -187,64 +187,64 @@ class CreatorsVsPerformersUsersResponse(BaseModel):
 
 class SectionStartRequest(BaseModel):
     """Request to start tracking a section playback event"""
-    play_session_id: str
-    section_type: str  # 'preparation', 'warmup', 'movement', 'cooldown', 'meditation', 'homecare'
-    section_index: int  # 0-based position in playback sequence
-    movement_id: Optional[str] = None  # Only for movement sections
-    movement_name: Optional[str] = None  # Only for movement sections
-    planned_duration_seconds: int  # From PlaybackItem.duration_seconds
-    class_plan_id: Optional[str] = None  # Optional: class may be deleted or ad-hoc
+    play_session_id: str = Field(..., description="Play Session identifier")
+    section_type: str = Field(..., description="Section Type")  # 'preparation', 'warmup', 'movement', 'cooldown', 'meditation', 'homecare'
+    section_index: int = Field(..., description="Section Index")  # 0-based position in playback sequence
+    movement_id: Optional[str] = Field(None, description="Movement identifier")  # Only for movement sections
+    movement_name: Optional[str] = Field(None, description="Movement Name")  # Only for movement sections
+    planned_duration_seconds: int = Field(..., description="Planned Duration Seconds")  # From PlaybackItem.duration_seconds
+    class_plan_id: Optional[str] = Field(None, description="Class plan identifier")  # Optional: class may be deleted or ad-hoc
 
 
 class SectionEndRequest(BaseModel):
     """Request to end tracking a section playback event"""
-    section_event_id: str
-    ended_reason: str  # 'completed', 'skipped_next', 'skipped_previous', 'exited', 'jumped'
+    section_event_id: str = Field(..., description="Section Event identifier")
+    ended_reason: str = Field(..., description="Ended Reason")  # 'completed', 'skipped_next', 'skipped_previous', 'exited', 'jumped'
 
 
 class SectionEventResponse(BaseModel):
     """Response after creating/updating section event"""
-    section_event_id: str
-    started_at: str
-    is_early_skip: Optional[bool] = None  # Only set after section ends
+    section_event_id: str = Field(..., description="Section Event identifier")
+    started_at: str = Field(..., description="Started timestamp")
+    is_early_skip: Optional[bool] = Field(None, description="Whether early skip")  # Only set after section ends
 
 
 class EarlySkipBySection(BaseModel):
     """Early skip statistics for a section type"""
-    section_type: str
-    total_plays: int
-    early_skips: int
-    early_skip_rate_pct: float
-    avg_duration_seconds: float
-    avg_planned_duration: float
+    section_type: str = Field(..., description="Section Type")
+    total_plays: int = Field(..., description="Total Plays")
+    early_skips: int = Field(..., description="Early Skips")
+    early_skip_rate_pct: float = Field(..., description="Early Skip Rate Pct")
+    avg_duration_seconds: float = Field(..., description="Avg Duration Seconds")
+    avg_planned_duration: float = Field(..., description="Avg Planned Duration")
 
 
 class EarlySkipByMovement(BaseModel):
     """Early skip statistics for a specific movement"""
-    movement_id: str
-    movement_name: str
-    total_plays: int
-    early_skips: int
-    early_skip_rate_pct: float
-    avg_duration_seconds: float
-    avg_planned_duration: float
+    movement_id: str = Field(..., description="Movement identifier")
+    movement_name: str = Field(..., description="Movement Name")
+    total_plays: int = Field(..., description="Total Plays")
+    early_skips: int = Field(..., description="Early Skips")
+    early_skip_rate_pct: float = Field(..., description="Early Skip Rate Pct")
+    avg_duration_seconds: float = Field(..., description="Avg Duration Seconds")
+    avg_planned_duration: float = Field(..., description="Avg Planned Duration")
 
 
 class DataSourceMetadata(BaseModel):
     """Metadata about data source for transparency"""
-    table_name: str
-    sql_query: str
-    description: str
+    table_name: str = Field(..., description="Table Name")
+    sql_query: str = Field(..., description="Sql Query")
+    description: str = Field(..., description="Description")
 
 
 class EarlySkipAnalytics(BaseModel):
     """Aggregated early skip analytics for admin dashboard (with SQL transparency)"""
-    by_section_type: List[EarlySkipBySection]
-    by_movement: List[EarlySkipByMovement]  # Top 10 most-skipped movements
-    overall_stats: Dict[str, Any]  # Total plays, total early skips, overall rate
+    by_section_type: List[EarlySkipBySection] = Field(..., description="By Section Type")
+    by_movement: List[EarlySkipByMovement]  # Top 10 most-skipped movements = Field(..., description="By Movement")
+    overall_stats: Dict[str, Any]  # Total plays, total early skips, overall rate = Field(..., description="Overall Stats")
 
     # SQL transparency - show exactly how data was derived
-    data_sources: List[DataSourceMetadata]
+    data_sources: List[DataSourceMetadata] = Field(..., description="Data Sources")
 
 
 # Helper functions
@@ -1230,41 +1230,41 @@ async def verify_admin(user_id: str) -> bool:
 # Pydantic models for LLM logging
 class LLMInvocationLogEntry(BaseModel):
     """Single LLM invocation log entry"""
-    id: str
-    created_at: str
-    user_id: str
-    method_used: str  # "ai_agent" or "direct_api"
-    llm_called: bool
-    llm_model: Optional[str] = None
-    llm_prompt: Optional[str] = None
-    llm_response: Optional[str] = None
-    llm_iterations: Optional[int] = None
-    request_data: dict
-    processing_time_ms: float
-    success: bool
-    error_message: Optional[str] = None
-    cost_estimate: str
-    result_summary: Optional[dict] = None
+    id: str = Field(..., description="Unique identifier")
+    created_at: str = Field(..., description="Creation timestamp")
+    user_id: str = Field(..., description="User identifier")
+    method_used: str  # "ai_agent" or "direct_api" = Field(..., description="Method Used")
+    llm_called: bool = Field(..., description="Llm Called")
+    llm_model: Optional[str] = Field(None, description="Llm Model")
+    llm_prompt: Optional[str] = Field(None, description="Llm Prompt")
+    llm_response: Optional[str] = Field(None, description="Llm Response")
+    llm_iterations: Optional[int] = Field(None, description="Llm Iterations")
+    request_data: dict = Field(..., description="Request Data")
+    processing_time_ms: float = Field(..., description="Processing Time Ms")
+    success: bool = Field(..., description="Whether the operation was successful")
+    error_message: Optional[str] = Field(None, description="Error message")
+    cost_estimate: str = Field(..., description="Cost Estimate")
+    result_summary: Optional[dict] = Field(None, description="Result Summary")
 
 
 class LLMLogsResponse(BaseModel):
     """Response for LLM logs endpoint"""
-    logs: List[LLMInvocationLogEntry]
-    total_count: int
-    page: int
-    page_size: int
-    has_more: bool
+    logs: List[LLMInvocationLogEntry] = Field(..., description="Logs")
+    total_count: int = Field(..., description="Number of total")
+    page: int = Field(..., description="Page")
+    page_size: int = Field(..., description="Page Size")
+    has_more: bool = Field(..., description="Whether has more")
 
 
 class LLMUsageStats(BaseModel):
     """Aggregated LLM usage statistics"""
-    total_invocations: int
-    ai_agent_calls: int
-    direct_api_calls: int
-    llm_success_rate: float  # Percentage
-    avg_processing_time_ms: float
-    total_estimated_cost: str
-    date_range: dict
+    total_invocations: int = Field(..., description="Total Invocations")
+    ai_agent_calls: int = Field(..., description="Ai Agent Calls")
+    direct_api_calls: int = Field(..., description="Direct Api Calls")
+    llm_success_rate: float  # Percentage = Field(..., description="Llm Success Rate")
+    avg_processing_time_ms: float = Field(..., description="Avg Processing Time Ms")
+    total_estimated_cost: str = Field(..., description="Total Estimated Cost")
+    date_range: dict = Field(..., description="Date Range")
 
 
 @router.get("/llm-logs", response_model=LLMLogsResponse)
@@ -1504,11 +1504,11 @@ def get_movement_muscle_groups_by_name(movement_name: str) -> List[str]:
 
 class BackfillResultsResponse(BaseModel):
     """Response from backfill operation"""
-    success: bool
-    records_processed: int
-    records_updated: int
-    movements_enriched: int
-    message: str
+    success: bool = Field(..., description="Whether the operation was successful")
+    records_processed: int = Field(..., description="Records Processed")
+    records_updated: int = Field(..., description="Records Updated")
+    movements_enriched: int = Field(..., description="Movements Enriched")
+    message: str = Field(..., description="Message content")
 
 
 @router.get("/admin/find-user-id")
@@ -1661,11 +1661,11 @@ async def backfill_muscle_groups_in_class_history(
 
 class ClassSequencingReportResponse(BaseModel):
     """Response for class sequencing report"""
-    report_content: str
-    class_id: str
-    class_date: str
-    total_movements: int
-    pass_status: bool
+    report_content: str = Field(..., description="Report Content")
+    class_id: str = Field(..., description="Class identifier")
+    class_date: str = Field(..., description="Class Date")
+    total_movements: int = Field(..., description="Total Movements")
+    pass_status: bool = Field(..., description="Pass Status")
 
 
 @router.get("/class-sequencing-report/all-users/latest", response_model=ClassSequencingReportResponse)
@@ -2656,32 +2656,32 @@ class QualityTrendData(BaseModel):
 
 class QualityLogEntry(BaseModel):
     """Single quality log entry with full rule compliance details"""
-    id: str
-    class_plan_id: Optional[str] = None  # FIX: Add for reconciliation with sequencing report
-    user_id: str
-    user_email: Optional[str] = None  # User email for admin tracking
-    generated_at: str
-    difficulty_level: str
-    movement_count: int
+    id: str = Field(..., description="Unique identifier")
+    class_plan_id: Optional[str] = Field(None, description="Class plan identifier")  # FIX: Add for reconciliation with sequencing report
+    user_id: str = Field(..., description="User identifier")
+    user_email: Optional[str] = Field(None, description="User Email")  # User email for admin tracking
+    generated_at: str = Field(..., description="Generated timestamp")
+    difficulty_level: str = Field(..., description="Difficulty level (Beginner, Intermediate, or Advanced)")
+    movement_count: int = Field(..., description="Number of movement")
 
     # Rule 1: Muscle repetition
-    rule1_muscle_repetition_pass: bool
-    rule1_max_consecutive_overlap_pct: Optional[float] = None
-    rule1_failed_pairs: Optional[Any] = None  # JSON field - Supabase returns as string
+    rule1_muscle_repetition_pass: bool = Field(..., description="Rule1 Muscle Repetition Pass")
+    rule1_max_consecutive_overlap_pct: Optional[float] = Field(None, description="Rule1 Max Consecutive Overlap Pct")
+    rule1_failed_pairs: Optional[Any] = Field(None, description="Rule1 Failed Pairs")  # JSON field - Supabase returns as string
 
     # Rule 2: Family balance
-    rule2_family_balance_pass: bool
-    rule2_max_family_pct: Optional[float] = None
-    rule2_overrepresented_families: Optional[Any] = None  # JSON field - Supabase returns as string
+    rule2_family_balance_pass: bool = Field(..., description="Rule2 Family Balance Pass")
+    rule2_max_family_pct: Optional[float] = Field(None, description="Rule2 Max Family Pct")
+    rule2_overrepresented_families: Optional[Any] = Field(None, description="Rule2 Overrepresented Families")  # JSON field - Supabase returns as string
 
     # Rule 3: Repertoire coverage
-    rule3_repertoire_coverage_pass: bool
-    rule3_unique_movements_count: Optional[int] = None
-    rule3_stalest_movement_days: Optional[int] = None
+    rule3_repertoire_coverage_pass: bool = Field(..., description="Rule3 Repertoire Coverage Pass")
+    rule3_unique_movements_count: Optional[int] = Field(None, description="Number of rule3 unique movements")
+    rule3_stalest_movement_days: Optional[int] = Field(None, description="Rule3 Stalest Movement Days")
 
     # Overall
-    overall_pass: bool
-    quality_score: Optional[float] = None
+    overall_pass: bool = Field(..., description="Overall Pass")
+    quality_score: Optional[float] = Field(None, description="Quality Score")
 
 
 @router.get("/quality-trends", response_model=QualityTrendData)

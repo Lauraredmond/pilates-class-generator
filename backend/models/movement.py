@@ -70,26 +70,26 @@ class MovementCreate(MovementBase):
 
 class MovementUpdate(BaseModel):
     """Model for updating movements (all fields optional)"""
-    name: Optional[str] = None
-    narrative: Optional[str] = None
-    visual_cues: Optional[str] = None
-    setup_position: Optional[str] = None
-    breathing_pattern: Optional[str] = None
-    duration_seconds: Optional[int] = None
+    name: Optional[str] = Field(None, description="Name")
+    narrative: Optional[str] = Field(None, description="Narrative")
+    visual_cues: Optional[str] = Field(None, description="Visual Cues")
+    setup_position: Optional[str] = Field(None, description="Setup Position")
+    breathing_pattern: Optional[str] = Field(None, description="Breathing Pattern")
+    duration_seconds: Optional[int] = Field(None, description="Duration in seconds")
 
 
 class MovementFilter(BaseModel):
     """Filters for querying movements"""
-    difficulty_level: Optional[str] = None
-    category: Optional[str] = None
-    primary_muscle: Optional[str] = None
-    min_duration: Optional[int] = None
-    max_duration: Optional[int] = None
+    difficulty_level: Optional[str] = Field(None, description="Difficulty level (Beginner, Intermediate, or Advanced)")
+    category: Optional[str] = Field(None, description="Category")
+    primary_muscle: Optional[str] = Field(None, description="Primary Muscle")
+    min_duration: Optional[int] = Field(None, description="Min Duration")
+    max_duration: Optional[int] = Field(None, description="Max Duration")
 
 
 class MovementStats(BaseModel):
     """Movement statistics"""
-    total_movements: int
-    by_difficulty: dict
-    by_category: dict
-    database_connected: bool
+    total_movements: int = Field(..., description="Total Movements")
+    by_difficulty: dict = Field(..., description="By Difficulty")
+    by_category: dict = Field(..., description="By Category")
+    database_connected: bool = Field(..., description="Database Connected")
