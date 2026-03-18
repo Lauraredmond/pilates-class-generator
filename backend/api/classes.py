@@ -171,7 +171,25 @@ class ClassPlanResponse(BaseModel):
         }
 
 
-@router.post("/", response_model=ClassPlanResponse, status_code=201)
+@router.post(
+    "/",
+    response_model=ClassPlanResponse,
+    status_code=201,
+    responses={
+        201: {
+            "description": "Class plan created successfully with full sequence validation, muscle balance calculation, and safety scoring. Returns complete class plan with all movements and metadata."
+        },
+        400: {
+            "description": "Sequence validation failed. Returns specific safety rule violations, warnings, and safety score. Common issues: missing warm-up/cooldown, muscle imbalance >40%, incorrect spinal progression."
+        },
+        404: {
+            "description": "One or more movement IDs not found in the database. Verify all movement_id values exist in the movements table."
+        },
+        500: {
+            "description": "Internal server error during validation or database persistence. Check logs for sequence validator errors or database connection issues."
+        }
+    }
+)
 async def create_class_plan(plan: ClassPlanCreate):
     """
     Create a new class plan with sequence validation
@@ -329,12 +347,27 @@ async def create_class_plan(plan: ClassPlanCreate):
         )
 
 
-@router.get("/{class_id}", response_model=ClassPlanResponse)
+@router.get(
+    "/{class_id}",
+    response_model=ClassPlanResponse,
+    responses={
+        200: {
+            "description": "Class plan retrieved successfully. Returns complete class plan with movements, muscle balance, validation status, and metadata."
+        },
+        404: {
+            "description": "Class plan not found or has been soft-deleted. The class_id does not exist in the database or deleted_at is set."
+        },
+        500: {
+            "description": "Internal server error during database query. Check logs for database connection issues."
+        }
+    }
+)
 async def get_class_plan(class_id: str):
     """
     Get a specific class plan by ID
 
-    Returns full class plan with movement details, muscle balance, and validation status
+    Returns full class plan with movement details, muscle balance, and validation status.
+    Excludes soft-deleted plans (deleted_at is not null).
     """
     try:
         response = supabase.table('class_plans').select('*').eq('id', class_id).execute()
@@ -379,11 +412,25 @@ async def get_class_plan(class_id: str):
         )
 
 
-@router.get("/user/{user_id}", response_model=List[ClassPlanResponse])
+@router.get(
+    "/user/{user_id}",
+    response_model=List[ClassPlanResponse],
+    responses={
+        200: {
+            "description": "User's class plans retrieved successfully. Returns paginated list sorted by created_at DESC, excluding soft-deleted plans."
+        },
+        400: {
+            "description": "Invalid query parameters. Limit must be 1-100, offset must be >= 0."
+        },
+        500: {
+            "description": "Internal server error during database query. Check logs for database connection issues."
+        }
+    }
+)
 async def get_user_class_plans(
     user_id: str,
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0)
+    limit: int = Query(default=20, ge=1, le=100, description="Number of results to return (1-100, default 20)"),
+    offset: int = Query(default=0, ge=0, description="Number of results to skip for pagination (default 0)")
 ):
     """
     Get all class plans for a specific user
@@ -435,8 +482,28 @@ async def get_user_class_plans(
         )
 
 
-@router.delete("/{class_id}", status_code=204)
-async def delete_class_plan(class_id: str, user_id: str = Query(...)):
+@router.delete(
+    "/{class_id}",
+    status_code=204,
+    responses={
+        204: {
+            "description": "Class plan soft-deleted successfully. Sets deleted_at timestamp without removing from database. No content returned."
+        },
+        403: {
+            "description": "Forbidden. User does not own this class plan and cannot delete it. Ownership verified via user_id query parameter."
+        },
+        404: {
+            "description": "Class plan not found or already deleted. The class_id does not exist or deleted_at is already set."
+        },
+        500: {
+            "description": "Internal server error during database update. Check logs for database connection issues."
+        }
+    }
+)
+async def delete_class_plan(
+    class_id: str,
+    user_id: str = Query(..., description="User ID for ownership verification. Must match the class plan's user_id.")
+):
     """
     Soft delete a class plan
 
@@ -493,12 +560,31 @@ async def delete_class_plan(class_id: str, user_id: str = Query(...)):
         )
 
 
-@router.put("/{class_id}", response_model=ClassPlanResponse)
+@router.put(
+    "/{class_id}",
+    response_model=ClassPlanResponse,
+    responses={
+        200: {
+            "description": "Class plan updated successfully. If movements were updated, returns re-validated sequence with new muscle balance calculation. Sets updated_at timestamp."
+        },
+        400: {
+            "description": "Update validation failed. If movements were updated, returns safety rule violations. Verify movement IDs exist and sequence follows safety rules."
+        },
+        404: {
+            "description": "Class plan not found or has been deleted. The class_id does not exist or deleted_at is set."
+        },
+        500: {
+            "description": "Internal server error during update. Check logs for validation errors or database issues."
+        }
+    }
+)
 async def update_class_plan(class_id: str, update: ClassPlanUpdate):
     """
     Update an existing class plan
 
-    If movements are updated, re-validates sequence and recalculates muscle balance
+    If movements are updated, re-validates sequence and recalculates muscle balance.
+    All fields are optional - only provided fields will be updated.
+    Sets updated_at timestamp automatically.
     """
     try:
         # Fetch existing plan
@@ -638,11 +724,34 @@ async def update_class_plan(class_id: str, update: ClassPlanUpdate):
 # ==============================================================================
 
 class ClassGenerationRequest(BaseModel):
-    """Request for AI-generated Pilates class"""
-    user_id: str = Field(..., example="user_123abc", description="User identifier")
-    duration_minutes: int = Field(default=30, ge=1, le=120, example=30, description="Class duration (1-120 minutes)")
-    difficulty: str = Field(default="Beginner", example="Beginner", description="Beginner, Intermediate, or Advanced")
-    use_agent: Optional[bool] = Field(None, example=False, description="Use AI agent (True) or direct API (False)")
+    """
+    Request for AI-generated Pilates class
+
+    Use this model to generate a complete Pilates class sequence that is validated
+    against safety rules, muscle balance requirements, and sequencing best practices.
+    """
+    user_id: str = Field(
+        ...,
+        example="user_123abc",
+        description="Unique identifier for the user requesting the class. Used to fetch user preferences and track generation history."
+    )
+    duration_minutes: int = Field(
+        default=30,
+        ge=1,
+        le=120,
+        example=30,
+        description="Desired class duration in minutes. Must be between 1 and 120 minutes. The system will select movements to fit this duration."
+    )
+    difficulty: str = Field(
+        default="Beginner",
+        example="Beginner",
+        description="Target difficulty level for the class. Valid values: 'Beginner', 'Intermediate', 'Advanced'. Determines movement complexity and intensity."
+    )
+    use_agent: Optional[bool] = Field(
+        None,
+        example=False,
+        description="Whether to use AI agent (GPT-4, costs $0.12-0.15, 15-20s) or direct API (free, <1s). If not specified, uses user's preference from database."
+    )
 
     class Config:
         json_schema_extra = {
@@ -656,13 +765,42 @@ class ClassGenerationRequest(BaseModel):
 
 
 class ClassGenerationResponse(BaseModel):
-    """Response from AI-generated class"""
-    class_plan: dict = Field(..., example={"name": "AI-Generated Class", "movements": []})
-    method: str = Field(..., example="direct_api", description="Generation method: 'ai_agent' or 'direct_api'")
-    iterations: Optional[int] = Field(None, example=3, description="AI agent iterations (if applicable)")
-    success: bool = Field(..., example=True)
-    cost_estimate: str = Field(..., example="$0.00", description="Estimated cost for generation")
-    processing_time_ms: float = Field(..., example=1250.5, description="Processing time in milliseconds")
+    """
+    Response from AI-generated class
+
+    Returns the generated class plan, generation metadata, and performance metrics.
+    Use this response to understand which generation method was used and track costs.
+    """
+    class_plan: dict = Field(
+        ...,
+        example={"name": "AI-Generated Class", "movements": []},
+        description="Complete class plan object with movements, duration, difficulty, and metadata. Contains movement sequences with timing and cues."
+    )
+    method: str = Field(
+        ...,
+        example="direct_api",
+        description="Generation method used: 'ai_agent' (GPT-4 powered, costly) or 'direct_api' (rule-based, free). Indicates which backend system generated the class."
+    )
+    iterations: Optional[int] = Field(
+        None,
+        example=3,
+        description="Number of AI agent iterations (only present if method='ai_agent'). Higher iterations indicate more refinement but higher cost."
+    )
+    success: bool = Field(
+        ...,
+        example=True,
+        description="Whether the class generation succeeded. False indicates an error occurred during generation."
+    )
+    cost_estimate: str = Field(
+        ...,
+        example="$0.00",
+        description="Estimated cost for this generation request. '$0.00' for direct_api, '$0.12-0.15' for ai_agent (GPT-4)."
+    )
+    processing_time_ms: float = Field(
+        ...,
+        example=1250.5,
+        description="Processing time in milliseconds. Direct API typically <1000ms, AI agent typically 15000-20000ms."
+    )
 
     class Config:
         json_schema_extra = {
@@ -691,7 +829,25 @@ class ClassGenerationResponse(BaseModel):
         }
 
 
-@router.post("/generate", response_model=ClassGenerationResponse)
+@router.post(
+    "/generate",
+    response_model=ClassGenerationResponse,
+    status_code=200,
+    responses={
+        200: {
+            "description": "Class generated successfully. Returns complete class plan with movements, timing, difficulty, and generation metadata (method used, cost estimate, processing time)."
+        },
+        400: {
+            "description": "Bad request. Invalid difficulty level or duration out of range (must be 1-120 minutes)."
+        },
+        404: {
+            "description": "No movements found for the specified difficulty level in the database."
+        },
+        500: {
+            "description": "Internal server error during class generation. Check logs for AI agent failures or database errors."
+        }
+    }
+)
 async def generate_class(request: ClassGenerationRequest):
     """
     Generate a Pilates class using AI Agent or Direct API
@@ -711,6 +867,9 @@ async def generate_class(request: ClassGenerationRequest):
        - Time: <1 second
 
     Toggle is controlled by `use_agent` parameter or user preferences.
+
+    The generated class is automatically saved to the database and logged
+    for analytics tracking. Returns the class plan with generation metadata.
     """
     start_time = time.time()
 
@@ -1117,15 +1276,51 @@ def normalize_music_genre(frontend_value: str) -> str:
 
 
 class SaveCompletedClassRequest(BaseModel):
-    """Request to save a completed class to database"""
-    user_id: str = Field(..., example="user_123abc")
-    difficulty: str = Field(..., example="Beginner")
-    duration_minutes: int = Field(..., example=30)
-    movements_snapshot: List[dict] = Field(..., description="Full sequence with movements + transitions")
-    muscle_balance: dict = Field(..., example={"Core": 40, "Glutes": 30, "Back": 20, "Arms": 10})
-    class_name: Optional[str] = Field(default="Automatically Generated Class", example="Morning Core Workout")
-    music_genre: Optional[str] = Field(None, example="CLASSICAL", description="Movement music genre")
-    cooldown_music_genre: Optional[str] = Field(None, example="IMPRESSIONIST", description="Cooldown music genre")
+    """
+    Request to save a completed class to database
+
+    Use this model when a user accepts and saves a generated class. This persists
+    the class to both class_plans and class_history tables for GDPR compliance.
+    """
+    user_id: str = Field(
+        ...,
+        example="user_123abc",
+        description="Unique identifier for the user who completed the class. Used to update their statistics and preferences."
+    )
+    difficulty: str = Field(
+        ...,
+        example="Beginner",
+        description="Difficulty level of the completed class. Valid values: 'Beginner', 'Intermediate', 'Advanced'."
+    )
+    duration_minutes: int = Field(
+        ...,
+        example=30,
+        description="Actual duration of the completed class in minutes. Used for analytics and user progress tracking."
+    )
+    movements_snapshot: List[dict] = Field(
+        ...,
+        description="Complete sequence snapshot with all movements and transitions. Each item must include 'type' ('movement' or 'transition'), 'name', 'duration_seconds', and 'muscle_groups' for movements."
+    )
+    muscle_balance: dict = Field(
+        ...,
+        example={"Core": 40, "Glutes": 30, "Back": 20, "Arms": 10},
+        description="Muscle group balance percentages for the class. Keys are muscle group names, values are percentages (0-100). Used for analytics and variety tracking."
+    )
+    class_name: Optional[str] = Field(
+        default="Automatically Generated Class",
+        example="Morning Core Workout",
+        description="User-provided name for the class. Defaults to 'Automatically Generated Class' if not specified."
+    )
+    music_genre: Optional[str] = Field(
+        None,
+        example="CLASSICAL",
+        description="Music genre used during the movement sequence. Valid values: BAROQUE, CLASSICAL, ROMANTIC, IMPRESSIONIST, MODERN, CONTEMPORARY, CELTIC_TRADITIONAL."
+    )
+    cooldown_music_genre: Optional[str] = Field(
+        None,
+        example="IMPRESSIONIST",
+        description="Music genre used during the cooldown sequence. Valid values: BAROQUE, CLASSICAL, ROMANTIC, IMPRESSIONIST, MODERN, CONTEMPORARY, CELTIC_TRADITIONAL."
+    )
 
     class Config:
         json_schema_extra = {
@@ -1158,12 +1353,37 @@ class SaveCompletedClassRequest(BaseModel):
 
 
 class SaveCompletedClassResponse(BaseModel):
-    """Response after saving completed class"""
-    class_plan_id: str = Field(..., example="class_789xyz", description="Saved class plan ID")
-    class_history_id: str = Field(..., example="history_456def", description="Class history entry ID")
-    classes_completed: int = Field(..., example=5, description="Total classes completed by user")
-    experience_level: str = Field(..., example="beginner", description="User's experience level")
-    message: str = Field(..., example="Class saved successfully! Total classes: 5")
+    """
+    Response after saving completed class
+
+    Returns database IDs for the saved class records and updated user statistics.
+    Use this response to confirm the class was persisted and track user progress.
+    """
+    class_plan_id: str = Field(
+        ...,
+        example="class_789xyz",
+        description="Database ID of the saved class plan record in class_plans table. Use this ID to reference the class in future API calls."
+    )
+    class_history_id: str = Field(
+        ...,
+        example="history_456def",
+        description="Database ID of the class history entry in class_history table. Links this completion event to the class plan for analytics."
+    )
+    classes_completed: int = Field(
+        ...,
+        example=5,
+        description="Updated total number of classes completed by this user. Incremented by 1 each time this endpoint is called."
+    )
+    experience_level: str = Field(
+        ...,
+        example="beginner",
+        description="User's current experience level based on classes completed. Values: 'beginner' (<10 classes), 'intermediate' (10-49 classes), 'advanced' (50+ classes)."
+    )
+    message: str = Field(
+        ...,
+        example="Class saved successfully! Total classes: 5",
+        description="Human-readable success message confirming the class was saved and showing the user's total class count."
+    )
 
     class Config:
         json_schema_extra = {
@@ -1177,7 +1397,22 @@ class SaveCompletedClassResponse(BaseModel):
         }
 
 
-@router.post("/save-completed", response_model=SaveCompletedClassResponse)
+@router.post(
+    "/save-completed",
+    response_model=SaveCompletedClassResponse,
+    status_code=200,
+    responses={
+        200: {
+            "description": "Class saved successfully to both class_plans and class_history tables. Returns database IDs and updated user statistics (total classes completed, experience level)."
+        },
+        400: {
+            "description": "Bad request. Invalid difficulty level, missing required fields, or malformed movements_snapshot."
+        },
+        500: {
+            "description": "Internal server error during database persistence. Check logs for database connection issues or data validation failures."
+        }
+    }
+)
 async def save_completed_class(request: SaveCompletedClassRequest):
     """
     Save a completed class to database (called when user clicks "Accept & Add to Class")
@@ -1186,11 +1421,17 @@ async def save_completed_class(request: SaveCompletedClassRequest):
     1. Saves to class_plans table (appears in "Saved Classes" in GDPR export)
     2. Saves to class_history table linked to class_plan (appears in "Class History")
     3. Increments classes_completed in user_preferences
-    4. Updates movement_usage for each movement
-    5. Returns updated user stats
+    4. Enriches movements_snapshot with muscle_groups from database
+    5. Returns updated user stats (total classes, experience level)
 
     GDPR Compliance: Classes saved via this endpoint will appear in both
     "Saved Classes" and "Class History" sections of the Article 15 data export.
+
+    The endpoint automatically:
+    - Updates user experience level based on total classes (beginner < 10, intermediate < 50, advanced 50+)
+    - Tracks music genre preferences for analytics
+    - Normalizes music genre values from frontend format to analytics format
+    - Sets first_class_date if this is the user's first saved class
 
     Session 13: Movement variety tracking
     Session 14: GDPR data export fix (save to both tables)
