@@ -18,7 +18,7 @@ All endpoints preserve the same request/response interface as before.
 Frontend code requires no changes.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query, Path
 from typing import Optional
 from loguru import logger
 import os
@@ -1171,16 +1171,15 @@ async def get_agent_info(agent: BasslinePilatesCoachAgent = Depends(get_agent)):
 
 @router.get("/decisions/{user_id}")
 async def get_user_decisions(
-    user_id: str,
-    limit: int = 10,
-    agent_type: Optional[str] = None
+    user_id: str = Path(..., description="Unique identifier of the user whose decision history to retrieve"),
+    limit: int = Query(10, ge=1, le=100, description="Maximum number of recent decisions to return (1-100, default 10)"),
+    agent_type: Optional[str] = Query(None, description="Filter by agent type: 'sequence', 'music', 'meditation', or 'research'. Returns all types if not specified.")
 ):
     """
     Get user's agent decision history (EU AI Act transparency)
 
-    - **user_id**: User ID to query
-    - **limit**: Number of recent decisions to return
-    - **agent_type**: Optional filter by agent type
+    Returns a history of AI agent decisions made for this user, including reasoning,
+    confidence scores, and input/output data. Required for EU AI Act Article 13 transparency.
     """
     # This would query the ai_decision_log table
     # Placeholder implementation

@@ -3,7 +3,7 @@ Movements API Router - Session 2B
 Endpoints for retrieving Pilates movement data
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import os
@@ -106,11 +106,11 @@ async def get_all_movements():
 
 @router.get("/search", response_model=List[Movement])
 async def search_movements(
-    difficulty: Optional[str] = None,
-    muscle_group: Optional[str] = None,
-    duration_min: Optional[int] = None,
-    duration_max: Optional[int] = None,
-    search: Optional[str] = None
+    difficulty: Optional[str] = Query(None, description="Filter by difficulty level: 'Beginner', 'Intermediate', or 'Advanced'"),
+    muscle_group: Optional[str] = Query(None, description="Filter by primary muscle group (e.g., 'core', 'legs', 'back'). Case-insensitive partial match."),
+    duration_min: Optional[int] = Query(None, ge=1, description="Minimum duration in seconds (inclusive filter)"),
+    duration_max: Optional[int] = Query(None, ge=1, description="Maximum duration in seconds (inclusive filter)"),
+    search: Optional[str] = Query(None, description="Text search in movement name (case-insensitive partial match)")
 ):
     """
     Search and filter movements with multiple criteria
