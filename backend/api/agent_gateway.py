@@ -105,7 +105,7 @@ async def agent_login(request: AgentLoginRequest):
 
         return AgentAuthResponse(
             access_token=token_data["access_token"],
-            user_id=user["id"],
+            user_id=str(user["id"]),
             email=user["email"]
         )
 
@@ -170,7 +170,7 @@ async def agent_register(request: AgentRegisterRequest):
 
         return AgentAuthResponse(
             access_token=token_data["access_token"],
-            user_id=user["id"],
+            user_id=str(user["id"]),
             email=user["email"]
         )
 
@@ -224,7 +224,7 @@ async def agent_get_me(user_id: str = Depends(get_current_user_id)):
             current_level = prefs.get("experience_level", "beginner").title()
 
         return AgentUserProfile(
-            user_id=user["id"],
+            user_id=str(user["id"]),
             email=user["email"],
             full_name=user.get("full_name"),
             total_classes=total_classes,
@@ -349,7 +349,7 @@ async def agent_list_classes(
 
         classes = [
             AgentSavedClass(
-                class_id=c["id"],
+                class_id=str(c["id"]),
                 duration_minutes=c.get("duration_minutes", 0),
                 difficulty_level=c.get("difficulty_level", "Beginner"),
                 movement_count=c.get("total_movements", 0),
@@ -408,7 +408,7 @@ async def agent_get_class(
         ]
 
         return AgentClassResponse(
-            class_id=class_data["id"],
+            class_id=str(class_data["id"]),
             duration_minutes=class_data.get("duration_minutes", 0),
             difficulty_level=class_data.get("difficulty_level", "Beginner"),
             movement_count=len(movements),
@@ -615,7 +615,7 @@ async def agent_search_movements(
 
         movements = [
             AgentMovementDetail(
-                id=m["id"],
+                id=str(m["id"]),
                 name=m["name"],
                 difficulty_level=m.get("difficulty_level", "Beginner"),
                 primary_muscles=m.get("primary_muscles", ["Core"]),
