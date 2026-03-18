@@ -2849,8 +2849,8 @@ async def get_quality_logs(
 # ==============================================================================
 
 async def generate_and_save_sequencing_report_background(
-    class_plan_id: str = Path(..., description="Unique identifier (UUID) for the class plan"),
-    user_id: str = Path(..., description="Unique identifier (UUID) for the user"),
+    class_plan_id: str,
+    user_id: str,
     movements_snapshot: List[Dict[str, Any]]
 ):
     """
@@ -2989,8 +2989,8 @@ async def generate_and_save_sequencing_report_background(
 
 @router.post("/trigger-report-generation/{class_plan_id}")
 async def trigger_sequencing_report_generation(
-    class_plan_id: str = Path(..., description="Unique identifier (UUID) for the class plan"),
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    class_plan_id: str = Path(..., description="Unique identifier (UUID) for the class plan")
 ):
     """
     Trigger async report generation for a specific class
