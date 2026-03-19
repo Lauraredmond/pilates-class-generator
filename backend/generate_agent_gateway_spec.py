@@ -15,18 +15,24 @@ sys.path.insert(0, os.path.dirname(__file__))
 from api.main import app
 
 
-def generate_agent_gateway_spec():
+def get_agent_gateway_spec_dict():
     """
-    Generate OpenAPI spec with only agent gateway endpoints
+    Get Agent Gateway OpenAPI spec as a dictionary (without saving files)
 
-    This creates a simplified, agent-focused spec optimized for:
+    This is the core spec generation logic used by:
+    - API endpoint: /api/agent/openapi.json
+    - CLI script: generate_agent_gateway_spec.py
+
+    Returns a simplified, agent-focused spec optimized for:
     - Jentic AI Readiness scoring (target: 70-90/100)
     - OpenClaw integration
-    - Lower operation count (13 vs 131)
+    - Lower operation count (11 vs 131)
     - Simpler schema depth (≤3)
     - Clear agent-first documentation
-    """
 
+    Returns:
+        dict: OpenAPI 3.1.0 spec with only agent gateway endpoints
+    """
     # Generate full OpenAPI spec
     full_spec = app.openapi()
 
@@ -343,7 +349,26 @@ Get your token from the login endpoint.
         }
     }
 
-    # Calculate stats
+    return agent_spec
+
+
+def generate_agent_gateway_spec():
+    """
+    Generate and save Agent Gateway OpenAPI spec files (JSON + YAML)
+
+    This is the CLI entrypoint that:
+    1. Generates the spec using get_agent_gateway_spec_dict()
+    2. Prints statistics
+    3. Saves files to disk
+
+    Returns:
+        dict: The generated OpenAPI spec
+    """
+    # Get the spec
+    agent_spec = get_agent_gateway_spec_dict()
+
+    # Calculate stats for display
+    agent_paths = agent_spec.get("paths", {})
     total_operations = sum(
         len([m for m in path_item.keys() if m in ["get", "post", "put", "patch", "delete"]])
         for path_item in agent_paths.values()
@@ -355,7 +380,7 @@ Get your token from the login endpoint.
     print(f"Total endpoints: {len(agent_paths)}")
     print(f"Total operations: {total_operations}")
     print(f"Schemas included: {len(agent_spec['components']['schemas'])}")
-    print(f"Workflows documented: {len(agent_spec['x-agent-workflows'])}")
+    print(f"Workflows documented: {len(agent_spec.get('x-agent-workflows', {}))}")
     print("="*60)
 
     # Save as JSON
