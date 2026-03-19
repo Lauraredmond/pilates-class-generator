@@ -13,6 +13,7 @@ from loguru import logger
 import time
 from uuid import uuid4
 from datetime import datetime
+from functools import lru_cache
 
 # Import routers
 from api import movements, agents, classes, analytics, auth, users, compliance, music, beta_errors, class_sections, movement_levels, feedback, debug, admin, coach, admin_extended, agent_gateway
@@ -105,6 +106,37 @@ async def root():
         "docs": "/api/docs",
         "health": "/health"
     }
+
+
+# Cached agent gateway spec generator
+@lru_cache(maxsize=1)
+def _get_cached_agent_spec():
+    """Cache agent gateway spec generation (expensive operation)"""
+    from generate_agent_gateway_spec import get_agent_gateway_spec_dict
+    return get_agent_gateway_spec_dict()
+
+
+# Agent Gateway OpenAPI spec endpoint
+@app.get("/api/agent/openapi.json", include_in_schema=False)
+async def get_agent_gateway_openapi():
+    """
+    Serve Agent Gateway OpenAPI spec (11 operations, optimized for AI agents)
+
+    This endpoint provides a simplified OpenAPI specification designed for:
+    - Jentic AI platform integration
+    - OpenClaw agent integration
+    - AI agent development and testing
+
+    The agent gateway spec is a curated subset of the full API (11 vs 131 operations)
+    with optimizations for AI agent consumption.
+
+    Jentic Scorecard: 70/100 (vs 26/100 for full API)
+
+    For integration, use this URL:
+    - Dev: https://pilates-dev-i0jb.onrender.com/api/agent/openapi.json
+    - Local: http://localhost:8000/api/agent/openapi.json
+    """
+    return _get_cached_agent_spec()
 
 
 # Include routers
