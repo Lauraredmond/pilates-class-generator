@@ -294,6 +294,10 @@ async def generate_sequence(
                             "movement_family": movement.get('movement_family', 'other'),  # FIX: Include for Rule 2 calculations
                             "duration_seconds": movement.get('duration_seconds', 60),
                             "order_index": idx,
+                            # Instructor feedback improvements (March 2026)
+                            "intensity_score": movement.get('intensity_score'),  # For intensity gating report
+                            "class_phase": movement.get('class_phase'),  # For intensity gating report
+                            "setup_position": movement.get('setup_position'),  # For position-change budget report
                             # Voiceover audio fields (Session 13.5)
                             "voiceover_url": movement.get('voiceover_url'),
                             "voiceover_duration_seconds": movement.get('voiceover_duration_seconds'),
@@ -999,6 +1003,10 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                         "movement_family": movement.get('movement_family', 'other'),  # FIX: Include for Rule 2 calculations
                         "duration_seconds": movement.get('duration_seconds', 60),
                         "order_index": idx,
+                        # Instructor feedback improvements (March 2026)
+                        "intensity_score": movement.get('intensity_score'),  # For intensity gating report
+                        "class_phase": movement.get('class_phase'),  # For intensity gating report
+                        "setup_position": movement.get('setup_position'),  # For position-change budget report
                         "voiceover_url": movement.get('voiceover_url'),
                         "voiceover_duration_seconds": movement.get('voiceover_duration_seconds'),
                         "voiceover_enabled": movement.get('voiceover_enabled', False)
