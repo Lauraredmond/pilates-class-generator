@@ -63,6 +63,13 @@
 
 ## 🎯 NEXT PRIORITIES
 
+**🔥 IMMEDIATE - Next Session:**
+- **Merge Agent Gateway to main** (currently dev-only)
+  - Commits: `01c907fc` (Agent Gateway), `ec475664` (UUID fix), plus OpenAPI enhancements
+  - Provides `/api/agent/*` endpoints for Jentic/OpenClaw AI agents
+  - Zero regression - coexists with existing `/api/*` endpoints
+  - Achieved 70/100 Jentic score
+
 **See CLAUDE_ARCHIVE.md "Prioritized Enhancement Roadmap" section for:**
 - Chromecast integration (High Priority)
 - Admin-only AI toggle + Redis caching (cost reduction)

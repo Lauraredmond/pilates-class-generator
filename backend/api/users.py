@@ -3,8 +3,8 @@ User profile and statistics API
 Manage user profiles, preferences, and view statistics
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, HTTPException, status, Depends, Path
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
 from datetime import datetime
 import os
@@ -30,35 +30,35 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Request/Response models
 class UserProfileUpdate(BaseModel):
-    full_name: Optional[str] = None
-    email: Optional[EmailStr] = None
+    full_name: Optional[str] = Field(None, description="Full Name")
+    email: Optional[EmailStr] = Field(None, description="Email address")
 
 
 class PasswordChange(BaseModel):
-    current_password: str
-    new_password: str
+    current_password: str = Field(..., description="Current Password")
+    new_password: str = Field(..., description="New Password")
 
 
 class UserStats(BaseModel):
-    total_classes: int
-    total_duration_minutes: int
-    total_movements: int
-    classes_this_week: int
-    classes_this_month: int
-    current_streak_days: int
-    favorite_movements: List[dict]
-    muscle_group_distribution: dict
-    difficulty_distribution: dict
-    total_research_insights: int
+    total_classes: int = Field(..., description="Total Classes")
+    total_duration_minutes: int = Field(..., description="Total Duration Minutes")
+    total_movements: int = Field(..., description="Total Movements")
+    classes_this_week: int = Field(..., description="Classes This Week")
+    classes_this_month: int = Field(..., description="Classes This Month")
+    current_streak_days: int = Field(..., description="Current Streak Days")
+    favorite_movements: List[dict] = Field(..., description="Favorite Movements")
+    muscle_group_distribution: dict = Field(..., description="Muscle Group Distribution")
+    difficulty_distribution: dict = Field(..., description="Difficulty Distribution")
+    total_research_insights: int = Field(..., description="Total Research Insights")
 
 
 class UserProfile(BaseModel):
-    id: str
-    email: str
-    full_name: Optional[str]
-    created_at: datetime
-    last_login: Optional[datetime]
-    preferences: UserPreferences
+    id: str = Field(..., description="Unique identifier")
+    email: str = Field(..., description="Email address")
+    full_name: Optional[str] = Field(..., description="Full Name")
+    created_at: datetime = Field(..., description="Creation timestamp")
+    last_login: Optional[datetime] = Field(..., description="Last Login")
+    preferences: UserPreferences = Field(..., description="Preferences")
 
 
 @router.get("/me/profile", response_model=UserProfile)

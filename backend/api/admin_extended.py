@@ -137,8 +137,8 @@ async def get_user_details(
 
 @router.put("/users/{user_id}")
 async def update_user_by_admin(
-    user_id: UUID,
     updates: dict,
+    user_id: UUID = Path(..., description="Unique identifier (UUID) for the user"),
     current_user: User = Depends(admin_required)
 ):
     """Update user profile (admin only)"""
@@ -179,7 +179,7 @@ async def update_user_by_admin(
 
 @router.delete("/users/{user_id}")
 async def delete_user_by_admin(
-    user_id: UUID,
+    user_id: UUID = Path(..., description="Unique identifier (UUID) for the user"),
     current_user: User = Depends(admin_required)
 ):
     """Permanently delete user account (admin only)"""

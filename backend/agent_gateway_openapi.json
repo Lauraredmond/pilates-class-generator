@@ -1,0 +1,1917 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Pilates Class Planner - Agent Gateway API",
+    "version": "2.0.0",
+    "description": "\n# Pilates Class Planner - AI Agent Gateway\n\nSimplified API optimized for AI agents (Jentic, OpenClaw, etc.)\n\n## \ud83c\udfaf Purpose\n\nThis API provides a high-level, agent-friendly interface to the Pilates Class Planner.\nInstead of navigating 131 endpoints, agents use **13 simplified workflows**.\n\n## \ud83d\ude80 Quick Start for AI Agents\n\n### 1. Authentication\n```bash\nPOST /api/agent/auth/login\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\"\n}\n```\n\n### 2. Generate a Class\n```bash\nPOST /api/agent/classes/generate\nAuthorization: Bearer <token>\n{\n  \"duration_minutes\": 60,\n  \"difficulty_level\": \"Beginner\",\n  \"focus_areas\": [\"core\", \"back\"],\n  \"include_music\": true,\n  \"include_meditation\": true\n}\n```\n\n### 3. Get User Analytics\n```bash\nGET /api/agent/analytics\nAuthorization: Bearer <token>\n```\n\n## \ud83d\udcca Key Features\n\n- **Simple Auth**: Login \u2192 Get token \u2192 Use everywhere\n- **Class Generation**: One endpoint creates complete classes\n- **Analytics**: Aggregated stats in one call\n- **Movements**: Search with simple filters\n- **Music**: Browse playlists easily\n\n## \ud83d\udd10 Authentication\n\nAll endpoints except `/api/agent/auth/login` and `/api/agent/auth/register` require:\n\n```\nAuthorization: Bearer <access_token>\n```\n\nGet your token from the login endpoint.\n\n## \ud83d\udcc8 Rate Limits\n\n- Free tier: 100 requests/hour\n- Pro tier: 1000 requests/hour\n\n## \ud83d\udee0\ufe0f Support\n\n- Docs: https://docs.basslinepilates.com\n- Issues: https://github.com/basslinepilates/api/issues\n",
+    "contact": {
+      "name": "Bassline Pilates API Support",
+      "url": "https://docs.basslinepilates.com",
+      "email": "support@basslinepilates.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.basslinepilates.com",
+      "description": "Production API server"
+    },
+    {
+      "url": "https://api-dev.basslinepilates.com",
+      "description": "Development API server"
+    }
+  ],
+  "paths": {
+    "/api/agent/auth/login": {
+      "post": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Login (Agent Simplified)",
+        "description": "Authenticate user and return JWT token. Simpler than /api/auth/login.",
+        "operationId": "agentLogin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentAuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Request data failed validation rules",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/validation-error",
+                  "title": "Validation Error",
+                  "status": 422,
+                  "detail": "Validation failed for field 'difficulty_level': value is not a valid enumeration member",
+                  "instance": "/api/agent/auth/login"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/auth/login"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid request syntax or parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/validation-error",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "The request contains invalid or malformed data.",
+                  "instance": "/api/agent/auth/login"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/auth/login"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/auth/login"
+                }
+              }
+            }
+          }
+        },
+        "x-complexity": "LOW",
+        "security": []
+      }
+    },
+    "/api/agent/auth/register": {
+      "post": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Register (Agent Simplified)",
+        "description": "Create new user account. Simpler than /api/auth/register.",
+        "operationId": "agentRegister",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentAuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Request data failed validation rules",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/validation-error",
+                  "title": "Validation Error",
+                  "status": 422,
+                  "detail": "Validation failed for field 'difficulty_level': value is not a valid enumeration member",
+                  "instance": "/api/agent/auth/register"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/auth/register"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid request syntax or parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/validation-error",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "The request contains invalid or malformed data.",
+                  "instance": "/api/agent/auth/register"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/auth/register"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/auth/register"
+                }
+              }
+            }
+          }
+        },
+        "x-complexity": "LOW",
+        "security": []
+      }
+    },
+    "/api/agent/auth/me": {
+      "get": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Get Current User (Agent Simplified)",
+        "description": "Get authenticated user profile with essential stats only.",
+        "operationId": "agentGetMe",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentUserProfile"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/auth/me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/auth/me"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/auth/me"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-complexity": "LOW"
+      }
+    },
+    "/api/agent/classes/generate": {
+      "post": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Generate Pilates Class (Agent Entry Point)",
+        "description": "High-level endpoint to generate a complete Pilates class. Orchestrates sequence generation, music selection, and meditation script.",
+        "operationId": "agentGenerateClass",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentGenerateClassRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentClassResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Request data failed validation rules",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/validation-error",
+                  "title": "Validation Error",
+                  "status": 422,
+                  "detail": "Validation failed for field 'difficulty_level': value is not a valid enumeration member",
+                  "instance": "/api/agent/classes/generate"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/classes/generate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid request syntax or parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/validation-error",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "The request contains invalid or malformed data.",
+                  "instance": "/api/agent/classes/generate"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/classes/generate"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/classes/generate"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-complexity": "LOW"
+      }
+    },
+    "/api/agent/classes": {
+      "get": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "List User's Saved Classes (Agent Simplified)",
+        "description": "Get all saved classes for authenticated user. Returns simplified summaries only.",
+        "operationId": "agentListClasses",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentSavedClass"
+                  },
+                  "title": "Response Agent Gateway-Agent List Classes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/classes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/classes"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/classes"
+                }
+              }
+            }
+          }
+        },
+        "x-complexity": "LOW"
+      }
+    },
+    "/api/agent/classes/{class_id}": {
+      "get": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Get Class Details (Agent Simplified)",
+        "description": "Get detailed information about a specific saved class.",
+        "operationId": "agentGetClass",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique class identifier",
+              "title": "Class Id"
+            },
+            "description": "Unique class identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentClassResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/classes/{class_id}"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - The requested resource does not exist",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/resource-not-found",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "The requested resource was not found.",
+                  "instance": "/api/agent/classes/{class_id}"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/classes/{class_id}"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/classes/{class_id}"
+                }
+              }
+            }
+          }
+        },
+        "x-complexity": "LOW"
+      },
+      "delete": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Delete Class (Agent Simplified)",
+        "description": "Soft delete a saved class (sets deleted_at timestamp).",
+        "operationId": "agentDeleteClass",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique class identifier",
+              "title": "Class Id"
+            },
+            "description": "Unique class identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentSuccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/classes/{class_id}"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - The requested resource does not exist",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/resource-not-found",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "The requested resource was not found.",
+                  "instance": "/api/agent/classes/{class_id}"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/classes/{class_id}"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/classes/{class_id}"
+                }
+              }
+            }
+          }
+        },
+        "x-complexity": "LOW"
+      }
+    },
+    "/api/agent/analytics": {
+      "get": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Get User Analytics (Agent Aggregated)",
+        "description": "Aggregated user statistics - combines multiple analytics endpoints into one simple response.",
+        "operationId": "agentGetAnalytics",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentAnalyticsSummary"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/analytics"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/analytics"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/analytics"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-complexity": "LOW"
+      }
+    },
+    "/api/agent/movements": {
+      "get": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Search Movements (Agent Simplified)",
+        "description": "Search Pilates movements with simplified response. Filter by difficulty or muscle group.",
+        "operationId": "agentSearchMovements",
+        "parameters": [
+          {
+            "name": "difficulty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by difficulty: Beginner, Intermediate, Advanced",
+              "title": "Difficulty"
+            },
+            "description": "Filter by difficulty: Beginner, Intermediate, Advanced"
+          },
+          {
+            "name": "muscle_group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by muscle group: Core, Legs, Back, Arms",
+              "title": "Muscle Group"
+            },
+            "description": "Filter by muscle group: Core, Legs, Back, Arms"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentMovementDetail"
+                  },
+                  "title": "Response Agent Gateway-Agent Search Movements"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/movements"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/movements"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/movements"
+                }
+              }
+            }
+          }
+        },
+        "x-complexity": "LOW",
+        "security": []
+      }
+    },
+    "/api/agent/music/playlists": {
+      "get": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Get Music Playlists (Agent Simplified)",
+        "description": "Get available music playlists with simplified details.",
+        "operationId": "agentGetPlaylists",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentMusicPlaylist"
+                  },
+                  "title": "Response Agent Gateway-Agent Get Playlists"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/music/playlists"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/music/playlists"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/music/playlists"
+                }
+              }
+            }
+          }
+        },
+        "x-complexity": "LOW",
+        "security": []
+      }
+    },
+    "/api/agent/health": {
+      "get": {
+        "tags": [
+          "Agent Gateway"
+        ],
+        "summary": "Health Check",
+        "description": "Simple health check endpoint for monitoring.",
+        "operationId": "agentHealth",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - An unexpected error occurred",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while processing your request.",
+                  "instance": "/api/agent/health"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/authentication-required",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to access this resource.",
+                  "instance": "/api/agent/health"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions to access this resource",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFC9457ProblemDetail"
+                },
+                "example": {
+                  "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this resource.",
+                  "instance": "/api/agent/health"
+                }
+              }
+            }
+          }
+        },
+        "x-complexity": "LOW",
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentGenerateClassRequest": {
+        "properties": {
+          "duration_minutes": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 10.0,
+            "title": "Duration Minutes",
+            "description": "Class duration in minutes (10-120)",
+            "example": 60
+          },
+          "difficulty_level": {
+            "type": "string",
+            "title": "Difficulty Level",
+            "description": "Difficulty level: Beginner, Intermediate, or Advanced",
+            "example": "Beginner"
+          },
+          "focus_areas": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Areas",
+            "description": "Optional muscle groups to emphasize (e.g., core, legs, back)",
+            "example": [
+              "core",
+              "back"
+            ]
+          },
+          "include_music": {
+            "type": "boolean",
+            "title": "Include Music",
+            "description": "Include music playlist in the class",
+            "default": true
+          },
+          "include_meditation": {
+            "type": "boolean",
+            "title": "Include Meditation",
+            "description": "Include closing meditation script",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "duration_minutes",
+          "difficulty_level"
+        ],
+        "title": "AgentGenerateClassRequest",
+        "description": "Simplified class generation request for agents"
+      },
+      "AgentRegisterRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "User email address",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "User password (min 8 characters)",
+            "example": "SecurePass123!"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name",
+            "description": "User's full name",
+            "example": "Jane Doe"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "AgentRegisterRequest",
+        "description": "Simplified registration request for agents"
+      },
+      "AgentMusicPlaylist": {
+        "properties": {
+          "playlist_id": {
+            "type": "string",
+            "title": "Playlist Id",
+            "description": "Unique playlist identifier"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Playlist name",
+            "example": "Classical Calm"
+          },
+          "genre": {
+            "type": "string",
+            "title": "Genre",
+            "description": "Music genre",
+            "example": "Classical"
+          },
+          "total_tracks": {
+            "type": "integer",
+            "title": "Total Tracks",
+            "description": "Number of tracks",
+            "example": 12
+          },
+          "total_duration_seconds": {
+            "type": "integer",
+            "title": "Total Duration Seconds",
+            "description": "Total duration",
+            "example": 3600
+          },
+          "suitable_for": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Suitable For",
+            "description": "Suitable class types",
+            "example": [
+              "Beginner",
+              "Meditation"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "playlist_id",
+          "name",
+          "genre",
+          "total_tracks",
+          "total_duration_seconds",
+          "suitable_for"
+        ],
+        "title": "AgentMusicPlaylist",
+        "description": "Simplified music playlist for agents"
+      },
+      "AgentAnalyticsSummary": {
+        "properties": {
+          "total_classes": {
+            "type": "integer",
+            "title": "Total Classes",
+            "description": "Total classes completed",
+            "example": 45
+          },
+          "total_practice_minutes": {
+            "type": "integer",
+            "title": "Total Practice Minutes",
+            "description": "Total practice time in minutes",
+            "example": 2700
+          },
+          "current_level": {
+            "type": "string",
+            "title": "Current Level",
+            "description": "Current difficulty level",
+            "example": "Intermediate"
+          },
+          "practice_streak_days": {
+            "type": "integer",
+            "title": "Practice Streak Days",
+            "description": "Current practice streak in days",
+            "example": 12
+          },
+          "favorite_movements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Favorite Movements",
+            "description": "Most practiced movements",
+            "example": [
+              "The Hundred",
+              "Roll Up"
+            ]
+          },
+          "muscle_balance": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Muscle Balance",
+            "description": "Muscle group balance percentages",
+            "example": {
+              "arms": 15,
+              "back": 20,
+              "core": 35,
+              "legs": 25,
+              "other": 5
+            }
+          },
+          "this_week_classes": {
+            "type": "integer",
+            "title": "This Week Classes",
+            "description": "Classes completed this week",
+            "example": 3
+          },
+          "this_month_classes": {
+            "type": "integer",
+            "title": "This Month Classes",
+            "description": "Classes completed this month",
+            "example": 12
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_classes",
+          "total_practice_minutes",
+          "current_level",
+          "practice_streak_days",
+          "favorite_movements",
+          "muscle_balance",
+          "this_week_classes",
+          "this_month_classes"
+        ],
+        "title": "AgentAnalyticsSummary",
+        "description": "Simplified analytics summary for agents"
+      },
+      "AgentSavedClass": {
+        "properties": {
+          "class_id": {
+            "type": "string",
+            "title": "Class Id",
+            "description": "Unique class identifier"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "title": "Duration Minutes",
+            "description": "Class duration in minutes"
+          },
+          "difficulty_level": {
+            "type": "string",
+            "title": "Difficulty Level",
+            "description": "Difficulty level"
+          },
+          "movement_count": {
+            "type": "integer",
+            "title": "Movement Count",
+            "description": "Number of movements"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "When class was created"
+          },
+          "last_accessed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Accessed",
+            "description": "When class was last accessed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_id",
+          "duration_minutes",
+          "difficulty_level",
+          "movement_count",
+          "created_at"
+        ],
+        "title": "AgentSavedClass",
+        "description": "Simplified saved class summary for agents"
+      },
+      "AgentClassResponse": {
+        "properties": {
+          "class_id": {
+            "type": "string",
+            "title": "Class Id",
+            "description": "Unique class identifier"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "title": "Duration Minutes",
+            "description": "Total class duration in minutes"
+          },
+          "difficulty_level": {
+            "type": "string",
+            "title": "Difficulty Level",
+            "description": "Class difficulty level"
+          },
+          "movement_count": {
+            "type": "integer",
+            "title": "Movement Count",
+            "description": "Number of movements in class"
+          },
+          "movements": {
+            "items": {
+              "$ref": "#/components/schemas/AgentMovementSummary"
+            },
+            "type": "array",
+            "title": "Movements",
+            "description": "List of movements"
+          },
+          "has_music": {
+            "type": "boolean",
+            "title": "Has Music",
+            "description": "Whether class includes music"
+          },
+          "has_meditation": {
+            "type": "boolean",
+            "title": "Has Meditation",
+            "description": "Whether class includes meditation"
+          },
+          "music": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentMusicSummary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Music summary (if included)"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "When class was created (ISO 8601)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_id",
+          "duration_minutes",
+          "difficulty_level",
+          "movement_count",
+          "movements",
+          "has_music",
+          "has_meditation",
+          "created_at"
+        ],
+        "title": "AgentClassResponse",
+        "description": "Simplified class response for agents"
+      },
+      "AgentAuthResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token",
+            "description": "JWT access token for API authentication"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Unique user identifier"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "User email address"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "user_id",
+          "email"
+        ],
+        "title": "AgentAuthResponse",
+        "description": "Simplified auth response for agents"
+      },
+      "AgentLoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "User email address",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "User password",
+            "example": "SecurePass123!"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "AgentLoginRequest",
+        "description": "Simplified login request for agents"
+      },
+      "RFC9457ProblemDetail": {
+        "description": "RFC 9457 Problem Details for HTTP APIs\n\nStandard format for machine-readable error responses that improves\nAI agent understanding and API integration quality.\n\nSpec: https://www.rfc-editor.org/rfc/rfc9457.html\n\nJENTIC FIX: Error Standardization 0% \u2192 90%+",
+        "example": {
+          "detail": "The 'difficulty_level' field must be one of: Beginner, Intermediate, Advanced. Received: 'Expert'.",
+          "error_id": "550e8400-e29b-41d4-a716-446655440000",
+          "instance": "/api/classes/generate",
+          "status": 400,
+          "timestamp": "2025-12-11T10:30:00Z",
+          "title": "Validation Error",
+          "type": "https://api.basslinepilates.com/errors/validation-error"
+        },
+        "properties": {
+          "type": {
+            "default": "about:blank",
+            "description": "URI reference identifying the problem type. When 'about:blank', the title is the same as the HTTP status code text.",
+            "title": "Type",
+            "type": "string"
+          },
+          "title": {
+            "description": "Short, human-readable summary of the problem type. Should not change between occurrences except for localization.",
+            "title": "Title",
+            "type": "string"
+          },
+          "status": {
+            "description": "HTTP status code generated by the origin server for this occurrence.",
+            "maximum": 599,
+            "minimum": 400,
+            "title": "Status",
+            "type": "integer"
+          },
+          "detail": {
+            "description": "Human-readable explanation specific to this occurrence of the problem. Focuses on helping client correct the issue.",
+            "title": "Detail",
+            "type": "string"
+          },
+          "instance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "URI reference identifying the specific occurrence of the problem. Often a request ID or error tracking ID.",
+            "title": "Instance"
+          },
+          "error_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Unique error identifier for log correlation (extension field)",
+            "title": "Error Id"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "When the error occurred (extension field)",
+            "title": "Timestamp"
+          }
+        },
+        "required": [
+          "title",
+          "status",
+          "detail"
+        ],
+        "title": "RFC9457ProblemDetail",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "AgentUserProfile": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Unique user identifier"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "User email address"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name",
+            "description": "User's full name"
+          },
+          "total_classes": {
+            "type": "integer",
+            "title": "Total Classes",
+            "description": "Total classes completed",
+            "default": 0
+          },
+          "current_level": {
+            "type": "string",
+            "title": "Current Level",
+            "description": "Current difficulty level",
+            "default": "Beginner"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email"
+        ],
+        "title": "AgentUserProfile",
+        "description": "Simplified user profile for agents"
+      },
+      "AgentMovementDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique movement identifier"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Movement name",
+            "example": "The Hundred"
+          },
+          "difficulty_level": {
+            "type": "string",
+            "title": "Difficulty Level",
+            "description": "Difficulty level",
+            "example": "Beginner"
+          },
+          "primary_muscles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Primary Muscles",
+            "description": "Primary muscles targeted",
+            "example": [
+              "Core"
+            ]
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds",
+            "description": "Typical duration in seconds",
+            "example": 60
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Brief description of the movement"
+          },
+          "contraindications": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contraindications",
+            "description": "When to avoid this movement",
+            "example": [
+              "Neck injury",
+              "Lower back pain"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "difficulty_level",
+          "primary_muscles",
+          "duration_seconds",
+          "description"
+        ],
+        "title": "AgentMovementDetail",
+        "description": "Simplified movement detail for agents"
+      },
+      "AgentSuccessResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Operation succeeded",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable success message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "AgentSuccessResponse",
+        "description": "Standard success response for agents"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT authentication. Get token from /api/agent/auth/login"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Agent Gateway",
+      "description": "Simplified endpoints optimized for AI agents. These endpoints provide high-level workflows that orchestrate complex backend operations. Use these instead of navigating the full API for better AI agent compatibility."
+    }
+  ],
+  "x-agent-workflows": {
+    "user_authentication": {
+      "description": "Authenticate and get access token",
+      "steps": [
+        {
+          "endpoint": "POST /api/agent/auth/login",
+          "required": true
+        },
+        {
+          "endpoint": "GET /api/agent/auth/me",
+          "required": false
+        }
+      ],
+      "example_prompt": "User says: 'Login with my email and password'"
+    },
+    "generate_pilates_class": {
+      "description": "Generate a complete Pilates class",
+      "steps": [
+        {
+          "endpoint": "POST /api/agent/classes/generate",
+          "required": true
+        }
+      ],
+      "example_prompt": "User says: 'Create a 60-minute beginner class focused on core'"
+    },
+    "view_saved_classes": {
+      "description": "List and view saved classes",
+      "steps": [
+        {
+          "endpoint": "GET /api/agent/classes",
+          "required": true
+        },
+        {
+          "endpoint": "GET /api/agent/classes/{id}",
+          "required": false
+        }
+      ],
+      "example_prompt": "User says: 'Show me my saved classes'"
+    },
+    "check_progress": {
+      "description": "Get user analytics and progress",
+      "steps": [
+        {
+          "endpoint": "GET /api/agent/analytics",
+          "required": true
+        }
+      ],
+      "example_prompt": "User says: 'How many classes have I completed?'"
+    },
+    "search_movements": {
+      "description": "Find specific exercises",
+      "steps": [
+        {
+          "endpoint": "GET /api/agent/movements",
+          "required": true
+        }
+      ],
+      "example_prompt": "User says: 'Find beginner core movements'"
+    }
+  }
+}

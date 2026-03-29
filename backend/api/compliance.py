@@ -3,7 +3,7 @@ Compliance API Endpoints - GDPR & EU AI Act
 Provides users with transparency into their data processing
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Path
 from fastapi.responses import HTMLResponse
 from typing import Dict, Any, List
 from datetime import datetime

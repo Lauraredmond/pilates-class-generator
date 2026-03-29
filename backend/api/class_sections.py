@@ -3,7 +3,7 @@ Class Sections API
 Endpoints for all 6 Pilates class sections (Session 11)
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Path
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -32,85 +32,85 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ============================================
 
 class PreparationScript(BaseModel):
-    id: str
-    script_name: str
-    script_type: str  # 'centering', 'breathing', 'principles'
-    narrative: str
-    key_principles: List[str]
-    duration_seconds: int
-    voiceover_url: Optional[str] = None
-    voiceover_duration: Optional[int] = None
-    voiceover_enabled: Optional[bool] = False
-    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
-    created_at: datetime
-    updated_at: datetime
+    id: str = Field(..., description="Unique identifier")
+    script_name: str = Field(..., description="Script Name")
+    script_type: str = Field(..., description="Script Type")  # 'centering', 'breathing', 'principles'
+    narrative: str = Field(..., description="Narrative")
+    key_principles: List[str] = Field(..., description="Key Principles")
+    duration_seconds: int = Field(..., description="Duration in seconds")
+    voiceover_url: Optional[str] = Field(None, description="URL for voiceover")
+    voiceover_duration: Optional[int] = Field(None, description="Voiceover Duration")
+    voiceover_enabled: Optional[bool] = Field(False, description="Voiceover Enabled")
+    video_url: Optional[str] = Field(None, description="URL for video")  # AWS CloudFront video demonstration (optional)
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 class WarmupRoutine(BaseModel):
-    id: str
-    routine_name: str
-    focus_area: str  # 'spine', 'hips', 'shoulders', 'full_body'
-    narrative: str
-    movements: Any  # JSONB - can be array or object
-    duration_seconds: int
-    contraindications: List[str]
-    modifications: Optional[Any] = None  # JSONB - can be array or object
-    difficulty_level: str
-    voiceover_url: Optional[str] = None
-    voiceover_duration: Optional[int] = None
-    voiceover_enabled: Optional[bool] = False
-    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
-    created_at: datetime
-    updated_at: datetime
+    id: str = Field(..., description="Unique identifier")
+    routine_name: str = Field(..., description="Routine Name")
+    focus_area: str = Field(..., description="Focus Area")  # 'spine', 'hips', 'shoulders', 'full_body'
+    narrative: str = Field(..., description="Narrative")
+    movements: Any = Field(..., description="List of movements in the sequence")  # JSONB - can be array or object
+    duration_seconds: int = Field(..., description="Duration in seconds")
+    contraindications: List[str] = Field(..., description="Contraindications")
+    modifications: Optional[Any] = Field(None, description="Modifications")  # JSONB - can be array or object
+    difficulty_level: str = Field(..., description="Difficulty level (Beginner, Intermediate, or Advanced)")
+    voiceover_url: Optional[str] = Field(None, description="URL for voiceover")
+    voiceover_duration: Optional[int] = Field(None, description="Voiceover Duration")
+    voiceover_enabled: Optional[bool] = Field(False, description="Voiceover Enabled")
+    video_url: Optional[str] = Field(None, description="URL for video")  # AWS CloudFront video demonstration (optional)
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 class CooldownSequence(BaseModel):
-    id: str
-    sequence_name: str
-    intensity_level: str  # 'gentle', 'moderate', 'deep'
-    narrative: str
-    stretches: Any  # JSONB - can be array or object
-    duration_seconds: int
-    target_muscles: List[str]
-    recovery_focus: str
-    voiceover_url: Optional[str] = None
-    voiceover_duration: Optional[int] = None
-    voiceover_enabled: Optional[bool] = False
-    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
-    created_at: datetime
-    updated_at: datetime
+    id: str = Field(..., description="Unique identifier")
+    sequence_name: str = Field(..., description="Sequence Name")
+    intensity_level: str = Field(..., description="Intensity Level")  # 'gentle', 'moderate', 'deep'
+    narrative: str = Field(..., description="Narrative")
+    stretches: Any = Field(..., description="Stretches")  # JSONB - can be array or object
+    duration_seconds: int = Field(..., description="Duration in seconds")
+    target_muscles: List[str] = Field(..., description="Target Muscles")
+    recovery_focus: str = Field(..., description="Recovery Focus")
+    voiceover_url: Optional[str] = Field(None, description="URL for voiceover")
+    voiceover_duration: Optional[int] = Field(None, description="Voiceover Duration")
+    voiceover_enabled: Optional[bool] = Field(False, description="Voiceover Enabled")
+    video_url: Optional[str] = Field(None, description="URL for video")  # AWS CloudFront video demonstration (optional)
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 class ClosingMeditationScript(BaseModel):
-    id: str
-    script_name: str
-    meditation_theme: str  # 'body_scan', 'gratitude', 'breath', 'mindfulness'
-    script_text: str
-    breathing_guidance: Optional[str] = None
-    duration_seconds: int
-    post_intensity: str  # 'high', 'moderate', 'low'
-    voiceover_url: Optional[str] = None
-    voiceover_duration: Optional[int] = None
-    voiceover_enabled: Optional[bool] = False
-    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
-    created_at: datetime
-    updated_at: datetime
+    id: str = Field(..., description="Unique identifier")
+    script_name: str = Field(..., description="Script Name")
+    meditation_theme: str = Field(..., description="Meditation Theme")  # 'body_scan', 'gratitude', 'breath', 'mindfulness'
+    script_text: str = Field(..., description="Script Text")
+    breathing_guidance: Optional[str] = Field(None, description="Breathing Guidance")
+    duration_seconds: int = Field(..., description="Duration in seconds")
+    post_intensity: str = Field(..., description="Post Intensity")  # 'high', 'moderate', 'low'
+    voiceover_url: Optional[str] = Field(None, description="URL for voiceover")
+    voiceover_duration: Optional[int] = Field(None, description="Voiceover Duration")
+    voiceover_enabled: Optional[bool] = Field(False, description="Voiceover Enabled")
+    video_url: Optional[str] = Field(None, description="URL for video")  # AWS CloudFront video demonstration (optional)
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 class ClosingHomecareAdvice(BaseModel):
-    id: str
-    advice_name: str
-    focus_area: str  # 'spine_care', 'injury_prevention', 'recovery', 'daily_practice'
-    advice_text: str
-    actionable_tips: List[str]
-    duration_seconds: int
-    related_to_class_focus: bool
-    voiceover_url: Optional[str] = None
-    voiceover_duration: Optional[int] = None
-    voiceover_enabled: Optional[bool] = False
-    video_url: Optional[str] = None  # AWS CloudFront video demonstration (optional)
-    created_at: datetime
-    updated_at: datetime
+    id: str = Field(..., description="Unique identifier")
+    advice_name: str = Field(..., description="Advice Name")
+    focus_area: str = Field(..., description="Focus Area")  # 'spine_care', 'injury_prevention', 'recovery', 'daily_practice'
+    advice_text: str = Field(..., description="Advice Text")
+    actionable_tips: List[str] = Field(..., description="Actionable Tips")
+    duration_seconds: int = Field(..., description="Duration in seconds")
+    related_to_class_focus: bool = Field(..., description="Related To Class Focus")
+    voiceover_url: Optional[str] = Field(None, description="URL for voiceover")
+    voiceover_duration: Optional[int] = Field(None, description="Voiceover Duration")
+    voiceover_enabled: Optional[bool] = Field(False, description="Voiceover Enabled")
+    video_url: Optional[str] = Field(None, description="URL for video")  # AWS CloudFront video demonstration (optional)
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 # ============================================
@@ -147,7 +147,7 @@ async def get_preparation_scripts(
 
 @router.get("/preparation/{script_id}", response_model=PreparationScript)
 async def get_preparation_script(
-    script_id: str,
+    script_id: str = Path(..., description="Unique identifier (UUID) for the preparation/meditation script"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get a specific preparation script by ID"""
@@ -210,7 +210,7 @@ async def get_warmup_routines(
 
 @router.get("/warmup/{routine_id}", response_model=WarmupRoutine)
 async def get_warmup_routine(
-    routine_id: str,
+    routine_id: str = Path(..., description="Unique identifier (UUID) for the warmup routine"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get a specific warmup routine by ID"""
@@ -269,7 +269,7 @@ async def get_cooldown_sequences(
 
 @router.get("/cooldown/{sequence_id}", response_model=CooldownSequence)
 async def get_cooldown_sequence(
-    sequence_id: str,
+    sequence_id: str = Path(..., description="Unique identifier (UUID) for the cooldown sequence"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get a specific cooldown sequence by ID"""
@@ -332,7 +332,7 @@ async def get_closing_meditations(
 
 @router.get("/closing-meditation/{script_id}", response_model=ClosingMeditationScript)
 async def get_closing_meditation(
-    script_id: str,
+    script_id: str = Path(..., description="Unique identifier (UUID) for the preparation/meditation script"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get a specific closing meditation script by ID"""
@@ -391,7 +391,7 @@ async def get_closing_homecare_advice(
 
 @router.get("/closing-homecare/{advice_id}", response_model=ClosingHomecareAdvice)
 async def get_homecare_advice(
-    advice_id: str,
+    advice_id: str = Path(..., description="Unique identifier (UUID) for the homecare advice"),
     user_id: str = Depends(get_current_user_id)
 ):
     """Get specific homecare advice by ID"""

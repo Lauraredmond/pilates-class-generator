@@ -18,7 +18,7 @@ All endpoints preserve the same request/response interface as before.
 Frontend code requires no changes.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query, Path
 from typing import Optional
 from loguru import logger
 import os
@@ -294,6 +294,10 @@ async def generate_sequence(
                             "movement_family": movement.get('movement_family', 'other'),  # FIX: Include for Rule 2 calculations
                             "duration_seconds": movement.get('duration_seconds', 60),
                             "order_index": idx,
+                            # Instructor feedback improvements (March 2026)
+                            "intensity_score": movement.get('intensity_score'),  # For intensity gating report
+                            "class_phase": movement.get('class_phase'),  # For intensity gating report
+                            "setup_position": movement.get('setup_position'),  # For position-change budget report
                             # Voiceover audio fields (Session 13.5)
                             "voiceover_url": movement.get('voiceover_url'),
                             "voiceover_duration_seconds": movement.get('voiceover_duration_seconds'),
@@ -999,6 +1003,10 @@ Return all 6 sections with complete details (narrative, timing, instructions).
                         "movement_family": movement.get('movement_family', 'other'),  # FIX: Include for Rule 2 calculations
                         "duration_seconds": movement.get('duration_seconds', 60),
                         "order_index": idx,
+                        # Instructor feedback improvements (March 2026)
+                        "intensity_score": movement.get('intensity_score'),  # For intensity gating report
+                        "class_phase": movement.get('class_phase'),  # For intensity gating report
+                        "setup_position": movement.get('setup_position'),  # For position-change budget report
                         "voiceover_url": movement.get('voiceover_url'),
                         "voiceover_duration_seconds": movement.get('voiceover_duration_seconds'),
                         "voiceover_enabled": movement.get('voiceover_enabled', False)
@@ -1171,16 +1179,15 @@ async def get_agent_info(agent: BasslinePilatesCoachAgent = Depends(get_agent)):
 
 @router.get("/decisions/{user_id}")
 async def get_user_decisions(
-    user_id: str,
-    limit: int = 10,
-    agent_type: Optional[str] = None
+    user_id: str = Path(..., description="Unique identifier of the user whose decision history to retrieve"),
+    limit: int = Query(10, ge=1, le=100, description="Maximum number of recent decisions to return (1-100, default 10)"),
+    agent_type: Optional[str] = Query(None, description="Filter by agent type: 'sequence', 'music', 'meditation', or 'research'. Returns all types if not specified.")
 ):
     """
     Get user's agent decision history (EU AI Act transparency)
 
-    - **user_id**: User ID to query
-    - **limit**: Number of recent decisions to return
-    - **agent_type**: Optional filter by agent type
+    Returns a history of AI agent decisions made for this user, including reasoning,
+    confidence scores, and input/output data. Required for EU AI Act Article 13 transparency.
     """
     # This would query the ai_decision_log table
     # Placeholder implementation
