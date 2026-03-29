@@ -64,6 +64,11 @@ class SequenceTools:
         "other": 0.03                        # 1/35 movements (max: 6%)
     }
 
+    # POSITIONAL CONTINUITY BONUS (NEW - Instructor Feedback March 2026)
+    # Soft preference for same body position to reduce fragmentation
+    # Must be smaller than muscle-overuse penalty (muscle balance = priority)
+    POSITION_CONTINUITY_BONUS = 0.15  # Additive bonus when position matches previous movement
+
     # Teaching time per movement (in minutes) - CRITICAL QUALITY RULE
     MINUTES_PER_MOVEMENT = {
         "Beginner": 4,      # Beginners need more explanation and practice time
@@ -458,10 +463,19 @@ class SequenceTools:
         required_movements: List[str],
         focus_areas: List[str],
         difficulty: str,
-        user_id: Optional[str]
+        user_id: Optional[str],
+        max_position_changes: Optional[int] = None
     ) -> List[Dict[str, Any]]:
-        """Build sequence following safety rules"""
+        """
+        Build sequence following safety rules
+
+        NEW (March 2026 - Instructor Feedback):
+        - Intensity gating by class phase (warm-up movements only in first 20%)
+        - Soft positional continuity bonus (reduce position jumping)
+        - Position-change budget (configurable max position changes)
+        """
         sequence = []
+        position_changes_count = 0  # Track position changes for budget
 
         # STEP 1: Get overhead from 6 class sections (preparation, warmup, cooldown, meditation, homecare)
         overhead_minutes = self._get_section_overhead_minutes(target_duration)
@@ -520,6 +534,14 @@ class SequenceTools:
 
         # Calculate: (available_minutes) = (num_movements * avg_duration) + ((num_movements - 1) * transition_time)
         max_movements = int((available_minutes + transition_time) / (avg_duration_minutes + transition_time))
+
+        # POSITION-CHANGE BUDGET (NEW - Instructor Feedback March 2026)
+        # Calculate default max position changes (40% of total movements)
+        # This can be overridden via API parameter
+        if max_position_changes is None:
+            max_position_changes = int(max_movements * 0.4)
+
+        logger.info(f"Position-change budget: {max_position_changes} changes allowed (40% of {max_movements} movements)")
 
         # ENFORCE MINIMUM 4 MOVEMENTS FOR 30-MIN CLASSES
         # User requirement: "We will have to go a little past the 30 minute threshold and insist on at least 4 movements for the 30 min class"
@@ -587,6 +609,9 @@ class SequenceTools:
         target_count = max_movements if target_duration == 10 else (max_movements - 1)
 
         while len(sequence) < target_count:
+            # Calculate current position in class timeline (percentage)
+            current_position_pct = len(sequence) / max_movements if max_movements > 0 else 0
+
             selected = self._select_next_movement(
                 movements=movements,
                 current_sequence=sequence,
@@ -595,7 +620,10 @@ class SequenceTools:
                 usage_weights=usage_weights,
                 class_difficulty=difficulty,
                 target_duration=target_duration,
-                target_count=target_count
+                target_count=target_count,
+                current_position_pct=current_position_pct,
+                max_position_changes=max_position_changes,
+                position_changes_count=position_changes_count
             )
 
             if not selected:
@@ -606,6 +634,14 @@ class SequenceTools:
             if "duration_seconds" not in selected_copy or not selected_copy["duration_seconds"]:
                 selected_copy["duration_seconds"] = teaching_time_seconds  # Fallback only
             selected_copy["type"] = "movement"
+
+            # Track position changes
+            if sequence:
+                prev_position = sequence[-1].get('setup_position')
+                curr_position = selected_copy.get('setup_position')
+                if prev_position and curr_position and prev_position != curr_position:
+                    position_changes_count += 1
+
             sequence.append(selected_copy)
 
         # Rule 3: Add dedicated cooldown movement (but NOT for 10-min quick practice)
@@ -750,7 +786,10 @@ class SequenceTools:
         usage_weights: Dict[str, float] = None,
         class_difficulty: str = None,
         target_duration: int = None,
-        target_count: int = None
+        target_count: int = None,
+        current_position_pct: float = 0.0,
+        max_position_changes: Optional[int] = None,
+        position_changes_count: int = 0
     ) -> Optional[Dict[str, Any]]:
         """
         Select next movement based on rules and focus areas
@@ -759,6 +798,7 @@ class SequenceTools:
         PHASE 2 FIX: Added weighted random selection based on usage history
         SESSION: Movement Families - Added family balance filtering
         PHASE 3 FIX: Added difficulty-based weight multipliers for Advanced classes
+        MARCH 2026 - INSTRUCTOR FEEDBACK: Added intensity gating and positional continuity
         """
         # Get already used movement IDs
         used_ids = [m["id"] for m in current_sequence]
@@ -768,6 +808,41 @@ class SequenceTools:
 
         if not available:
             return None
+
+        # NEW: INTENSITY GATING BY CLASS PHASE (Instructor Feedback - March 2026)
+        # Filter movements based on position in class timeline
+        # 0-20%: warm_up only
+        # 20-65%: warm_up + early_middle
+        # 65-85%: all phases (peak allowed)
+        # 85-100%: warm_up + cool_down only
+        if current_position_pct <= 0.20:
+            # First 20% - warm-up movements only
+            phase_filtered = [m for m in available if m.get('class_phase') == 'warm_up']
+            if phase_filtered:
+                available = phase_filtered
+                logger.debug(f"Intensity gating (0-20%): Filtered to {len(available)} warm_up movements")
+        elif current_position_pct <= 0.65:
+            # 20-65% - warm-up + early-middle
+            phase_filtered = [m for m in available if m.get('class_phase') in ('warm_up', 'early_middle')]
+            if phase_filtered:
+                available = phase_filtered
+                logger.debug(f"Intensity gating (20-65%): Filtered to {len(available)} warm_up/early_middle movements")
+        elif current_position_pct <= 0.85:
+            # 65-85% - all phases allowed (peak permitted)
+            logger.debug(f"Intensity gating (65-85%): All phases allowed ({len(available)} movements)")
+        else:
+            # 85-100% - cool-down phase
+            phase_filtered = [m for m in available if m.get('class_phase') in ('warm_up', 'cool_down')]
+            if phase_filtered:
+                available = phase_filtered
+                logger.debug(f"Intensity gating (85-100%): Filtered to {len(available)} warm_up/cool_down movements")
+
+        if not available:
+            logger.warning("⚠️  Intensity gating filtered out all movements - relaxing phase filter")
+            # Fallback: allow any unused movement if phase filter is too restrictive
+            available = [m for m in movements if m["id"] not in used_ids]
+            if not available:
+                return None
 
         # HARD ENFORCEMENT FOR 10-MIN ADVANCED: Ensure 33-66% Advanced (1-2 out of 3)
         if target_duration == 10 and class_difficulty == 'Advanced':
@@ -907,12 +982,41 @@ class SequenceTools:
 
         # PHASE 2 FIX: Use weighted random selection based on usage history
         # PHASE 3 FIX: Apply difficulty-based multipliers for Advanced classes
+        # MARCH 2026: Add positional continuity bonus
         if available:
             # Build weights list aligned with available movements
             weights = []
             for m in available:
                 # Start with usage weight (historical variety)
                 base_weight = usage_weights.get(m['id'], 1.0) if usage_weights else 1.0
+
+                # NEW: POSITIONAL CONTINUITY BONUS (Instructor Feedback - March 2026)
+                # Apply bonus if this movement keeps the same body position as previous
+                # BUT only if we haven't exhausted the position-change budget
+                position_bonus = 0.0
+                if current_sequence and max_position_changes is not None:
+                    prev_position = current_sequence[-1].get('setup_position')
+                    curr_position = m.get('setup_position')
+
+                    # Check if budget is nearly exhausted (less than 20% remaining)
+                    budget_remaining = max_position_changes - position_changes_count
+                    budget_pct_remaining = budget_remaining / max(max_position_changes, 1)
+
+                    if prev_position and curr_position:
+                        if prev_position == curr_position:
+                            # Same position - apply standard bonus
+                            position_bonus = self.POSITION_CONTINUITY_BONUS
+
+                            # Double bonus if budget is running low
+                            if budget_pct_remaining < 0.2:
+                                position_bonus *= 2.0
+                                logger.debug(f"Position bonus DOUBLED for '{m['name']}' (budget low: {budget_remaining}/{max_position_changes})")
+                        elif budget_remaining <= 0:
+                            # Budget exhausted - penalize position changes
+                            position_bonus = -self.POSITION_CONTINUITY_BONUS * 2.0
+                            logger.debug(f"Position PENALTY for '{m['name']}' (budget exhausted)")
+
+                base_weight += position_bonus
 
                 # Apply difficulty multiplier if class_difficulty is specified
                 if class_difficulty and class_difficulty in self.DIFFICULTY_WEIGHT_MULTIPLIERS:
