@@ -15,8 +15,8 @@ import { loginWithTestUser } from './test-helpers';
 
 // Test user credentials (create these in Supabase dev database first)
 const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || 'test@bassline.dev',
-  password: process.env.TEST_USER_PASSWORD || 'TestPassword123!',
+  email: process.env.TEST_USER_EMAIL || process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'test@bassline.dev',
+  password: process.env.TEST_USER_PASSWORD || process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'TestPassword123!',
 };
 
 test.describe('Class Generation Flow', () => {

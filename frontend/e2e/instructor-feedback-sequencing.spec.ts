@@ -13,8 +13,8 @@ import { loginWithTestUser } from './test-helpers';
  */
 
 const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || 'test@bassline.dev',
-  password: process.env.TEST_USER_PASSWORD || 'TestPassword123!',
+  email: process.env.TEST_USER_EMAIL || process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'test@bassline.dev',
+  password: process.env.TEST_USER_PASSWORD || process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'TestPassword123!',
 };
 
 // High-intensity movements that should NOT appear early (intensity 7-10)
