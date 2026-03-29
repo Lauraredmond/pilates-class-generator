@@ -421,12 +421,16 @@ class SequenceTools:
 
                 logger.info(f"✅ Attached muscle groups to {len(movements)} movements")
 
-            # DEBUG: Log voiceover fields from first 3 movements
+            # DEBUG: Log fields from first 3 movements (including instructor feedback fields)
             logger.info("=" * 80)
             logger.info("🔍 DEBUG: Movements from database (first 3):")
             for i, m in enumerate(movements[:3]):
                 logger.info(f"  Movement {i+1}: {m.get('name')}")
                 logger.info(f"    muscle_groups: {[mg['name'] for mg in m.get('muscle_groups', [])]}")
+                logger.info(f"    movement_family: {m.get('movement_family', 'NOT PRESENT')}")
+                logger.info(f"    intensity_score: {m.get('intensity_score', 'NOT PRESENT')}")
+                logger.info(f"    class_phase: {m.get('class_phase', 'NOT PRESENT')}")
+                logger.info(f"    setup_position: {m.get('setup_position', 'NOT PRESENT')}")
                 logger.info(f"    voiceover_enabled: {m.get('voiceover_enabled')}")
                 logger.info(f"    voiceover_url: {m.get('voiceover_url', 'NOT PRESENT')[:80] if m.get('voiceover_url') else 'NONE'}")
                 logger.info(f"    voiceover_duration_seconds: {m.get('voiceover_duration_seconds')}")
