@@ -1440,23 +1440,41 @@ async def save_completed_class(request: SaveCompletedClassRequest):
         now = datetime.now()
         today = now.date().isoformat()
 
-        # CRITICAL FIX: Enrich movements_snapshot with muscle_groups from database
-        # Frontend doesn't always send muscle_groups, so we fetch them here
+        # CRITICAL FIX: Enrich movements_snapshot with ALL movement fields from database
+        # Frontend doesn't always send complete data, so we fetch authoritative values here
         logger.info(f"🔍 DEBUG: Enriching {len(request.movements_snapshot)} items from movements_snapshot")
         enriched_movements_snapshot = []
         for item in request.movements_snapshot:
             enriched_item = item.copy()
 
             if item.get('type') == 'movement':
-                # Fetch muscle groups from junction table
                 movement_id = item.get('id')
                 movement_name = item.get('name', 'Unknown')
                 if movement_id:
+                    # Fetch muscle groups from junction table
                     muscle_groups = get_movement_muscle_groups(movement_id)
                     enriched_item['muscle_groups'] = muscle_groups
-                    logger.info(f"  ✅ Movement '{movement_name}' (ID: {movement_id}): {len(muscle_groups)} muscle groups fetched: {muscle_groups}")
+
+                    # INSTRUCTOR FEEDBACK FIX: Also fetch instructor feedback fields from movements table
+                    try:
+                        movement_response = supabase.table('movements') \
+                            .select('movement_family, intensity_score, class_phase, setup_position') \
+                            .eq('id', movement_id) \
+                            .execute()
+
+                        if movement_response.data:
+                            movement_data = movement_response.data[0]
+                            enriched_item['movement_family'] = movement_data.get('movement_family', 'other')
+                            enriched_item['intensity_score'] = movement_data.get('intensity_score')
+                            enriched_item['class_phase'] = movement_data.get('class_phase')
+                            enriched_item['setup_position'] = movement_data.get('setup_position')
+                            logger.info(f"  ✅ Movement '{movement_name}' (ID: {movement_id}): enriched with muscle_groups={muscle_groups}, family={enriched_item['movement_family']}, intensity={enriched_item['intensity_score']}, phase={enriched_item['class_phase']}")
+                        else:
+                            logger.warning(f"  ⚠️ Movement '{movement_name}' (ID: {movement_id}): not found in movements table")
+                    except Exception as e:
+                        logger.error(f"  ❌ Failed to fetch movement data for {movement_name}: {e}")
                 else:
-                    logger.warning(f"  ⚠️ Movement '{movement_name}' has no ID, skipping muscle group enrichment")
+                    logger.warning(f"  ⚠️ Movement '{movement_name}' has no ID, skipping enrichment")
 
             enriched_movements_snapshot.append(enriched_item)
 
