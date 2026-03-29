@@ -222,6 +222,161 @@ def generate_overlap_report(
 
     lines.append("\n---\n")
 
+    # Section 4c: Intensity Phase Gating (INSTRUCTOR FEEDBACK - March 2026)
+    lines.append("## Intensity Phase Gating (Rule 24)\n")
+    lines.append("**Goal:** Prevent high-intensity movements from appearing too early in the class\n")
+    lines.append("**Rule:** Movements are restricted by class timeline position to ensure proper warmup\n")
+    lines.append(f"**Total Movements in Class:** {len(sequence)}\n")
+
+    lines.append("\n**Phase Restrictions:**")
+    lines.append("- **0-20% (Warm-up Phase):** Only `warm_up` phase movements allowed")
+    lines.append("- **20-65% (Building Phase):** `warm_up` + `early_middle` phase movements")
+    lines.append("- **65-85% (Peak Phase):** All phases allowed (including `peak` intensity movements)")
+    lines.append("- **85-100% (Cool-down Phase):** Only `warm_up` + `cool_down` phase movements\n")
+
+    # Analyze intensity progression in this class
+    intensity_analysis = []
+    for i, movement in enumerate(sequence):
+        position_pct = ((i + 1) / len(sequence)) * 100
+        intensity_score = movement.get('intensity_score', 'N/A')
+        class_phase = movement.get('class_phase', 'Unknown')
+        movement_name = movement.get('name', 'Unknown')
+
+        # Determine expected phase based on position
+        if position_pct <= 20:
+            expected_phase = "warm_up"
+        elif position_pct <= 65:
+            expected_phase = "warm_up or early_middle"
+        elif position_pct <= 85:
+            expected_phase = "any (peak allowed)"
+        else:
+            expected_phase = "warm_up or cool_down"
+
+        # Check for violations
+        violation = False
+        if position_pct <= 20 and class_phase != 'warm_up':
+            violation = True
+        elif 20 < position_pct <= 65 and class_phase not in ('warm_up', 'early_middle'):
+            violation = True
+        elif position_pct > 85 and class_phase not in ('warm_up', 'cool_down'):
+            violation = True
+
+        intensity_analysis.append({
+            'position': i + 1,
+            'position_pct': position_pct,
+            'name': movement_name,
+            'intensity_score': intensity_score,
+            'class_phase': class_phase,
+            'expected_phase': expected_phase,
+            'violation': violation
+        })
+
+    # Display intensity progression table
+    lines.append("### Intensity Progression in This Class\n")
+    lines.append("```csv")
+    lines.append("Position,Position %,Movement Name,Intensity Score (1-10),Class Phase,Expected Phase,Status")
+
+    violations_found = []
+    for analysis in intensity_analysis:
+        status = "❌ VIOLATION" if analysis['violation'] else "✅ OK"
+        lines.append(
+            f"{analysis['position']},{analysis['position_pct']:.1f}%,"
+            f"{analysis['name']},{analysis['intensity_score']},"
+            f"{analysis['class_phase']},{analysis['expected_phase']},{status}"
+        )
+        if analysis['violation']:
+            violations_found.append(analysis)
+
+    lines.append("```\n")
+
+    # Summary
+    if violations_found:
+        lines.append(f"### ❌ **RULE 24 VIOLATION:** {len(violations_found)} movement(s) placed incorrectly\n")
+        lines.append("**Intensity Violations:**")
+        for v in violations_found:
+            lines.append(f"- **{v['name']}** (position {v['position']}, {v['position_pct']:.1f}%): ")
+            lines.append(f"  - Phase: `{v['class_phase']}`, Expected: `{v['expected_phase']}`")
+            lines.append(f"  - Intensity Score: {v['intensity_score']}")
+        lines.append("\n**Impact:** High-intensity movements appearing too early can cause injury or fatigue.")
+    else:
+        lines.append("### ✅ **RULE 24 PASSED:** All movements are appropriately phased\n")
+        lines.append("The class follows a safe intensity progression from warm-up to peak to cool-down.")
+
+    lines.append("\n**Note:** This addresses instructor feedback: 'Teaser and Swan Dive appearing too early in class.'\n")
+
+    lines.append("\n---\n")
+
+    # Section 4d: Position-Change Budget (INSTRUCTOR FEEDBACK - March 2026)
+    lines.append("## Position-Change Budget (Rules 25 & 26)\n")
+    lines.append("**Goal:** Reduce excessive mat position changes to improve flow and reduce setup time\n")
+    lines.append("**Rule 25 (Positional Continuity):** Prefer movements that maintain the same body position\n")
+    lines.append("**Rule 26 (Position-Change Budget):** Limit position transitions to 40% of total movements\n")
+    lines.append(f"**Total Movements in Class:** {len(sequence)}\n")
+
+    # Analyze position changes
+    position_changes = []
+    position_change_count = 0
+
+    for i in range(len(sequence) - 1):
+        current = sequence[i]
+        next_mov = sequence[i + 1]
+        current_name = current.get('name', 'Unknown')
+        next_name = next_mov.get('name', 'Unknown')
+        current_position = current.get('setup_position', 'Unknown')
+        next_position = next_mov.get('setup_position', 'Unknown')
+
+        position_changed = (current_position != next_position)
+        if position_changed:
+            position_change_count += 1
+
+        position_changes.append({
+            'transition': f"{current_name} → {next_name}",
+            'from_position': current_position,
+            'to_position': next_position,
+            'changed': position_changed
+        })
+
+    # Calculate budget utilization
+    max_position_changes = int(len(sequence) * 0.4)  # 40% budget
+    position_change_pct = (position_change_count / len(sequence)) * 100 if len(sequence) > 0 else 0
+    budget_used_pct = (position_change_count / max_position_changes) * 100 if max_position_changes > 0 else 0
+    budget_exceeded = position_change_count > max_position_changes
+
+    lines.append(f"**Position-Change Budget:** {max_position_changes} changes allowed (40% of {len(sequence)} movements)")
+    lines.append(f"**Actual Position Changes:** {position_change_count}")
+    lines.append(f"**Position Changes as % of Class:** {position_change_pct:.1f}%")
+    lines.append(f"**Budget Utilization:** {budget_used_pct:.1f}%\n")
+
+    # Display position transition table
+    lines.append("### Position Transitions in This Class\n")
+    lines.append("```csv")
+    lines.append("Transition,From Position,To Position,Position Changed?")
+
+    for change in position_changes:
+        status = "Yes ⚠️" if change['changed'] else "No ✅"
+        lines.append(
+            f"\"{change['transition']}\",{change['from_position']},"
+            f"{change['to_position']},{status}"
+        )
+
+    lines.append("```\n")
+
+    # Summary
+    if budget_exceeded:
+        lines.append(f"### ❌ **RULE 26 VIOLATION:** Position-change budget exceeded\n")
+        lines.append(f"**Budget:** {max_position_changes} changes allowed")
+        lines.append(f"**Actual:** {position_change_count} changes ({position_change_count - max_position_changes} over budget)")
+        lines.append(f"\n**Impact:** Excessive position changes reduce flow and increase transition time.")
+        lines.append(f"\n**Recommendation:** Group movements by body position (supine, prone, seated, etc.) where possible.")
+    else:
+        lines.append(f"### ✅ **RULE 26 PASSED:** Position changes within budget\n")
+        lines.append(f"The class maintains good flow with {position_change_count}/{max_position_changes} position changes used.")
+        lines.append(f"\n**Bonus Applied:** Movements maintaining the same position received +0.15 weight bonus during selection.")
+
+    lines.append("\n**Note:** This addresses instructor feedback: 'Too much jumping around the mat between movements.'\n")
+
+    lines.append("\n---\n")
+
     # Section 5: Movement Pattern Proximity Check (NEW - addresses Crab/Seal issue)
     lines.append("## Movement Pattern Proximity Check\n")
     lines.append("**Rule:** Similar movement patterns should not appear within 3 positions of each other.\n")
