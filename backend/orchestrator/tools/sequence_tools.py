@@ -1018,6 +1018,10 @@ class SequenceTools:
 
                 base_weight += position_bonus
 
+                # SAFETY: Ensure weight never goes below minimum threshold
+                # This prevents elimination of all candidates when penalties are applied
+                base_weight = max(base_weight, 0.01)
+
                 # Apply difficulty multiplier if class_difficulty is specified
                 if class_difficulty and class_difficulty in self.DIFFICULTY_WEIGHT_MULTIPLIERS:
                     movement_difficulty = m.get('difficulty_level', 'Beginner')
