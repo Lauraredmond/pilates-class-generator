@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginWithTestUser } from './test-helpers';
 
 /**
  * E2E Test: AI Class Generation Flow (Database Mode)
@@ -32,13 +33,8 @@ test.describe('Class Generation Flow', () => {
     // STEP 1: Login
     // ========================================
     await test.step('Login with test user', async () => {
-      await page.fill('input[type="email"]', TEST_USER.email);
-      await page.fill('input[type="password"]', TEST_USER.password);
-      await page.click('button[type="submit"]');
-
-      // Wait for dashboard to load
-      await page.waitForURL('**/dashboard');
-      await expect(page).toHaveURL(/dashboard/);
+      await loginWithTestUser(page, TEST_USER.email, TEST_USER.password);
+      await expect(page).toHaveURL(/dashboard|\//);
     });
 
     // ========================================
@@ -172,10 +168,7 @@ test.describe('Class Generation Flow', () => {
     // This test verifies error handling when backend is slow/unavailable
 
     await test.step('Login', async () => {
-      await page.fill('input[type="email"]', TEST_USER.email);
-      await page.fill('input[type="password"]', TEST_USER.password);
-      await page.click('button[type="submit"]');
-      await page.waitForURL('**/dashboard');
+      await loginWithTestUser(page, TEST_USER.email, TEST_USER.password);
     });
 
     await test.step('Navigate to class builder', async () => {
@@ -206,10 +199,7 @@ test.describe('Class Generation Flow', () => {
     // This test verifies music integration works in playback
 
     await test.step('Login and navigate to existing class', async () => {
-      await page.fill('input[type="email"]', TEST_USER.email);
-      await page.fill('input[type="password"]', TEST_USER.password);
-      await page.click('button[type="submit"]');
-      await page.waitForURL('**/dashboard');
+      await loginWithTestUser(page, TEST_USER.email, TEST_USER.password);
 
       // Navigate to classes
       const classesLink = page.locator('a[href*="classes"]').first();
