@@ -1,0 +1,10 @@
+[Log] [API Config] Using backend: https://pilates-class-generator-api3.onrender.com (isDev: false) (index-CAipUzoP.js, line 108)
+[Log] [Debug] Debug console disabled (index-CAipUzoP.js, line 47)
+[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Log] ✅ Service Worker registered: – "https://basslinemvp.netlify.app/" (index-CAipUzoP.js, line 124)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – AxiosError: Request failed with status code 500
+AxiosError: Request failed with status code 500
+	error (index-CAipUzoP.js:13:5611)
+	(anonymous function) (index-CAipUzoP.js:110:53921)
+[Error] Failed to load resource: the server responded with a status of 500 () (register, line 0)

@@ -1,19 +1,14 @@
-[Log] [API Config] Using backend: https://pilates-dev-i0jb.onrender.com (isDev: true) (index-BdvCYJnJ.js, line 108)
-[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
-[Log] [Debug] ✅ Eruda debug console initialized (eruda-Dkdrpl4M.js, line 92)
-[Log] [Debug] ✅ Media diagnostics panel added (eruda-Dkdrpl4M.js, line 92)
-[Log] ✅ Service Worker registered: – "https://bassline-dev.netlify.app/" (eruda-Dkdrpl4M.js, line 92)
-[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – Pe
-Pe
-	(anonymous function) (eruda-Dkdrpl4M.js:92:2986)
-	error (index-BdvCYJnJ.js:13:5449)
-	(anonymous function) (index-BdvCYJnJ.js:110:53909)
-[Error] Failed to load resource: the server responded with a status of 500 () (profile, line 0)
-[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
-[Error] Failed to fetch stats: – Pe
-Pe
-	(anonymous function) (eruda-Dkdrpl4M.js:92:2986)
-	error (index-BdvCYJnJ.js:13:5449)
-	(anonymous function) (index-BdvCYJnJ.js:110:53909)
-[Error] Failed to load resource: the server responded with a status of 500 () (profile, line 0)
+[Log] [API Config] Using backend: https://pilates-dev-i0jb.onrender.com (isDev: true) (index-wCqgEXvP.js, line 108)
+[Log] [Debug] ✅ Eruda debug console initialized (eruda-CQh3482O.js, line 92)
+[Log] [Debug] ✅ Media diagnostics panel added (eruda-CQh3482O.js, line 92)
+[Log] ✅ Service Worker registered: – "https://bassline-dev.netlify.app/" (eruda-CQh3482O.js, line 92)
+[Error] Failed to load resource: the server responded with a status of 400 () (generate-complete-class, line 0)
+[Error] API Error: – {detail: "The provided data is invalid"}
+	(anonymous function) (eruda-CQh3482O.js:92:2986)
+	error (index-wCqgEXvP.js:13:5449)
+	(anonymous function) (index-wCqgEXvP.js:15:5731)
+[Error] Failed to generate complete class: – Ae {stack: "dg@https://bassline-dev.netlify.app/assets/index-w…-dev.netlify.app/assets/index-wCqgEXvP.js:12:2111", message: "Request failed with status code 400", name: "AxiosError", …}
+Ae {stack: "dg@https://bassline-dev.netlify.app/assets/index-w…-dev.netlify.app/assets/index-wCqgEXvP.js:12:2111", message: "Request failed with status code 400", name: "AxiosError", code: "ERR_BAD_REQUEST", config: Object, …}Ae
+	(anonymous function) (eruda-CQh3482O.js:92:2986)
+	error (index-wCqgEXvP.js:13:5449)
+	(anonymous function) (index-wCqgEXvP.js:108:35101)

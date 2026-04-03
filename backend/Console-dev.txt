@@ -1,0 +1,122 @@
+[Log] [API Config] Using backend: https://pilates-dev-i0jb.onrender.com (isDev: true) (index-hXV6O9vT.js, line 108)
+[Log] [Debug] ✅ Eruda debug console initialized (eruda-CSarU7P4.js, line 92)
+[Log] [Debug] ✅ Media diagnostics panel added (eruda-CSarU7P4.js, line 92)
+[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Log] ✅ Service Worker registered: – "https://bassline-dev.netlify.app/" (eruda-CSarU7P4.js, line 92)
+[Log] 🎥 DEBUG: Video URL changed! – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] 🎥 DEBUG: Video paused (class paused) (eruda-CSarU7P4.js, line 92)
+[Log] 🎥 INFO: New section starting (no pending fade to cancel) (eruda-CSarU7P4.js, line 92)
+[Log] 🎥 ⏱️ SECTION TIMER: Started for 120s section (eruda-CSarU7P4.js, line 92)
+[Log] [Media:music] ClassPlayback component mounted – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] AudioContext initialized – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] element created (reusable) – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] URL changed – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] element created (reusable) – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] URL changed – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] switching voiceover – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] src updated - loading – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] PAUSE requested – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] Fetching playlists START – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] 🎥 DEBUG: Forced video opacity to 1 (override fade-out) (eruda-CSarU7P4.js, line 92)
+[Log] 🎥 DEBUG: Set video.src to: – "https://pilates-movement-videos.s3.us-east-1.amazonaws.com/PrepPhase_v2.mp4" (eruda-CSarU7P4.js, line 92)
+[Log] 🎥 DEBUG: Called video.load() to fetch new video (eruda-CSarU7P4.js, line 92)
+[Log] [Media:voiceover] loadstart – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] 🎥 DEBUG: Waiting for video to buffer... (eruda-CSarU7P4.js, line 92)
+[Log] [Media:music] PLAY requested – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] PLAY skipped (no src yet) – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] play (ducking music) – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] volume change (ducking) – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] waiting (buffering) – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] Wake Lock ACQUIRED – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 119s remaining (eruda-CSarU7P4.js, line 92, x3)
+[Log] [Media:music] Section tracking START – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 119s remaining (eruda-CSarU7P4.js, line 92, x2)
+[Log] [Media:music] Movement playlist LOADED – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] Cooldown playlist LOADED – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] URL changed – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] switching track – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] src updated - loading – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] waiting (buffering) – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] loadstart – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 119s remaining (eruda-CSarU7P4.js, line 92)
+[Log] [Media:voiceover] loadedmetadata – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] loadeddata – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] canplay – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] playing – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] canplaythrough – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 119s remaining (eruda-CSarU7P4.js, line 92, x2)
+[Log] [Media:music] Section tracking SUCCESS – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] 🎥 ⏱️ TIMER: 0s elapsed, 119s remaining (eruda-CSarU7P4.js, line 92)
+[Log] [Media:music] loadedmetadata – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] loadeddata – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] canplay – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] playing – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] canplaythrough – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] 🎥 📊 VIDEO LOADED: Duration = 115.3s, Section duration = 120s (eruda-CSarU7P4.js, line 92)
+[Log] [Media:music] ClassPlayback component unmounted – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] Wake Lock RELEASED (browser event) – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] Wake Lock released on component unmount – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:music] pause – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Log] [Media:voiceover] pause – Object (eruda-CSarU7P4.js, line 92)
+Object
+[Error] Failed to load resource: the server responded with a status of 401 () (preferences, line 0)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – Ae
+Ae
+	(anonymous function) (eruda-CSarU7P4.js:92:2986)
+	error (index-hXV6O9vT.js:13:5449)
+	(anonymous function) (index-hXV6O9vT.js:110:53909)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – Ae
+Ae
+	(anonymous function) (eruda-CSarU7P4.js:92:2986)
+	error (index-hXV6O9vT.js:13:5449)
+	(anonymous function) (index-hXV6O9vT.js:110:53909)
+[Error] Failed to load resource: the server responded with a status of 500 () (stats, line 0)
+[Error] Failed to fetch stats: – Ae
+Ae
+	(anonymous function) (eruda-CSarU7P4.js:92:2986)
+	error (index-hXV6O9vT.js:13:5449)
+	(anonymous function) (index-hXV6O9vT.js:110:53909)
+[Error] Failed to load resource: the server responded with a status of 500 () (register, line 0)
