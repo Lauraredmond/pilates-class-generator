@@ -122,12 +122,16 @@ Get your token from the login endpoint.
         },
         "servers": [
             {
-                "url": "https://api.basslinepilates.com",
-                "description": "Production API server"
+                "url": "https://pilates-class-generator-api3.onrender.com",
+                "description": "Production server on Render"
             },
             {
-                "url": "https://api-dev.basslinepilates.com",
-                "description": "Development API server"
+                "url": "https://pilates-dev-i0jb.onrender.com",
+                "description": "Development server on Render"
+            },
+            {
+                "url": "http://localhost:8000",
+                "description": "Local development server"
             }
         ],
         "paths": {},

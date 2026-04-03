@@ -30,6 +30,10 @@ app = FastAPI(
     # CRITICAL for Jentic AI readiness: Define server URLs
     servers=[
         {
+            "url": "https://pilates-class-generator-api3.onrender.com",
+            "description": "Production server on Render"
+        },
+        {
             "url": "https://pilates-dev-i0jb.onrender.com",
             "description": "Development server on Render"
         },
@@ -185,6 +189,10 @@ def custom_openapi():
 
     # JENTIC FIX: Add servers array (get_openapi doesn't include it from app.servers)
     openapi_schema["servers"] = [
+        {
+            "url": "https://pilates-class-generator-api3.onrender.com",
+            "description": "Production server on Render"
+        },
         {
             "url": "https://pilates-dev-i0jb.onrender.com",
             "description": "Development server on Render"
