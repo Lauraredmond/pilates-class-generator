@@ -26,7 +26,7 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 if SUPABASE_URL:
     if 'lixvcebtwusmaipodcpc' in SUPABASE_URL:
         logger.warning("🚨 CONNECTING TO PRODUCTION SUPABASE: %s", SUPABASE_URL[:50])
-    elif 'gntqrebxmpdjyuxztwww' in SUPABASE_URL:
+    elif os.getenv('SUPABASE_PROJECT_ID', '') in SUPABASE_URL:
         logger.info("✅ CONNECTING TO DEV SUPABASE: %s", SUPABASE_URL[:50])
     else:
         logger.info("📊 CONNECTING TO SUPABASE: %s", SUPABASE_URL[:50])

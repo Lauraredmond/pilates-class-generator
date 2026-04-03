@@ -45,7 +45,7 @@ File: `database/migrations/migrate_all_to_s3.sql`
 **Run this SQL in BOTH Supabase projects:**
 
 1. **Production:** lixvcebtwusmaipodcpc.supabase.co
-2. **Dev:** gntqrebxmpdjyuxztwww.supabase.co
+2. **Dev:** [PROJECT_ID].supabase.co
 
 The SQL file will be generated after you confirm upload is complete.
 

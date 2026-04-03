@@ -35,7 +35,7 @@ async def debug_environment():
     database_type = "UNKNOWN"
     if 'lixvcebtwusmaipodcpc' in supabase_url:
         database_type = "PRODUCTION"
-    elif 'gntqrebxmpdjyuxztwww' in supabase_url:
+    elif os.getenv('SUPABASE_PROJECT_ID', '') in supabase_url:
         database_type = "DEV"
 
     # Check if supabase client is working
@@ -83,7 +83,7 @@ async def check_music_source():
         database_type = "UNKNOWN"
         if 'lixvcebtwusmaipodcpc' in supabase_url:
             database_type = "PRODUCTION"
-        elif 'gntqrebxmpdjyuxztwww' in supabase_url:
+        elif os.getenv('SUPABASE_PROJECT_ID', '') in supabase_url:
             database_type = "DEV"
 
         # Query for Celtic tracks (the ones you updated differently in dev vs prod)

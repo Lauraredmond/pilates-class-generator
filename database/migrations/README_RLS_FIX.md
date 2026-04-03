@@ -11,7 +11,7 @@ Migration `023_enable_rls_on_backup_tables.sql` enables RLS and creates service-
 ## How to Apply
 
 ### Option 1: Via Supabase SQL Editor (Recommended)
-1. Go to your Supabase project: https://supabase.com/dashboard/project/gntqrebxmpdjyuxztwww
+1. Go to your Supabase project: https://supabase.com/dashboard/project/[PROJECT_ID]
 2. Click **SQL Editor** in the left sidebar
 3. Click **New Query**
 4. Copy and paste the contents of `023_enable_rls_on_backup_tables.sql`
@@ -20,7 +20,7 @@ Migration `023_enable_rls_on_backup_tables.sql` enables RLS and creates service-
 
 ### Option 2: Via psql Command Line
 ```bash
-psql "postgresql://postgres:[YOUR_PASSWORD]@db.gntqrebxmpdjyuxztwww.supabase.co:5432/postgres" \
+psql "postgresql://postgres:[YOUR_PASSWORD]@db.[PROJECT_ID].supabase.co:5432/postgres" \
   -f database/migrations/023_enable_rls_on_backup_tables.sql
 ```
 

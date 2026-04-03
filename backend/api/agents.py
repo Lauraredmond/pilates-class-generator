@@ -67,7 +67,7 @@ logger.info("=" * 80)
 logger.info(f"📍 SUPABASE_URL: {supabase_url}")
 if 'lixvcebtwusmaipodcpc' in supabase_url:
     logger.warning("⚠️  WARNING: Connected to PRODUCTION Supabase!")
-elif 'gntqrebxmpdjyuxztwww' in supabase_url:
+elif os.getenv('SUPABASE_PROJECT_ID', '') in supabase_url:
     logger.info("✅ Connected to DEV Supabase")
 else:
     logger.warning(f"⚠️  WARNING: Unknown Supabase project: {supabase_url}")

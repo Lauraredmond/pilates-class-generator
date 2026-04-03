@@ -46,7 +46,7 @@ test.describe('Sequencing Report Rule 3 Fix', () => {
     test.setTimeout(60000); // 60 second timeout for this test
     // Test user credentials from .env.test
     const testEmail = process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'laura.bassline@proton.me';
-    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'Laura101!!';
+    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'test-password';
 
     // Navigate to login
     await page.goto(`${BASE_URL}/login`);
@@ -130,7 +130,7 @@ test.describe('Sequencing Report Rule 3 Fix', () => {
     test.setTimeout(60000); // 60 second timeout for this test
     // Test user credentials from .env.test
     const testEmail = process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'laura.bassline@proton.me';
-    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'Laura101!!';
+    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'test-password';
 
     // Navigate to login
     await page.goto(`${BASE_URL}/login`);
