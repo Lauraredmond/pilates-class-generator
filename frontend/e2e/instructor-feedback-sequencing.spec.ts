@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 import { loginWithTestUser } from './test-helpers';
 
 /**
@@ -11,11 +12,6 @@ import { loginWithTestUser } from './test-helpers';
  *
  * Also verifies NO REGRESSION in existing functionality.
  */
-
-const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'test@bassline.dev',
-  password: process.env.TEST_USER_PASSWORD || process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'TestPassword123!',
-};
 
 // High-intensity movements that should NOT appear early (intensity 7-10)
 const HIGH_INTENSITY_MOVEMENTS = [
@@ -42,9 +38,16 @@ const HIGH_INTENSITY_MOVEMENTS = [
 ];
 
 test.describe('Instructor Feedback: Sequencing Improvements', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test.beforeEach(async ({ page }) => {
     // Login with medical disclaimer handling
-    await loginWithTestUser(page, TEST_USER.email, TEST_USER.password);
+    await loginWithTestUser(page, testCredentials.email, testCredentials.password);
   });
 
   test('IMPROVEMENT 1: No high-intensity movements in first 20% of class', async ({ page }) => {

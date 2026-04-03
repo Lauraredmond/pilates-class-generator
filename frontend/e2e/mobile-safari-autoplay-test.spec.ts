@@ -6,9 +6,10 @@
  */
 
 import { test, expect, Page, devices } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
-const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com';
-const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'placeholder-password';
+const testCredentials.email = ;
+const testCredentials.password =  || 'placeholder-password';
 
 async function handleMedicalDisclaimer(page: Page) {
   const yesButton = page.locator('button:has-text("Yes")').first();
@@ -47,8 +48,8 @@ async function setupAndLogin(page: Page) {
   const passwordField = page.locator('input[type="password"]').first();
 
   if (await emailField.isVisible() && await passwordField.isVisible()) {
-    await emailField.fill(TEST_EMAIL);
-    await passwordField.fill(TEST_PASSWORD);
+    await emailField.fill(testCredentials.email);
+    await passwordField.fill(testCredentials.password);
 
     const submitButton = page.locator('button[type="submit"]').first();
     if (await submitButton.isVisible()) {
@@ -60,6 +61,13 @@ async function setupAndLogin(page: Page) {
 }
 
 test.describe('Mobile Safari Video Auto-Play', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test('Reproduce mobile Safari autoplay failure', async ({ browser }) => {
     test.setTimeout(600000); // 10 minutes
 
@@ -180,7 +188,7 @@ test.describe('Mobile Safari Video Auto-Play', () => {
         }
       }
 
-      previousMovement = currentMovement || '';
+      previousMovement = currentMovement;
       await page.waitForTimeout(10000); // Check every 10 seconds
     }
 

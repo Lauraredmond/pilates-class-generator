@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from './helpers/secure-credentials';
 
 /**
  * Simple Cast SDK Load Test - No Login Required

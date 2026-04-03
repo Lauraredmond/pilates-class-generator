@@ -1,4 +1,5 @@
 import { test } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -123,8 +124,8 @@ test('Capture console logs during class playback', async ({ page, baseURL }) => 
   const emailField = page.locator('input[type="email"]').first();
   if (await emailField.isVisible()) {
     console.log('\n=== Logging In ===');
-    await emailField.fill(process.env.TEST_USER_EMAIL || 'test@example.com');
-    await page.locator('input[type="password"]').first().fill(process.env.TEST_USER_PASSWORD || 'testpassword');
+    await emailField.fill();
+    await page.locator('input[type="password"]').first().fill( || 'testpassword');
     await page.locator('button[type="submit"]').first().click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);

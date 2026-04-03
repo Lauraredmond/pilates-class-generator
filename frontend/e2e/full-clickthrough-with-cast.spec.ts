@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 /**
  * E2E Test: Full Clickthrough Test with Chromecast Debugging
@@ -32,12 +33,14 @@ import { test, expect } from '@playwright/test';
 
 // Load test credentials from .env.test file
 // Default credentials loaded from environment variables
-const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || 'test@example.com',
-  password: process.env.TEST_USER_PASSWORD || 'testpassword',
-};
-
 test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   let consoleMessages: string[] = [];
   let castButtonLogs: string[] = [];
 
@@ -147,8 +150,8 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
       }
 
       // Fill credentials
-      await page.fill('input[type="email"]', TEST_USER.email);
-      await page.fill('input[type="password"]', TEST_USER.password);
+      await page.fill('input[type="email"]', testCredentials.email);
+      await page.fill('input[type="password"]', testCredentials.password);
       await page.screenshot({ path: 'screenshots/02-login-filled.png', fullPage: true });
 
       // Submit
@@ -527,8 +530,8 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
         }
       }
 
-      await page.fill('input[type="email"]', TEST_USER.email);
-      await page.fill('input[type="password"]', TEST_USER.password);
+      await page.fill('input[type="email"]', testCredentials.email);
+      await page.fill('input[type="password"]', testCredentials.password);
       await page.click('button[type="submit"]');
 
       // Wait for successful login (redirects to home page)
@@ -966,13 +969,13 @@ test.describe('Full Clickthrough Test with Chromecast Debugging', () => {
             disabled: (btn as HTMLButtonElement).disabled,
             ariaDisabled: btn.getAttribute('aria-disabled'),
             ariaLabel: btn.getAttribute('aria-label'),
-            title: btn.getAttribute('title') || '',
+            title: btn.getAttribute('title'),
             opacity: styles.opacity,
             cursor: styles.cursor,
             backgroundColor: styles.backgroundColor,
             color: styles.color,
             hasSvgIcon: !!svgIcon,
-            svgClassName: svgIcon?.getAttribute('class') || '',
+            svgClassName: svgIcon?.getAttribute('class'),
             innerHTML: btn.innerHTML.substring(0, 200) // First 200 chars to see content
           };
         });

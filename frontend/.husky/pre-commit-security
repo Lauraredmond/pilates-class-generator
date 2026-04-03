@@ -1,0 +1,53 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Security check: Prevent hardcoded credentials in test files
+echo "🔒 Checking for hardcoded credentials in test files..."
+
+# Check for fallback values in environment variable usage
+FALLBACK_CREDS=$(git diff --cached --name-only | grep -E "\.spec\.(ts|js)$" | xargs -I {} sh -c 'git diff --cached {} | grep -E "process\.env.*\|\|.*[\"'\''][^\"'\'']*[\"'\'']" | grep -E "(EMAIL|PASSWORD|TOKEN|KEY|SECRET)"' 2>/dev/null)
+
+if [ ! -z "$FALLBACK_CREDS" ]; then
+    echo "❌ SECURITY VIOLATION: Hardcoded credential fallbacks detected!"
+    echo ""
+    echo "Found credentials with fallback values:"
+    echo "$FALLBACK_CREDS"
+    echo ""
+    echo "Fix: Remove all fallback values and use secure-credentials helper"
+    echo "Example:"
+    echo "  ❌ BAD:  const email = process.env.TEST_EMAIL || 'test@example.com';"
+    echo "  ✅ GOOD: const { email } = getTestCredentials();"
+    echo ""
+    echo "See SECURE_TESTING_GUIDE.md for proper credential management"
+    exit 1
+fi
+
+# Check for direct email addresses (except example.com)
+DIRECT_EMAILS=$(git diff --cached --name-only | grep -E "\.spec\.(ts|js)$" | xargs -I {} sh -c 'git diff --cached {} | grep -E "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" | grep -v "example\.com" | grep -v "@playwright" | grep -v "@types"' 2>/dev/null)
+
+if [ ! -z "$DIRECT_EMAILS" ]; then
+    echo "⚠️  WARNING: Possible real email addresses detected in test files!"
+    echo ""
+    echo "Found email addresses:"
+    echo "$DIRECT_EMAILS"
+    echo ""
+    echo "Ensure these are not real email addresses. Use test@example.com for placeholders."
+    echo "Press ENTER to continue or Ctrl+C to cancel..."
+    read
+fi
+
+# Check for password strings
+PASSWORD_STRINGS=$(git diff --cached --name-only | grep -E "\.spec\.(ts|js)$" | xargs -I {} sh -c 'git diff --cached {} | grep -E "password[\"'\'']?\s*[:=]\s*[\"'\''][^\"'\'']+[\"'\'']" | grep -v "process\.env" | grep -v "testCredentials" | grep -v "getTestCredentials"' 2>/dev/null)
+
+if [ ! -z "$PASSWORD_STRINGS" ]; then
+    echo "❌ SECURITY VIOLATION: Hardcoded passwords detected!"
+    echo ""
+    echo "Found hardcoded passwords:"
+    echo "$PASSWORD_STRINGS"
+    echo ""
+    echo "Fix: Use environment variables via secure-credentials helper"
+    echo "See SECURE_TESTING_GUIDE.md for proper credential management"
+    exit 1
+fi
+
+echo "✅ Security check passed - no hardcoded credentials detected"

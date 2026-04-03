@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 // Test configuration
 const BASE_URL = process.env.TEST_ENV === 'production'
@@ -7,13 +8,16 @@ const BASE_URL = process.env.TEST_ENV === 'production'
   ? 'https://bassline-dev.netlify.app'
   : 'http://localhost:5173';
 
-// Test user credentials from environment
-const COACH_USER = {
-  email: process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'test@example.com',
-  password: process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'TestPassword123!',
-};
+// Coach user will be retrieved from secure credentials in test.beforeAll
 
 test.describe('Coach Workflows', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test.beforeEach(async ({ page }) => {
     // First, navigate to root to handle any initial disclaimers
     await page.goto(BASE_URL);
@@ -28,8 +32,8 @@ test.describe('Coach Workflows', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Login as coach
-    await page.fill('input[type="email"]', COACH_USER.email);
-    await page.fill('input[type="password"]', COACH_USER.password);
+    await page.fill('input[type="email"]', testCredentials.email);
+    await page.fill('input[type="password"]', testCredentials.password);
 
     // Submit login
     const loginButton = page.locator('button:has-text("Sign In"), button:has-text("Login"), button[type="submit"]').first();

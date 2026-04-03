@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from './helpers/secure-credentials';
 
 test.describe('🚨 ITERATION 10 - FINAL ATTEMPT - Chromecast Fix', () => {
   test('should initialize Cast SDK with all logger calls replaced', async ({ page }) => {

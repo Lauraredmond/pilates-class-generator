@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 // Test configuration
 const BASE_URL = process.env.TEST_ENV === 'production'
@@ -6,20 +7,20 @@ const BASE_URL = process.env.TEST_ENV === 'production'
   : 'http://localhost:5173';
 
 // Test credentials - Update these if needed
-const TEST_USER = {
-  email: `test.multirole.${Date.now()}@example.com`,
-  password: 'Test123!@#',
-  fullName: 'Test Multi Role User',
-  roles: ['practitioner', 'parent', 'coach'],  // Multiple roles
-};
-
 // Existing user for login test - credentials from environment variables
 const EXISTING_USER = {
-  email: process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'test@example.com',
-  password: process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'TestPassword123!',
+  email: ,
+  password: ,
 };
 
 test.describe('Multi-Role Registration Flow', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test.beforeEach(async ({ page }) => {
     // Navigate to the app
     await page.goto(BASE_URL);
@@ -48,9 +49,9 @@ test.describe('Multi-Role Registration Flow', () => {
     await handlePermissionsAndDisclaimers(page);
 
     // Fill in basic information
-    await page.fill('input[type="email"]', TEST_USER.email);
-    await page.fill('input#password', TEST_USER.password);
-    await page.fill('input#confirmPassword', TEST_USER.password);
+    await page.fill('input[type="email"]', testCredentials.email);
+    await page.fill('input#password', testCredentials.password);
+    await page.fill('input#confirmPassword', testCredentials.password);
     await page.fill('input#fullName', TEST_USER.fullName);
 
     // Select multiple roles
@@ -82,7 +83,7 @@ test.describe('Multi-Role Registration Flow', () => {
     // Check for success message
     await expect(page.locator('text=Check Your Email!')).toBeVisible({ timeout: 10000 });
 
-    console.log('✅ Multi-role registration successful for:', TEST_USER.email);
+    console.log('✅ Multi-role registration successful for:', testCredentials.email);
   });
 
   test('should allow existing user to add new role from profile', async ({ page }) => {
@@ -307,6 +308,13 @@ async function navigateToProfile(page: any) {
 
 // Test configuration helper
 test.describe.configure({
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   mode: 'serial',  // Run tests in sequence
   timeout: 60000,  // 60 second timeout per test
 });

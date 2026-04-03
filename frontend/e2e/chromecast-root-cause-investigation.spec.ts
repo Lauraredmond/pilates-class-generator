@@ -10,15 +10,21 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { getTestCredentials, validateTestEnvironment } from './helpers/secure-credentials';
 
 const DEV_SITE = 'https://bassline-dev.netlify.app';
-const TEST_EMAIL = process.env.PLAYWRIGHT_TEST_EMAIL || 'test@example.com';
-const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || 'test-password';
 
 // Output directory for investigation results
 const OUTPUT_DIR = '/tmp/chromecast-investigation';
 
+// Get secure test credentials (will throw if not configured)
+let testCredentials: { email: string; password: string };
+
 test.beforeAll(() => {
+  // Validate test environment and get credentials
+  validateTestEnvironment();
+  testCredentials = getTestCredentials();
+
   // Create output directory
   if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -40,8 +46,8 @@ test.describe('Chromecast Root Cause Investigation', () => {
     const loginButton = page.locator('button:has-text("Sign in with Email")');
     if (await loginButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await loginButton.click();
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
+      await page.fill('input[type="email"]', testCredentials.email);
+      await page.fill('input[type="password"]', testCredentials.password);
       await page.click('button[type="submit"]');
       await page.waitForURL(/class-builder|dashboard/, { timeout: 10000 });
     }
@@ -182,8 +188,8 @@ test.describe('Chromecast Root Cause Investigation', () => {
     const loginButton = page.locator('button:has-text("Sign in with Email")');
     if (await loginButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await loginButton.click();
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
+      await page.fill('input[type="email"]', testCredentials.email);
+      await page.fill('input[type="password"]', testCredentials.password);
       await page.click('button[type="submit"]');
       await page.waitForURL(/class-builder|dashboard/, { timeout: 10000 });
     }
@@ -290,8 +296,8 @@ test.describe('Chromecast Root Cause Investigation', () => {
     const loginButton = page.locator('button:has-text("Sign in with Email")');
     if (await loginButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await loginButton.click();
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
+      await page.fill('input[type="email"]', testCredentials.email);
+      await page.fill('input[type="password"]', testCredentials.password);
       await page.click('button[type="submit"]');
       await page.waitForURL(/class-builder|dashboard/, { timeout: 10000 });
     }
@@ -363,8 +369,8 @@ test.describe('Chromecast Root Cause Investigation', () => {
     const loginButton = page.locator('button:has-text("Sign in with Email")');
     if (await loginButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await loginButton.click();
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
+      await page.fill('input[type="email"]', testCredentials.email);
+      await page.fill('input[type="password"]', testCredentials.password);
       await page.click('button[type="submit"]');
       await page.waitForURL(/class-builder|dashboard/, { timeout: 10000 });
     }

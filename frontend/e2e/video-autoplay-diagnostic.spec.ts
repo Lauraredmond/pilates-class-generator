@@ -14,10 +14,11 @@
  */
 
 import { test, expect, Page } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 // Test credentials from .env.test file
-const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com';
-const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'placeholder-password';
+const testCredentials.email = ;
+const testCredentials.password =  || 'placeholder-password';
 
 // Helper to handle medical disclaimer
 async function handleMedicalDisclaimer(page: Page) {
@@ -69,8 +70,8 @@ async function setupAndLogin(page: Page) {
 
   if (await emailField.isVisible() && await passwordField.isVisible()) {
     console.log('[AUTH] Found login form, filling credentials...');
-    await emailField.fill(TEST_EMAIL);
-    await passwordField.fill(TEST_PASSWORD);
+    await emailField.fill(testCredentials.email);
+    await passwordField.fill(testCredentials.password);
 
     const submitButton = page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Login")').first();
     if (await submitButton.isVisible()) {
@@ -84,6 +85,13 @@ async function setupAndLogin(page: Page) {
 }
 
 test.describe('Video Auto-Play Diagnostic', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   let page: Page;
 
   test.beforeEach(async ({ browser }) => {

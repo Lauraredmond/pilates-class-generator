@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from './helpers/secure-credentials';
 
 test.describe('Cast Button in Class Playback', () => {
   test('navigate to class playback and check Cast button', async ({ page }) => {

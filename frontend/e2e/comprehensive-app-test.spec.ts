@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, getAdminTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 /**
  * E2E Test: Comprehensive Application Testing
@@ -12,7 +13,7 @@ import { test, expect } from '@playwright/test';
  *
  * Setup:
  *   Requires two test users:
- *   - TEST_USER_EMAIL / TEST_USER_PASSWORD - Regular user
+ *   - testCredentials.email / testCredentials.password - Regular user
  *   - ADMIN_USER_EMAIL / ADMIN_USER_PASSWORD - Admin user (is_admin = true)
  *
  *   Credentials stored in frontend/.env.test (gitignored)
@@ -22,22 +23,20 @@ import { test, expect } from '@playwright/test';
  *   npm run test:e2e:comprehensive
  */
 
-// Load test credentials
-const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || 'test@example.com',
-  password: process.env.TEST_USER_PASSWORD || 'testpassword',
-};
-
-const ADMIN_USER = {
-  email: process.env.ADMIN_USER_EMAIL || 'admin@example.com',
-  password: process.env.ADMIN_USER_PASSWORD || 'adminpassword',
-};
+// Admin credentials will be retrieved from secure credentials when needed
 
 // ==============================================================================
 // TEST 1: CHROMECAST ICON STATE VERIFICATION
 // ==============================================================================
 
 test.describe('Chromecast Integration', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test('Chromecast icon should be WHITE/ACTIVE (not greyed out)', async ({ page }) => {
     // Login
     await page.goto('/login');
@@ -68,8 +67,8 @@ test.describe('Chromecast Integration', () => {
       }
     }
 
-    await page.fill('input[type="email"]', TEST_USER.email);
-    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.fill('input[type="email"]', testCredentials.email);
+    await page.fill('input[type="password"]', testCredentials.password);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 
@@ -184,6 +183,13 @@ test.describe('Chromecast Integration', () => {
 // ==============================================================================
 
 test.describe('Analytics Page - User Stats', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test('Analytics page should increment class count after class generation', async ({ page }) => {
     // Login
     await page.goto('/login');
@@ -214,8 +220,8 @@ test.describe('Analytics Page - User Stats', () => {
       }
     }
 
-    await page.fill('input[type="email"]', TEST_USER.email);
-    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.fill('input[type="email"]', testCredentials.email);
+    await page.fill('input[type="password"]', testCredentials.password);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 
@@ -284,6 +290,13 @@ test.describe('Analytics Page - User Stats', () => {
 // ==============================================================================
 
 test.describe('Analytics Page - Admin LLM Logs', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test('Regular users should NOT see LLM usage logs section', async ({ page }) => {
     // Login as regular user
     await page.goto('/login');
@@ -314,8 +327,8 @@ test.describe('Analytics Page - Admin LLM Logs', () => {
       }
     }
 
-    await page.fill('input[type="email"]', TEST_USER.email);
-    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.fill('input[type="email"]', testCredentials.email);
+    await page.fill('input[type="password"]', testCredentials.password);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 
@@ -334,6 +347,9 @@ test.describe('Analytics Page - Admin LLM Logs', () => {
   });
 
   test('Admin users SHOULD see LLM usage logs section', async ({ page }) => {
+    // Get admin credentials
+    const adminCredentials = getAdminTestCredentials();
+
     // Login as admin user
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
@@ -363,8 +379,8 @@ test.describe('Analytics Page - Admin LLM Logs', () => {
       }
     }
 
-    await page.fill('input[type="email"]', ADMIN_USER.email);
-    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.fill('input[type="email"]', adminCredentials.email);
+    await page.fill('input[type="password"]', adminCredentials.password);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 
@@ -397,6 +413,13 @@ test.describe('Analytics Page - Admin LLM Logs', () => {
 // ==============================================================================
 
 test.describe('AI Toggle - Admin Access Control', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test('Regular users should NOT see AI toggle in class builder', async ({ page }) => {
     // Login as regular user
     await page.goto('/login');
@@ -427,8 +450,8 @@ test.describe('AI Toggle - Admin Access Control', () => {
       }
     }
 
-    await page.fill('input[type="email"]', TEST_USER.email);
-    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.fill('input[type="email"]', testCredentials.email);
+    await page.fill('input[type="password"]', testCredentials.password);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 
@@ -453,6 +476,9 @@ test.describe('AI Toggle - Admin Access Control', () => {
   });
 
   test('Admin users SHOULD see AI toggle in class builder', async ({ page }) => {
+    // Get admin credentials
+    const adminCredentials = getAdminTestCredentials();
+
     // Login as admin user
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
@@ -482,8 +508,8 @@ test.describe('AI Toggle - Admin Access Control', () => {
       }
     }
 
-    await page.fill('input[type="email"]', ADMIN_USER.email);
-    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.fill('input[type="email"]', adminCredentials.email);
+    await page.fill('input[type="password"]', adminCredentials.password);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 
@@ -507,6 +533,9 @@ test.describe('AI Toggle - Admin Access Control', () => {
   });
 
   test('AI toggle should default to OFF during MVP development', async ({ page }) => {
+    // Get admin credentials
+    const adminCredentials = getAdminTestCredentials();
+
     // Login as admin
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
@@ -536,8 +565,8 @@ test.describe('AI Toggle - Admin Access Control', () => {
       }
     }
 
-    await page.fill('input[type="email"]', ADMIN_USER.email);
-    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.fill('input[type="email"]', adminCredentials.email);
+    await page.fill('input[type="password"]', adminCredentials.password);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 
@@ -570,7 +599,17 @@ test.describe('AI Toggle - Admin Access Control', () => {
 // ==============================================================================
 
 test.describe('Developer Tools - Admin Stats', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test('Settings page should show developer tools for admins only', async ({ page }) => {
+    // Get admin credentials
+    const adminCredentials = getAdminTestCredentials();
+
     // Login as admin
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
@@ -600,8 +639,8 @@ test.describe('Developer Tools - Admin Stats', () => {
       }
     }
 
-    await page.fill('input[type="email"]', ADMIN_USER.email);
-    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.fill('input[type="email"]', adminCredentials.email);
+    await page.fill('input[type="password"]', adminCredentials.password);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 
@@ -641,6 +680,13 @@ test.describe('Developer Tools - Admin Stats', () => {
 // ==============================================================================
 
 test.describe('Class Playback - Media & Section Verification', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test('Should progress through class sections with music, voiceover, and video playback', async ({ page }) => {
     // Login
     await page.goto('/login');
@@ -671,8 +717,8 @@ test.describe('Class Playback - Media & Section Verification', () => {
       }
     }
 
-    await page.fill('input[type="email"]', TEST_USER.email);
-    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.fill('input[type="email"]', testCredentials.email);
+    await page.fill('input[type="password"]', testCredentials.password);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$|\/dashboard/, { timeout: 15000 });
 

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from './helpers/secure-credentials';
 
 test.describe('Force Fresh Load Test', () => {
   test('bypass all caches and check Cast logs', async ({ page, context }) => {

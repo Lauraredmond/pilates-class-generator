@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from './helpers/secure-credentials';
 
 test.describe('Quick CSS Check', () => {
   test('Check if responsive classes are applied', async ({ page }) => {

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 import { loginWithTestUser } from './test-helpers';
 
 /**
@@ -13,13 +14,13 @@ import { loginWithTestUser } from './test-helpers';
  * 6. Verify class saves to library
  */
 
-// Test user credentials (create these in Supabase dev database first)
-const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'test@bassline.dev',
-  password: process.env.TEST_USER_PASSWORD || process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'TestPassword123!',
-};
-
 test.describe('Class Generation Flow', () => {
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test.beforeEach(async ({ page }) => {
     // Navigate to login page
     await page.goto('/login');
@@ -33,7 +34,7 @@ test.describe('Class Generation Flow', () => {
     // STEP 1: Login
     // ========================================
     await test.step('Login with test user', async () => {
-      await loginWithTestUser(page, TEST_USER.email, TEST_USER.password);
+      await loginWithTestUser(page, testCredentials.email, testCredentials.password);
       await expect(page).toHaveURL(/dashboard|\//);
     });
 
@@ -168,7 +169,7 @@ test.describe('Class Generation Flow', () => {
     // This test verifies error handling when backend is slow/unavailable
 
     await test.step('Login', async () => {
-      await loginWithTestUser(page, TEST_USER.email, TEST_USER.password);
+      await loginWithTestUser(page, testCredentials.email, testCredentials.password);
     });
 
     await test.step('Navigate to class builder', async () => {
@@ -199,7 +200,7 @@ test.describe('Class Generation Flow', () => {
     // This test verifies music integration works in playback
 
     await test.step('Login and navigate to existing class', async () => {
-      await loginWithTestUser(page, TEST_USER.email, TEST_USER.password);
+      await loginWithTestUser(page, testCredentials.email, testCredentials.password);
 
       // Navigate to classes
       const classesLink = page.locator('a[href*="classes"]').first();

@@ -47,10 +47,11 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 // Load test credentials from environment (loaded by Playwright config)
-const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com';
-const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || 'testpassword';
+const testCredentials.email = ;
+const testCredentials.password =  || 'testpassword';
 const TEST_ENV = process.env.TEST_ENV || 'dev';
 
 // Environment URLs
@@ -62,6 +63,13 @@ const ENV_URLS = {
 const BASE_URL = ENV_URLS[TEST_ENV as keyof typeof ENV_URLS];
 
 test.describe('Class Playback - Full E2E Flow', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test.beforeEach(async ({ page }) => {
     // Navigate to app
     await page.goto(BASE_URL);
@@ -110,8 +118,8 @@ test.describe('Class Playback - Full E2E Flow', () => {
       }
 
       // Fill login form
-      await page.fill('input[type="email"]', TEST_USER_EMAIL);
-      await page.fill('input[type="password"]', TEST_USER_PASSWORD);
+      await page.fill('input[type="email"]', testCredentials.email);
+      await page.fill('input[type="password"]', testCredentials.password);
 
       // Submit login
       await page.click('button:has-text("Sign In")');

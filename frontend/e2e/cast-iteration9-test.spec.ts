@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from './helpers/secure-credentials';
 
 test.describe('Cast Button Iteration 9 - Initialization Visibility Fix', () => {
   test('should show ✅✅✅ initialization log when Cast SDK loads', async ({ page }) => {

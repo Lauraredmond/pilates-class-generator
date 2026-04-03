@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 const BASE_URL = 'http://localhost:5173';
 
@@ -44,11 +45,11 @@ async function handlePermissionsAndDisclaimers(page: any) {
 test.describe('Sequencing Report Rule 3 Fix', () => {
   // Setup hook to check for required environment variables
   test.beforeAll(() => {
-    if (!process.env.PLAYWRIGHT_TEST_USER_EMAIL || !process.env.PLAYWRIGHT_TEST_USER_PASSWORD) {
+    if (! || !) {
       throw new Error(
         'Missing required environment variables. Please set:\n' +
-        '  PLAYWRIGHT_TEST_USER_EMAIL\n' +
-        '  PLAYWRIGHT_TEST_USER_PASSWORD\n' +
+        '  PLAYWRIGHT_testCredentials.email\n' +
+        '  PLAYWRIGHT_testCredentials.password\n' +
         'in your .env.test file or environment'
       );
     }
@@ -57,8 +58,8 @@ test.describe('Sequencing Report Rule 3 Fix', () => {
   test('Historical muscle balance should show data instead of "No data available"', async ({ page }) => {
     test.setTimeout(60000); // 60 second timeout for this test
     // Test user credentials from environment variables (required)
-    const testEmail = process.env.PLAYWRIGHT_TEST_USER_EMAIL!;
-    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD!;
+    const testEmail = !;
+    const testPassword = !;
 
     // Navigate to login
     await page.goto(`${BASE_URL}/login`);
@@ -141,8 +142,8 @@ test.describe('Sequencing Report Rule 3 Fix', () => {
   test('Advanced classes should include beginner movements for repertoire coverage', async ({ page }) => {
     test.setTimeout(60000); // 60 second timeout for this test
     // Test user credentials from environment variables (required)
-    const testEmail = process.env.PLAYWRIGHT_TEST_USER_EMAIL!;
-    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD!;
+    const testEmail = !;
+    const testPassword = !;
 
     // Navigate to login
     await page.goto(`${BASE_URL}/login`);
@@ -195,7 +196,7 @@ test.describe('Sequencing Report Rule 3 Fix', () => {
 
       // Extract movements from the generated class
       const movements = await page.$$eval('.movement-card .movement-name',
-        elements => elements.map(el => el.textContent?.trim() || '')
+        elements => elements.map(el => el.textContent?.trim())
       );
 
       allMovements.push(...movements);

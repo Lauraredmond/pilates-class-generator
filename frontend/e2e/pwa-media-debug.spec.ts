@@ -1,8 +1,9 @@
 import { test, expect, Page } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 // Test credentials
-const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com';
-const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'testpassword';
+const testCredentials.email = ;
+const testCredentials.password =  || 'testpassword';
 
 // Helper to capture and log all console messages
 function setupConsoleLogging(page: Page) {
@@ -105,8 +106,8 @@ async function login(page: Page) {
 
   if (await emailField.isVisible() && await passwordField.isVisible()) {
     console.log('[AUTH] Found login form, filling credentials...');
-    await emailField.fill(TEST_EMAIL);
-    await passwordField.fill(TEST_PASSWORD);
+    await emailField.fill(testCredentials.email);
+    await passwordField.fill(testCredentials.password);
 
     // Look for submit button
     const submitButton = page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Sign In"), button:has-text("Login"), button:has-text("Log in"), button:has-text("Log In")').first();
@@ -147,6 +148,13 @@ async function login(page: Page) {
 }
 
 test.describe('Bassline PWA Media Debug Audit', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test.beforeEach(async ({ page }) => {
     // Set up console logging for all tests
     setupConsoleLogging(page);

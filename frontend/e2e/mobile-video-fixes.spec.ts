@@ -7,11 +7,12 @@
  */
 
 import { test, expect, Page } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 // Test credentials from .env.test file
 // ⚠️ Real credentials MUST be in .env.test (gitignored), NOT hardcoded here
-const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com';
-const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'placeholder-password';
+const testCredentials.email = ;
+const testCredentials.password =  || 'placeholder-password';
 
 // Helper to handle medical disclaimer
 async function handleMedicalDisclaimer(page: Page) {
@@ -69,8 +70,8 @@ async function setupAndLogin(page: Page) {
 
   if (await emailField.isVisible() && await passwordField.isVisible()) {
     console.log('[AUTH] Found login form, filling credentials...');
-    await emailField.fill(TEST_EMAIL);
-    await passwordField.fill(TEST_PASSWORD);
+    await emailField.fill(testCredentials.email);
+    await passwordField.fill(testCredentials.password);
 
     const submitButton = page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Login")').first();
     if (await submitButton.isVisible()) {
@@ -109,6 +110,13 @@ const DEVICES = {
 };
 
 test.describe('Mobile Video Fixes', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   let page: Page;
 
   test.beforeEach(async ({ browser }) => {
@@ -124,6 +132,13 @@ test.describe('Mobile Video Fixes', () => {
 
   // Issue 1: Mobile display - narrative should scroll UNDER video, not behind
   test.describe('Issue 1: Mobile Display Layout', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
     DEVICES.mobile.forEach(device => {
       test(`${device.name}: narrative scrolls under video, not behind`, async () => {
         await page.setViewportSize(device.viewport);
@@ -249,6 +264,13 @@ test.describe('Mobile Video Fixes', () => {
 
   // Issue 2: Auto-play - videos should play automatically on section transitions
   test.describe('Issue 2: Video Auto-play', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
     test('videos auto-play when entering new sections', async () => {
       // Navigate to class builder and generate class
       await page.click('text=Generate');
@@ -288,6 +310,13 @@ test.describe('Mobile Video Fixes', () => {
 
   // Issue 3: Sync - implement thumbnail + progress bar for 7-second delay
   test.describe('Issue 3: Video/Voiceover Sync', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
     test('shows thumbnail with progress bar during 7-second delay', async () => {
       // Navigate to class builder and generate class
       await page.click('text=Generate');

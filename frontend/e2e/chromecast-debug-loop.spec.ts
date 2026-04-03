@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestCredentials, validateTestEnvironment } from "./helpers/secure-credentials";
 
 /**
  * Chromecast Debug Loop - Automated diagnosis and verification
@@ -12,6 +13,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Chromecast Debug Loop', () => {
+
+  let testCredentials: { email: string; password: string };
+
+  test.beforeAll(() => {
+    validateTestEnvironment();
+    testCredentials = getTestCredentials();
+  });
   test('Diagnose Cast button state and SDK loading', async ({ page }) => {
     console.log('\n🔍 CHROMECAST DIAGNOSTIC TEST STARTING...\n');
 
@@ -50,10 +58,10 @@ test.describe('Chromecast Debug Loop', () => {
 
     console.log('📍 Step 2: Login');
     const emailInput = page.locator('input[type="email"]');
-    await emailInput.fill(process.env.TEST_USER_EMAIL || '');
+    await emailInput.fill();
 
     const passwordInput = page.locator('input[type="password"]');
-    await passwordInput.fill(process.env.TEST_USER_PASSWORD || '');
+    await passwordInput.fill();
 
     const loginButton = page.locator('button:has-text("Sign In")');
     await loginButton.click();
