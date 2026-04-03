@@ -340,9 +340,8 @@ async def agent_list_classes(
     """
     try:
         result = supabase.table("class_plans")\
-            .select("id, title, duration_minutes, difficulty_level, total_movements, created_at, updated_at")\
+            .select("id, duration_minutes, difficulty_level, created_at, updated_at")\
             .eq("user_id", user_id)\
-            .is_("deleted_at", "null")\
             .order("created_at", desc=True)\
             .limit(limit)\
             .execute()
@@ -352,7 +351,7 @@ async def agent_list_classes(
                 class_id=str(c["id"]),
                 duration_minutes=c.get("duration_minutes", 0),
                 difficulty_level=c.get("difficulty_level", "Beginner"),
-                movement_count=c.get("total_movements", 0),
+                movement_count=0,  # Not available in this query
                 created_at=c["created_at"],
                 last_accessed=c.get("updated_at")
             )
@@ -456,9 +455,9 @@ async def agent_delete_class(
         if result.data["user_id"] != user_id:
             raise HTTPException(status_code=403, detail="Permission denied")
 
-        # Soft delete
+        # Hard delete (since deleted_at column doesn't exist)
         supabase.table("class_plans")\
-            .update({"deleted_at": datetime.utcnow().isoformat()})\
+            .delete()\
             .eq("id", class_id)\
             .execute()
 
