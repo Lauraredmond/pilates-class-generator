@@ -627,6 +627,481 @@ paths:
       security:
       - BearerAuth: []
       x-complexity: LOW
+  /api/agent/analytics/movement-history:
+    get:
+      tags:
+      - Agent Gateway
+      summary: Get Movement History (Agent Analytics View)
+      description: Time series data showing movement usage over time periods (day/week/month).
+      operationId: agentGetMovementHistory
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Time period: day, week, month, total'
+          default: week
+          title: Period
+        description: 'Time period: day, week, month, total'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentTimeSeriesData'
+                title: Response Agent Gateway-Agent Get Movement History
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/internal-server-error
+                title: Internal Server Error
+                status: 500
+                detail: An unexpected error occurred while processing your request.
+                instance: /api/agent/analytics/movement-history
+        '401':
+          description: Unauthorized - Authentication required or invalid credentials
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/authentication-required
+                title: Unauthorized
+                status: 401
+                detail: Authentication is required to access this resource.
+                instance: /api/agent/analytics/movement-history
+        '403':
+          description: Forbidden - Insufficient permissions to access this resource
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                title: Forbidden
+                status: 403
+                detail: You do not have permission to access this resource.
+                instance: /api/agent/analytics/movement-history
+      x-complexity: LOW
+  /api/agent/analytics/muscle-group-history:
+    get:
+      tags:
+      - Agent Gateway
+      summary: Get Muscle Group History (Agent Analytics View)
+      description: Time series data showing muscle group targeting over time periods.
+      operationId: agentGetMuscleGroupHistory
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Time period: day, week, month, total'
+          default: week
+          title: Period
+        description: 'Time period: day, week, month, total'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentTimeSeriesData'
+                title: Response Agent Gateway-Agent Get Muscle Group History
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/internal-server-error
+                title: Internal Server Error
+                status: 500
+                detail: An unexpected error occurred while processing your request.
+                instance: /api/agent/analytics/muscle-group-history
+        '401':
+          description: Unauthorized - Authentication required or invalid credentials
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/authentication-required
+                title: Unauthorized
+                status: 401
+                detail: Authentication is required to access this resource.
+                instance: /api/agent/analytics/muscle-group-history
+        '403':
+          description: Forbidden - Insufficient permissions to access this resource
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                title: Forbidden
+                status: 403
+                detail: You do not have permission to access this resource.
+                instance: /api/agent/analytics/muscle-group-history
+      x-complexity: LOW
+  /api/agent/analytics/practice-frequency:
+    get:
+      tags:
+      - Agent Gateway
+      summary: Get Practice Frequency (Agent Analytics View)
+      description: Shows how often user practices over time periods.
+      operationId: agentGetPracticeFrequency
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Time period: day, week, month'
+          default: week
+          title: Period
+        description: 'Time period: day, week, month'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPracticeFrequencyData'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/internal-server-error
+                title: Internal Server Error
+                status: 500
+                detail: An unexpected error occurred while processing your request.
+                instance: /api/agent/analytics/practice-frequency
+        '401':
+          description: Unauthorized - Authentication required or invalid credentials
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/authentication-required
+                title: Unauthorized
+                status: 401
+                detail: Authentication is required to access this resource.
+                instance: /api/agent/analytics/practice-frequency
+        '403':
+          description: Forbidden - Insufficient permissions to access this resource
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                title: Forbidden
+                status: 403
+                detail: You do not have permission to access this resource.
+                instance: /api/agent/analytics/practice-frequency
+      x-complexity: LOW
+  /api/agent/analytics/difficulty-progression:
+    get:
+      tags:
+      - Agent Gateway
+      summary: Get Difficulty Progression (Agent Analytics View)
+      description: Shows how user's difficulty level choices progress over time.
+      operationId: agentGetDifficultyProgression
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Time period: day, week, month'
+          default: week
+          title: Period
+        description: 'Time period: day, week, month'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDifficultyProgressionData'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/internal-server-error
+                title: Internal Server Error
+                status: 500
+                detail: An unexpected error occurred while processing your request.
+                instance: /api/agent/analytics/difficulty-progression
+        '401':
+          description: Unauthorized - Authentication required or invalid credentials
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/authentication-required
+                title: Unauthorized
+                status: 401
+                detail: Authentication is required to access this resource.
+                instance: /api/agent/analytics/difficulty-progression
+        '403':
+          description: Forbidden - Insufficient permissions to access this resource
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                title: Forbidden
+                status: 403
+                detail: You do not have permission to access this resource.
+                instance: /api/agent/analytics/difficulty-progression
+      x-complexity: LOW
+  /api/agent/analytics/muscle-distribution:
+    get:
+      tags:
+      - Agent Gateway
+      summary: Get Muscle Distribution (Agent Analytics View)
+      description: Shows percentage breakdown of muscle groups targeted.
+      operationId: agentGetMuscleDistribution
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Time period: day, week, month, total'
+          default: total
+          title: Period
+        description: 'Time period: day, week, month, total'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentMuscleDistributionData'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/internal-server-error
+                title: Internal Server Error
+                status: 500
+                detail: An unexpected error occurred while processing your request.
+                instance: /api/agent/analytics/muscle-distribution
+        '401':
+          description: Unauthorized - Authentication required or invalid credentials
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/authentication-required
+                title: Unauthorized
+                status: 401
+                detail: Authentication is required to access this resource.
+                instance: /api/agent/analytics/muscle-distribution
+        '403':
+          description: Forbidden - Insufficient permissions to access this resource
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                title: Forbidden
+                status: 403
+                detail: You do not have permission to access this resource.
+                instance: /api/agent/analytics/muscle-distribution
+      x-complexity: LOW
+  /api/agent/analytics/movement-family-distribution:
+    get:
+      tags:
+      - Agent Gateway
+      summary: Get Movement Family Distribution (Agent Analytics View)
+      description: Shows percentage breakdown of movement families (flexion, extension,
+        etc).
+      operationId: agentGetMovementFamilyDistribution
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Time period: day, week, month, total'
+          default: total
+          title: Period
+        description: 'Time period: day, week, month, total'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentMovementFamilyDistributionData'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/internal-server-error
+                title: Internal Server Error
+                status: 500
+                detail: An unexpected error occurred while processing your request.
+                instance: /api/agent/analytics/movement-family-distribution
+        '401':
+          description: Unauthorized - Authentication required or invalid credentials
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/authentication-required
+                title: Unauthorized
+                status: 401
+                detail: Authentication is required to access this resource.
+                instance: /api/agent/analytics/movement-family-distribution
+        '403':
+          description: Forbidden - Insufficient permissions to access this resource
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                title: Forbidden
+                status: 403
+                detail: You do not have permission to access this resource.
+                instance: /api/agent/analytics/movement-family-distribution
+      x-complexity: LOW
+  /api/agent/analytics/play-statistics:
+    get:
+      tags:
+      - Agent Gateway
+      summary: Get Play Statistics (Agent Analytics View)
+      description: Aggregated playback statistics showing session counts, completion
+        rates, etc.
+      operationId: agentGetPlayStatistics
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPlayStatistics'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/internal-server-error
+                title: Internal Server Error
+                status: 500
+                detail: An unexpected error occurred while processing your request.
+                instance: /api/agent/analytics/play-statistics
+        '401':
+          description: Unauthorized - Authentication required or invalid credentials
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/authentication-required
+                title: Unauthorized
+                status: 401
+                detail: Authentication is required to access this resource.
+                instance: /api/agent/analytics/play-statistics
+        '403':
+          description: Forbidden - Insufficient permissions to access this resource
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/RFC9457ProblemDetail'
+              example:
+                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                title: Forbidden
+                status: 403
+                detail: You do not have permission to access this resource.
+                instance: /api/agent/analytics/play-statistics
+      security:
+      - BearerAuth: []
+      x-complexity: LOW
   /api/agent/movements:
     get:
       tags:
@@ -844,200 +1319,132 @@ paths:
       security: []
 components:
   schemas:
-    HTTPValidationError:
+    AgentTimeSeriesData:
       properties:
-        detail:
-          items:
-            $ref: '#/components/schemas/ValidationError'
-          type: array
-          title: Detail
-      type: object
-      title: HTTPValidationError
-    AgentAuthResponse:
-      properties:
-        access_token:
+        label:
           type: string
-          title: Access Token
-          description: JWT access token for API authentication
-        user_id:
-          type: string
-          title: User Id
-          description: Unique user identifier
-        email:
-          type: string
-          title: Email
-          description: User email address
-      type: object
-      required:
-      - access_token
-      - user_id
-      - email
-      title: AgentAuthResponse
-      description: Simplified auth response for agents
-    AgentUserProfile:
-      properties:
-        user_id:
-          type: string
-          title: User Id
-          description: Unique user identifier
-        email:
-          type: string
-          title: Email
-          description: User email address
-        full_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Full Name
-          description: User's full name
-        total_classes:
-          type: integer
-          title: Total Classes
-          description: Total classes completed
-          default: 0
-        current_level:
-          type: string
-          title: Current Level
-          description: Current difficulty level
-          default: Beginner
-      type: object
-      required:
-      - user_id
-      - email
-      title: AgentUserProfile
-      description: Simplified user profile for agents
-    AgentSuccessResponse:
-      properties:
-        success:
-          type: boolean
-          title: Success
-          description: Operation succeeded
-          default: true
-        message:
-          type: string
-          title: Message
-          description: Human-readable success message
-      type: object
-      required:
-      - message
-      title: AgentSuccessResponse
-      description: Standard success response for agents
-    AgentMovementDetail:
-      properties:
-        id:
-          type: string
-          title: Id
-          description: Unique movement identifier
-        name:
-          type: string
-          title: Name
-          description: Movement name
+          title: Label
+          description: Movement or muscle group name
           example: The Hundred
-        difficulty_level:
-          type: string
-          title: Difficulty Level
-          description: Difficulty level
-          example: Beginner
-        primary_muscles:
+        periods:
+          items:
+            type: integer
+          type: array
+          title: Periods
+          description: Counts for each time period
+          example:
+          - 2
+          - 5
+          - 3
+          - 4
+        period_labels:
           items:
             type: string
           type: array
-          title: Primary Muscles
-          description: Primary muscles targeted
+          title: Period Labels
+          description: Labels for each period
           example:
-          - Core
-        duration_seconds:
+          - Week 1
+          - Week 2
+          - Week 3
+          - Week 4
+        total:
           type: integer
-          title: Duration Seconds
-          description: Typical duration in seconds
-          example: 60
-        description:
-          type: string
-          title: Description
-          description: Brief description of the movement
-        contraindications:
-          items:
-            type: string
-          type: array
-          title: Contraindications
-          description: When to avoid this movement
-          example:
-          - Neck injury
-          - Lower back pain
+          title: Total
+          description: Total count across all periods
+          example: 14
       type: object
       required:
-      - id
-      - name
-      - difficulty_level
-      - primary_muscles
-      - duration_seconds
-      - description
-      title: AgentMovementDetail
-      description: Simplified movement detail for agents
-    AgentAnalyticsSummary:
+      - label
+      - periods
+      - period_labels
+      - total
+      title: AgentTimeSeriesData
+      description: Time series data for analytics views (simplified from analytics.py)
+    AgentDifficultyProgressionData:
       properties:
-        total_classes:
-          type: integer
-          title: Total Classes
-          description: Total classes completed
-          example: 45
-        total_practice_minutes:
-          type: integer
-          title: Total Practice Minutes
-          description: Total practice time in minutes
-          example: 2700
-        current_level:
-          type: string
-          title: Current Level
-          description: Current difficulty level
-          example: Intermediate
-        practice_streak_days:
-          type: integer
-          title: Practice Streak Days
-          description: Current practice streak in days
-          example: 12
-        favorite_movements:
+        period_labels:
           items:
             type: string
           type: array
-          title: Favorite Movements
-          description: Most practiced movements
+          title: Period Labels
+          description: Period labels
           example:
-          - The Hundred
-          - Roll Up
-        muscle_balance:
-          additionalProperties: true
-          type: object
-          title: Muscle Balance
-          description: Muscle group balance percentages
+          - Week 1
+          - Week 2
+          - Week 3
+          - Week 4
+        beginner_counts:
+          items:
+            type: integer
+          type: array
+          title: Beginner Counts
+          description: Beginner class counts
           example:
-            arms: 15
-            back: 20
-            core: 35
-            legs: 25
-            other: 5
-        this_week_classes:
-          type: integer
-          title: This Week Classes
-          description: Classes completed this week
-          example: 3
-        this_month_classes:
-          type: integer
-          title: This Month Classes
-          description: Classes completed this month
-          example: 12
+          - 2
+          - 1
+          - 0
+          - 0
+        intermediate_counts:
+          items:
+            type: integer
+          type: array
+          title: Intermediate Counts
+          description: Intermediate class counts
+          example:
+          - 1
+          - 3
+          - 2
+          - 2
+        advanced_counts:
+          items:
+            type: integer
+          type: array
+          title: Advanced Counts
+          description: Advanced class counts
+          example:
+          - 0
+          - 1
+          - 2
+          - 2
       type: object
       required:
-      - total_classes
-      - total_practice_minutes
-      - current_level
-      - practice_streak_days
-      - favorite_movements
-      - muscle_balance
-      - this_week_classes
-      - this_month_classes
-      title: AgentAnalyticsSummary
-      description: Simplified analytics summary for agents
+      - period_labels
+      - beginner_counts
+      - intermediate_counts
+      - advanced_counts
+      title: AgentDifficultyProgressionData
+      description: Difficulty progression chart data (simplified from analytics.py)
+    AgentPracticeFrequencyData:
+      properties:
+        period_labels:
+          items:
+            type: string
+          type: array
+          title: Period Labels
+          description: Period labels
+          example:
+          - Week 1
+          - Week 2
+          - Week 3
+          - Week 4
+        class_counts:
+          items:
+            type: integer
+          type: array
+          title: Class Counts
+          description: Number of classes per period
+          example:
+          - 3
+          - 5
+          - 2
+          - 4
+      type: object
+      required:
+      - period_labels
+      - class_counts
+      title: AgentPracticeFrequencyData
+      description: Practice frequency chart data (simplified from analytics.py)
     RFC9457ProblemDetail:
       description: "RFC 9457 Problem Details for HTTP APIs\n\nStandard format for\
         \ machine-readable error responses that improves\nAI agent understanding and\
@@ -1105,59 +1512,73 @@ components:
       - detail
       title: RFC9457ProblemDetail
       type: object
-    AgentClassResponse:
+    AgentRegisterRequest:
       properties:
-        class_id:
+        email:
           type: string
-          title: Class Id
-          description: Unique class identifier
-        duration_minutes:
-          type: integer
-          title: Duration Minutes
-          description: Total class duration in minutes
-        difficulty_level:
+          format: email
+          title: Email
+          description: User email address
+          example: user@example.com
+        password:
           type: string
-          title: Difficulty Level
-          description: Class difficulty level
-        movement_count:
-          type: integer
-          title: Movement Count
-          description: Number of movements in class
-        movements:
-          items:
-            $ref: '#/components/schemas/AgentMovementSummary'
-          type: array
-          title: Movements
-          description: List of movements
-        has_music:
-          type: boolean
-          title: Has Music
-          description: Whether class includes music
-        has_meditation:
-          type: boolean
-          title: Has Meditation
-          description: Whether class includes meditation
-        music:
+          minLength: 8
+          title: Password
+          description: User password (min 8 characters)
+          example: SecurePass123!
+        full_name:
           anyOf:
-          - $ref: '#/components/schemas/AgentMusicSummary'
+          - type: string
           - type: 'null'
-          description: Music summary (if included)
-        created_at:
-          type: string
-          title: Created At
-          description: When class was created (ISO 8601)
+          title: Full Name
+          description: User's full name
+          example: Jane Doe
       type: object
       required:
-      - class_id
-      - duration_minutes
-      - difficulty_level
-      - movement_count
-      - movements
-      - has_music
-      - has_meditation
-      - created_at
-      title: AgentClassResponse
-      description: Simplified class response for agents
+      - email
+      - password
+      title: AgentRegisterRequest
+      description: Simplified registration request for agents
+    AgentAuthResponse:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+          description: JWT access token for API authentication
+        user_id:
+          type: string
+          title: User Id
+          description: Unique user identifier
+        email:
+          type: string
+          title: Email
+          description: User email address
+      type: object
+      required:
+      - access_token
+      - user_id
+      - email
+      title: AgentAuthResponse
+      description: Simplified auth response for agents
+    AgentLoginRequest:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          title: Password
+          description: User password
+          example: SecurePass123!
+      type: object
+      required:
+      - email
+      - password
+      title: AgentLoginRequest
+      description: Simplified login request for agents
     AgentGenerateClassRequest:
       properties:
         duration_minutes:
@@ -1244,52 +1665,6 @@ components:
       - suitable_for
       title: AgentMusicPlaylist
       description: Simplified music playlist for agents
-    AgentRegisterRequest:
-      properties:
-        email:
-          type: string
-          format: email
-          title: Email
-          description: User email address
-          example: user@example.com
-        password:
-          type: string
-          minLength: 8
-          title: Password
-          description: User password (min 8 characters)
-          example: SecurePass123!
-        full_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Full Name
-          description: User's full name
-          example: Jane Doe
-      type: object
-      required:
-      - email
-      - password
-      title: AgentRegisterRequest
-      description: Simplified registration request for agents
-    AgentLoginRequest:
-      properties:
-        email:
-          type: string
-          format: email
-          title: Email
-          description: User email address
-          example: user@example.com
-        password:
-          type: string
-          title: Password
-          description: User password
-          example: SecurePass123!
-      type: object
-      required:
-      - email
-      - password
-      title: AgentLoginRequest
-      description: Simplified login request for agents
     AgentSavedClass:
       properties:
         class_id:
@@ -1327,6 +1702,327 @@ components:
       - created_at
       title: AgentSavedClass
       description: Simplified saved class summary for agents
+    AgentSuccessResponse:
+      properties:
+        success:
+          type: boolean
+          title: Success
+          description: Operation succeeded
+          default: true
+        message:
+          type: string
+          title: Message
+          description: Human-readable success message
+      type: object
+      required:
+      - message
+      title: AgentSuccessResponse
+      description: Standard success response for agents
+    AgentUserProfile:
+      properties:
+        user_id:
+          type: string
+          title: User Id
+          description: Unique user identifier
+        email:
+          type: string
+          title: Email
+          description: User email address
+        full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Name
+          description: User's full name
+        total_classes:
+          type: integer
+          title: Total Classes
+          description: Total classes completed
+          default: 0
+        current_level:
+          type: string
+          title: Current Level
+          description: Current difficulty level
+          default: Beginner
+      type: object
+      required:
+      - user_id
+      - email
+      title: AgentUserProfile
+      description: Simplified user profile for agents
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    AgentAnalyticsSummary:
+      properties:
+        total_classes:
+          type: integer
+          title: Total Classes
+          description: Total classes completed
+          example: 45
+        total_practice_minutes:
+          type: integer
+          title: Total Practice Minutes
+          description: Total practice time in minutes
+          example: 2700
+        current_level:
+          type: string
+          title: Current Level
+          description: Current difficulty level
+          example: Intermediate
+        practice_streak_days:
+          type: integer
+          title: Practice Streak Days
+          description: Current practice streak in days
+          example: 12
+        favorite_movements:
+          items:
+            type: string
+          type: array
+          title: Favorite Movements
+          description: Most practiced movements
+          example:
+          - The Hundred
+          - Roll Up
+        muscle_balance:
+          additionalProperties: true
+          type: object
+          title: Muscle Balance
+          description: Muscle group balance percentages
+          example:
+            arms: 15
+            back: 20
+            core: 35
+            legs: 25
+            other: 5
+        this_week_classes:
+          type: integer
+          title: This Week Classes
+          description: Classes completed this week
+          example: 3
+        this_month_classes:
+          type: integer
+          title: This Month Classes
+          description: Classes completed this month
+          example: 12
+      type: object
+      required:
+      - total_classes
+      - total_practice_minutes
+      - current_level
+      - practice_streak_days
+      - favorite_movements
+      - muscle_balance
+      - this_week_classes
+      - this_month_classes
+      title: AgentAnalyticsSummary
+      description: Simplified analytics summary for agents
+    AgentClassResponse:
+      properties:
+        class_id:
+          type: string
+          title: Class Id
+          description: Unique class identifier
+        duration_minutes:
+          type: integer
+          title: Duration Minutes
+          description: Total class duration in minutes
+        difficulty_level:
+          type: string
+          title: Difficulty Level
+          description: Class difficulty level
+        movement_count:
+          type: integer
+          title: Movement Count
+          description: Number of movements in class
+        movements:
+          items:
+            $ref: '#/components/schemas/AgentMovementSummary'
+          type: array
+          title: Movements
+          description: List of movements
+        has_music:
+          type: boolean
+          title: Has Music
+          description: Whether class includes music
+        has_meditation:
+          type: boolean
+          title: Has Meditation
+          description: Whether class includes meditation
+        music:
+          anyOf:
+          - $ref: '#/components/schemas/AgentMusicSummary'
+          - type: 'null'
+          description: Music summary (if included)
+        created_at:
+          type: string
+          title: Created At
+          description: When class was created (ISO 8601)
+      type: object
+      required:
+      - class_id
+      - duration_minutes
+      - difficulty_level
+      - movement_count
+      - movements
+      - has_music
+      - has_meditation
+      - created_at
+      title: AgentClassResponse
+      description: Simplified class response for agents
+    AgentPlayStatistics:
+      properties:
+        total_sessions:
+          type: integer
+          title: Total Sessions
+          description: Total play sessions
+          example: 52
+        qualified_plays:
+          type: integer
+          title: Qualified Plays
+          description: Qualified plays (>120s)
+          example: 45
+        completed_classes:
+          type: integer
+          title: Completed Classes
+          description: Completed classes
+          example: 38
+        total_play_minutes:
+          type: integer
+          title: Total Play Minutes
+          description: Total play time in minutes
+          example: 2850
+        completion_rate_percentage:
+          type: number
+          title: Completion Rate Percentage
+          description: Completion rate %
+          example: 84.4
+      type: object
+      required:
+      - total_sessions
+      - qualified_plays
+      - completed_classes
+      - total_play_minutes
+      - completion_rate_percentage
+      title: AgentPlayStatistics
+      description: User play statistics (simplified from analytics.py)
+    AgentMuscleDistributionData:
+      properties:
+        muscle_groups:
+          items:
+            type: string
+          type: array
+          title: Muscle Groups
+          description: Muscle group names
+          example:
+          - Core
+          - Legs
+          - Back
+          - Arms
+        percentages:
+          items:
+            type: number
+          type: array
+          title: Percentages
+          description: Percentage for each muscle group
+          example:
+          - 35.0
+          - 25.0
+          - 20.0
+          - 15.0
+      type: object
+      required:
+      - muscle_groups
+      - percentages
+      title: AgentMuscleDistributionData
+      description: Muscle distribution data for doughnut/pie chart (simplified from
+        analytics.py)
+    AgentMovementFamilyDistributionData:
+      properties:
+        families:
+          items:
+            type: string
+          type: array
+          title: Families
+          description: Movement family names
+          example:
+          - Flexion
+          - Extension
+          - Rotation
+        percentages:
+          items:
+            type: number
+          type: array
+          title: Percentages
+          description: Percentage for each family
+          example:
+          - 40.0
+          - 30.0
+          - 30.0
+      type: object
+      required:
+      - families
+      - percentages
+      title: AgentMovementFamilyDistributionData
+      description: Movement family distribution data (simplified from analytics.py)
+    AgentMovementDetail:
+      properties:
+        id:
+          type: string
+          title: Id
+          description: Unique movement identifier
+        name:
+          type: string
+          title: Name
+          description: Movement name
+          example: The Hundred
+        difficulty_level:
+          type: string
+          title: Difficulty Level
+          description: Difficulty level
+          example: Beginner
+        primary_muscles:
+          items:
+            type: string
+          type: array
+          title: Primary Muscles
+          description: Primary muscles targeted
+          example:
+          - Core
+        duration_seconds:
+          type: integer
+          title: Duration Seconds
+          description: Typical duration in seconds
+          example: 60
+        description:
+          type: string
+          title: Description
+          description: Brief description of the movement
+        contraindications:
+          items:
+            type: string
+          type: array
+          title: Contraindications
+          description: When to avoid this movement
+          example:
+          - Neck injury
+          - Lower back pain
+      type: object
+      required:
+      - id
+      - name
+      - difficulty_level
+      - primary_muscles
+      - duration_seconds
+      - description
+      title: AgentMovementDetail
+      description: Simplified movement detail for agents
   securitySchemes:
     BearerAuth:
       type: http

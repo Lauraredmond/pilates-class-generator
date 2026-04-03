@@ -35,6 +35,12 @@ from models.agent_gateway import (
     AgentSavedClass,
     # Analytics
     AgentAnalyticsSummary,
+    AgentTimeSeriesData,
+    AgentPracticeFrequencyData,
+    AgentDifficultyProgressionData,
+    AgentMuscleDistributionData,
+    AgentMovementFamilyDistributionData,
+    AgentPlayStatistics,
     # Movements
     AgentMovementDetail,
     # Music
@@ -579,6 +585,263 @@ async def agent_get_analytics(user_id: str = Depends(get_current_user_id)):
         raise HTTPException(
             status_code=500,
             detail="Failed to fetch analytics"
+        )
+
+
+@router.get(
+    "/analytics/movement-history",
+    response_model=List[AgentTimeSeriesData],
+    summary="Get Movement History (Agent Analytics View)",
+    description="Time series data showing movement usage over time periods (day/week/month)."
+)
+async def agent_get_movement_history(
+    user_id: str = Depends(get_current_user_id),
+    period: str = Query(default="week", description="Time period: day, week, month, total")
+):
+    """
+    Get movement usage history - analytics view for agents
+
+    Returns time series data for all movements showing usage patterns
+    """
+    try:
+        # Import here to avoid circular dependency
+        from api.analytics import get_movement_history, TimePeriod
+
+        # Convert string to TimePeriod enum
+        period_enum = TimePeriod(period)
+
+        # Call existing analytics endpoint
+        result = await get_movement_history(user_id=user_id, period=period_enum)
+
+        # Convert to agent format (already matches AgentTimeSeriesData)
+        return [
+            AgentTimeSeriesData(
+                label=item.label,
+                periods=item.periods,
+                period_labels=item.period_labels,
+                total=item.total
+            )
+            for item in result
+        ]
+
+    except Exception as e:
+        logger.error(f"Agent movement history failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch movement history"
+        )
+
+
+@router.get(
+    "/analytics/muscle-group-history",
+    response_model=List[AgentTimeSeriesData],
+    summary="Get Muscle Group History (Agent Analytics View)",
+    description="Time series data showing muscle group targeting over time periods."
+)
+async def agent_get_muscle_group_history(
+    user_id: str = Depends(get_current_user_id),
+    period: str = Query(default="week", description="Time period: day, week, month, total")
+):
+    """
+    Get muscle group targeting history - analytics view for agents
+
+    Returns time series data showing which muscle groups were targeted
+    """
+    try:
+        from api.analytics import get_muscle_group_history, TimePeriod
+
+        period_enum = TimePeriod(period)
+        result = await get_muscle_group_history(user_id=user_id, period=period_enum)
+
+        return [
+            AgentTimeSeriesData(
+                label=item.label,
+                periods=item.periods,
+                period_labels=item.period_labels,
+                total=item.total
+            )
+            for item in result
+        ]
+
+    except Exception as e:
+        logger.error(f"Agent muscle group history failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch muscle group history"
+        )
+
+
+@router.get(
+    "/analytics/practice-frequency",
+    response_model=AgentPracticeFrequencyData,
+    summary="Get Practice Frequency (Agent Analytics View)",
+    description="Shows how often user practices over time periods."
+)
+async def agent_get_practice_frequency(
+    user_id: str = Depends(get_current_user_id),
+    period: str = Query(default="week", description="Time period: day, week, month")
+):
+    """
+    Get practice frequency - analytics view for agents
+
+    Returns class counts per time period
+    """
+    try:
+        from api.analytics import get_practice_frequency, TimePeriod
+
+        period_enum = TimePeriod(period)
+        result = await get_practice_frequency(user_id=user_id, period=period_enum)
+
+        return AgentPracticeFrequencyData(
+            period_labels=result.period_labels,
+            class_counts=result.class_counts
+        )
+
+    except Exception as e:
+        logger.error(f"Agent practice frequency failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch practice frequency"
+        )
+
+
+@router.get(
+    "/analytics/difficulty-progression",
+    response_model=AgentDifficultyProgressionData,
+    summary="Get Difficulty Progression (Agent Analytics View)",
+    description="Shows how user's difficulty level choices progress over time."
+)
+async def agent_get_difficulty_progression(
+    user_id: str = Depends(get_current_user_id),
+    period: str = Query(default="week", description="Time period: day, week, month")
+):
+    """
+    Get difficulty progression - analytics view for agents
+
+    Returns stacked data showing beginner/intermediate/advanced class counts
+    """
+    try:
+        from api.analytics import get_difficulty_progression, TimePeriod
+
+        period_enum = TimePeriod(period)
+        result = await get_difficulty_progression(user_id=user_id, period=period_enum)
+
+        return AgentDifficultyProgressionData(
+            period_labels=result.period_labels,
+            beginner_counts=result.beginner_counts,
+            intermediate_counts=result.intermediate_counts,
+            advanced_counts=result.advanced_counts
+        )
+
+    except Exception as e:
+        logger.error(f"Agent difficulty progression failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch difficulty progression"
+        )
+
+
+@router.get(
+    "/analytics/muscle-distribution",
+    response_model=AgentMuscleDistributionData,
+    summary="Get Muscle Distribution (Agent Analytics View)",
+    description="Shows percentage breakdown of muscle groups targeted."
+)
+async def agent_get_muscle_distribution(
+    user_id: str = Depends(get_current_user_id),
+    period: str = Query(default="total", description="Time period: day, week, month, total")
+):
+    """
+    Get muscle distribution - analytics view for agents
+
+    Returns percentage breakdown for doughnut/pie chart
+    """
+    try:
+        from api.analytics import get_muscle_distribution, TimePeriod
+
+        period_enum = TimePeriod(period)
+        result = await get_muscle_distribution(user_id=user_id, period=period_enum)
+
+        return AgentMuscleDistributionData(
+            muscle_groups=result.muscle_groups,
+            percentages=result.percentages
+        )
+
+    except Exception as e:
+        logger.error(f"Agent muscle distribution failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch muscle distribution"
+        )
+
+
+@router.get(
+    "/analytics/movement-family-distribution",
+    response_model=AgentMovementFamilyDistributionData,
+    summary="Get Movement Family Distribution (Agent Analytics View)",
+    description="Shows percentage breakdown of movement families (flexion, extension, etc)."
+)
+async def agent_get_movement_family_distribution(
+    user_id: str = Depends(get_current_user_id),
+    period: str = Query(default="total", description="Time period: day, week, month, total")
+):
+    """
+    Get movement family distribution - analytics view for agents
+
+    Returns percentage breakdown for pie chart
+    """
+    try:
+        from api.analytics import get_movement_family_distribution, TimePeriod
+
+        period_enum = TimePeriod(period)
+        result = await get_movement_family_distribution(user_id=user_id, period=period_enum)
+
+        return AgentMovementFamilyDistributionData(
+            families=result.families,
+            percentages=result.percentages
+        )
+
+    except Exception as e:
+        logger.error(f"Agent movement family distribution failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch movement family distribution"
+        )
+
+
+@router.get(
+    "/analytics/play-statistics",
+    response_model=AgentPlayStatistics,
+    summary="Get Play Statistics (Agent Analytics View)",
+    description="Aggregated playback statistics showing session counts, completion rates, etc."
+)
+async def agent_get_play_statistics(
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get user play statistics - analytics view for agents
+
+    Returns aggregated playback data including sessions, completions, and duration
+    """
+    try:
+        from api.analytics import get_user_play_statistics
+
+        # Call existing analytics endpoint
+        result = await get_user_play_statistics(user_id=user_id)
+
+        return AgentPlayStatistics(
+            total_sessions=result.total_sessions,
+            qualified_plays=result.qualified_plays,
+            completed_classes=result.completed_classes,
+            total_play_minutes=result.total_play_seconds // 60,  # Convert to minutes
+            completion_rate_percentage=result.completion_rate_percentage
+        )
+
+    except Exception as e:
+        logger.error(f"Agent play statistics failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch play statistics"
         )
 
 

@@ -133,6 +133,49 @@ class AgentAnalyticsSummary(BaseModel):
     this_month_classes: int = Field(..., description="Classes completed this month", example=12)
 
 
+class AgentTimeSeriesData(BaseModel):
+    """Time series data for analytics views (simplified from analytics.py)"""
+    label: str = Field(..., description="Movement or muscle group name", example="The Hundred")
+    periods: List[int] = Field(..., description="Counts for each time period", example=[2, 5, 3, 4])
+    period_labels: List[str] = Field(..., description="Labels for each period", example=["Week 1", "Week 2", "Week 3", "Week 4"])
+    total: int = Field(..., description="Total count across all periods", example=14)
+
+
+class AgentPracticeFrequencyData(BaseModel):
+    """Practice frequency chart data (simplified from analytics.py)"""
+    period_labels: List[str] = Field(..., description="Period labels", example=["Week 1", "Week 2", "Week 3", "Week 4"])
+    class_counts: List[int] = Field(..., description="Number of classes per period", example=[3, 5, 2, 4])
+
+
+class AgentDifficultyProgressionData(BaseModel):
+    """Difficulty progression chart data (simplified from analytics.py)"""
+    period_labels: List[str] = Field(..., description="Period labels", example=["Week 1", "Week 2", "Week 3", "Week 4"])
+    beginner_counts: List[int] = Field(..., description="Beginner class counts", example=[2, 1, 0, 0])
+    intermediate_counts: List[int] = Field(..., description="Intermediate class counts", example=[1, 3, 2, 2])
+    advanced_counts: List[int] = Field(..., description="Advanced class counts", example=[0, 1, 2, 2])
+
+
+class AgentMuscleDistributionData(BaseModel):
+    """Muscle distribution data for doughnut/pie chart (simplified from analytics.py)"""
+    muscle_groups: List[str] = Field(..., description="Muscle group names", example=["Core", "Legs", "Back", "Arms"])
+    percentages: List[float] = Field(..., description="Percentage for each muscle group", example=[35.0, 25.0, 20.0, 15.0])
+
+
+class AgentMovementFamilyDistributionData(BaseModel):
+    """Movement family distribution data (simplified from analytics.py)"""
+    families: List[str] = Field(..., description="Movement family names", example=["Flexion", "Extension", "Rotation"])
+    percentages: List[float] = Field(..., description="Percentage for each family", example=[40.0, 30.0, 30.0])
+
+
+class AgentPlayStatistics(BaseModel):
+    """User play statistics (simplified from analytics.py)"""
+    total_sessions: int = Field(..., description="Total play sessions", example=52)
+    qualified_plays: int = Field(..., description="Qualified plays (>120s)", example=45)
+    completed_classes: int = Field(..., description="Completed classes", example=38)
+    total_play_minutes: int = Field(..., description="Total play time in minutes", example=2850)
+    completion_rate_percentage: float = Field(..., description="Completion rate %", example=84.4)
+
+
 # ============================================
 # MOVEMENTS
 # ============================================
