@@ -81,7 +81,7 @@ async def agent_login(request: AgentLoginRequest):
     try:
         # Fetch user from database
         result = supabase.table("user_profiles")\
-            .select("id, email, password_hash")\
+            .select("id, email, hashed_password")\
             .eq("email", request.email)\
             .execute()
 
@@ -94,7 +94,7 @@ async def agent_login(request: AgentLoginRequest):
         user = result.data[0]
 
         # Verify password
-        if not verify_password(request.password, user["password_hash"]):
+        if not verify_password(request.password, user["hashed_password"]):
             raise HTTPException(
                 status_code=401,
                 detail="Invalid email or password"
@@ -148,7 +148,7 @@ async def agent_register(request: AgentRegisterRequest):
         hashed_password = hash_password(request.password)
         user_data = {
             "email": request.email,
-            "password_hash": hashed_password,
+            "hashed_password": hashed_password,
             "full_name": request.full_name,
             "created_at": datetime.utcnow().isoformat()
         }
