@@ -80,7 +80,7 @@ async def agent_login(request: AgentLoginRequest):
     """
     try:
         # Fetch user from database
-        result = supabase.table("users")\
+        result = supabase.table("user_profiles")\
             .select("id, email, password_hash")\
             .eq("email", request.email)\
             .execute()
@@ -133,7 +133,7 @@ async def agent_register(request: AgentRegisterRequest):
     """
     try:
         # Check if user exists
-        existing = supabase.table("users")\
+        existing = supabase.table("user_profiles")\
             .select("id")\
             .eq("email", request.email)\
             .execute()
@@ -153,7 +153,7 @@ async def agent_register(request: AgentRegisterRequest):
             "created_at": datetime.utcnow().isoformat()
         }
 
-        result = supabase.table("users").insert(user_data).execute()
+        result = supabase.table("user_profiles").insert(user_data).execute()
 
         if not result.data:
             raise HTTPException(
@@ -198,7 +198,7 @@ async def agent_get_me(user_id: str = Depends(get_current_user_id)):
     """
     try:
         # Fetch user
-        user_result = supabase.table("users")\
+        user_result = supabase.table("user_profiles")\
             .select("id, email, full_name")\
             .eq("id", user_id)\
             .single()\
