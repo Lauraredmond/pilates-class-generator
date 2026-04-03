@@ -12,8 +12,8 @@ import fs from 'fs';
 import path from 'path';
 
 const DEV_SITE = 'https://bassline-dev.netlify.app';
-const TEST_EMAIL = process.env.PLAYWRIGHT_TEST_EMAIL || 'lauraredmond@gmail.com';
-const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || '';
+const TEST_EMAIL = process.env.PLAYWRIGHT_TEST_EMAIL || 'test@example.com';
+const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || 'test-password';
 
 // Output directory for investigation results
 const OUTPUT_DIR = '/tmp/chromecast-investigation';
