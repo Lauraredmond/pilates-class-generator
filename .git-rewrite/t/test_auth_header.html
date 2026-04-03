@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Auth Header</title></head>
+<body>
+<h1>Test Authorization Header</h1>
+<button onclick="testAuth()">Test API Call</button>
+<pre id="output"></pre>
+
+<script>
+async function testAuth() {
+  const token = localStorage.getItem('token');
+  const output = document.getElementById('output');
+
+  output.textContent = `Token from localStorage: ${token ? 'EXISTS' : 'MISSING'}\n`;
+
+  if (token) {
+    output.textContent += `Token length: ${token.length}\n`;
+    output.textContent += `Token starts with: ${token.substring(0, 20)}...\n\n`;
+
+    // Test API call
+    try {
+      const response = await fetch('https://pilates-class-generator-api3.onrender.com/api/agents/generate-sequence', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          target_duration_minutes: 15,
+          difficulty_level: 'Beginner',
+          strictness_level: 'guided',
+          include_mcp_research: false
+        })
+      });
+
+      output.textContent += `Response status: ${response.status}\n`;
+      const data = await response.json();
+      output.textContent += `Response: ${JSON.stringify(data, null, 2)}`;
+    } catch (err) {
+      output.textContent += `Error: ${err.message}`;
+    }
+  }
+}
+</script>
+</body>
+</html>

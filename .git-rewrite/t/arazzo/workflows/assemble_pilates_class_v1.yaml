@@ -1,0 +1,324 @@
+# ==============================================================================
+# BASSLINE PILATES CLASS ASSEMBLY WORKFLOW V1
+# ==============================================================================
+# Purpose: Orchestrate 4 AI agents to create a complete Pilates class
+# Strategy: Sequential workflow - each step uses outputs from previous steps
+# Integration: References OpenAPI spec for all Bassline API operations
+# ==============================================================================
+
+arazzo: "1.0.1"
+info:
+  title: "Bassline Pilates Class Assembly Workflow"
+  summary: "Orchestrate AI agents to generate a complete Pilates class"
+  description: |
+    This workflow coordinates 4 specialized AI agents to create a personalized,
+    safe, and effective Pilates class:
+
+    **Workflow Steps:**
+    1. Get User Profile - Fetch user's level, preferences, injuries
+    2. Generate Sequence - Create safe movement sequence
+    3. Select Music - Choose appropriate classical music playlist
+    4. Create Meditation - Generate personalized cool-down script
+
+    **JENTIC PATTERN NOTES:**
+    - This Arazzo workflow is called as a "tool" by the StandardAgent
+    - Agent decides WHEN to use this workflow (e.g., user asks for a class)
+    - Workflow defines HOW to assemble the class (deterministic steps)
+    - Separation: Agent = strategic decisions, Workflow = tactical execution
+
+  version: "1.0.0"
+
+# ==============================================================================
+# OPENAPI REFERENCES
+# ==============================================================================
+# Reference the Bassline API spec created in Task 1
+sourceDescriptions:
+  - name: basslineAPI
+    url: file:///Users/lauraredmond/Documents/Bassline/Projects/MVP2/openapi/bassline_openapi.yaml
+    type: openapi
+    x-description: "Bassline Pilates API - All existing backend endpoints"
+
+# ==============================================================================
+# WORKFLOWS
+# ==============================================================================
+workflows:
+  # ============================================================================
+  # MAIN WORKFLOW: Generate Complete Pilates Class
+  # ============================================================================
+  - workflowId: assemblePilatesClass
+    summary: "Generate a complete Pilates class with sequence, music, and meditation"
+    description: |
+      This is the primary workflow for class generation. It executes sequentially:
+
+      1. **Get User Profile** - Understand user's context
+      2. **Generate Sequence** - Create safe movement sequence
+      3. **Select Music** - Choose music matching class energy
+      4. **Create Meditation** - Generate cool-down script
+
+      **Data Flow:**
+      - User inputs (duration, difficulty, focus) are passed to all steps
+      - User profile outputs (difficulty preference, music preference) feed into later steps
+      - Sequence outputs (class intensity) feed into music and meditation selection
+
+    # --------------------------------------------------------------------------
+    # WORKFLOW INPUTS (from user or calling agent)
+    # --------------------------------------------------------------------------
+    inputs:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: "Authenticated user ID (from JWT token)"
+        target_duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 120
+          description: "Desired class duration"
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          description: "Requested difficulty (may be overridden by user profile)"
+        focus_areas:
+          type: array
+          items:
+            type: string
+          default: []
+          description: "Muscle groups to emphasize (e.g., ['Core', 'Legs'])"
+        include_mcp_research:
+          type: boolean
+          default: false
+          description: "Whether to enhance movements with web research"
+        strictness_level:
+          type: string
+          enum: [strict, guided, autonomous]
+          default: guided
+          description: "How much creative freedom agents have"
+      required:
+        - user_id
+        - target_duration_minutes
+        - difficulty_level
+
+    # --------------------------------------------------------------------------
+    # WORKFLOW STEPS (executed sequentially)
+    # --------------------------------------------------------------------------
+    steps:
+      # ------------------------------------------------------------------------
+      # STEP 1: Get User Profile
+      # ------------------------------------------------------------------------
+      - stepId: getUserProfile
+        description: "Fetch user's profile and preferences to personalize the class"
+        operationId: getUserProfile
+        parameters: []
+        successCriteria:
+          - context: $statusCode
+            condition: $statusCode == 200
+            type: simple
+        outputs:
+          userLevel: $response.body.preferences.default_difficulty
+          userMusicPeriod: $response.body.preferences.preferred_music_period
+          userAIStrictness: $response.body.preferences.ai_strictness_level
+          userDefaultDuration: $response.body.preferences.default_duration
+
+      # ------------------------------------------------------------------------
+      # STEP 2: Generate Movement Sequence
+      # ------------------------------------------------------------------------
+      - stepId: generateSequence
+        description: |
+          Generate safe Pilates movement sequence using Sequence Agent.
+
+          JENTIC PATTERN NOTE:
+          The Sequence Agent itself uses StandardAgent internally with these components:
+          - ReWOOReasoner (plan movements → execute validation → reflect on balance)
+          - Pilates-specific tools (access movement database, validate safety rules)
+          - Domain knowledge (spinal progression, muscle balance, contraindications)
+        operationId: generateSequence
+        requestBody:
+          contentType: application/json
+          payload:
+            # ARAZZO RUNTIME EXPRESSIONS - Pass data between steps
+            target_duration_minutes: $inputs.target_duration_minutes
+            difficulty_level: |
+              {
+                # Use user's default difficulty unless explicitly overridden
+                $inputs.difficulty_level != null
+                  ? $inputs.difficulty_level
+                  : $steps.getUserProfile.outputs.userLevel
+              }
+            focus_areas: $inputs.focus_areas
+            strictness_level: |
+              {
+                # Respect user's AI strictness preference
+                $inputs.strictness_level != null
+                  ? $inputs.strictness_level
+                  : $steps.getUserProfile.outputs.userAIStrictness
+              }
+            include_mcp_research: $inputs.include_mcp_research
+        successCriteria:
+          - context: $statusCode
+            condition: $statusCode == 200
+            type: simple
+          - context: $response.body.success
+            condition: $response.body.success == true
+            type: simple
+          - context: $response.body.data.sequence
+            condition: $response.body.data.sequence.length > 0
+            type: simple
+        outputs:
+          sequence: $response.body.data.sequence
+          totalDuration: $response.body.data.total_duration
+          movementCount: $response.body.data.movement_count
+          muscleBalance: $response.body.data.muscle_balance
+          # Derive class intensity from sequence complexity
+          classIntensity: |
+            {
+              $response.body.data.movement_count > 15 ? "high" :
+              $response.body.data.movement_count > 10 ? "moderate" : "low"
+            }
+
+      # ------------------------------------------------------------------------
+      # STEP 3: Select Music Playlist
+      # ------------------------------------------------------------------------
+      - stepId: selectMusic
+        description: |
+          Select classical music playlist using Music Agent.
+
+          Music is selected from Musopen/FreePD based on:
+          - User's preferred stylistic period
+          - Class duration
+          - Derived class intensity
+        operationId: selectMusic
+        requestBody:
+          contentType: application/json
+          payload:
+            class_duration_minutes: $inputs.target_duration_minutes
+            # Pass energy curve derived from sequence (placeholder logic)
+            energy_curve: null
+            # Use user's preferred music period
+            preferred_genres: [$steps.getUserProfile.outputs.userMusicPeriod]
+            target_bpm_range: [90, 130]
+        successCriteria:
+          - context: $statusCode
+            condition: $statusCode == 200
+            type: simple
+          - context: $response.body.success
+            condition: $response.body.success == true
+            type: simple
+        outputs:
+          playlist: $response.body.data.playlist
+          musicReasoning: $response.body.data.reasoning
+
+      # ------------------------------------------------------------------------
+      # STEP 4: Create Meditation Script
+      # ------------------------------------------------------------------------
+      - stepId: createMeditation
+        description: |
+          Generate personalized cool-down meditation using Meditation Agent.
+
+          Meditation is adapted to:
+          - Class intensity (harder class = longer recovery focus)
+          - User preferences
+          - Time remaining in class duration
+        operationId: createMeditation
+        requestBody:
+          contentType: application/json
+          payload:
+            duration_minutes: 5
+            # Use derived class intensity from Step 2
+            class_intensity: $steps.generateSequence.outputs.classIntensity
+            focus_theme: null
+            include_breathing: true
+        successCriteria:
+          - context: $statusCode
+            condition: $statusCode == 200
+            type: simple
+          - context: $response.body.success
+            condition: $response.body.success == true
+            type: simple
+        outputs:
+          meditationScript: $response.body.data.meditation_script
+          meditationDuration: $response.body.data.duration_minutes
+          meditationTheme: $response.body.data.theme
+
+    # --------------------------------------------------------------------------
+    # WORKFLOW OUTPUTS (what gets returned to the calling agent/app)
+    # --------------------------------------------------------------------------
+    outputs:
+      completeClass:
+        value:
+          # User context
+          userId: $inputs.user_id
+          generatedAt: |
+            { $now() }
+
+          # Sequence data
+          sequence: $steps.generateSequence.outputs.sequence
+          totalDuration: $steps.generateSequence.outputs.totalDuration
+          movementCount: $steps.generateSequence.outputs.movementCount
+          muscleBalance: $steps.generateSequence.outputs.muscleBalance
+
+          # Music data
+          musicPlaylist: $steps.selectMusic.outputs.playlist
+          musicReasoning: $steps.selectMusic.outputs.musicReasoning
+
+          # Meditation data
+          meditationScript: $steps.createMeditation.outputs.meditationScript
+          meditationDuration: $steps.createMeditation.outputs.meditationDuration
+          meditationTheme: $steps.createMeditation.outputs.meditationTheme
+
+          # Metadata
+          workflowVersion: "1.0.0"
+          userPreferences:
+            level: $steps.getUserProfile.outputs.userLevel
+            musicPeriod: $steps.getUserProfile.outputs.userMusicPeriod
+            aiStrictness: $steps.getUserProfile.outputs.userAIStrictness
+
+# ==============================================================================
+# WORKFLOW METADATA
+# ==============================================================================
+x-workflow-metadata:
+  author: "Bassline Development Team"
+  created: "2025-11-28"
+  jentic-integration: "Phase 1"
+  educational-notes: |
+    **JENTIC PATTERN COMPARISON:**
+
+    This Arazzo workflow demonstrates the separation between:
+
+    1. **StandardAgent** (strategic, fuzzy, adaptive)
+       - Decides WHEN to run this workflow
+       - Decides WHAT parameters to pass
+       - Interprets workflow results
+       - Handles unexpected situations
+
+    2. **Arazzo Workflow** (tactical, deterministic, repeatable)
+       - Defines HOW to assemble a class
+       - Orchestrates API calls in sequence
+       - Handles success/failure paths
+       - Provides structured outputs
+
+    **Example Flow:**
+
+    User: "I want a 30-minute intermediate hip-focus class"
+       ↓
+    StandardAgent (reasoning):
+       "User wants a class → I should use assemblePilatesClass workflow
+        with duration=30, difficulty=Intermediate, focus=['Hips']"
+       ↓
+    Arazzo Workflow (execution):
+       Step 1: GET /api/users/me/profile
+       Step 2: POST /api/agents/generate-sequence
+       Step 3: POST /api/agents/select-music
+       Step 4: POST /api/agents/create-meditation
+       ↓
+    StandardAgent (reflection):
+       "Workflow completed successfully. Class has 12 movements,
+        Baroque music, 5-min body scan meditation. Looks good!"
+       ↓
+    User Response:
+       "Here's your 30-minute intermediate hip-focus class..."
+
+    **Key Insight:**
+    Agent = Driver (strategic decisions)
+    Workflow = GPS Route (turn-by-turn directions)
+    LLM = Engine (powers both)

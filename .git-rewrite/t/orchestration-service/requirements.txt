@@ -1,0 +1,79 @@
+# ==============================================================================
+# Bassline Orchestration Service - Python Dependencies
+# Python 3.11+ Required
+# ==============================================================================
+
+# Jentic Libraries (Open Source - Apache 2.0 License)
+# Installed directly from GitHub (not yet on PyPI)
+git+https://github.com/jentic/standard-agent.git@main
+
+# FastAPI and Web Server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# HTTP Client (for calling Bassline API)
+httpx>=0.25.0
+aiohttp>=3.9.0
+
+# AI/LLM Providers
+openai>=1.3.0
+anthropic>=0.7.0
+
+# Environment and Configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+# Logging
+loguru>=0.7.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+httpx>=0.25.0  # For TestClient
+
+# Type Checking and Linting
+mypy>=1.7.0
+ruff>=0.1.6
+
+# Utilities
+python-multipart>=0.0.6
+
+# Production Server
+gunicorn>=21.2.0
+
+# ==============================================================================
+# EDUCATIONAL NOTE - Jentic Integration (PRODUCTION-READY)
+# ==============================================================================
+#
+# ✅ USING REAL JENTIC CODE (not stubs)
+#
+# The standard-agent library is installed directly from GitHub:
+# pip install git+https://github.com/jentic/standard-agent.git@main
+#
+# Real imports being used in agents/bassline_agent.py:
+#
+# from agents.standard_agent import StandardAgent
+# from agents.reasoner.rewoo import ReWOOReasoner
+# from agents.llm.litellm import LiteLLM
+# from agents.memory.dict_memory import DictMemory
+# from agents.tools.base import JustInTimeToolingBase, ToolBase
+#
+# Jentic Architecture Components:
+# ✅ StandardAgent - Orchestrates LLM, reasoner, tools, memory
+# ✅ ReWOOReasoner - Plan → Execute → Reflect reasoning loop
+# ✅ LiteLLM - Universal LLM adapter (OpenAI, Anthropic, Bedrock, etc.)
+# ✅ DictMemory - Simple in-memory state management
+# ✅ Tool interface - Pluggable actions the agent can execute
+#
+# Bassline Customizations:
+# ✅ PilatesToolRegistry - Custom tool registry for Pilates domain
+# ✅ ValidateSequenceTool - Checks Pilates safety rules
+# ✅ MuscleBalanceTool - Calculates muscle group distribution
+# ✅ ContraindicationsTool - Checks movements against user conditions
+# ✅ TeachingCuesTool - Generates Pilates teaching cues
+#
+# This is PRODUCTION code using real Jentic libraries, not placeholders.
+# ==============================================================================

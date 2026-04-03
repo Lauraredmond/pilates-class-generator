@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head><title>Debug Token Storage</title></head>
+<body>
+<h1>Debug Token Storage</h1>
+<p>Open this in the same browser where you're logged into the app</p>
+<button onclick="checkToken()">Check Token</button>
+<pre id="output"></pre>
+
+<script>
+function checkToken() {
+  const output = document.getElementById('output');
+  const token = localStorage.getItem('token');
+  const refreshToken = localStorage.getItem('refreshToken');
+
+  output.textContent = '';
+  output.textContent += `Token exists: ${token ? 'YES' : 'NO'}\n`;
+
+  if (token) {
+    output.textContent += `Token length: ${token.length}\n`;
+    output.textContent += `Token preview: ${token.substring(0, 50)}...\n\n`;
+
+    // Try to decode JWT
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        output.textContent += `Decoded payload:\n${JSON.stringify(payload, null, 2)}\n\n`;
+
+        // Check expiration
+        if (payload.exp) {
+          const expDate = new Date(payload.exp * 1000);
+          const now = new Date();
+          output.textContent += `Token expires: ${expDate.toISOString()}\n`;
+          output.textContent += `Current time: ${now.toISOString()}\n`;
+          output.textContent += `Expired: ${now > expDate ? 'YES ❌' : 'NO ✅'}\n\n`;
+        }
+      } else {
+        output.textContent += `Invalid JWT format (expected 3 parts, got ${parts.length})\n`;
+      }
+    } catch (e) {
+      output.textContent += `Error decoding token: ${e.message}\n`;
+    }
+  }
+
+  output.textContent += `\nRefresh token exists: ${refreshToken ? 'YES' : 'NO'}\n`;
+
+  // List all localStorage keys
+  output.textContent += `\nAll localStorage keys:\n`;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    output.textContent += `  - ${key}\n`;
+  }
+}
+</script>
+</body>
+</html>

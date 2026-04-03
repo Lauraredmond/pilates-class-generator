@@ -1,0 +1,76 @@
+{
+  "passed": 14,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "Backend Health Check",
+      "passed": true,
+      "details": "Version: 2.0.0"
+    },
+    {
+      "name": "Frontend Accessibility",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Database Connectivity",
+      "passed": true,
+      "details": "Movements in DB: 34"
+    },
+    {
+      "name": "Get All Movements",
+      "passed": true,
+      "details": "Found 34 movements (expected 34)"
+    },
+    {
+      "name": "Filter Beginner Movements",
+      "passed": true,
+      "details": "Found 22 beginner movements"
+    },
+    {
+      "name": "Movement Data Structure",
+      "passed": true,
+      "details": "Fields: id, movement_number, code, name, category, difficulty_level, narrative, visual_cues, setup_position, breathing_pattern, primary_muscles, secondary_muscles, duration_seconds, prerequisites, contraindications, modifications"
+    },
+    {
+      "name": "Agent Info Endpoint",
+      "passed": true,
+      "details": "Agents: sequence, music, meditation, research"
+    },
+    {
+      "name": "Sequence Generation (Beginner)",
+      "passed": true,
+      "details": "Generated 23 movements in 165ms"
+    },
+    {
+      "name": "Sequence Generation (Intermediate)",
+      "passed": true,
+      "details": "Generated 29 movements in 97ms"
+    },
+    {
+      "name": "Reject Invalid Duration (too short)",
+      "passed": true,
+      "details": "Status: 422"
+    },
+    {
+      "name": "Reject Invalid Difficulty",
+      "passed": true,
+      "details": "Status: 500"
+    },
+    {
+      "name": "Sequence Generation Performance",
+      "passed": true,
+      "details": "Avg time: 100ms (min: 93ms, max: 109ms)"
+    },
+    {
+      "name": "Movement Data Retrieval Speed",
+      "passed": true,
+      "details": "Time: 72ms"
+    },
+    {
+      "name": "CORS Headers Present",
+      "passed": true,
+      "details": "Headers: date, server, allow, content-length, content-type, access-control-allow-credentials, access-control-allow-origin, vary"
+    }
+  ]
+}

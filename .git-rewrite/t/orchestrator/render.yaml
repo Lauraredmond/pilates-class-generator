@@ -1,0 +1,45 @@
+# Render.com deployment configuration for Bassline Pilates Orchestrator
+# This service provides AI agent orchestration using Jentic StandardAgent + Arazzo
+
+services:
+  - type: web
+    name: bassline-orchestrator
+    env: python
+    region: oregon  # Same region as backend for low latency
+    plan: starter  # Can upgrade to standard if needed
+    branch: main
+    rootDir: orchestrator
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+      # Backend API URL (orchestrator calls backend APIs)
+      - key: BASSLINE_API_URL
+        value: https://pilates-class-generator-api3.onrender.com
+
+      # Supabase credentials (tools need database access)
+      - key: SUPABASE_URL
+        sync: false  # Set in Render dashboard
+
+      - key: SUPABASE_KEY
+        sync: false  # Set in Render dashboard
+
+      # OpenAI API key (LLM needs this)
+      - key: OPENAI_API_KEY
+        sync: false  # Set in Render dashboard
+
+      # Environment
+      - key: ENVIRONMENT
+        value: production
+
+      # Log level
+      - key: LOG_LEVEL
+        value: INFO
+
+    healthCheckPath: /health
+
+    autoDeploy: true

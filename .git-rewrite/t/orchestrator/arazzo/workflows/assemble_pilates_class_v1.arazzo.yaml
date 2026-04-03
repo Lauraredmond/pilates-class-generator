@@ -1,0 +1,546 @@
+arazzo: 1.0.0
+info:
+  title: Complete Pilates Class Generation Workflow
+  summary: Generate a complete 6-section Pilates class using AI agents
+  version: 1.0.0
+  description: |
+    This Arazzo workflow orchestrates multiple backend API calls to generate
+    a complete Pilates class with all 6 sections:
+
+    1. Preparation (centering and breathing) - Section 1
+    2. Warmup (safety-focused routines) - Section 2
+    3. Main movements (AI-generated sequence) - Section 3
+    4. Cooldown (stretching and recovery) - Section 4
+    5. Closing meditation - Section 5
+    6. Homecare advice - Section 6
+
+    **JENTIC PATTERN: Declarative Orchestration**
+
+    Instead of writing Python code to call APIs in sequence, we define
+    the workflow declaratively in YAML. The Arazzo Engine executes this,
+    handling:
+    - HTTP requests to backend APIs
+    - Data passing between steps using runtime expressions ($inputs, $steps)
+    - Error handling and retries
+    - Authentication
+
+    **WHY THIS BRINGS SCALABILITY:**
+    1. Non-developers can read and modify workflows
+    2. Changes don't require code deploys
+    3. Visual workflow diagrams possible
+    4. Easy to add/remove/reorder steps
+    5. Testable independently of code
+
+sourceDescriptions:
+  - name: bassline-api
+    url: ../../backend/openapi/bassline_api_v1.yaml
+    type: openapi
+    x-description: |
+      Reference to the Bassline API OpenAPI specification.
+      Arazzo uses this to understand what endpoints are available,
+      what parameters they accept, and what responses they return.
+
+workflows:
+  # =============================================================================
+  # MAIN WORKFLOW: Assemble Complete Pilates Class
+  # =============================================================================
+  - workflowId: assemblePilatesClass
+    summary: Generate complete 6-section Pilates class
+    description: |
+      Orchestrates 8 API calls to generate a complete class:
+
+      **Flow:**
+      1. Get user profile → personalization data
+      2. Get preparation script → Section 1
+      3. Get warmup routine → Section 2
+      4. Generate AI sequence → Section 3 (movements + transitions)
+      5. Select music playlist → Background music
+      6. Get cooldown sequence → Section 4
+      7. Get closing meditation → Section 5
+      8. Get homecare advice → Section 6
+
+      **Runtime Expressions:**
+      - $inputs.user_id → Workflow input
+      - $steps.getUserProfile.outputs.body.preferences → Previous step output
+      - $response.body.data.sequence → Current step response
+
+      **EDUCATIONAL NOTE:**
+      This replaces ~200 lines of imperative Python orchestration code
+      with ~150 lines of declarative YAML that's easier to understand,
+      modify, and test.
+
+    parameters:
+      - name: user_id
+        in: body
+      - name: target_duration_minutes
+        in: body
+      - name: difficulty_level
+        in: body
+      - name: focus_areas
+        in: body
+      - name: include_mcp_research
+        in: body
+      - name: strictness_level
+        in: body
+
+    inputs:
+      type: object
+      required:
+        - user_id
+        - target_duration_minutes
+        - difficulty_level
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Authenticated user ID
+          x-example: "550e8400-e29b-41d4-a716-446655440000"
+        target_duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 120
+          description: Total class duration
+          x-example: 30
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          description: Student difficulty level
+          x-example: "Beginner"
+        focus_areas:
+          type: array
+          items:
+            type: string
+          description: Optional muscle groups to emphasize
+          default: []
+          x-example: ["core", "back"]
+        include_mcp_research:
+          type: boolean
+          description: Enhance cues with web research
+          default: false
+        strictness_level:
+          type: string
+          enum: [strict, guided, autonomous]
+          description: AI decision-making strictness
+          default: "guided"
+
+    steps:
+      # =========================================================================
+      # STEP 1: Get User Profile (Personalization)
+      # =========================================================================
+      - stepId: getUserProfile
+        description: |
+          Fetch user's preferences to personalize the class.
+
+          **WHY FIRST:**
+          User preferences drive all subsequent decisions:
+          - Default difficulty level (if not specified)
+          - Preferred music style
+          - AI strictness preference
+          - Contraindications to avoid
+
+          **JENTIC PATTERN:**
+          Uses operationId from OpenAPI spec (getUserProfile)
+          instead of hardcoding URL paths.
+
+        operationId: getUserProfile
+        successCriteria:
+          - condition: $statusCode == 200
+            type: simple
+        outputs:
+          userId: $response.body.id
+          defaultDifficulty: $response.body.preferences.default_difficulty
+          preferredMusic: $response.body.preferences.preferred_music_period
+          aiStrictness: $response.body.preferences.ai_strictness_level
+        x-educational-note: |
+          This step's outputs are stored in $steps.getUserProfile.outputs
+          and can be referenced by subsequent steps. This is how data flows
+          through the workflow without manual variable passing.
+
+      # =========================================================================
+      # STEP 2: Get Preparation Script (Section 1)
+      # =========================================================================
+      - stepId: getPreparationScript
+        description: |
+          Select appropriate preparation/centering script.
+
+          **SECTION 1: Preparation** (4 minutes)
+          - Centering and breathing
+          - Pilates principles overview
+          - Mental focus preparation
+
+        operationId: listPreparationScripts
+        parameters:
+          - name: difficulty
+            in: query
+            value: $inputs.difficulty_level
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.length > 0
+            type: simple
+        outputs:
+          preparationScript: $response.body[0]
+        onFailure:
+          - name: fallbackToDefault
+            type: goto
+            stepId: useDefaultPreparation
+            x-note: "If no script found, use default preparation"
+
+      # =========================================================================
+      # STEP 3: Get Warmup Routine (Section 2)
+      # =========================================================================
+      - stepId: getWarmupRoutine
+        description: |
+          Select safety-focused warmup routine.
+
+          **SECTION 2: Warmup** (3 minutes)
+          - Spinal mobility
+          - Joint preparation
+          - Muscle activation
+
+          **JENTIC PATTERN: Query Parameters**
+          Uses runtime expression for focus_area based on user inputs.
+
+        operationId: listWarmupRoutines
+        parameters:
+          - name: focus_area
+            in: query
+            value: full_body
+          - name: difficulty
+            in: query
+            value: $inputs.difficulty_level
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.length > 0
+            type: simple
+        outputs:
+          warmupRoutine: $response.body[0]
+        x-educational-note: |
+          Notice how we don't need to write code to construct query strings.
+          Arazzo handles URL construction, parameter encoding, and HTTP headers.
+
+      # =========================================================================
+      # STEP 4: Generate AI Sequence (Section 3)
+      # =========================================================================
+      - stepId: generateSequence
+        description: |
+          Generate main movement sequence using AI agent.
+
+          **SECTION 3: Main Movements** (variable duration)
+          - AI-selected movements (safety rules enforced)
+          - Auto-generated transitions
+          - Muscle balance calculated
+          - Optional web research enhancements
+
+          **JENTIC PATTERN: Request Body with Runtime Expressions**
+          Combines workflow inputs with previous step outputs.
+
+        operationId: generateSequence
+        requestBody:
+          contentType: application/json
+          payload:
+            target_duration_minutes: $inputs.target_duration_minutes
+            difficulty_level: $inputs.difficulty_level
+            focus_areas: $inputs.focus_areas
+            include_mcp_research: $inputs.include_mcp_research
+            strictness_level: $steps.getUserProfile.outputs.aiStrictness
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.success == true
+            type: simple
+          - condition: $response.body.data.validation.is_valid == true
+            type: simple
+            x-note: "Ensure generated sequence passes safety validation"
+        outputs:
+          movements: $response.body.data.sequence
+          movementCount: $response.body.data.movement_count
+          transitionCount: $response.body.data.transition_count
+          muscleBalance: $response.body.data.muscle_balance
+          safetyScore: $response.body.data.validation.safety_score
+          totalDuration: $response.body.data.total_duration_minutes
+        onFailure:
+          - name: retryWithLowerStrictness
+            type: retry
+            retryAfter: 1
+            retryLimit: 2
+            x-note: "If sequence generation fails, retry with less strict validation"
+
+      # =========================================================================
+      # STEP 5: Select Music Playlist
+      # =========================================================================
+      - stepId: selectMusic
+        description: |
+          Select appropriate music playlist for class.
+
+          **Background Music** (full class duration)
+          - Royalty-free classical music
+          - Matches class energy and duration
+          - User's preferred stylistic period
+
+          **JENTIC PATTERN: Data Flow**
+          Uses preferredMusic from step 1 and totalDuration from step 4.
+
+        operationId: selectMusic
+        requestBody:
+          contentType: application/json
+          payload:
+            class_duration_minutes: $steps.generateSequence.outputs.totalDuration
+            energy_level: 0.6
+            stylistic_period: $steps.getUserProfile.outputs.preferredMusic
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.success == true
+            type: simple
+        outputs:
+          musicPlaylist: $response.body.data.playlist
+        onFailure:
+          - name: useDefaultPlaylist
+            type: end
+            x-note: "Music is optional - continue even if selection fails"
+
+      # =========================================================================
+      # STEP 6: Get Cooldown Sequence (Section 4)
+      # =========================================================================
+      - stepId: getCooldownSequence
+        description: |
+          Select appropriate cooldown sequence.
+
+          **SECTION 4: Cooldown** (3 minutes)
+          - Stretching
+          - Recovery
+          - Breath regulation
+
+        operationId: listCooldownSequences
+        parameters:
+          - name: intensity
+            in: query
+            value: moderate
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.length > 0
+            type: simple
+        outputs:
+          cooldownSequence: $response.body[0]
+
+      # =========================================================================
+      # STEP 7: Get Closing Meditation (Section 5)
+      # =========================================================================
+      - stepId: getClosingMeditation
+        description: |
+          Select or generate closing meditation script.
+
+          **SECTION 5: Closing Meditation** (4 minutes)
+          - Body scan or mindfulness
+          - Breathing guidance
+          - Integration of class experience
+
+          **JENTIC PATTERN: Conditional Parameters**
+          post_intensity inferred from class difficulty.
+
+        operationId: listClosingMeditations
+        parameters:
+          - name: theme
+            in: query
+            value: mindfulness
+          - name: post_intensity
+            in: query
+            value: moderate
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.length > 0
+            type: simple
+        outputs:
+          meditationScript: $response.body[0]
+
+      # =========================================================================
+      # STEP 8: Get Homecare Advice (Section 6)
+      # =========================================================================
+      - stepId: getHomecareAdvice
+        description: |
+          Select appropriate homecare advice.
+
+          **SECTION 6: Homecare Advice** (1 minute)
+          - Self-care tips
+          - Practice suggestions
+          - Injury prevention
+
+        operationId: listHomecareAdvice
+        parameters:
+          - name: focus_area
+            in: query
+            value: general
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.length > 0
+            type: simple
+        outputs:
+          homecareAdvice: $response.body[0]
+
+    # ===========================================================================
+    # WORKFLOW OUTPUTS (Final Result)
+    # ===========================================================================
+    outputs:
+      completeClass:
+        type: object
+        description: |
+          Complete 6-section class structure.
+
+          **JENTIC PATTERN: Output Aggregation**
+          Combines outputs from all 8 steps into a single structured response.
+
+          This is what gets returned to the frontend - a complete,
+          ready-to-teach class with all sections assembled.
+
+        value:
+          # Metadata
+          userId: $steps.getUserProfile.outputs.userId
+          generatedAt: $workflow.startTime
+          targetDuration: $inputs.target_duration_minutes
+          actualDuration: $steps.generateSequence.outputs.totalDuration
+          difficulty: $inputs.difficulty_level
+
+          # Section 1: Preparation
+          preparation:
+            section: 1
+            name: "Preparation & Centering"
+            duration_minutes: 4
+            script: $steps.getPreparationScript.outputs.preparationScript
+
+          # Section 2: Warmup
+          warmup:
+            section: 2
+            name: "Safety-Focused Warmup"
+            duration_minutes: 3
+            routine: $steps.getWarmupRoutine.outputs.warmupRoutine
+
+          # Section 3: Main Movements (AI-generated)
+          mainSequence:
+            section: 3
+            name: "Main Movement Sequence"
+            duration_minutes: $steps.generateSequence.outputs.totalDuration
+            movements: $steps.generateSequence.outputs.movements
+            movement_count: $steps.generateSequence.outputs.movementCount
+            transition_count: $steps.generateSequence.outputs.transitionCount
+            muscle_balance: $steps.generateSequence.outputs.muscleBalance
+            safety_score: $steps.generateSequence.outputs.safetyScore
+
+          # Section 4: Cooldown
+          cooldown:
+            section: 4
+            name: "Cooldown & Stretching"
+            duration_minutes: 3
+            sequence: $steps.getCooldownSequence.outputs.cooldownSequence
+
+          # Section 5: Closing Meditation
+          closingMeditation:
+            section: 5
+            name: "Closing Meditation"
+            duration_minutes: 4
+            script: $steps.getClosingMeditation.outputs.meditationScript
+
+          # Section 6: Homecare Advice
+          closingHomecare:
+            section: 6
+            name: "Homecare Advice"
+            duration_minutes: 1
+            advice: $steps.getHomecareAdvice.outputs.homecareAdvice
+
+          # Background Music (spans all sections)
+          music:
+            playlist: $steps.selectMusic.outputs.musicPlaylist
+
+          # Quality Metrics
+          metrics:
+            total_sections: 6
+            total_steps_executed: 8
+            workflow_execution_time_ms: $workflow.duration
+
+    # ===========================================================================
+    # SUCCESS CRITERIA (Overall Workflow)
+    # ===========================================================================
+    successCriteria:
+      - condition: $steps.generateSequence.outputs.safetyScore >= 0.7
+        type: simple
+        x-note: "Ensure overall class safety score meets minimum threshold"
+      - condition: $steps.generateSequence.outputs.movementCount >= 5
+        type: simple
+        x-note: "Ensure minimum number of movements for a complete class"
+
+# =============================================================================
+# EDUCATIONAL NOTES: JENTIC ARAZZO ADVANTAGES
+# =============================================================================
+
+# WHY THIS APPROACH IS SCALABLE:
+# ===============================
+#
+# 1. **Declarative > Imperative**
+#    - YAML workflow (declarative) easier to read than Python code (imperative)
+#    - Non-developers can understand and even modify workflows
+#    - Visual workflow diagrams possible (Arazzo viewers)
+#
+# 2. **Separation of Concerns**
+#    - Workflow logic (this file) separate from business logic (backend APIs)
+#    - Backend APIs can change without workflow changes (as long as OpenAPI stays same)
+#    - Workflow can be tested independently of implementation
+#
+# 3. **Reusability**
+#    - This workflow pattern can be copied to new domains
+#    - Just change the operationIds and runtime expressions
+#    - Same Arazzo Engine handles execution
+#
+# 4. **Observability**
+#    - Each step is explicitly named and documented
+#    - Runtime expressions show data flow clearly
+#    - Easier to debug than nested Python functions
+#
+# 5. **Modification Ease**
+#    - Want to add a new section? Add a new step
+#    - Want to change order? Reorder steps
+#    - Want to skip music? Remove selectMusic step
+#    - No code changes needed!
+#
+# COMPARISON TO CUSTOM PYTHON ORCHESTRATION:
+# ==========================================
+#
+# BEFORE (Imperative Python - ~200 lines):
+# ```python
+# async def generate_complete_class(request):
+#     profile = await get_user_profile(request.user_id)
+#     prep = await get_preparation(profile.difficulty)
+#     warmup = await get_warmup(profile.difficulty)
+#     sequence = await generate_sequence(
+#         duration=request.duration,
+#         difficulty=profile.difficulty,
+#         strictness=profile.ai_strictness  # Lots of manual data passing
+#     )
+#     music = await select_music(
+#         duration=sequence.total_duration,  # Manually extract from previous call
+#         period=profile.preferred_music
+#     )
+#     # ... repeat for cooldown, meditation, homecare
+#     return assemble_class(prep, warmup, sequence, music, ...)  # Manual assembly
+# ```
+#
+# AFTER (Declarative Arazzo - this file):
+# - 8 steps clearly defined
+# - Data flow explicit ($steps.X.outputs.Y)
+# - Error handling declarative (onFailure)
+# - Success criteria explicit (successCriteria)
+# - Output assembly explicit (outputs section)
+#
+# SCALABILITY TO OTHER DOMAINS:
+# =============================
+#
+# Want to build a yoga class generator? Copy this workflow and change:
+# - sourceDescriptions (point to yoga API OpenAPI spec)
+# - operationIds (yogaSequence, yogaMusic, etc.)
+# - Runtime expressions (same pattern)
+#
+# Want to build a nutrition plan generator? Same pattern:
+# - Step 1: Get user dietary preferences
+# - Step 2: Generate breakfast
+# - Step 3: Generate lunch
+# - Step 4: Generate dinner
+# - Step 5: Calculate nutrition totals
+# - Outputs: Complete meal plan
+#
+# The Arazzo Engine handles all orchestration the same way!

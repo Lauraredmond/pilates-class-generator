@@ -1,0 +1,21 @@
+Pilates Excel Extraction Summary
+==================================================
+
+Source: Pilates_Summary_Spreadsheet_teachingTracker_v10.xlsm
+Date: 2025-11-14T16:59:00.080387
+
+Sheets Found: 12
+  - Movement summaries: 36 rows
+  - Transposed view: 36 rows
+  - Class: 25 rows
+  - Class plan 1-1 assessment: 25 rows
+  - Class 1-1 Repeat notes: 17 rows
+  - CH Class history - detail: 35 rows
+  - CH Class history - stats: 171 rows
+  - Movement history: 38 rows
+  - Muscle group history: 28 rows
+  - Movement attributes: 35 rows
+  - Transition narratives: 21 rows
+  - Class plan rules: 17 rows
+
+Movements Extracted: 35

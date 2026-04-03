@@ -1,0 +1,485 @@
+# ==============================================================================
+# Bassline Pilates - Arazzo Workflow V1
+# ==============================================================================
+#
+# JENTIC ARAZZO WORKFLOW
+#
+# This workflow orchestrates AI agents to generate a complete Pilates class.
+# It replaces the hardcoded orchestration in backend/api/agents.py:205-298.
+#
+# WORKFLOW: 4-Step Class Generation (Phase 1 - Movements + Transitions only)
+#
+# Steps:
+#   1. Generate sequence (SequenceAgent via /api/agents/generate-sequence)
+#   2. Select music (MusicAgent via /api/agents/select-music)
+#   3. Create meditation (MeditationAgent via /api/agents/create-meditation)
+#   4. Assemble complete class (combine all results)
+#
+# EDUCATIONAL NOTE:
+# - This is Jentic's Arazzo Engine DSL for declarative API orchestration
+# - Each step references OpenAPI operations via operationId
+# - Runtime expressions ($inputs, $steps, $response) enable data flow
+# - Success criteria validate each step before proceeding
+# - All steps execute sequentially with deterministic behavior
+#
+# Created: Phase 1 - Jentic Integration (Session 10)
+# ==============================================================================
+
+arazzo: "1.0.1"
+info:
+  title: Assemble Complete Pilates Class (V1)
+  version: 1.0.0
+  description: |
+    Orchestrates AI agents to generate a complete Pilates class with sequence,
+    music, and meditation components.
+
+    **Phase 1 Scope:**
+    - Movements and transitions only (no preparation, warm-up, cool-down sections)
+    - Music integration (Musopen/FreePD classical music)
+    - Meditation script generation
+    - Research enhancements (optional)
+
+    **Future Phases:**
+    - Phase 2: Full 6-section class structure (preparation, warm-up, main, transitions, cool-down, closing)
+    - Phase 3: Multi-modal delivery (audio TTS, visual demonstrations)
+
+# ------------------------------------------------------------------------------
+# SOURCE DESCRIPTIONS - OpenAPI References
+# ------------------------------------------------------------------------------
+
+sourceDescriptions:
+  - name: bassline-api
+    type: openapi
+    url: ./bassline_openapi.yaml
+    description: Bassline Pilates API (FastAPI backend)
+
+# ------------------------------------------------------------------------------
+# WORKFLOW DEFINITION
+# ------------------------------------------------------------------------------
+
+workflows:
+  - workflowId: assemble_pilates_class_v1
+    summary: Generate complete Pilates class
+    description: |
+      JENTIC STANDARD AGENT PATTERN:
+      This workflow coordinates multiple specialized AI agents (Sequence, Music,
+      Meditation, Research) to generate a complete Pilates class plan.
+
+      BASSLINE CUSTOMIZATION:
+      - Safety-first approach with sequencing validation
+      - EU AI Act compliance logging at each step
+      - GDPR-compliant PII handling
+      - Classical music integration (Musopen/FreePD)
+
+    # --------------------------------------------------------------------------
+    # WORKFLOW INPUTS
+    # --------------------------------------------------------------------------
+
+    inputs:
+      type: object
+      required:
+        - user_id
+        - target_duration_minutes
+        - difficulty_level
+      properties:
+        user_id:
+          type: string
+          description: Authenticated user ID
+        target_duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 120
+          description: Desired class duration in minutes
+        difficulty_level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          description: Class difficulty level
+        focus_areas:
+          type: array
+          items:
+            type: string
+          description: Optional muscle groups to emphasize
+        strictness_level:
+          type: string
+          enum: [strict, guided, autonomous]
+          default: guided
+          description: AI agent strictness level
+        include_music:
+          type: boolean
+          default: true
+          description: Include music recommendation
+        include_meditation:
+          type: boolean
+          default: true
+          description: Include meditation script
+        include_research:
+          type: boolean
+          default: false
+          description: Include MCP research enhancements (slower)
+        movement_music_style:
+          type: string
+          default: IMPRESSIONIST
+          description: Stylistic period for movement music
+        cooldown_music_style:
+          type: string
+          default: BAROQUE
+          description: Stylistic period for cool-down music
+
+    # --------------------------------------------------------------------------
+    # WORKFLOW STEPS
+    # --------------------------------------------------------------------------
+
+    steps:
+      # ------------------------------------------------------------------------
+      # STEP 1: Generate Sequence
+      # ------------------------------------------------------------------------
+
+      - stepId: generate_sequence
+        description: Generate movement sequence using SequenceAgent
+        operationId: generateSequence
+        parameters:
+          - name: request_body
+            in: body
+            value:
+              target_duration_minutes: $inputs.target_duration_minutes
+              difficulty_level: $inputs.difficulty_level
+              focus_areas: $inputs.focus_areas
+              strictness_level: $inputs.strictness_level
+              include_mcp_research: $inputs.include_research
+
+        successCriteria:
+          - condition: $statusCode == 200
+            type: simple
+          - condition: $response.body.success == true
+            type: simple
+
+        outputs:
+          sequence_data: $response.body.data
+          sequence_metadata: $response.body.metadata
+          movements: $response.body.data.sequence
+          total_movements: $response.body.data.movement_count
+
+      # ------------------------------------------------------------------------
+      # STEP 2: Select Music
+      # ------------------------------------------------------------------------
+
+      - stepId: select_music
+        description: Select music playlists using MusicAgent
+        operationId: selectMusic
+        dependsOn:
+          - generate_sequence
+        parameters:
+          - name: request_body
+            in: body
+            value:
+              class_duration_minutes: $inputs.target_duration_minutes
+              target_bpm_range:
+                min: 80
+                max: 130
+              movement_music_style: $inputs.movement_music_style
+              cooldown_music_style: $inputs.cooldown_music_style
+
+        successCriteria:
+          - condition: $statusCode == 200
+            type: simple
+          - condition: $response.body.success == true
+            type: simple
+
+        outputs:
+          music_data: $response.body.data
+          movement_playlist: $response.body.data.movement_playlist
+          cooldown_playlist: $response.body.data.cooldown_playlist
+
+        onFailure:
+          - name: use_default_music
+            type: goto
+            stepId: use_default_music_fallback
+
+      # ------------------------------------------------------------------------
+      # STEP 2b: Fallback - Use Default Music (if music selection fails)
+      # ------------------------------------------------------------------------
+
+      - stepId: use_default_music_fallback
+        description: Use default music playlists as fallback
+        operationId: getPlaylists
+        parameters:
+          - name: stylistic_period
+            in: query
+            value: IMPRESSIONIST
+          - name: intensity
+            in: query
+            value: MEDIUM
+
+        successCriteria:
+          - condition: $statusCode == 200
+            type: simple
+
+        outputs:
+          music_data:
+            movement_playlist: $response.body[0]
+            cooldown_playlist: $response.body[0]
+
+      # ------------------------------------------------------------------------
+      # STEP 3: Create Meditation Script
+      # ------------------------------------------------------------------------
+
+      - stepId: create_meditation
+        description: Generate meditation/cool-down script using MeditationAgent
+        operationId: createMeditation
+        dependsOn:
+          - generate_sequence
+        parameters:
+          - name: request_body
+            in: body
+            value:
+              duration_minutes: 5
+              class_intensity: $inputs.difficulty_level == 'Beginner' ? 'low' : ($inputs.difficulty_level == 'Advanced' ? 'high' : 'moderate')
+              focus_theme: Mindfulness
+              include_breathing: true
+
+        successCriteria:
+          - condition: $statusCode == 200
+            type: simple
+          - condition: $response.body.success == true
+            type: simple
+
+        outputs:
+          meditation_data: $response.body.data
+          meditation_script: $response.body.data.script
+          meditation_duration: $response.body.data.duration_minutes
+
+        onFailure:
+          - name: use_default_meditation
+            type: end
+            outputs:
+              meditation_data:
+                script: "Take a moment to breathe deeply and relax your body."
+                duration_minutes: 5
+
+      # ------------------------------------------------------------------------
+      # STEP 4: Perform Research Enhancements (Optional)
+      # ------------------------------------------------------------------------
+
+      - stepId: research_enhancements
+        description: Enhance first 3 movements with MCP research (optional)
+        operationId: researchCues
+        dependsOn:
+          - generate_sequence
+        parameters:
+          - name: request_body
+            in: body
+            value:
+              research_type: movement_cues
+              movement_name: $steps.generate_sequence.outputs.movements[0].name
+              trusted_sources_only: true
+
+        # JENTIC PATTERN: Conditional execution based on input
+        # Only execute if user requested research
+        onSuccess:
+          - when: $inputs.include_research == true
+            type: goto
+            stepId: research_movement_2
+
+        outputs:
+          research_results:
+            - movement_name: $steps.generate_sequence.outputs.movements[0].name
+              enhanced_cues: $response.body.data.cues
+              sources: $response.body.data.sources
+
+      # Research second movement (conditional)
+      - stepId: research_movement_2
+        description: Research second movement cues
+        operationId: researchCues
+        dependsOn:
+          - research_enhancements
+        parameters:
+          - name: request_body
+            in: body
+            value:
+              research_type: movement_cues
+              movement_name: $steps.generate_sequence.outputs.movements[1].name
+              trusted_sources_only: true
+
+        outputs:
+          research_result_2:
+            movement_name: $steps.generate_sequence.outputs.movements[1].name
+            enhanced_cues: $response.body.data.cues
+            sources: $response.body.data.sources
+
+      # Research third movement (conditional)
+      - stepId: research_movement_3
+        description: Research third movement cues
+        operationId: researchCues
+        dependsOn:
+          - research_movement_2
+        parameters:
+          - name: request_body
+            in: body
+            value:
+              research_type: movement_cues
+              movement_name: $steps.generate_sequence.outputs.movements[2].name
+              trusted_sources_only: true
+
+        outputs:
+          research_result_3:
+            movement_name: $steps.generate_sequence.outputs.movements[2].name
+            enhanced_cues: $response.body.data.cues
+            sources: $response.body.data.sources
+
+      # ------------------------------------------------------------------------
+      # STEP 5: Assemble Complete Class
+      # ------------------------------------------------------------------------
+
+      - stepId: assemble_complete_class
+        description: |
+          BASSLINE CUSTOM LOGIC:
+          Combine all agent outputs into final class plan structure.
+          This step merges sequence, music, meditation, and optional research.
+        operationId: createClassPlan
+        dependsOn:
+          - generate_sequence
+          - select_music
+          - create_meditation
+        parameters:
+          - name: request_body
+            in: body
+            value:
+              name: "Generated Class - $inputs.difficulty_level - $inputs.target_duration_minutes min"
+              user_id: $inputs.user_id
+              movements: $steps.generate_sequence.outputs.movements
+              duration: $inputs.target_duration_minutes
+              difficulty: $inputs.difficulty_level
+              notes: |
+                Auto-generated class by Jentic-powered orchestration.
+
+                Music: $steps.select_music.outputs.movement_playlist.name
+                Meditation: $steps.create_meditation.outputs.meditation_duration min mindfulness
+
+                Generated at: $workflow.timestamp
+
+        successCriteria:
+          - condition: $statusCode == 201
+            type: simple
+
+        outputs:
+          class_plan_id: $response.body.id
+          class_plan: $response.body
+
+    # --------------------------------------------------------------------------
+    # WORKFLOW OUTPUTS
+    # --------------------------------------------------------------------------
+
+    outputs:
+      complete_class:
+        type: object
+        description: Complete Pilates class with all components
+        value:
+          class_plan_id: $steps.assemble_complete_class.outputs.class_plan_id
+          user_id: $inputs.user_id
+          duration_minutes: $inputs.target_duration_minutes
+          difficulty_level: $inputs.difficulty_level
+
+          # Sequence data
+          sequence:
+            movements: $steps.generate_sequence.outputs.movements
+            total_movements: $steps.generate_sequence.outputs.total_movements
+            validation_status: $steps.generate_sequence.outputs.sequence_data.validation_status
+            muscle_balance: $steps.generate_sequence.outputs.sequence_data.muscle_balance
+
+          # Music data
+          music:
+            movement_playlist: $steps.select_music.outputs.movement_playlist
+            cooldown_playlist: $steps.select_music.outputs.cooldown_playlist
+
+          # Meditation data
+          meditation:
+            script: $steps.create_meditation.outputs.meditation_script
+            duration_minutes: $steps.create_meditation.outputs.meditation_duration
+
+          # Research enhancements (if requested)
+          research_enhancements:
+            enabled: $inputs.include_research
+            results:
+              - $steps.research_enhancements.outputs.research_results
+              - $steps.research_movement_2.outputs.research_result_2
+              - $steps.research_movement_3.outputs.research_result_3
+
+          # Metadata
+          metadata:
+            workflow_id: assemble_pilates_class_v1
+            generated_at: $workflow.timestamp
+            orchestration_engine: Jentic Arazzo Engine
+            total_processing_time_ms: $workflow.duration_ms
+            agents_used:
+              - SequenceAgent
+              - MusicAgent
+              - MeditationAgent
+              - ResearchAgent (conditional)
+
+      # EU AI Act Compliance Output
+      ai_compliance:
+        type: object
+        description: EU AI Act compliance metadata
+        value:
+          transparency:
+            workflow_definition_url: ./assemble_pilates_class_v1.arazzo.yaml
+            agent_decisions_logged: true
+            explanation_available: true
+
+          agents_invoked:
+            - agent_type: SequenceAgent
+              operation: generateSequence
+              decision_logged: true
+              reasoning_available: true
+            - agent_type: MusicAgent
+              operation: selectMusic
+              decision_logged: true
+              reasoning_available: true
+            - agent_type: MeditationAgent
+              operation: createMeditation
+              decision_logged: true
+              reasoning_available: true
+
+          human_oversight:
+            user_can_override: true
+            user_can_regenerate: true
+            user_can_modify: true
+
+          audit_trail:
+            workflow_execution_id: $workflow.execution_id
+            user_id: $inputs.user_id
+            timestamp: $workflow.timestamp
+
+# ==============================================================================
+# EDUCATIONAL NOTES - Jentic vs Bassline Code
+# ==============================================================================
+#
+# JENTIC ARAZZO PATTERN:
+# - Declarative workflow definition (YAML, not imperative Python)
+# - operationId references to OpenAPI operations
+# - Runtime expressions for data flow ($inputs, $steps, $response)
+# - Sequential step execution with explicit dependencies
+# - Success criteria validation at each step
+# - Failure handling with onFailure actions
+# - Conditional execution with when clauses
+#
+# BASSLINE CUSTOMIZATION:
+# - Safety validation in Step 1 (sequence generation)
+# - Classical music integration in Step 2 (Musopen/FreePD)
+# - Meditation script generation in Step 3
+# - Optional research enhancements in Step 4 (MCP Playwright)
+# - EU AI Act compliance metadata in workflow outputs
+# - GDPR-compliant data handling throughout
+#
+# REPLACES:
+# - backend/api/agents.py:205-298 (hardcoded orchestration)
+#
+# BENEFITS:
+# - Declarative vs imperative (easier to maintain)
+# - Deterministic execution (repeatable, testable)
+# - Visual workflow (can be rendered as flowchart)
+# - Version controlled (workflow changes tracked)
+# - Language agnostic (not tied to Python)
+# - Tool ecosystem (Arazzo Engine provides CLI, debugging, monitoring)
+#
+# ==============================================================================

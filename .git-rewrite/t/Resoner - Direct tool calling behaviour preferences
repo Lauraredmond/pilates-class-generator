@@ -1,0 +1,121 @@
+  Improved Format: Default vs Reasoner Mode
+
+  For each section, we need to specify:
+
+  Section 1: Preparation - Your Clarified Answer
+
+  Default Mode (No Reasoner - Direct Tool Calling):
+  - Behavior: A
+  - Purpose: Fast, consistent, no LLM costs
+
+  Reasoner Mode (Validation/Questionnaires Enabled):
+  - Behavior: Option C (AI generates new script each time)
+  - Purpose: Personalized, adapts to user's questionnaire responses
+
+  Required Elements (ALWAYS present in both modes):
+  1. ✅ Wake up the core muscles
+  2. ✅ Posture explanation:
+    - Feet, knees, hips, shoulders, head alignment
+    - Visual cue: Fingers pointing from pelvic bone (parallel = neutral, down = anterior tilt, up = posterior tilt)
+  3. ✅ Core activation:
+    - Visual aids: "Tighten like a belt" or "Tense to 100%, release to 30%"
+  4. ✅ Lateral thoracic breathing:
+    - Cues: Fingers on rib cage, feel expansion (inhale), feel collapse (exhale)
+
+  Optional Elements (AI can vary):
+  - Exact wording/phrasing
+  - Additional metaphors/imagery
+  - Duration of each section
+
+  ----------------------------------------------------------
+
+
+  Section 2: Warm-up
+
+  Default Mode (No Reasoner):
+  - Behavior: A
+  - Purpose: Warm up the muscle sets that will be used in the selection of Pilates movements for the current class. Suggest creating SQL insert statements relating to warming up the muscles in every muscle group in the muscles_group table. Ask me if you need me to provide you with this muscle group data and/ or the warm up narratives which I can google on the Internet
+
+  Reasoner Mode (Validation/Questionnaires Enabled):
+  - Behavior: C
+  - Purpose: Warm up the muscle sets that will be used in the selection of Pilates movements for the current class. Reasoner could source new and novel warm up exercises, other than the default ones, for the muscles to be used in the currently planned Pilates movement set
+
+  Required Elements (ALWAYS present in both modes):
+  1. Warm up for hip flexors, glutes, back, shoulders, hamstrings, chest
+
+  Optional Elements (AI can vary):
+  - Narrative language
+  - Visual cues used
+  - Alternative warm up exercises for a given muscle/ muscle group
+
+  -------------------------------------------------------------
+  Section 3: Main Movements
+
+  Default Mode (No Reasoner):
+  - Behavior: A
+  - Purpose: Provide direction to student on how they perform the Pilates movement and transition to the next movement. Movement selection for every class should do a look back on prior class and ensure new movements are used to keep the class novel and fresh, but nice to include some well-practised movements as well. When student starts, they should do the hundred quite a bit to get them used to it as the hundred is a base movement for a lot of other Pilates movements. Further, sequencing of movements in any given class should ensure no overuse of muscles across consecutive movements
+
+  Reasoner Mode (Validation/Questionnaires Enabled):
+  - Behavior: B
+  - Purpose: Provide direction to student on how they perform the Pilates movement and transition to the next movement with slight variation on narrative and visual cues only. Movement selection for every class should do a look back on prior class and ensure new movements are used to keep the class novel and fresh, but nice to include some well-practised movements as well. When student starts, they should do the hundred quite a bit to get them used to it as the hundred is a base movement for a lot of other Pilates movements. Further, sequencing of movements in any given class should ensure no overuse of muscles across consecutive movements
+
+  Required Elements (ALWAYS present in both modes):
+  1. Movement and transition must always be present, in that order
+  2. Transition must always be comfortable for the user and make sense when considering current and next movement
+
+  Optional Elements (AI can vary):
+  - Offer alternative visual cues
+  - Vary narrative slightly
+  - Modify movement for injuries, if indicated
+
+  --------------------------------------------------------------
+  Section 4: Cool-down
+
+  Default Mode (No Reasoner):
+  - Behavior: A
+  - Purpose: Cools down the muscle sets that were used during the Pilates movements section of the current class. Suggest creating SQL insert statements relating to cooling down the muscles in every muscle group in the muscles_group table. Ask me if you need me to provide you with this muscle group data and/ or the cool down narratives which I can google on the Internet
+
+  Reasoner Mode (Validation/Questionnaires Enabled):
+  - Behavior: C
+  - Purpose: Cool down the muscle sets that were used in the selection of Pilates movements for the current class. Reasoner could source new and novel cool down exercises, other than the default ones, for the muscles used in the Pilates movement set
+
+  Required Elements (ALWAYS present in both modes):
+  1. Cool down for hip flexors, glutes, back, shoulders, hamstrings, chest
+
+  Optional Elements (AI can vary):
+  - Narrative language
+  - Visual cues used
+  - Alternative cool down exercises for a given muscle/ muscle group
+
+  ---
+  Section 5: Closing Meditation
+
+  Default Mode (No Reasoner):
+  - Behavior: A
+  - Purpose: Narrative to help people relax, slow their breathing and activate test and digest system. Narrative should be short to allow students to enjoy the music. No real technique applied here
+
+  Reasoner Mode (Validation/Questionnaires Enabled):
+  - Behavior: B
+  - Purpose: Narrative to help people relax, slow their breathing and activate test and digest system. Narrative should be short to allow students to enjoy the music. No real technique applied here but good to source new narratives on occasion to keep it fresh. Good to source new breathing techniques for relaxation
+
+  Required Elements (ALWAYS present in both modes):
+  1. Short narrative and breathing direction to say lateral thoracic breathing no longer applicable
+
+  Optional Elements (AI can vary):
+  - good to source new narratives on occasion to keep it fresh. Good to source new breathing techniques for relaxation
+
+  ---
+  Section 6: HomeCare Advice
+
+  Default Mode (No Reasoner):
+  - Behavior: A
+  - Purpose: Give people a healthy living message to leave the class with and apply to daily living/ regular, outside lives
+
+  Reasoner Mode (Validation/Questionnaires Enabled):
+  - Behavior: C
+  - Purpose: Give people a healthy living message to leave the class with and apply to daily living/ regular, outside lives. Good external sources are American school of medicine that gives advice on things like hydration, advised stretching/ exercise frequency but just general healthy living advice, soured from the jorunal
+
+  Required Elements (ALWAYS present in both modes):
+  1. Source informaton and that it is guidance only, consult with physicican if any concerns
+  Optional Elements (AI can vary):
+  - Source interesting headlines from American school of medicine

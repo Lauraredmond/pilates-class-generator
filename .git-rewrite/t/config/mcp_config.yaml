@@ -1,0 +1,119 @@
+# MCP (Model Context Protocol) Configuration
+# Playwright server configuration for web research capabilities
+
+mcp_servers:
+  playwright:
+    # Command to start the MCP server
+    command: "npx"
+    args:
+      - "@modelcontextprotocol/server-playwright"
+
+    # Server capabilities
+    capabilities:
+      - web_navigation
+      - screenshot_capture
+      - content_extraction
+      - form_interaction
+
+    # Rate limiting to prevent abuse
+    rate_limits:
+      requests_per_minute: 30
+      concurrent_sessions: 3
+      max_requests_per_day: 1000
+
+    # Caching configuration
+    cache:
+      enabled: true
+      ttl_seconds: 86400  # 24 hours
+      max_size_mb: 500
+
+    # Trusted domains for Pilates research
+    trusted_domains:
+      - pilatesmethod.com
+      - pilatesfoundation.com
+      - balancedbody.com
+      - pilates.com
+      - ncbi.nlm.nih.gov  # Medical research
+      - physiotherapy.org.uk
+
+    # Quality scoring thresholds
+    quality_thresholds:
+      min_score: 0.7
+      require_attribution: true
+      verify_medical_credentials: true
+
+    # Timeout settings
+    timeouts:
+      navigation_seconds: 30
+      extraction_seconds: 10
+      total_request_seconds: 60
+
+# Research agent configuration
+research_agent:
+  # Use cases enabled
+  enabled_features:
+    - movement_cues
+    - warmup_research
+    - condition_modifications
+    - injury_modifications
+    - pregnancy_modifications
+    - music_recommendations
+    - meditation_scripts
+
+  # Source attribution
+  attribution:
+    required: true
+    format: "APA"
+    include_access_date: true
+
+  # Content validation
+  validation:
+    check_recency: true
+    max_age_days: 90
+    require_credentials: true  # For medical/safety content
+
+# MCP Tools Configuration
+tools:
+  - name: "search_movement_cues"
+    description: "Search for Pilates cueing and form guidance"
+    parameters:
+      movement_name:
+        type: "string"
+        required: true
+      trusted_sites_only:
+        type: "boolean"
+        default: true
+
+  - name: "find_warmup_sequence"
+    description: "Find warm-up exercises for specific muscle groups"
+    parameters:
+      target_muscles:
+        type: "array"
+        required: true
+      duration_minutes:
+        type: "number"
+        default: 5
+
+  - name: "research_pregnancy_modifications"
+    description: "Find safe Pilates modifications for pregnancy"
+    parameters:
+      movement_name:
+        type: "string"
+        required: true
+      trimester:
+        type: "number"
+        required: true
+        enum: [1, 2, 3]
+
+  - name: "research_injury_modifications"
+    description: "Research modifications for students with injuries"
+    parameters:
+      movement_name:
+        type: "string"
+        required: true
+      injury_type:
+        type: "string"
+        required: true
+      injury_location:
+        type: "string"
+        required: true

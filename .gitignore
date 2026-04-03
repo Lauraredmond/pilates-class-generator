@@ -84,6 +84,15 @@ secrets/
 supabaseDetails
 **/supabaseDetails
 
+# SECURITY - Files containing exposed credentials (NEVER commit these)
+ENV_STRUCTURE.md
+clean_sensitive_data.sh
+**/clean_sensitive_data.sh
+**/.old.env*
+.old.*
+backend/.old.*
+**/quick_cleanup.sh
+
 # Excel temporary files
 ~$*.xlsm
 ~$*.xlsx

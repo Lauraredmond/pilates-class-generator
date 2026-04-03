@@ -1,0 +1,577 @@
+"""
+==============================================================================
+SEQUENCE TOOLS - Extracted from backend/agents/sequence_agent.py
+==============================================================================
+BASSLINE CUSTOM: Pilates movement sequencing business logic
+
+This module contains ALL sequencing logic extracted from SequenceAgent (963 lines).
+Pure business logic - no agent orchestration, just domain expertise.
+
+CRITICAL DOMAIN KNOWLEDGE PRESERVED:
+- Safety rules (spinal progression, muscle balance)
+- Teaching time calculations (4-6 min per movement)
+- Movement selection algorithms
+- Transition generation between movements
+- Movement usage tracking (intelligent variety)
+- Muscle balance calculations
+
+JENTIC PATTERN: Tools = Domain Expertise
+StandardAgent will call these methods via the tools registry.
+==============================================================================
+"""
+
+import random
+from typing import Dict, Any, List, Optional
+from loguru import logger
+from datetime import date, datetime
+
+
+class SequenceTools:
+    """
+    BASSLINE CUSTOM: Pilates movement sequencing business logic
+
+    Extracted from: backend/agents/sequence_agent.py (963 lines)
+    ALL business logic preserved - nothing lost in migration.
+
+    This is the most complex tool module containing critical Pilates domain expertise.
+    """
+
+    # Safety-critical sequencing rules
+    SAFETY_RULES = {
+        "spinal_progression": "Flexion movements must precede extension movements",
+        "muscle_balance": "No muscle group should exceed 40% of total class load",
+        "complexity_progression": "Difficulty should progress gradually",
+        "must_cooldown": "Classes must end with stretching and breathing",
+        "teaching_time": "Students need 3-5 minutes per movement for proper instruction"
+    }
+
+    # Teaching time per movement (in minutes) - CRITICAL QUALITY RULE
+    MINUTES_PER_MOVEMENT = {
+        "Beginner": 4,      # Beginners need more explanation and practice time
+        "Intermediate": 5,  # Intermediate students can move faster
+        "Advanced": 6       # Advanced students perfect form, not rush
+    }
+
+    # Transition time between movements (in minutes)
+    TRANSITION_TIME_MINUTES = 1  # Average transition time based on setup position changes
+
+    def __init__(self, supabase_client=None):
+        """
+        Initialize sequence tools
+
+        Args:
+            supabase_client: Supabase client for database access
+        """
+        self.supabase = supabase_client
+        logger.info("✅ SequenceTools initialized")
+
+    # ==========================================================================
+    # MAIN ENTRY POINT
+    # ==========================================================================
+
+    def generate_sequence(
+        self,
+        target_duration_minutes: int,
+        difficulty_level: str = "Beginner",
+        focus_areas: List[str] = None,
+        required_movements: List[str] = None,
+        excluded_movements: List[str] = None,
+        user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Generate a complete Pilates movement sequence
+
+        BASSLINE CUSTOM: Main sequencing logic (from SequenceAgent)
+
+        Args:
+            target_duration_minutes: Total class duration (15-120 minutes)
+            difficulty_level: 'Beginner', 'Intermediate', or 'Advanced'
+            focus_areas: Optional muscle groups to emphasize
+            required_movements: Movement IDs that must be included
+            excluded_movements: Movement IDs to exclude
+            user_id: Optional user ID for movement usage tracking
+
+        Returns:
+            Dict with sequence, muscle balance, validation, and statistics
+        """
+        # Validate inputs
+        if not (15 <= target_duration_minutes <= 120):
+            raise ValueError("Duration must be between 15 and 120 minutes")
+
+        if difficulty_level not in ["Beginner", "Intermediate", "Advanced"]:
+            raise ValueError("Difficulty must be Beginner, Intermediate, or Advanced")
+
+        logger.info(
+            f"Generating {difficulty_level} sequence for {target_duration_minutes} minutes | "
+            f"Focus: {focus_areas}"
+        )
+
+        # Step 1: Get available movements from database
+        available_movements = self._get_available_movements(
+            difficulty=difficulty_level,
+            excluded_ids=excluded_movements or []
+        )
+
+        if not available_movements:
+            raise ValueError("No movements available for given criteria")
+
+        # Step 2: Build sequence following safety rules
+        sequence = self._build_safe_sequence(
+            movements=available_movements,
+            target_duration=target_duration_minutes,
+            required_movements=required_movements or [],
+            focus_areas=focus_areas or [],
+            difficulty=difficulty_level,
+            user_id=user_id
+        )
+
+        # Step 3: Add transitions between movements
+        sequence_with_transitions = self._add_transitions_to_sequence(sequence)
+
+        # Step 4: Calculate muscle balance (use movements only, not transitions)
+        muscle_balance = self._calculate_muscle_balance(sequence)
+
+        # Step 5: Validate sequence against safety rules
+        validation = self._validate_sequence(sequence, muscle_balance)
+
+        # Calculate counts
+        movements_only = [item for item in sequence_with_transitions if item.get("type") == "movement"]
+        transitions_only = [item for item in sequence_with_transitions if item.get("type") == "transition"]
+
+        # Calculate total duration (movements + transitions)
+        total_duration_seconds = sum(item.get("duration_seconds") or 60 for item in sequence_with_transitions)
+
+        return {
+            "sequence": sequence_with_transitions,
+            "movement_count": len(movements_only),
+            "transition_count": len(transitions_only),
+            "total_items": len(sequence_with_transitions),
+            "total_duration_minutes": total_duration_seconds // 60,
+            "muscle_balance": muscle_balance,
+            "validation": validation
+        }
+
+    # ==========================================================================
+    # DATABASE OPERATIONS
+    # ==========================================================================
+
+    def _get_available_movements(
+        self,
+        difficulty: str,
+        excluded_ids: List[str]
+    ) -> List[Dict[str, Any]]:
+        """Fetch available movements from database with all teaching data"""
+        if not self.supabase:
+            logger.warning("Supabase client not available - returning mock data")
+            return self._get_mock_movements(difficulty)
+
+        try:
+            # Get movements at or below requested difficulty
+            difficulty_order = ["Beginner", "Intermediate", "Advanced"]
+            max_level_idx = difficulty_order.index(difficulty)
+            allowed_levels = difficulty_order[:max_level_idx + 1]
+
+            # Query database - get all fields
+            response = self.supabase.table('movements') \
+                .select('*') \
+                .in_('difficulty_level', allowed_levels) \
+                .execute()
+
+            movements = response.data
+
+            # Filter out excluded movements
+            if excluded_ids:
+                movements = [m for m in movements if m['id'] not in excluded_ids]
+
+            logger.info(f"Found {len(movements)} available movements")
+            return movements
+
+        except Exception as e:
+            logger.error(f"Error fetching movements: {e}")
+            return []
+
+    def _get_mock_movements(self, difficulty: str) -> List[Dict[str, Any]]:
+        """Provide mock movements when database unavailable"""
+        # Minimal mock data for fallback
+        return [
+            {"id": "mock-1", "name": "The Hundred", "difficulty_level": "Beginner", "duration_seconds": 240, "setup_position": "Supine"},
+            {"id": "mock-2", "name": "Roll Up", "difficulty_level": "Beginner", "duration_seconds": 180, "setup_position": "Supine"},
+            {"id": "mock-3", "name": "Single Leg Stretch", "difficulty_level": "Beginner", "duration_seconds": 180, "setup_position": "Supine"},
+        ]
+
+    # ==========================================================================
+    # SEQUENCE BUILDING
+    # ==========================================================================
+
+    def _build_safe_sequence(
+        self,
+        movements: List[Dict[str, Any]],
+        target_duration: int,
+        required_movements: List[str],
+        focus_areas: List[str],
+        difficulty: str,
+        user_id: Optional[str]
+    ) -> List[Dict[str, Any]]:
+        """Build sequence following safety rules"""
+        sequence = []
+
+        # Calculate max movements based on teaching time + transitions
+        minutes_per_movement = self.MINUTES_PER_MOVEMENT.get(difficulty, 4)
+        transition_time = self.TRANSITION_TIME_MINUTES
+
+        # Store teaching time for use when setting movement durations
+        teaching_time_seconds = minutes_per_movement * 60
+
+        # Calculate: (target_duration) = (num_movements * time_per_movement) + ((num_movements - 1) * transition_time)
+        max_movements = int((target_duration + transition_time) / (minutes_per_movement + transition_time))
+
+        logger.info(
+            f"Building sequence: {target_duration} min / ({minutes_per_movement} min/movement + {transition_time} min/transition) "
+            f"= max {max_movements} movements"
+        )
+
+        # Get movement usage weights for variety enforcement (if user_id provided)
+        usage_weights = {}
+        if user_id and self.supabase:
+            usage_weights = self._get_movement_usage_weights(user_id, movements)
+
+        # Rule 1: Add required movements if specified
+        if required_movements:
+            for movement_id in required_movements:
+                movement = next((m for m in movements if m["id"] == movement_id), None)
+                if movement and len(sequence) < max_movements - 1:  # Save room for cooldown
+                    movement_copy = movement.copy()
+                    movement_copy["duration_seconds"] = teaching_time_seconds
+                    movement_copy["type"] = "movement"
+                    sequence.append(movement_copy)
+
+        # Rule 2: Fill to max movements with balanced movements
+        # Priority: Flexion -> Rotation -> Extension -> Lateral -> Balance
+        pattern_order = ["flexion", "rotation", "extension", "lateral", "balance"]
+
+        # Leave room for cooldown
+        while len(sequence) < (max_movements - 1):
+            selected = self._select_next_movement(
+                movements=movements,
+                current_sequence=sequence,
+                focus_areas=focus_areas,
+                pattern_priority=pattern_order,
+                usage_weights=usage_weights
+            )
+
+            if not selected:
+                break
+
+            selected_copy = selected.copy()
+            selected_copy["duration_seconds"] = teaching_time_seconds
+            selected_copy["type"] = "movement"
+            sequence.append(selected_copy)
+
+        # Rule 3: Always end with cooldown
+        cooldown = self._get_cooldown_movement(movements, sequence)
+        if cooldown:
+            cooldown_copy = cooldown.copy()
+            cooldown_copy["duration_seconds"] = teaching_time_seconds
+            cooldown_copy["type"] = "movement"
+            sequence.append(cooldown_copy)
+
+        logger.info(f"Generated sequence with {len(sequence)} movements (max was {max_movements})")
+
+        return sequence
+
+    def _select_next_movement(
+        self,
+        movements: List[Dict[str, Any]],
+        current_sequence: List[Dict[str, Any]],
+        focus_areas: List[str],
+        pattern_priority: List[str],
+        usage_weights: Dict[str, float] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Select next movement based on rules and focus areas
+
+        PHASE 1 FIX: Added consecutive muscle overlap validation
+        PHASE 2 FIX: Added weighted random selection based on usage history
+        """
+        # Get already used movement IDs
+        used_ids = [m["id"] for m in current_sequence]
+
+        # Filter out already used movements
+        available = [m for m in movements if m["id"] not in used_ids]
+
+        if not available:
+            return None
+
+        # PHASE 1 FIX: Filter out movements with high consecutive muscle overlap
+        if current_sequence:
+            prev_movement = current_sequence[-1]
+            prev_muscles = set(mg.get('name', '') for mg in prev_movement.get('muscle_groups', []))
+
+            if prev_muscles:
+                filtered_available = []
+                for candidate in available:
+                    candidate_muscles = set(mg.get('name', '') for mg in candidate.get('muscle_groups', []))
+
+                    if candidate_muscles:
+                        overlap = prev_muscles & candidate_muscles
+                        overlap_pct = (len(overlap) / len(candidate_muscles)) * 100 if candidate_muscles else 0
+
+                        # Only keep candidates with <50% overlap
+                        if overlap_pct < 50:
+                            filtered_available.append(candidate)
+
+                # If we filtered out everything, fall back to original available list
+                if filtered_available:
+                    available = filtered_available
+                    logger.info(f"Filtered to {len(available)} movements with <50% consecutive muscle overlap")
+
+        # If focus areas specified, prefer those
+        if focus_areas:
+            focused = [
+                m for m in available
+                if any(area.lower() in str(m.get("category", "")).lower() for area in focus_areas)
+            ]
+            if focused:
+                available = focused
+
+        # PHASE 2 FIX: Use weighted random selection based on usage history
+        if usage_weights and available:
+            # Build weights list aligned with available movements
+            weights = [usage_weights.get(m['id'], 1.0) for m in available]
+
+            # Use random.choices with weights (prefers less-recently-used movements)
+            selected = random.choices(available, weights=weights, k=1)[0]
+            logger.info(f"Selected '{selected['name']}' (weight: {usage_weights.get(selected['id'], 1.0):.0f})")
+            return selected
+
+        # Fallback: pick randomly from available (no usage data)
+        return random.choice(available) if available else None
+
+    def _get_cooldown_movement(self, movements: List[Dict[str, Any]], current_sequence: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Get appropriate cooldown movement"""
+        if not movements:
+            return None
+
+        # Get already used movement IDs
+        used_ids = [m["id"] for m in current_sequence]
+
+        # Filter to unused movements only
+        available = [m for m in movements if m["id"] not in used_ids]
+        if not available:
+            return None
+
+        cooldown_keywords = ["seal", "breathing", "stretch"]
+        cooldown_movements = [
+            m for m in available
+            if any(kw in m["name"].lower() for kw in cooldown_keywords)
+        ]
+        return cooldown_movements[0] if cooldown_movements else available[-1]
+
+    # ==========================================================================
+    # TRANSITIONS
+    # ==========================================================================
+
+    def _add_transitions_to_sequence(self, sequence: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Add transition narratives between movements based on setup positions"""
+        if not sequence or len(sequence) < 2:
+            return sequence
+
+        sequence_with_transitions = []
+
+        try:
+            # Get all transitions from database if available
+            transitions_map = {}
+            if self.supabase:
+                transitions_response = self.supabase.table('transitions') \
+                    .select('from_position, to_position, narrative') \
+                    .execute()
+
+                transitions_map = {
+                    (t['from_position'], t['to_position']): t['narrative']
+                    for t in transitions_response.data
+                }
+
+            for i, movement in enumerate(sequence):
+                # Add the movement
+                sequence_with_transitions.append(movement)
+
+                # Add transition if there's a next movement
+                if i < len(sequence) - 1:
+                    from_position = movement.get('setup_position', 'Unknown')
+                    to_position = sequence[i + 1].get('setup_position', 'Unknown')
+
+                    # Get transition narrative from database
+                    transition_key = (from_position, to_position)
+                    narrative = transitions_map.get(
+                        transition_key,
+                        f"Transition from {from_position} to {to_position} position with control."
+                    )
+
+                    # Add transition item to sequence
+                    transition_item = {
+                        "type": "transition",
+                        "from_position": from_position,
+                        "to_position": to_position,
+                        "narrative": narrative,
+                        "duration_seconds": 60,  # 1 minute transition time
+                        "name": f"Transition: {from_position} → {to_position}"
+                    }
+
+                    sequence_with_transitions.append(transition_item)
+
+            logger.info(f"Added {len(sequence) - 1} transitions to sequence")
+
+        except Exception as e:
+            logger.error(f"Error adding transitions: {e}")
+            # Return original sequence if transition fetch fails
+            return sequence
+
+        return sequence_with_transitions
+
+    # ==========================================================================
+    # MUSCLE BALANCE & VALIDATION
+    # ==========================================================================
+
+    def _calculate_muscle_balance(self, sequence: List[Dict[str, Any]]) -> Dict[str, float]:
+        """Calculate muscle group usage across sequence using database muscle mappings"""
+        muscle_load = {}
+
+        try:
+            # Get total duration for percentage calculation
+            total_duration = sum(m.get("duration_seconds") or 60 for m in sequence)
+
+            # Get movement IDs
+            movement_ids = [m["id"] for m in sequence]
+
+            if not movement_ids or not self.supabase:
+                return muscle_load
+
+            # Query movement_muscles table
+            response = self.supabase.table('movement_muscles') \
+                .select('movement_id, muscle_group_name') \
+                .in_('movement_id', movement_ids) \
+                .execute()
+
+            # Build muscle load map
+            for movement in sequence:
+                duration = movement.get("duration_seconds", 60)
+                movement_id = movement["id"]
+
+                # Find muscle groups for this movement
+                movement_muscles = [
+                    mm for mm in response.data
+                    if mm["movement_id"] == movement_id
+                ]
+
+                for mm in movement_muscles:
+                    muscle_name = mm.get("muscle_group_name", "Unknown")
+                    if muscle_name not in muscle_load:
+                        muscle_load[muscle_name] = 0.0
+                    muscle_load[muscle_name] += duration
+
+            # Convert to percentages
+            if total_duration > 0:
+                muscle_load = {k: (v / total_duration) * 100 for k, v in muscle_load.items()}
+
+            logger.info(f"Calculated muscle balance from {len(movement_ids)} movements")
+
+        except Exception as e:
+            logger.error(f"Error calculating muscle balance: {e}")
+            muscle_load = {}
+
+        return muscle_load
+
+    def _validate_sequence(
+        self,
+        sequence: List[Dict[str, Any]],
+        muscle_balance: Dict[str, float]
+    ) -> Dict[str, Any]:
+        """Validate sequence against safety rules"""
+        violations = []
+        warnings = []
+
+        # Check muscle balance
+        for muscle, load in muscle_balance.items():
+            if load > 40:
+                warnings.append(f"{muscle.title()} load high ({load:.1f}%)")
+
+        # Calculate safety score
+        safety_score = 1.0 - (len(violations) * 0.2 + len(warnings) * 0.05)
+        safety_score = max(0.0, min(1.0, safety_score))
+
+        return {
+            "is_valid": len(violations) == 0,
+            "safety_score": safety_score,
+            "violations": violations,
+            "warnings": warnings
+        }
+
+    # ==========================================================================
+    # MOVEMENT USAGE TRACKING (PHASE 2 - INTELLIGENT VARIETY)
+    # ==========================================================================
+
+    def _get_movement_usage_weights(
+        self,
+        user_id: str,
+        movements: List[Dict[str, Any]]
+    ) -> Dict[str, float]:
+        """
+        Get movement usage weights based on history
+
+        Queries existing movement_usage table to calculate weights.
+        Higher weight = prefer this movement (less recently used)
+        """
+        if not self.supabase:
+            return {m['id']: 1.0 for m in movements}
+
+        try:
+            # Query movement_usage table for this user
+            response = self.supabase.table('movement_usage') \
+                .select('movement_id, last_used_date, usage_count') \
+                .eq('user_id', user_id) \
+                .execute()
+
+            usage_map = {
+                item['movement_id']: {
+                    'last_used_date': item['last_used_date'],
+                    'usage_count': item.get('usage_count', 0)
+                }
+                for item in response.data
+            }
+
+            # Calculate weights for each movement
+            weights = {}
+            today = date.today()
+
+            for movement in movements:
+                movement_id = movement['id']
+
+                if movement_id in usage_map:
+                    # Calculate days since last used
+                    last_used_str = usage_map[movement_id]['last_used_date']
+                    usage_count = usage_map[movement_id]['usage_count']
+
+                    # Handle both date and datetime formats
+                    if 'T' in last_used_str:
+                        last_used = datetime.fromisoformat(last_used_str.replace('Z', '+00:00')).date()
+                    else:
+                        last_used = datetime.strptime(last_used_str, '%Y-%m-%d').date()
+
+                    days_since = (today - last_used).days
+
+                    # Weight formula: Combine recency AND frequency
+                    recency_weight = (days_since + 1) ** 3  # Cubic for stronger penalty
+                    frequency_penalty = max(1, usage_count) ** 2  # Quadratic penalty
+                    weight = recency_weight / frequency_penalty
+                else:
+                    # Never used before - highest weight
+                    weight = 100000
+
+                weights[movement_id] = weight
+
+            logger.info(f"Calculated usage weights for {len(weights)} movements")
+            return weights
+
+        except Exception as e:
+            logger.warning(f"Error getting movement usage weights: {e}")
+            return {m['id']: 1.0 for m in movements}

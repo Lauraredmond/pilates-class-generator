@@ -1,0 +1,290 @@
+arazzo: 1.0.0
+info:
+  title: Complete Pilates Class Assembly Workflow V2
+  summary: Assemble a full Pilates class with all 6 sections using movement levels
+  description: >
+    This workflow orchestrates the complete assembly of a Pilates class including:
+    1. Preparation (Pilates principles, breathing)
+    2. Warm-up (gentle mobilization)
+    3. Main movements with progressive levels (L1→L2→L3→Full)
+    4. Transitions between movements
+    5. Cool-down (stretching, recovery)
+    6a. Closing meditation
+    6b. Closing home care advice
+    Plus music selection for all sections.
+
+    **Session 11: Data Model Expansion**
+    Expanded from 4 steps to 10 steps to support complete class structure.
+  version: 2.0.0
+
+# ============================================
+# SOURCE DESCRIPTIONS
+# ============================================
+sourceDescriptions:
+  - name: bassline-api
+    url: https://pilates-class-generator-api3.onrender.com
+    type: openapi
+    description: Bassline Pilates backend API (production)
+
+# ============================================
+# WORKFLOW: 10-STEP COMPLETE CLASS ASSEMBLY
+# ============================================
+workflows:
+  - workflowId: assemble_complete_pilates_class_v2
+    summary: Assemble a complete Pilates class with all 6 sections
+    description: >
+      **Full class assembly workflow** using all Bassline APIs and movement progression levels.
+
+      **JENTIC PATTERN**: StandardAgent executes this workflow using ArazzoRunner
+      **BASSLINE CUSTOM**: Pilates domain logic for safe, effective class sequencing
+
+    inputs:
+      # User context
+      user_id:
+        type: string
+        description: Authenticated user ID
+
+      # Class parameters
+      difficulty:
+        type: string
+        enum: [Beginner, Intermediate, Advanced]
+        default: Beginner
+
+      duration_minutes:
+        type: integer
+        minimum: 30
+        maximum: 90
+        default: 60
+        description: Total class duration
+
+      # Movement level preference (NEW in V2)
+      show_full_progression:
+        type: boolean
+        default: false
+        description: Show L1→L2→L3→Full progression (for instructors)
+
+    # ============================================
+    # STEP 1: GET USER PROFILE & PREFERENCES
+    # ============================================
+    steps:
+      - stepId: get_user_profile
+        operationId: get_current_user
+        description: Fetch user profile and preferences
+        parameters:
+          - name: user_id
+            in: path
+            value: $inputs.user_id
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          user_preferences: $response.body.preferences
+          pilates_experience: $response.body.pilates_experience
+          preferred_level: $response.body.preferences.preferred_movement_level
+          show_progression: $response.body.preferences.show_full_progression
+
+      # ============================================
+      # STEP 2: SELECT PREPARATION SCRIPT
+      # ============================================
+      - stepId: select_preparation_script
+        operationId: get_preparation_scripts
+        description: Select opening preparation script (breathing, principles)
+        parameters:
+          - name: difficulty
+            in: query
+            value: $inputs.difficulty
+          - name: script_type
+            in: query
+            value: centering  # Default to centering script
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          preparation_script: $response.body[0]  # Select first matching script
+
+      # ============================================
+      # STEP 3: SELECT WARM-UP ROUTINE
+      # ============================================
+      - stepId: select_warmup_routine
+        operationId: get_warmup_routines
+        description: Select gentle warm-up routine
+        parameters:
+          - name: difficulty
+            in: query
+            value: $inputs.difficulty
+          - name: focus_area
+            in: query
+            value: full_body  # Full body warm-up
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          warmup_routine: $response.body[0]  # Select first matching routine
+
+      # ============================================
+      # STEP 4: SELECT MOVEMENTS WITH LEVELS
+      # ============================================
+      - stepId: select_movements_with_levels
+        operationId: get_movements
+        description: >
+          Select main movements appropriate for user's level.
+          If show_full_progression=true, include all levels (L1→L2→L3→Full).
+          If false, select single appropriate level only.
+        parameters:
+          - name: difficulty
+            in: query
+            value: $steps.get_user_profile.outputs.preferred_level
+          - name: limit
+            in: query
+            value: 10  # Select 10 movements for 60min class
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          movements: $response.body
+
+      # ============================================
+      # STEP 5: GENERATE TRANSITIONS
+      # ============================================
+      - stepId: generate_transitions
+        operationId: generate_sequence
+        description: Generate safe transitions between movements
+        parameters:
+          - name: movements
+            in: body
+            value: $steps.select_movements_with_levels.outputs.movements
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          transitions: $response.body.transitions
+
+      # ============================================
+      # STEP 6: SELECT COOL-DOWN SEQUENCE
+      # ============================================
+      - stepId: select_cooldown_sequence
+        operationId: get_cooldown_sequences
+        description: Select cool-down stretches based on class intensity
+        parameters:
+          - name: intensity
+            in: query
+            value: moderate  # Moderate intensity cool-down
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          cooldown_sequence: $response.body[0]  # Select first matching sequence
+
+      # ============================================
+      # STEP 7: SELECT CLOSING MEDITATION
+      # ============================================
+      - stepId: select_closing_meditation
+        operationId: get_closing_meditations
+        description: Select meditation script appropriate for class intensity
+        parameters:
+          - name: post_intensity
+            in: query
+            value: moderate  # Match class intensity
+          - name: theme
+            in: query
+            value: body_scan  # Body scan meditation
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          meditation_script: $response.body[0]  # Select first matching script
+
+      # ============================================
+      # STEP 8: SELECT HOME CARE ADVICE
+      # ============================================
+      - stepId: select_homecare_advice
+        operationId: get_closing_homecare_advice
+        description: Select practical home care advice from trusted sources (ASM, NIH)
+        parameters:
+          - name: focus_area
+            in: query
+            value: spine_care  # Focus on spinal health
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          homecare_advice: $response.body[0]  # Select first matching advice
+
+      # ============================================
+      # STEP 9: SELECT MUSIC FOR ALL SECTIONS
+      # ============================================
+      - stepId: select_music_for_all_sections
+        operationId: get_music_playlists
+        description: Select appropriate music for entire class
+        parameters:
+          - name: stylistic_period
+            in: query
+            value: Classical  # Classical period music
+          - name: intended_use
+            in: query
+            value: PILATES_SLOW_FLOW
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          playlist: $response.body[0]  # Select first matching playlist
+
+      # ============================================
+      # STEP 10: ASSEMBLE AND SAVE CLASS
+      # ============================================
+      - stepId: assemble_and_save_class
+        operationId: create_class_plan
+        description: Assemble complete class from all sections and save
+        parameters:
+          - name: user_id
+            in: body
+            value: $inputs.user_id
+          - name: class_data
+            in: body
+            value:
+              # Section 1: Preparation
+              preparation:
+                script: $steps.select_preparation_script.outputs.preparation_script
+                duration: $steps.select_preparation_script.outputs.preparation_script.duration_seconds
+
+              # Section 2: Warm-up
+              warmup:
+                routine: $steps.select_warmup_routine.outputs.warmup_routine
+                duration: $steps.select_warmup_routine.outputs.warmup_routine.duration_seconds
+
+              # Section 3: Main movements + transitions
+              main_sequence:
+                movements: $steps.select_movements_with_levels.outputs.movements
+                transitions: $steps.generate_transitions.outputs.transitions
+                show_progression: $steps.get_user_profile.outputs.show_progression
+
+              # Section 4: Cool-down
+              cooldown:
+                sequence: $steps.select_cooldown_sequence.outputs.cooldown_sequence
+                duration: $steps.select_cooldown_sequence.outputs.cooldown_sequence.duration_seconds
+
+              # Section 5: Closing meditation
+              closing_meditation:
+                script: $steps.select_closing_meditation.outputs.meditation_script
+                duration: $steps.select_closing_meditation.outputs.meditation_script.duration_seconds
+
+              # Section 6: Home care advice
+              closing_homecare:
+                advice: $steps.select_homecare_advice.outputs.homecare_advice
+                duration: $steps.select_homecare_advice.outputs.homecare_advice.duration_seconds
+
+              # Music for entire class
+              music:
+                playlist: $steps.select_music_for_all_sections.outputs.playlist
+
+              # Metadata
+              difficulty: $inputs.difficulty
+              total_duration_minutes: $inputs.duration_minutes
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          class_plan_id: $response.body.id
+          complete_class: $response.body
+
+    outputs:
+      class_plan_id: $steps.assemble_and_save_class.outputs.class_plan_id
+      complete_class: $steps.assemble_and_save_class.outputs.complete_class
+      method: workflow_v2
+      sections:
+        preparation: $steps.select_preparation_script.outputs.preparation_script.script_name
+        warmup: $steps.select_warmup_routine.outputs.warmup_routine.routine_name
+        main_movements: $steps.select_movements_with_levels.outputs.movements
+        cooldown: $steps.select_cooldown_sequence.outputs.cooldown_sequence.sequence_name
+        meditation: $steps.select_closing_meditation.outputs.meditation_script.script_name
+        homecare: $steps.select_homecare_advice.outputs.homecare_advice.advice_name
