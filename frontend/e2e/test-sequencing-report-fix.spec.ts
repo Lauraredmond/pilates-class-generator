@@ -42,11 +42,23 @@ async function handlePermissionsAndDisclaimers(page: any) {
 }
 
 test.describe('Sequencing Report Rule 3 Fix', () => {
+  // Setup hook to check for required environment variables
+  test.beforeAll(() => {
+    if (!process.env.PLAYWRIGHT_TEST_USER_EMAIL || !process.env.PLAYWRIGHT_TEST_USER_PASSWORD) {
+      throw new Error(
+        'Missing required environment variables. Please set:\n' +
+        '  PLAYWRIGHT_TEST_USER_EMAIL\n' +
+        '  PLAYWRIGHT_TEST_USER_PASSWORD\n' +
+        'in your .env.test file or environment'
+      );
+    }
+  });
+
   test('Historical muscle balance should show data instead of "No data available"', async ({ page }) => {
     test.setTimeout(60000); // 60 second timeout for this test
-    // Test user credentials from .env.test
-    const testEmail = process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'laura.bassline@proton.me';
-    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'test-password';
+    // Test user credentials from environment variables (required)
+    const testEmail = process.env.PLAYWRIGHT_TEST_USER_EMAIL!;
+    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD!;
 
     // Navigate to login
     await page.goto(`${BASE_URL}/login`);
@@ -128,9 +140,9 @@ test.describe('Sequencing Report Rule 3 Fix', () => {
 
   test('Advanced classes should include beginner movements for repertoire coverage', async ({ page }) => {
     test.setTimeout(60000); // 60 second timeout for this test
-    // Test user credentials from .env.test
-    const testEmail = process.env.PLAYWRIGHT_TEST_USER_EMAIL || 'laura.bassline@proton.me';
-    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD || 'test-password';
+    // Test user credentials from environment variables (required)
+    const testEmail = process.env.PLAYWRIGHT_TEST_USER_EMAIL!;
+    const testPassword = process.env.PLAYWRIGHT_TEST_USER_PASSWORD!;
 
     // Navigate to login
     await page.goto(`${BASE_URL}/login`);
