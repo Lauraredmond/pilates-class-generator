@@ -16,12 +16,16 @@
   },
   "servers": [
     {
-      "url": "https://api.basslinepilates.com",
-      "description": "Production API server"
+      "url": "https://pilates-class-generator-api3.onrender.com",
+      "description": "Production server on Render"
     },
     {
-      "url": "https://api-dev.basslinepilates.com",
-      "description": "Development API server"
+      "url": "https://pilates-dev-i0jb.onrender.com",
+      "description": "Development server on Render"
+    },
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development server"
     }
   ],
   "paths": {
@@ -1207,77 +1211,57 @@
   },
   "components": {
     "schemas": {
-      "AgentGenerateClassRequest": {
+      "HTTPValidationError": {
         "properties": {
-          "duration_minutes": {
-            "type": "integer",
-            "maximum": 120.0,
-            "minimum": 10.0,
-            "title": "Duration Minutes",
-            "description": "Class duration in minutes (10-120)",
-            "example": 60
-          },
-          "difficulty_level": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "AgentAuthResponse": {
+        "properties": {
+          "access_token": {
             "type": "string",
-            "title": "Difficulty Level",
-            "description": "Difficulty level: Beginner, Intermediate, or Advanced",
-            "example": "Beginner"
+            "title": "Access Token",
+            "description": "JWT access token for API authentication"
           },
-          "focus_areas": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Focus Areas",
-            "description": "Optional muscle groups to emphasize (e.g., core, legs, back)",
-            "example": [
-              "core",
-              "back"
-            ]
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Unique user identifier"
           },
-          "include_music": {
-            "type": "boolean",
-            "title": "Include Music",
-            "description": "Include music playlist in the class",
-            "default": true
-          },
-          "include_meditation": {
-            "type": "boolean",
-            "title": "Include Meditation",
-            "description": "Include closing meditation script",
-            "default": true
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "User email address"
           }
         },
         "type": "object",
         "required": [
-          "duration_minutes",
-          "difficulty_level"
+          "access_token",
+          "user_id",
+          "email"
         ],
-        "title": "AgentGenerateClassRequest",
-        "description": "Simplified class generation request for agents"
+        "title": "AgentAuthResponse",
+        "description": "Simplified auth response for agents"
       },
-      "AgentRegisterRequest": {
+      "AgentUserProfile": {
         "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Unique user identifier"
+          },
           "email": {
             "type": "string",
-            "format": "email",
             "title": "Email",
-            "description": "User email address",
-            "example": "user@example.com"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 8,
-            "title": "Password",
-            "description": "User password (min 8 characters)",
-            "example": "SecurePass123!"
+            "description": "User email address"
           },
           "full_name": {
             "anyOf": [
@@ -1289,73 +1273,115 @@
               }
             ],
             "title": "Full Name",
-            "description": "User's full name",
-            "example": "Jane Doe"
+            "description": "User's full name"
+          },
+          "total_classes": {
+            "type": "integer",
+            "title": "Total Classes",
+            "description": "Total classes completed",
+            "default": 0
+          },
+          "current_level": {
+            "type": "string",
+            "title": "Current Level",
+            "description": "Current difficulty level",
+            "default": "Beginner"
           }
         },
         "type": "object",
         "required": [
-          "email",
-          "password"
+          "user_id",
+          "email"
         ],
-        "title": "AgentRegisterRequest",
-        "description": "Simplified registration request for agents"
+        "title": "AgentUserProfile",
+        "description": "Simplified user profile for agents"
       },
-      "AgentMusicPlaylist": {
+      "AgentSuccessResponse": {
         "properties": {
-          "playlist_id": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Operation succeeded",
+            "default": true
+          },
+          "message": {
             "type": "string",
-            "title": "Playlist Id",
-            "description": "Unique playlist identifier"
+            "title": "Message",
+            "description": "Human-readable success message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "AgentSuccessResponse",
+        "description": "Standard success response for agents"
+      },
+      "AgentMovementDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique movement identifier"
           },
           "name": {
             "type": "string",
             "title": "Name",
-            "description": "Playlist name",
-            "example": "Classical Calm"
+            "description": "Movement name",
+            "example": "The Hundred"
           },
-          "genre": {
+          "difficulty_level": {
             "type": "string",
-            "title": "Genre",
-            "description": "Music genre",
-            "example": "Classical"
+            "title": "Difficulty Level",
+            "description": "Difficulty level",
+            "example": "Beginner"
           },
-          "total_tracks": {
-            "type": "integer",
-            "title": "Total Tracks",
-            "description": "Number of tracks",
-            "example": 12
-          },
-          "total_duration_seconds": {
-            "type": "integer",
-            "title": "Total Duration Seconds",
-            "description": "Total duration",
-            "example": 3600
-          },
-          "suitable_for": {
+          "primary_muscles": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Suitable For",
-            "description": "Suitable class types",
+            "title": "Primary Muscles",
+            "description": "Primary muscles targeted",
             "example": [
-              "Beginner",
-              "Meditation"
+              "Core"
+            ]
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds",
+            "description": "Typical duration in seconds",
+            "example": 60
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Brief description of the movement"
+          },
+          "contraindications": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contraindications",
+            "description": "When to avoid this movement",
+            "example": [
+              "Neck injury",
+              "Lower back pain"
             ]
           }
         },
         "type": "object",
         "required": [
-          "playlist_id",
+          "id",
           "name",
-          "genre",
-          "total_tracks",
-          "total_duration_seconds",
-          "suitable_for"
+          "difficulty_level",
+          "primary_muscles",
+          "duration_seconds",
+          "description"
         ],
-        "title": "AgentMusicPlaylist",
-        "description": "Simplified music playlist for agents"
+        "title": "AgentMovementDetail",
+        "description": "Simplified movement detail for agents"
       },
       "AgentAnalyticsSummary": {
         "properties": {
@@ -1434,179 +1460,6 @@
         ],
         "title": "AgentAnalyticsSummary",
         "description": "Simplified analytics summary for agents"
-      },
-      "AgentSavedClass": {
-        "properties": {
-          "class_id": {
-            "type": "string",
-            "title": "Class Id",
-            "description": "Unique class identifier"
-          },
-          "duration_minutes": {
-            "type": "integer",
-            "title": "Duration Minutes",
-            "description": "Class duration in minutes"
-          },
-          "difficulty_level": {
-            "type": "string",
-            "title": "Difficulty Level",
-            "description": "Difficulty level"
-          },
-          "movement_count": {
-            "type": "integer",
-            "title": "Movement Count",
-            "description": "Number of movements"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At",
-            "description": "When class was created"
-          },
-          "last_accessed": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Accessed",
-            "description": "When class was last accessed"
-          }
-        },
-        "type": "object",
-        "required": [
-          "class_id",
-          "duration_minutes",
-          "difficulty_level",
-          "movement_count",
-          "created_at"
-        ],
-        "title": "AgentSavedClass",
-        "description": "Simplified saved class summary for agents"
-      },
-      "AgentClassResponse": {
-        "properties": {
-          "class_id": {
-            "type": "string",
-            "title": "Class Id",
-            "description": "Unique class identifier"
-          },
-          "duration_minutes": {
-            "type": "integer",
-            "title": "Duration Minutes",
-            "description": "Total class duration in minutes"
-          },
-          "difficulty_level": {
-            "type": "string",
-            "title": "Difficulty Level",
-            "description": "Class difficulty level"
-          },
-          "movement_count": {
-            "type": "integer",
-            "title": "Movement Count",
-            "description": "Number of movements in class"
-          },
-          "movements": {
-            "items": {
-              "$ref": "#/components/schemas/AgentMovementSummary"
-            },
-            "type": "array",
-            "title": "Movements",
-            "description": "List of movements"
-          },
-          "has_music": {
-            "type": "boolean",
-            "title": "Has Music",
-            "description": "Whether class includes music"
-          },
-          "has_meditation": {
-            "type": "boolean",
-            "title": "Has Meditation",
-            "description": "Whether class includes meditation"
-          },
-          "music": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AgentMusicSummary"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Music summary (if included)"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At",
-            "description": "When class was created (ISO 8601)"
-          }
-        },
-        "type": "object",
-        "required": [
-          "class_id",
-          "duration_minutes",
-          "difficulty_level",
-          "movement_count",
-          "movements",
-          "has_music",
-          "has_meditation",
-          "created_at"
-        ],
-        "title": "AgentClassResponse",
-        "description": "Simplified class response for agents"
-      },
-      "AgentAuthResponse": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "title": "Access Token",
-            "description": "JWT access token for API authentication"
-          },
-          "user_id": {
-            "type": "string",
-            "title": "User Id",
-            "description": "Unique user identifier"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email",
-            "description": "User email address"
-          }
-        },
-        "type": "object",
-        "required": [
-          "access_token",
-          "user_id",
-          "email"
-        ],
-        "title": "AgentAuthResponse",
-        "description": "Simplified auth response for agents"
-      },
-      "AgentLoginRequest": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email",
-            "description": "User email address",
-            "example": "user@example.com"
-          },
-          "password": {
-            "type": "string",
-            "title": "Password",
-            "description": "User password",
-            "example": "SecurePass123!"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
-        "title": "AgentLoginRequest",
-        "description": "Simplified login request for agents"
       },
       "RFC9457ProblemDetail": {
         "description": "RFC 9457 Problem Details for HTTP APIs\n\nStandard format for machine-readable error responses that improves\nAI agent understanding and API integration quality.\n\nSpec: https://www.rfc-editor.org/rfc/rfc9457.html\n\nJENTIC FIX: Error Standardization 0% \u2192 90%+",
@@ -1693,30 +1546,204 @@
         "title": "RFC9457ProblemDetail",
         "type": "object"
       },
-      "HTTPValidationError": {
+      "AgentClassResponse": {
         "properties": {
-          "detail": {
+          "class_id": {
+            "type": "string",
+            "title": "Class Id",
+            "description": "Unique class identifier"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "title": "Duration Minutes",
+            "description": "Total class duration in minutes"
+          },
+          "difficulty_level": {
+            "type": "string",
+            "title": "Difficulty Level",
+            "description": "Class difficulty level"
+          },
+          "movement_count": {
+            "type": "integer",
+            "title": "Movement Count",
+            "description": "Number of movements in class"
+          },
+          "movements": {
             "items": {
-              "$ref": "#/components/schemas/ValidationError"
+              "$ref": "#/components/schemas/AgentMovementSummary"
             },
             "type": "array",
-            "title": "Detail"
+            "title": "Movements",
+            "description": "List of movements"
+          },
+          "has_music": {
+            "type": "boolean",
+            "title": "Has Music",
+            "description": "Whether class includes music"
+          },
+          "has_meditation": {
+            "type": "boolean",
+            "title": "Has Meditation",
+            "description": "Whether class includes meditation"
+          },
+          "music": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentMusicSummary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Music summary (if included)"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "When class was created (ISO 8601)"
           }
         },
         "type": "object",
-        "title": "HTTPValidationError"
+        "required": [
+          "class_id",
+          "duration_minutes",
+          "difficulty_level",
+          "movement_count",
+          "movements",
+          "has_music",
+          "has_meditation",
+          "created_at"
+        ],
+        "title": "AgentClassResponse",
+        "description": "Simplified class response for agents"
       },
-      "AgentUserProfile": {
+      "AgentGenerateClassRequest": {
         "properties": {
-          "user_id": {
-            "type": "string",
-            "title": "User Id",
-            "description": "Unique user identifier"
+          "duration_minutes": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 10.0,
+            "title": "Duration Minutes",
+            "description": "Class duration in minutes (10-120)",
+            "example": 60
           },
+          "difficulty_level": {
+            "type": "string",
+            "title": "Difficulty Level",
+            "description": "Difficulty level: Beginner, Intermediate, or Advanced",
+            "example": "Beginner"
+          },
+          "focus_areas": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Areas",
+            "description": "Optional muscle groups to emphasize (e.g., core, legs, back)",
+            "example": [
+              "core",
+              "back"
+            ]
+          },
+          "include_music": {
+            "type": "boolean",
+            "title": "Include Music",
+            "description": "Include music playlist in the class",
+            "default": true
+          },
+          "include_meditation": {
+            "type": "boolean",
+            "title": "Include Meditation",
+            "description": "Include closing meditation script",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "duration_minutes",
+          "difficulty_level"
+        ],
+        "title": "AgentGenerateClassRequest",
+        "description": "Simplified class generation request for agents"
+      },
+      "AgentMusicPlaylist": {
+        "properties": {
+          "playlist_id": {
+            "type": "string",
+            "title": "Playlist Id",
+            "description": "Unique playlist identifier"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Playlist name",
+            "example": "Classical Calm"
+          },
+          "genre": {
+            "type": "string",
+            "title": "Genre",
+            "description": "Music genre",
+            "example": "Classical"
+          },
+          "total_tracks": {
+            "type": "integer",
+            "title": "Total Tracks",
+            "description": "Number of tracks",
+            "example": 12
+          },
+          "total_duration_seconds": {
+            "type": "integer",
+            "title": "Total Duration Seconds",
+            "description": "Total duration",
+            "example": 3600
+          },
+          "suitable_for": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Suitable For",
+            "description": "Suitable class types",
+            "example": [
+              "Beginner",
+              "Meditation"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "playlist_id",
+          "name",
+          "genre",
+          "total_tracks",
+          "total_duration_seconds",
+          "suitable_for"
+        ],
+        "title": "AgentMusicPlaylist",
+        "description": "Simplified music playlist for agents"
+      },
+      "AgentRegisterRequest": {
+        "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "title": "Email",
-            "description": "User email address"
+            "description": "User email address",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "User password (min 8 characters)",
+            "example": "SecurePass123!"
           },
           "full_name": {
             "anyOf": [
@@ -1728,115 +1755,92 @@
               }
             ],
             "title": "Full Name",
-            "description": "User's full name"
-          },
-          "total_classes": {
-            "type": "integer",
-            "title": "Total Classes",
-            "description": "Total classes completed",
-            "default": 0
-          },
-          "current_level": {
-            "type": "string",
-            "title": "Current Level",
-            "description": "Current difficulty level",
-            "default": "Beginner"
+            "description": "User's full name",
+            "example": "Jane Doe"
           }
         },
         "type": "object",
         "required": [
-          "user_id",
-          "email"
+          "email",
+          "password"
         ],
-        "title": "AgentUserProfile",
-        "description": "Simplified user profile for agents"
+        "title": "AgentRegisterRequest",
+        "description": "Simplified registration request for agents"
       },
-      "AgentMovementDetail": {
+      "AgentLoginRequest": {
         "properties": {
-          "id": {
+          "email": {
             "type": "string",
-            "title": "Id",
-            "description": "Unique movement identifier"
+            "format": "email",
+            "title": "Email",
+            "description": "User email address",
+            "example": "user@example.com"
           },
-          "name": {
+          "password": {
             "type": "string",
-            "title": "Name",
-            "description": "Movement name",
-            "example": "The Hundred"
+            "title": "Password",
+            "description": "User password",
+            "example": "SecurePass123!"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "AgentLoginRequest",
+        "description": "Simplified login request for agents"
+      },
+      "AgentSavedClass": {
+        "properties": {
+          "class_id": {
+            "type": "string",
+            "title": "Class Id",
+            "description": "Unique class identifier"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "title": "Duration Minutes",
+            "description": "Class duration in minutes"
           },
           "difficulty_level": {
             "type": "string",
             "title": "Difficulty Level",
-            "description": "Difficulty level",
-            "example": "Beginner"
+            "description": "Difficulty level"
           },
-          "primary_muscles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Primary Muscles",
-            "description": "Primary muscles targeted",
-            "example": [
-              "Core"
-            ]
-          },
-          "duration_seconds": {
+          "movement_count": {
             "type": "integer",
-            "title": "Duration Seconds",
-            "description": "Typical duration in seconds",
-            "example": 60
+            "title": "Movement Count",
+            "description": "Number of movements"
           },
-          "description": {
+          "created_at": {
             "type": "string",
-            "title": "Description",
-            "description": "Brief description of the movement"
+            "title": "Created At",
+            "description": "When class was created"
           },
-          "contraindications": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Contraindications",
-            "description": "When to avoid this movement",
-            "example": [
-              "Neck injury",
-              "Lower back pain"
-            ]
+          "last_accessed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Accessed",
+            "description": "When class was last accessed"
           }
         },
         "type": "object",
         "required": [
-          "id",
-          "name",
+          "class_id",
+          "duration_minutes",
           "difficulty_level",
-          "primary_muscles",
-          "duration_seconds",
-          "description"
+          "movement_count",
+          "created_at"
         ],
-        "title": "AgentMovementDetail",
-        "description": "Simplified movement detail for agents"
-      },
-      "AgentSuccessResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success",
-            "description": "Operation succeeded",
-            "default": true
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "description": "Human-readable success message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "message"
-        ],
-        "title": "AgentSuccessResponse",
-        "description": "Standard success response for agents"
+        "title": "AgentSavedClass",
+        "description": "Simplified saved class summary for agents"
       }
     },
     "securitySchemes": {
