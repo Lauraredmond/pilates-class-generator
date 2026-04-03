@@ -22,9 +22,8 @@ info:
 # ============================================
 sourceDescriptions:
   - name: bassline-api
-    url: https://pilates-class-generator-api3.onrender.com
+    url: https://pilates-class-generator-api3.onrender.com/openapi.json
     type: openapi
-    description: Bassline Pilates backend API (production)
 
 # ============================================
 # WORKFLOW: 10-STEP COMPLETE CLASS ASSEMBLY
@@ -145,10 +144,10 @@ workflows:
       - stepId: generate_transitions
         operationId: generate_sequence
         description: Generate safe transitions between movements
-        parameters:
-          - name: movements
-            in: body
-            value: $steps.select_movements_with_levels.outputs.movements
+        requestBody:
+          contentType: application/json
+          payload:
+            movements: $steps.select_movements_with_levels.outputs.movements
         successCriteria:
           - condition: $statusCode == 200
         outputs:
@@ -226,13 +225,11 @@ workflows:
       - stepId: assemble_and_save_class
         operationId: create_class_plan
         description: Assemble complete class from all sections and save
-        parameters:
-          - name: user_id
-            in: body
-            value: $inputs.user_id
-          - name: class_data
-            in: body
-            value:
+        requestBody:
+          contentType: application/json
+          payload:
+            user_id: $inputs.user_id
+            class_data:
               # Section 1: Preparation
               preparation:
                 script: $steps.select_preparation_script.outputs.preparation_script
@@ -281,10 +278,9 @@ workflows:
       class_plan_id: $steps.assemble_and_save_class.outputs.class_plan_id
       complete_class: $steps.assemble_and_save_class.outputs.complete_class
       method: workflow_v2
-      sections:
-        preparation: $steps.select_preparation_script.outputs.preparation_script.script_name
-        warmup: $steps.select_warmup_routine.outputs.warmup_routine.routine_name
-        main_movements: $steps.select_movements_with_levels.outputs.movements
-        cooldown: $steps.select_cooldown_sequence.outputs.cooldown_sequence.sequence_name
-        meditation: $steps.select_closing_meditation.outputs.meditation_script.script_name
-        homecare: $steps.select_homecare_advice.outputs.homecare_advice.advice_name
+      section_preparation: $steps.select_preparation_script.outputs.preparation_script.script_name
+      section_warmup: $steps.select_warmup_routine.outputs.warmup_routine.routine_name
+      section_main_movements: $steps.select_movements_with_levels.outputs.movements
+      section_cooldown: $steps.select_cooldown_sequence.outputs.cooldown_sequence.sequence_name
+      section_meditation: $steps.select_closing_meditation.outputs.meditation_script.script_name
+      section_homecare: $steps.select_homecare_advice.outputs.homecare_advice.advice_name
