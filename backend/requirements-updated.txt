@@ -63,7 +63,7 @@ langchain-community==0.3.31
 langchain-core==1.2.22
 langchain-openai==0.3.35
 langchain-text-splitters==0.3.11
-langsmith==0.4.37
+langsmith==0.6.3
 license-expression==30.4.4
 litellm==1.83.0
 loguru==0.7.2
