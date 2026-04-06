@@ -929,21 +929,18 @@ async def generate_class(request: ClassGenerationRequest):
                 # ==============================================================================
                 try:
                     now = datetime.now().isoformat()
+                    # SCHEMA FIX: Use correct field names matching production schema
                     class_plan_db = {
-                        'name': class_plan['name'],
+                        'title': class_plan['name'],  # FIXED: 'name' → 'title'
                         'user_id': request.user_id,
-                        'movements': class_plan.get('agent_result', {}).get('movements', []),  # Extract movements if structured
+                        'main_sequence': class_plan.get('agent_result', {}).get('movements', []),  # FIXED: 'movements' → 'main_sequence'
                         'duration_minutes': request.duration_minutes,
                         'difficulty_level': request.difficulty,
-                        'notes': f"AI-generated class using GPT-4. Iterations: {result.iterations}",
-                        'muscle_balance': {},  # Agent should provide this
-                        'validation_status': {
-                            'valid': True,
-                            'safety_score': 1.0,
-                            'warnings': []
-                        },
-                        'created_at': now,
-                        'updated_at': now
+                        'description': f"AI-generated class using GPT-4. Iterations: {result.iterations}",  # FIXED: 'notes' → 'description'
+                        'total_movements': len(class_plan.get('agent_result', {}).get('movements', [])),  # ADDED: Required field
+                        'generated_by_ai': True,  # ADDED: AI agent = AI generated
+                        'sequence_validation_passed': True,  # ADDED: Required field
+                        'status': 'ready'  # ADDED: Required field
                     }
 
                     db_response = supabase.table('class_plans').insert(class_plan_db).execute()
@@ -1162,23 +1159,20 @@ async def generate_class(request: ClassGenerationRequest):
             try:
                 now = datetime.now().isoformat()
                 logger.debug(f"🔍 DEBUG: Preparing class_plan_db dict")
+                # SCHEMA FIX: Use correct field names matching production schema
                 class_plan_db = {
-                    'name': class_plan['name'],
+                    'title': class_plan['name'],  # FIXED: 'name' → 'title'
                     'user_id': request.user_id,
-                    'movements': selected_movements,
+                    'main_sequence': selected_movements,  # FIXED: 'movements' → 'main_sequence'
                     'duration_minutes': current_duration // 60,
                     'difficulty_level': request.difficulty,
-                    'notes': "Rule-based class generation (no LLM)",
-                    'muscle_balance': {},
-                    'validation_status': {
-                        'valid': True,
-                        'safety_score': 1.0,
-                        'warnings': []
-                    },
-                    'created_at': now,
-                    'updated_at': now
+                    'description': "Rule-based class generation (no LLM)",  # FIXED: 'notes' → 'description'
+                    'total_movements': len(selected_movements),  # ADDED: Required field
+                    'generated_by_ai': False,  # ADDED: Direct API = not AI generated
+                    'sequence_validation_passed': True,  # ADDED: Required field
+                    'status': 'ready'  # ADDED: Required field
                 }
-                logger.debug(f"🔍 DEBUG: Inserting into class_plans table")
+                logger.debug(f"🔍 DEBUG: Inserting into class_plans table with {len(selected_movements)} movements")
 
                 db_response = supabase.table('class_plans').insert(class_plan_db).execute()
                 logger.debug(f"🔍 DEBUG: class_plans insert response: {db_response.data is not None}")
