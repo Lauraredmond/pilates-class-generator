@@ -486,7 +486,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
     return JSONResponse(
         status_code=422,
-        content=problem.model_dump(exclude_none=True),
+        content=problem.model_dump(mode='json', exclude_none=True),
         headers={"Content-Type": "application/problem+json"}
     )
 
@@ -519,7 +519,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
     return JSONResponse(
         status_code=500,
-        content=problem.model_dump(exclude_none=True),
+        content=problem.model_dump(mode='json', exclude_none=True),
         headers={"Content-Type": "application/problem+json"}
     )
 
