@@ -1085,16 +1085,22 @@ async def generate_class(request: ClassGenerationRequest):
         # ROUTE 2: DIRECT API (Simple Rule-Based Generation)
         # ==============================================================================
         if not use_agent:
+            logger.debug(f"🔍 DEBUG: Starting Direct API path for user {request.user_id}")
+
             # Fetch appropriate movements from database
+            logger.debug(f"🔍 DEBUG: Querying movements table for difficulty={request.difficulty}")
             movements_response = supabase.table('movements').select('*').eq('difficulty_level', request.difficulty).limit(10).execute()
+            logger.debug(f"🔍 DEBUG: Movements query returned {len(movements_response.data) if movements_response.data else 0} results")
 
             if not movements_response.data:
+                logger.error(f"❌ No movements found for difficulty level: {request.difficulty}")
                 raise HTTPException(
                     status_code=404,
                     detail=f"No movements found for difficulty level: {request.difficulty}"
                 )
 
             movements = movements_response.data
+            logger.debug(f"🔍 DEBUG: Processing {len(movements)} movements for class generation")
 
             # Simple selection: first N movements that fit duration
             target_seconds = request.duration_minutes * 60
@@ -1103,10 +1109,13 @@ async def generate_class(request: ClassGenerationRequest):
             current_duration = 0
 
             for i, movement in enumerate(movements):
+                logger.debug(f"🔍 DEBUG: Processing movement {i+1}/{len(movements)}: {movement.get('name', 'Unknown')}")
                 movement_duration = movement.get('duration_seconds', 60)
                 if current_duration + movement_duration <= target_seconds:
                     # Fetch muscle groups from junction table
+                    logger.debug(f"🔍 DEBUG: Fetching muscle groups for movement ID {movement.get('id')}")
                     muscle_groups = get_movement_muscle_groups(movement['id'])
+                    logger.debug(f"🔍 DEBUG: Got muscle groups: {muscle_groups}")
 
                     # For API response
                     selected_movements.append({
@@ -1128,7 +1137,10 @@ async def generate_class(request: ClassGenerationRequest):
                     current_duration += movement_duration
 
                 if current_duration >= target_seconds:
+                    logger.debug(f"🔍 DEBUG: Reached target duration ({current_duration}s >= {target_seconds}s)")
                     break
+
+            logger.debug(f"🔍 DEBUG: Selected {len(selected_movements)} movements, total duration {current_duration}s")
 
             class_plan = {
                 "name": f"{request.difficulty} Pilates Class ({request.duration_minutes} min)",
@@ -1138,14 +1150,18 @@ async def generate_class(request: ClassGenerationRequest):
                 "difficulty_level": request.difficulty,
                 "generated_by": "direct_api"
             }
+            logger.debug(f"🔍 DEBUG: Created class_plan dict with {len(class_plan.get('movements', []))} movements")
 
             processing_time_ms = (time.time() - start_time) * 1000
+            logger.debug(f"🔍 DEBUG: Processing time so far: {processing_time_ms:.2f}ms")
 
             # ==============================================================================
             # SAVE TO DATABASE: Persist class for analytics (Direct API route)
             # ==============================================================================
+            logger.debug(f"🔍 DEBUG: Starting database save operations")
             try:
                 now = datetime.now().isoformat()
+                logger.debug(f"🔍 DEBUG: Preparing class_plan_db dict")
                 class_plan_db = {
                     'name': class_plan['name'],
                     'user_id': request.user_id,
@@ -1162,15 +1178,18 @@ async def generate_class(request: ClassGenerationRequest):
                     'created_at': now,
                     'updated_at': now
                 }
+                logger.debug(f"🔍 DEBUG: Inserting into class_plans table")
 
                 db_response = supabase.table('class_plans').insert(class_plan_db).execute()
+                logger.debug(f"🔍 DEBUG: class_plans insert response: {db_response.data is not None}")
                 if db_response.data:
                     class_plan['id'] = db_response.data[0]['id']
-                    logger.info(f"✅ Saved Direct API class to class_plans table for user {request.user_id}")
+                    logger.info(f"✅ Saved Direct API class to class_plans table for user {request.user_id} (ID: {class_plan['id']})")
 
                     # ==============================================================================
                     # ANALYTICS FIX: Also save to class_history table for analytics tracking
                     # ==============================================================================
+                    logger.debug(f"🔍 DEBUG: Preparing class_history_entry")
                     try:
                         class_history_entry = {
                             'class_plan_id': db_response.data[0]['id'],
@@ -1185,6 +1204,7 @@ async def generate_class(request: ClassGenerationRequest):
                             'total_movements_taught': len(selected_movements),
                             'created_at': now
                         }
+                        logger.debug(f"🔍 DEBUG: Inserting into class_history table")
 
                         supabase.table('class_history').insert(class_history_entry).execute()
                         logger.info(f"✅ Saved to class_history table for analytics tracking (user {request.user_id})")
@@ -1228,7 +1248,11 @@ async def generate_class(request: ClassGenerationRequest):
                 # Don't fail the request if logging fails
                 logger.error(f"❌ Failed to log direct API usage: {log_error}", exc_info=True)
 
-            return ClassGenerationResponse(
+            logger.debug(f"🔍 DEBUG: Preparing to return ClassGenerationResponse")
+            logger.debug(f"🔍 DEBUG: class_plan keys: {list(class_plan.keys())}")
+            logger.debug(f"🔍 DEBUG: class_plan has ID: {'id' in class_plan}")
+
+            response = ClassGenerationResponse(
                 class_plan=class_plan,
                 method="direct_api",
                 iterations=None,
@@ -1236,11 +1260,16 @@ async def generate_class(request: ClassGenerationRequest):
                 cost_estimate="$0.00",
                 processing_time_ms=processing_time_ms
             )
+            logger.debug(f"🔍 DEBUG: Successfully created ClassGenerationResponse")
+            return response
 
     except HTTPException:
+        logger.debug(f"🔍 DEBUG: HTTPException caught, re-raising")
         raise
     except Exception as e:
         logger.error(f"Error generating class: {e}", exc_info=True)
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Error args: {e.args}")
         raise HTTPException(
             status_code=500,
             detail=ErrorMessages.INTERNAL_ERROR
