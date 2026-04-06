@@ -33,7 +33,7 @@ cffi==2.0.0
 pycparser==2.23
 
 # Other core dependencies
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 loguru==0.7.2
 PyYAML==6.0.1
 typing-extensions==4.14.1
