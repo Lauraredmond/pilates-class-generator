@@ -237,7 +237,7 @@ def custom_openapi():
                     "application/problem+json": {
                         "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
                         "example": {
-                            "type": "https://api.basslinepilates.com/errors/validation-error",
+                            "type": "urn:pilates-api:error:validation-error",
                             "title": "Bad Request",
                             "status": 400,
                             "detail": "The request contains invalid or malformed data.",
@@ -252,7 +252,7 @@ def custom_openapi():
                     "application/problem+json": {
                         "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
                         "example": {
-                            "type": "https://api.basslinepilates.com/errors/authentication-required",
+                            "type": "urn:pilates-api:error:authentication-required",
                             "title": "Unauthorized",
                             "status": 401,
                             "detail": "Authentication is required to access this resource.",
@@ -267,7 +267,7 @@ def custom_openapi():
                     "application/problem+json": {
                         "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
                         "example": {
-                            "type": "https://api.basslinepilates.com/errors/insufficient-permissions",
+                            "type": "urn:pilates-api:error:insufficient-permissions",
                             "title": "Forbidden",
                             "status": 403,
                             "detail": "You do not have permission to access this resource.",
@@ -282,7 +282,7 @@ def custom_openapi():
                     "application/problem+json": {
                         "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
                         "example": {
-                            "type": "https://api.basslinepilates.com/errors/resource-not-found",
+                            "type": "urn:pilates-api:error:resource-not-found",
                             "title": "Not Found",
                             "status": 404,
                             "detail": "The requested resource was not found.",
@@ -297,7 +297,7 @@ def custom_openapi():
                     "application/problem+json": {
                         "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
                         "example": {
-                            "type": "https://api.basslinepilates.com/errors/validation-error",
+                            "type": "urn:pilates-api:error:validation-error",
                             "title": "Validation Error",
                             "status": 422,
                             "detail": "Validation failed for field 'difficulty_level': value is not a valid enumeration member",
@@ -312,7 +312,7 @@ def custom_openapi():
                     "application/problem+json": {
                         "schema": {"$ref": "#/components/schemas/RFC9457ProblemDetail"},
                         "example": {
-                            "type": "https://api.basslinepilates.com/errors/internal-server-error",
+                            "type": "urn:pilates-api:error:internal-server-error",
                             "title": "Internal Server Error",
                             "status": 500,
                             "detail": "An unexpected error occurred while processing your request.",

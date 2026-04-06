@@ -172,7 +172,7 @@ class RFC9457ProblemDetail(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "type": "https://api.basslinepilates.com/errors/validation-error",
+                "type": "urn:pilates-api:error:validation-error",
                 "title": "Validation Error",
                 "status": 400,
                 "detail": "The 'difficulty_level' field must be one of: Beginner, Intermediate, Advanced. Received: 'Expert'.",
@@ -186,45 +186,45 @@ class RFC9457ProblemDetail(BaseModel):
 # Error type URIs (for RFC 9457 'type' field)
 class ProblemTypes:
     """
-    Problem type URIs for common error scenarios
-    These URIs can resolve to documentation pages explaining the error type
+    Problem type URNs for common error scenarios
+    Using URN format instead of HTTP URLs to avoid referencing non-existent domains
     """
-    BASE_URL = "https://api.basslinepilates.com/errors"
+    BASE_URN = "urn:pilates-api:error"
 
     # 400 Bad Request errors
-    VALIDATION_ERROR = f"{BASE_URL}/validation-error"
-    INVALID_DIFFICULTY = f"{BASE_URL}/invalid-difficulty"
-    INVALID_DURATION = f"{BASE_URL}/invalid-duration"
-    MISSING_REQUIRED_FIELD = f"{BASE_URL}/missing-required-field"
+    VALIDATION_ERROR = f"{BASE_URN}:validation-error"
+    INVALID_DIFFICULTY = f"{BASE_URN}:invalid-difficulty"
+    INVALID_DURATION = f"{BASE_URN}:invalid-duration"
+    MISSING_REQUIRED_FIELD = f"{BASE_URN}:missing-required-field"
 
     # 401 Unauthorized errors
-    AUTHENTICATION_REQUIRED = f"{BASE_URL}/authentication-required"
-    INVALID_TOKEN = f"{BASE_URL}/invalid-token"
-    EXPIRED_TOKEN = f"{BASE_URL}/expired-token"
+    AUTHENTICATION_REQUIRED = f"{BASE_URN}:authentication-required"
+    INVALID_TOKEN = f"{BASE_URN}:invalid-token"
+    EXPIRED_TOKEN = f"{BASE_URN}:expired-token"
 
     # 403 Forbidden errors
-    INSUFFICIENT_PERMISSIONS = f"{BASE_URL}/insufficient-permissions"
-    BETA_ACCESS_REQUIRED = f"{BASE_URL}/beta-access-required"
+    INSUFFICIENT_PERMISSIONS = f"{BASE_URN}:insufficient-permissions"
+    BETA_ACCESS_REQUIRED = f"{BASE_URN}:beta-access-required"
 
     # 404 Not Found errors
-    RESOURCE_NOT_FOUND = f"{BASE_URL}/resource-not-found"
-    MOVEMENT_NOT_FOUND = f"{BASE_URL}/movement-not-found"
-    CLASS_NOT_FOUND = f"{BASE_URL}/class-not-found"
-    USER_NOT_FOUND = f"{BASE_URL}/user-not-found"
+    RESOURCE_NOT_FOUND = f"{BASE_URN}:resource-not-found"
+    MOVEMENT_NOT_FOUND = f"{BASE_URN}:movement-not-found"
+    CLASS_NOT_FOUND = f"{BASE_URN}:class-not-found"
+    USER_NOT_FOUND = f"{BASE_URN}:user-not-found"
 
     # 409 Conflict errors
-    EMAIL_ALREADY_EXISTS = f"{BASE_URL}/email-already-exists"
-    RESOURCE_CONFLICT = f"{BASE_URL}/resource-conflict"
+    EMAIL_ALREADY_EXISTS = f"{BASE_URN}:email-already-exists"
+    RESOURCE_CONFLICT = f"{BASE_URN}:resource-conflict"
 
     # 422 Unprocessable Entity errors
-    SAFETY_RULE_VIOLATION = f"{BASE_URL}/safety-rule-violation"
-    SEQUENCE_GENERATION_FAILED = f"{BASE_URL}/sequence-generation-failed"
+    SAFETY_RULE_VIOLATION = f"{BASE_URN}:safety-rule-violation"
+    SEQUENCE_GENERATION_FAILED = f"{BASE_URN}:sequence-generation-failed"
 
     # 500 Internal Server Error
-    DATABASE_ERROR = f"{BASE_URL}/database-error"
-    AI_AGENT_ERROR = f"{BASE_URL}/ai-agent-error"
-    INTERNAL_SERVER_ERROR = f"{BASE_URL}/internal-server-error"
+    DATABASE_ERROR = f"{BASE_URN}:database-error"
+    AI_AGENT_ERROR = f"{BASE_URN}:ai-agent-error"
+    INTERNAL_SERVER_ERROR = f"{BASE_URN}:internal-server-error"
 
     # 503 Service Unavailable
-    SERVICE_UNAVAILABLE = f"{BASE_URL}/service-unavailable"
-    RATE_LIMIT_EXCEEDED = f"{BASE_URL}/rate-limit-exceeded"
+    SERVICE_UNAVAILABLE = f"{BASE_URN}:service-unavailable"
+    RATE_LIMIT_EXCEEDED = f"{BASE_URN}:rate-limit-exceeded"

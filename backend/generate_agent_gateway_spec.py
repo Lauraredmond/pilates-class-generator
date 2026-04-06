@@ -107,13 +107,10 @@ Get your token from the login endpoint.
 
 ## 🛠️ Support
 
-- Docs: https://docs.basslinepilates.com
-- Issues: https://github.com/basslinepilates/api/issues
+For API support, refer to the API documentation endpoint at `/api/docs`.
 """,
             "contact": {
-                "name": "Bassline Pilates API Support",
-                "url": "https://docs.basslinepilates.com",
-                "email": "support@basslinepilates.com"
+                "name": "Bassline Pilates API Support"
             },
             "license": {
                 "name": "MIT",

@@ -20,12 +20,10 @@ info:
     \ except `/api/agent/auth/login` and `/api/agent/auth/register` require:\n\n```\n\
     Authorization: Bearer <access_token>\n```\n\nGet your token from the login endpoint.\n\
     \n## \U0001F4C8 Rate Limits\n\n- Free tier: 100 requests/hour\n- Pro tier: 1000\
-    \ requests/hour\n\n## \U0001F6E0\uFE0F Support\n\n- Docs: https://docs.basslinepilates.com\n\
-    - Issues: https://github.com/basslinepilates/api/issues\n"
+    \ requests/hour\n\n## \U0001F6E0\uFE0F Support\n\nFor API support, refer to the\
+    \ API documentation endpoint at `/api/docs`.\n"
   contact:
     name: Bassline Pilates API Support
-    url: https://docs.basslinepilates.com
-    email: support@basslinepilates.com
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -64,7 +62,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/validation-error
+                type: urn:pilates-api:error:validation-error
                 title: Validation Error
                 status: 422
                 detail: 'Validation failed for field ''difficulty_level'': value is
@@ -77,7 +75,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -89,7 +87,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/validation-error
+                type: urn:pilates-api:error:validation-error
                 title: Bad Request
                 status: 400
                 detail: The request contains invalid or malformed data.
@@ -101,7 +99,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -113,7 +111,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -147,7 +145,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/validation-error
+                type: urn:pilates-api:error:validation-error
                 title: Validation Error
                 status: 422
                 detail: 'Validation failed for field ''difficulty_level'': value is
@@ -160,7 +158,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -172,7 +170,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/validation-error
+                type: urn:pilates-api:error:validation-error
                 title: Bad Request
                 status: 400
                 detail: The request contains invalid or malformed data.
@@ -184,7 +182,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -196,7 +194,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -224,7 +222,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -236,7 +234,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -248,7 +246,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -284,7 +282,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/validation-error
+                type: urn:pilates-api:error:validation-error
                 title: Validation Error
                 status: 422
                 detail: 'Validation failed for field ''difficulty_level'': value is
@@ -297,7 +295,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -309,7 +307,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/validation-error
+                type: urn:pilates-api:error:validation-error
                 title: Bad Request
                 status: 400
                 detail: The request contains invalid or malformed data.
@@ -321,7 +319,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -333,7 +331,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -384,7 +382,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -396,7 +394,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -408,7 +406,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -452,7 +450,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -464,7 +462,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/resource-not-found
+                type: urn:pilates-api:error:resource-not-found
                 title: Not Found
                 status: 404
                 detail: The requested resource was not found.
@@ -476,7 +474,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -488,7 +486,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -531,7 +529,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -543,7 +541,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/resource-not-found
+                type: urn:pilates-api:error:resource-not-found
                 title: Not Found
                 status: 404
                 detail: The requested resource was not found.
@@ -555,7 +553,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -567,7 +565,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -595,7 +593,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -607,7 +605,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -619,7 +617,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -669,7 +667,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -681,7 +679,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -693,7 +691,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -741,7 +739,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -753,7 +751,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -765,7 +763,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -810,7 +808,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -822,7 +820,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -834,7 +832,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -879,7 +877,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -891,7 +889,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -903,7 +901,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -948,7 +946,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -960,7 +958,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -972,7 +970,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -1018,7 +1016,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -1030,7 +1028,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -1042,7 +1040,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -1070,7 +1068,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -1082,7 +1080,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -1094,7 +1092,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -1163,7 +1161,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -1175,7 +1173,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -1187,7 +1185,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -1234,7 +1232,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -1246,7 +1244,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -1258,7 +1256,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -1286,7 +1284,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/internal-server-error
+                type: urn:pilates-api:error:internal-server-error
                 title: Internal Server Error
                 status: 500
                 detail: An unexpected error occurred while processing your request.
@@ -1298,7 +1296,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/authentication-required
+                type: urn:pilates-api:error:authentication-required
                 title: Unauthorized
                 status: 401
                 detail: Authentication is required to access this resource.
@@ -1310,7 +1308,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RFC9457ProblemDetail'
               example:
-                type: https://api.basslinepilates.com/errors/insufficient-permissions
+                type: urn:pilates-api:error:insufficient-permissions
                 title: Forbidden
                 status: 403
                 detail: You do not have permission to access this resource.
@@ -1319,102 +1317,141 @@ paths:
       security: []
 components:
   schemas:
-    AgentTimeSeriesData:
+    AgentMusicPlaylist:
       properties:
-        label:
+        playlist_id:
           type: string
-          title: Label
-          description: Movement or muscle group name
-          example: The Hundred
-        periods:
-          items:
-            type: integer
-          type: array
-          title: Periods
-          description: Counts for each time period
-          example:
-          - 2
-          - 5
-          - 3
-          - 4
-        period_labels:
-          items:
-            type: string
-          type: array
-          title: Period Labels
-          description: Labels for each period
-          example:
-          - Week 1
-          - Week 2
-          - Week 3
-          - Week 4
-        total:
+          title: Playlist Id
+          description: Unique playlist identifier
+        name:
+          type: string
+          title: Name
+          description: Playlist name
+          example: Classical Calm
+        genre:
+          type: string
+          title: Genre
+          description: Music genre
+          example: Classical
+        total_tracks:
           type: integer
-          title: Total
-          description: Total count across all periods
-          example: 14
-      type: object
-      required:
-      - label
-      - periods
-      - period_labels
-      - total
-      title: AgentTimeSeriesData
-      description: Time series data for analytics views (simplified from analytics.py)
-    AgentDifficultyProgressionData:
-      properties:
-        period_labels:
+          title: Total Tracks
+          description: Number of tracks
+          example: 12
+        total_duration_seconds:
+          type: integer
+          title: Total Duration Seconds
+          description: Total duration
+          example: 3600
+        suitable_for:
           items:
             type: string
           type: array
-          title: Period Labels
-          description: Period labels
+          title: Suitable For
+          description: Suitable class types
           example:
-          - Week 1
-          - Week 2
-          - Week 3
-          - Week 4
-        beginner_counts:
-          items:
-            type: integer
-          type: array
-          title: Beginner Counts
-          description: Beginner class counts
-          example:
-          - 2
-          - 1
-          - 0
-          - 0
-        intermediate_counts:
-          items:
-            type: integer
-          type: array
-          title: Intermediate Counts
-          description: Intermediate class counts
-          example:
-          - 1
-          - 3
-          - 2
-          - 2
-        advanced_counts:
-          items:
-            type: integer
-          type: array
-          title: Advanced Counts
-          description: Advanced class counts
-          example:
-          - 0
-          - 1
-          - 2
-          - 2
+          - Beginner
+          - Meditation
       type: object
       required:
-      - period_labels
-      - beginner_counts
-      - intermediate_counts
-      - advanced_counts
-      title: AgentDifficultyProgressionData
-      description: Difficulty progression chart data (simplified from analytics.py)
+      - playlist_id
+      - name
+      - genre
+      - total_tracks
+      - total_duration_seconds
+      - suitable_for
+      title: AgentMusicPlaylist
+      description: Simplified music playlist for agents
+    AgentClassResponse:
+      properties:
+        class_id:
+          type: string
+          title: Class Id
+          description: Unique class identifier
+        duration_minutes:
+          type: integer
+          title: Duration Minutes
+          description: Total class duration in minutes
+        difficulty_level:
+          type: string
+          title: Difficulty Level
+          description: Class difficulty level
+        movement_count:
+          type: integer
+          title: Movement Count
+          description: Number of movements in class
+        movements:
+          items:
+            $ref: '#/components/schemas/AgentMovementSummary'
+          type: array
+          title: Movements
+          description: List of movements
+        has_music:
+          type: boolean
+          title: Has Music
+          description: Whether class includes music
+        has_meditation:
+          type: boolean
+          title: Has Meditation
+          description: Whether class includes meditation
+        music:
+          anyOf:
+          - $ref: '#/components/schemas/AgentMusicSummary'
+          - type: 'null'
+          description: Music summary (if included)
+        created_at:
+          type: string
+          title: Created At
+          description: When class was created (ISO 8601)
+      type: object
+      required:
+      - class_id
+      - duration_minutes
+      - difficulty_level
+      - movement_count
+      - movements
+      - has_music
+      - has_meditation
+      - created_at
+      title: AgentClassResponse
+      description: Simplified class response for agents
+    AgentSavedClass:
+      properties:
+        class_id:
+          type: string
+          title: Class Id
+          description: Unique class identifier
+        duration_minutes:
+          type: integer
+          title: Duration Minutes
+          description: Class duration in minutes
+        difficulty_level:
+          type: string
+          title: Difficulty Level
+          description: Difficulty level
+        movement_count:
+          type: integer
+          title: Movement Count
+          description: Number of movements
+        created_at:
+          type: string
+          title: Created At
+          description: When class was created
+        last_accessed:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Accessed
+          description: When class was last accessed
+      type: object
+      required:
+      - class_id
+      - duration_minutes
+      - difficulty_level
+      - movement_count
+      - created_at
+      title: AgentSavedClass
+      description: Simplified saved class summary for agents
     AgentPracticeFrequencyData:
       properties:
         period_labels:
@@ -1458,7 +1495,7 @@ components:
         status: 400
         timestamp: '2025-12-11T10:30:00Z'
         title: Validation Error
-        type: https://api.basslinepilates.com/errors/validation-error
+        type: urn:pilates-api:error:validation-error
       properties:
         type:
           default: about:blank
@@ -1512,244 +1549,6 @@ components:
       - detail
       title: RFC9457ProblemDetail
       type: object
-    AgentRegisterRequest:
-      properties:
-        email:
-          type: string
-          format: email
-          title: Email
-          description: User email address
-          example: user@example.com
-        password:
-          type: string
-          minLength: 8
-          title: Password
-          description: User password (min 8 characters)
-          example: SecurePass123!
-        full_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Full Name
-          description: User's full name
-          example: Jane Doe
-      type: object
-      required:
-      - email
-      - password
-      title: AgentRegisterRequest
-      description: Simplified registration request for agents
-    AgentAuthResponse:
-      properties:
-        access_token:
-          type: string
-          title: Access Token
-          description: JWT access token for API authentication
-        user_id:
-          type: string
-          title: User Id
-          description: Unique user identifier
-        email:
-          type: string
-          title: Email
-          description: User email address
-      type: object
-      required:
-      - access_token
-      - user_id
-      - email
-      title: AgentAuthResponse
-      description: Simplified auth response for agents
-    AgentLoginRequest:
-      properties:
-        email:
-          type: string
-          format: email
-          title: Email
-          description: User email address
-          example: user@example.com
-        password:
-          type: string
-          title: Password
-          description: User password
-          example: SecurePass123!
-      type: object
-      required:
-      - email
-      - password
-      title: AgentLoginRequest
-      description: Simplified login request for agents
-    AgentGenerateClassRequest:
-      properties:
-        duration_minutes:
-          type: integer
-          maximum: 120.0
-          minimum: 10.0
-          title: Duration Minutes
-          description: Class duration in minutes (10-120)
-          example: 60
-        difficulty_level:
-          type: string
-          title: Difficulty Level
-          description: 'Difficulty level: Beginner, Intermediate, or Advanced'
-          example: Beginner
-        focus_areas:
-          anyOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-          title: Focus Areas
-          description: Optional muscle groups to emphasize (e.g., core, legs, back)
-          example:
-          - core
-          - back
-        include_music:
-          type: boolean
-          title: Include Music
-          description: Include music playlist in the class
-          default: true
-        include_meditation:
-          type: boolean
-          title: Include Meditation
-          description: Include closing meditation script
-          default: true
-      type: object
-      required:
-      - duration_minutes
-      - difficulty_level
-      title: AgentGenerateClassRequest
-      description: Simplified class generation request for agents
-    AgentMusicPlaylist:
-      properties:
-        playlist_id:
-          type: string
-          title: Playlist Id
-          description: Unique playlist identifier
-        name:
-          type: string
-          title: Name
-          description: Playlist name
-          example: Classical Calm
-        genre:
-          type: string
-          title: Genre
-          description: Music genre
-          example: Classical
-        total_tracks:
-          type: integer
-          title: Total Tracks
-          description: Number of tracks
-          example: 12
-        total_duration_seconds:
-          type: integer
-          title: Total Duration Seconds
-          description: Total duration
-          example: 3600
-        suitable_for:
-          items:
-            type: string
-          type: array
-          title: Suitable For
-          description: Suitable class types
-          example:
-          - Beginner
-          - Meditation
-      type: object
-      required:
-      - playlist_id
-      - name
-      - genre
-      - total_tracks
-      - total_duration_seconds
-      - suitable_for
-      title: AgentMusicPlaylist
-      description: Simplified music playlist for agents
-    AgentSavedClass:
-      properties:
-        class_id:
-          type: string
-          title: Class Id
-          description: Unique class identifier
-        duration_minutes:
-          type: integer
-          title: Duration Minutes
-          description: Class duration in minutes
-        difficulty_level:
-          type: string
-          title: Difficulty Level
-          description: Difficulty level
-        movement_count:
-          type: integer
-          title: Movement Count
-          description: Number of movements
-        created_at:
-          type: string
-          title: Created At
-          description: When class was created
-        last_accessed:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Last Accessed
-          description: When class was last accessed
-      type: object
-      required:
-      - class_id
-      - duration_minutes
-      - difficulty_level
-      - movement_count
-      - created_at
-      title: AgentSavedClass
-      description: Simplified saved class summary for agents
-    AgentSuccessResponse:
-      properties:
-        success:
-          type: boolean
-          title: Success
-          description: Operation succeeded
-          default: true
-        message:
-          type: string
-          title: Message
-          description: Human-readable success message
-      type: object
-      required:
-      - message
-      title: AgentSuccessResponse
-      description: Standard success response for agents
-    AgentUserProfile:
-      properties:
-        user_id:
-          type: string
-          title: User Id
-          description: Unique user identifier
-        email:
-          type: string
-          title: Email
-          description: User email address
-        full_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Full Name
-          description: User's full name
-        total_classes:
-          type: integer
-          title: Total Classes
-          description: Total classes completed
-          default: 0
-        current_level:
-          type: string
-          title: Current Level
-          description: Current difficulty level
-          default: Beginner
-      type: object
-      required:
-      - user_id
-      - email
-      title: AgentUserProfile
-      description: Simplified user profile for agents
     HTTPValidationError:
       properties:
         detail:
@@ -1759,6 +1558,34 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
+    AgentMovementFamilyDistributionData:
+      properties:
+        families:
+          items:
+            type: string
+          type: array
+          title: Families
+          description: Movement family names
+          example:
+          - Flexion
+          - Extension
+          - Rotation
+        percentages:
+          items:
+            type: number
+          type: array
+          title: Percentages
+          description: Percentage for each family
+          example:
+          - 40.0
+          - 30.0
+          - 30.0
+      type: object
+      required:
+      - families
+      - percentages
+      title: AgentMovementFamilyDistributionData
+      description: Movement family distribution data (simplified from analytics.py)
     AgentAnalyticsSummary:
       properties:
         total_classes:
@@ -1823,59 +1650,6 @@ components:
       - this_month_classes
       title: AgentAnalyticsSummary
       description: Simplified analytics summary for agents
-    AgentClassResponse:
-      properties:
-        class_id:
-          type: string
-          title: Class Id
-          description: Unique class identifier
-        duration_minutes:
-          type: integer
-          title: Duration Minutes
-          description: Total class duration in minutes
-        difficulty_level:
-          type: string
-          title: Difficulty Level
-          description: Class difficulty level
-        movement_count:
-          type: integer
-          title: Movement Count
-          description: Number of movements in class
-        movements:
-          items:
-            $ref: '#/components/schemas/AgentMovementSummary'
-          type: array
-          title: Movements
-          description: List of movements
-        has_music:
-          type: boolean
-          title: Has Music
-          description: Whether class includes music
-        has_meditation:
-          type: boolean
-          title: Has Meditation
-          description: Whether class includes meditation
-        music:
-          anyOf:
-          - $ref: '#/components/schemas/AgentMusicSummary'
-          - type: 'null'
-          description: Music summary (if included)
-        created_at:
-          type: string
-          title: Created At
-          description: When class was created (ISO 8601)
-      type: object
-      required:
-      - class_id
-      - duration_minutes
-      - difficulty_level
-      - movement_count
-      - movements
-      - has_music
-      - has_meditation
-      - created_at
-      title: AgentClassResponse
-      description: Simplified class response for agents
     AgentPlayStatistics:
       properties:
         total_sessions:
@@ -1912,6 +1686,175 @@ components:
       - completion_rate_percentage
       title: AgentPlayStatistics
       description: User play statistics (simplified from analytics.py)
+    AgentSuccessResponse:
+      properties:
+        success:
+          type: boolean
+          title: Success
+          description: Operation succeeded
+          default: true
+        message:
+          type: string
+          title: Message
+          description: Human-readable success message
+      type: object
+      required:
+      - message
+      title: AgentSuccessResponse
+      description: Standard success response for agents
+    AgentUserProfile:
+      properties:
+        user_id:
+          type: string
+          title: User Id
+          description: Unique user identifier
+        email:
+          type: string
+          title: Email
+          description: User email address
+        full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Name
+          description: User's full name
+        total_classes:
+          type: integer
+          title: Total Classes
+          description: Total classes completed
+          default: 0
+        current_level:
+          type: string
+          title: Current Level
+          description: Current difficulty level
+          default: Beginner
+      type: object
+      required:
+      - user_id
+      - email
+      title: AgentUserProfile
+      description: Simplified user profile for agents
+    AgentLoginRequest:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          title: Password
+          description: User password
+          example: SecurePass123!
+      type: object
+      required:
+      - email
+      - password
+      title: AgentLoginRequest
+      description: Simplified login request for agents
+    AgentRegisterRequest:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          minLength: 8
+          title: Password
+          description: User password (min 8 characters)
+          example: SecurePass123!
+        full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Name
+          description: User's full name
+          example: Jane Doe
+      type: object
+      required:
+      - email
+      - password
+      title: AgentRegisterRequest
+      description: Simplified registration request for agents
+    AgentDifficultyProgressionData:
+      properties:
+        period_labels:
+          items:
+            type: string
+          type: array
+          title: Period Labels
+          description: Period labels
+          example:
+          - Week 1
+          - Week 2
+          - Week 3
+          - Week 4
+        beginner_counts:
+          items:
+            type: integer
+          type: array
+          title: Beginner Counts
+          description: Beginner class counts
+          example:
+          - 2
+          - 1
+          - 0
+          - 0
+        intermediate_counts:
+          items:
+            type: integer
+          type: array
+          title: Intermediate Counts
+          description: Intermediate class counts
+          example:
+          - 1
+          - 3
+          - 2
+          - 2
+        advanced_counts:
+          items:
+            type: integer
+          type: array
+          title: Advanced Counts
+          description: Advanced class counts
+          example:
+          - 0
+          - 1
+          - 2
+          - 2
+      type: object
+      required:
+      - period_labels
+      - beginner_counts
+      - intermediate_counts
+      - advanced_counts
+      title: AgentDifficultyProgressionData
+      description: Difficulty progression chart data (simplified from analytics.py)
+    AgentAuthResponse:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+          description: JWT access token for API authentication
+        user_id:
+          type: string
+          title: User Id
+          description: Unique user identifier
+        email:
+          type: string
+          title: Email
+          description: User email address
+      type: object
+      required:
+      - access_token
+      - user_id
+      - email
+      title: AgentAuthResponse
+      description: Simplified auth response for agents
     AgentMuscleDistributionData:
       properties:
         muscle_groups:
@@ -1943,34 +1886,47 @@ components:
       title: AgentMuscleDistributionData
       description: Muscle distribution data for doughnut/pie chart (simplified from
         analytics.py)
-    AgentMovementFamilyDistributionData:
+    AgentGenerateClassRequest:
       properties:
-        families:
-          items:
-            type: string
-          type: array
-          title: Families
-          description: Movement family names
+        duration_minutes:
+          type: integer
+          maximum: 120.0
+          minimum: 10.0
+          title: Duration Minutes
+          description: Class duration in minutes (10-120)
+          example: 60
+        difficulty_level:
+          type: string
+          title: Difficulty Level
+          description: 'Difficulty level: Beginner, Intermediate, or Advanced'
+          example: Beginner
+        focus_areas:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Focus Areas
+          description: Optional muscle groups to emphasize (e.g., core, legs, back)
           example:
-          - Flexion
-          - Extension
-          - Rotation
-        percentages:
-          items:
-            type: number
-          type: array
-          title: Percentages
-          description: Percentage for each family
-          example:
-          - 40.0
-          - 30.0
-          - 30.0
+          - core
+          - back
+        include_music:
+          type: boolean
+          title: Include Music
+          description: Include music playlist in the class
+          default: true
+        include_meditation:
+          type: boolean
+          title: Include Meditation
+          description: Include closing meditation script
+          default: true
       type: object
       required:
-      - families
-      - percentages
-      title: AgentMovementFamilyDistributionData
-      description: Movement family distribution data (simplified from analytics.py)
+      - duration_minutes
+      - difficulty_level
+      title: AgentGenerateClassRequest
+      description: Simplified class generation request for agents
     AgentMovementDetail:
       properties:
         id:
@@ -2023,6 +1979,48 @@ components:
       - description
       title: AgentMovementDetail
       description: Simplified movement detail for agents
+    AgentTimeSeriesData:
+      properties:
+        label:
+          type: string
+          title: Label
+          description: Movement or muscle group name
+          example: The Hundred
+        periods:
+          items:
+            type: integer
+          type: array
+          title: Periods
+          description: Counts for each time period
+          example:
+          - 2
+          - 5
+          - 3
+          - 4
+        period_labels:
+          items:
+            type: string
+          type: array
+          title: Period Labels
+          description: Labels for each period
+          example:
+          - Week 1
+          - Week 2
+          - Week 3
+          - Week 4
+        total:
+          type: integer
+          title: Total
+          description: Total count across all periods
+          example: 14
+      type: object
+      required:
+      - label
+      - periods
+      - period_labels
+      - total
+      title: AgentTimeSeriesData
+      description: Time series data for analytics views (simplified from analytics.py)
   securitySchemes:
     BearerAuth:
       type: http
