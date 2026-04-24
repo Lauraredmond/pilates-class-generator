@@ -68,7 +68,7 @@ httptools==0.7.1
 # Must be installed AFTER other dependencies
 git+https://github.com/jentic/standard-agent.git@main
 git+https://github.com/jentic/arazzo-engine.git@main#subdirectory=runner
-litellm>=1.83.3  # Security: Latest stable with API security improvements
+litellm>=1.83.7  # Security: Latest stable with API security improvements
 
 # Note: All versions explicitly pinned to prevent pip dependency resolver issues
 # Exception: Jentic libraries installed from GitHub (latest main branch)
