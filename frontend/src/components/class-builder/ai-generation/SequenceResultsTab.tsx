@@ -146,6 +146,40 @@ export function SequenceResultsTab({ data }: SequenceResultsTabProps) {
           ))}
         </div>
       </div>
+
+      {/* Watch Points Summary */}
+      {(() => {
+        const movementsWithWatchPoints = data.movements.filter(
+          (item) => item.type !== 'transition' && item.watch_out_points
+        );
+
+        if (movementsWithWatchPoints.length === 0) {
+          return null;
+        }
+
+        return (
+          <div className="bg-burgundy-dark border border-yellow-500/40 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h4 className="text-sm font-semibold text-cream">Watch Points</h4>
+            </div>
+            <div className="space-y-3">
+              {movementsWithWatchPoints.map((item, index) => (
+                <div key={item.id || `watch-${index}`} className="border-l-2 border-yellow-500/40 pl-3">
+                  <p className="text-sm font-semibold text-cream/90 mb-1">
+                    {item.name}
+                  </p>
+                  <p className="text-sm text-cream/70 leading-relaxed">
+                    {item.watch_out_points}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

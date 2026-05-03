@@ -22,6 +22,7 @@ export interface SequenceResult {
     from_position?: string;
     to_position?: string;
     narrative?: string;
+    watch_out_points?: string;
   }>;
   movement_count: number;
   transition_count: number;
