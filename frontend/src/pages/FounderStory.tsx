@@ -17,7 +17,7 @@ export function FounderStory() {
         </h1>
       </div>
 
-      {/* Founder Story Video - No title, just video */}
+      {/* Marketing Video - No title, just video */}
       <div className="mb-12">
         <div className="w-full max-w-4xl mx-auto">
           <video
@@ -27,7 +27,7 @@ export function FounderStory() {
             style={{ maxHeight: '600px' }}
           >
             <source
-              src="https://pilates-movement-videos.s3.us-east-1.amazonaws.com/FounderStoryVideo.mp4"
+              src="https://informational-videos-basslinepilates.s3.us-east-1.amazonaws.com/MarketingVideo3.mp4"
               type="video/mp4"
             />
             Your browser does not support the video tag.
@@ -37,21 +37,14 @@ export function FounderStory() {
 
       {/* Story Content */}
       <div className="space-y-12">
-        {/* Section 1: The Idea */}
+        {/* Section 1: Why I built this app */}
         <section className="bg-burgundy-dark/40 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-cream/10 shadow-xl">
           <h2 className="text-3xl font-semibold text-cream mb-6">
-            The Idea
+            Why I built this app
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-            I created this two step fitness app to help people discover the reward and accessibility of fitness.
-            By combining human support, dynamic exercise planning, and music as an enhancer, the platform is built to make fitness more enjoyable
-            – and ultimately, more sustainable.
-            </p>
-            <p>
-            I have known too many who've discovered powerfully rewarding exercise regimes which they could have known earlier. 
-            Similarly, I've encountered really keen exercisers who dropped off through life's invariably competing demands. 
-            I'm passionate about creating tools to fix these problems. Here is my story…
+            I created this fitness app to help both Pilates instructors and practitioners with their distinct, individual Pilates needs. By combining Pilates class planning rules, automated record keeping, and music as an enhancer, the platform is built to make fitness more accessible and enjoyable - and ultimately, more sustainable.
             </p>
           </div>
         </section>
@@ -74,6 +67,24 @@ export function FounderStory() {
             <p>
             It's for that reason I want to help others experience the transformative effects of exercise and movement – and discover that there's more than one way to fall in love with fitness.
             </p>
+          </div>
+
+          {/* Founder Story Video */}
+          <div className="mt-8">
+            <div className="w-full max-w-4xl mx-auto">
+              <video
+                className="w-full rounded-lg shadow-2xl border border-cream/20"
+                controls
+                preload="auto"
+                style={{ maxHeight: '600px' }}
+              >
+                <source
+                  src="https://pilates-movement-videos.s3.us-east-1.amazonaws.com/FounderStoryVideo.mp4"
+                  type="video/mp4"
+                />
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
         </section>
 
