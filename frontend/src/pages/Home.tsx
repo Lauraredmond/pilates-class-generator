@@ -25,8 +25,8 @@ export function Home() {
       {/* Hero Image */}
       <div className="relative w-full h-48 md:h-64 lg:h-80 rounded-xl overflow-hidden mb-4 shadow-glow">
         <img
-          src="/assets/hero-empowered-woman.jpg"
-          alt="Empowered woman at the height of her fitness journey"
+          src="/assets/pilates-hero.jpg"
+          alt="Pilates practice"
           className="w-full h-full object-cover object-center transform hover:scale-105 transition-smooth"
         />
         <div className="absolute inset-0 bg-hero-gradient opacity-20"></div>
