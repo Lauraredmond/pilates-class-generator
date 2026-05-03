@@ -29,7 +29,7 @@ langchain-openai==0.3.35  # Updated for langchain compatibility
 # Jentic AI Agent Framework (integrated orchestration)
 git+https://github.com/jentic/standard-agent.git@main
 git+https://github.com/jentic/arazzo-engine.git@main#subdirectory=runner
-litellm>=1.83.3  # Security: Latest stable with API security improvements
+litellm>=1.83.7  # Security: Latest stable with API security improvements
 pyyaml>=6.0.1
 
 # MCP (Model Context Protocol)
