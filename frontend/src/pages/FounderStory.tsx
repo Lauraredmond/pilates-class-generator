@@ -95,20 +95,7 @@ export function FounderStory() {
           </h2>
           <div className="space-y-4 text-cream/80 text-lg leading-relaxed">
             <p>
-              I built Bassline on the basis that Joseph Pilates' classical Pilates methods were highly rules based and, though detailed, lent themselves extremely well to automation.
-              When I was challenged on what real problem this platform could solve, I started thinking more broadly.
-             
-              What if, instead of just a Pilates class generator, we created a shared platform where people could document and track the fitness routines that work uniquely for them?
-              </p>
-              <p>
-              The idea itself wasn't new: give people access to a network of instructors who share their expertise, mindset, and approach - so anyone can shape a routine that
-              suits their goals and preferences.
-              But when I spoke with the fitness instructors and coaches I've admired throughout my time, a theme kept coming up: the psychology of fitness is
-              treated with very different levels of care and quality.
-              </p>
-              <p>
-              That insight, coupled with my own experience, pushed me toward what Bassline could really offer - a network of shared philosophies and mantras
-              that help people stay consistent, confident, and connected not to where or when they exercise, buy why.
+              I built Bassline on the basis that Joseph Pilates' classical Pilates methods were highly rules based and, though detailed, lent themselves extremely well to automation. We're all time-poor, and automation helps uplift quality while saving us time in any discipline, Pilates being no different. My hope is that this tool helps both teachers and students of Pilates refine their craft and practise more easily and often.
             </p>
           </div>
         </section>
