@@ -36,10 +36,11 @@ export function Home() {
       <div className="space-y-3 mb-5">
         {/* Primary Button - Renamed */}
         <Button
-          className="w-full"
+          className="w-full opacity-50 cursor-not-allowed"
           size="lg"
-          onClick={() => navigate('/classes')}
+          onClick={() => {}}
           variant="primary"
+          disabled
         >
           Create my training plan
         </Button>
