@@ -51,9 +51,24 @@ async def get_all_users(
     """
     Get all users with filtering options (admin only).
 
-    Returns user profiles with statistics.
+    Returns user profiles with statistics and total count.
     """
     try:
+        # Build query for total count
+        count_query = supabase.table("user_profiles").select("id", count="exact")
+
+        # Add filters to count query
+        if user_type:
+            count_query = count_query.eq("user_type", user_type)
+
+        if search:
+            # Supabase doesn't support OR in a single query, so we'll filter on email only
+            count_query = count_query.ilike("email", f"%{search}%")
+
+        # Get total count
+        count_result = count_query.execute()
+        total_count = count_result.count if hasattr(count_result, 'count') else 0
+
         # Build query for user profiles
         query = supabase.table("user_profiles").select("*")
 
@@ -82,7 +97,12 @@ async def get_all_users(
             else:
                 user["total_sessions"] = 0
 
-        return users
+        return {
+            "users": users,
+            "total": total_count,
+            "limit": limit,
+            "offset": offset
+        }
 
     except Exception as e:
         logger.error(f"Error fetching users: {e}")

@@ -27,6 +27,9 @@ export function AdminPanel() {
   const [exerciseStats, setExerciseStats] = useState<ExerciseStats[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const usersPerPage = 50;
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalCoaches: 0,
@@ -42,6 +45,13 @@ export function AdminPanel() {
   }
 
   useEffect(() => {
+    // Reset to page 1 when switching tabs
+    if (activeTab === 'users') {
+      setCurrentPage(1);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
     if (activeTab === 'users') {
       fetchUsers();
     } else if (activeTab === 'exercises') {
@@ -49,21 +59,38 @@ export function AdminPanel() {
     } else if (activeTab === 'stats') {
       fetchDashboardStats();
     }
-  }, [activeTab]);
+  }, [activeTab, currentPage]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('access_token');
+      const offset = (currentPage - 1) * usersPerPage;
+
+      // Fetch users with pagination
       const response = await axios.get(`${API_BASE_URL}/api/admin/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        params: {
+          limit: usersPerPage,
+          offset: offset,
+        },
       });
-      setUsers(response.data);
+
+      // Backend returns {users, total, limit, offset}
+      if (response.data.users !== undefined) {
+        setUsers(response.data.users);
+        setTotalUsers(response.data.total);
+      } else {
+        // Fallback for old response format (just array)
+        setUsers(response.data);
+        setTotalUsers(response.data.length);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
       setUsers([]);
+      setTotalUsers(0);
     } finally {
       setLoading(false);
     }
@@ -178,7 +205,7 @@ export function AdminPanel() {
                 {activeTab === 'users' && (
                   <div>
                     <h2 className="text-xl font-semibold text-burgundy mb-4">
-                      User Management ({users.length} users)
+                      User Management ({totalUsers} total users, showing {users.length})
                     </h2>
                     <div className="overflow-x-auto">
                       <table className="w-full bg-white rounded-lg overflow-hidden">
@@ -231,6 +258,39 @@ export function AdminPanel() {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Pagination Controls */}
+                    {totalUsers > usersPerPage && (
+                      <div className="flex items-center justify-between mt-4 px-4">
+                        <div className="text-sm text-charcoal/60">
+                          Page {currentPage} of {Math.ceil(totalUsers / usersPerPage)}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                              currentPage === 1
+                                ? 'bg-charcoal/10 text-charcoal/40 cursor-not-allowed'
+                                : 'bg-burgundy text-cream hover:bg-burgundy/80'
+                            }`}
+                          >
+                            ← Previous
+                          </button>
+                          <button
+                            onClick={() => setCurrentPage(Math.min(Math.ceil(totalUsers / usersPerPage), currentPage + 1))}
+                            disabled={currentPage >= Math.ceil(totalUsers / usersPerPage)}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                              currentPage >= Math.ceil(totalUsers / usersPerPage)
+                                ? 'bg-charcoal/10 text-charcoal/40 cursor-not-allowed'
+                                : 'bg-burgundy text-cream hover:bg-burgundy/80'
+                            }`}
+                          >
+                            Next →
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
