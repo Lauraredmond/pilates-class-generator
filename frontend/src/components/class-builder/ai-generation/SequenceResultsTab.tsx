@@ -180,7 +180,7 @@ export function SequenceResultsTab({ data }: SequenceResultsTabProps) {
                 return (
                   <div key={item.id || `watch-${index}`} className="relative pl-4">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-energy-gradient rounded-full" />
-                    <p className="text-sm font-semibold mb-1" style={{ color: '#C9A57B' }}>
+                    <p className="text-sm font-semibold text-cream mb-1">
                       {item.name}
                     </p>
                     <p className="text-sm leading-relaxed" style={{ color: '#C9A57B' }}>
