@@ -179,10 +179,10 @@ export function SequenceResultsTab({ data }: SequenceResultsTabProps) {
 
                 return (
                   <div key={item.id || `watch-${index}`} className="border-l-2 border-cream/40 pl-3">
-                    <p className="text-sm font-semibold text-cream/90 mb-1">
+                    <p className="text-sm font-semibold text-cream/60 mb-1">
                       {item.name}
                     </p>
-                    <p className="text-sm text-cream/70 leading-relaxed">
+                    <p className="text-sm text-cream/60 leading-relaxed">
                       {formattedWatchPoints}
                     </p>
                   </div>
