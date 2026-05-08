@@ -1,7 +1,7 @@
 # FastAPI and ASGI server
 fastapi==0.128.8  # Security: CVE-2024-24762 + latest security patches
 uvicorn[standard]==0.39.0  # Security: Latest stable with security fixes
-python-multipart==0.0.26  # Security: CVE-2024-24762, CVE-2024-53981 + latest patches
+python-multipart==0.0.27  # Security: CVE-2024-24762, CVE-2024-53981 + latest patches
 
 # Database and ORM
 supabase==2.28.3  # Security: Latest stable with auth/client fixes
