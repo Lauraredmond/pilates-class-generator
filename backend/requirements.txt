@@ -23,7 +23,7 @@ cryptography==46.0.6  # Security: CVE-2024-26130, CVE-2023-50782, CVE-2024-0727 
 # AI and ML
 openai>=1.100.2  # Updated for standard-agent compatibility
 anthropic==0.8.1
-langchain==0.3.28  # Security: 12 CVEs fixed + latest patches (CVE-2024-28088, CVE-2024-8309, etc.)
+langchain==0.3.30  # Security: 12 CVEs fixed + latest patches (CVE-2024-28088, CVE-2024-8309, etc.)
 langchain-openai==0.3.35  # Updated for langchain compatibility
 
 # Jentic AI Agent Framework (integrated orchestration)
